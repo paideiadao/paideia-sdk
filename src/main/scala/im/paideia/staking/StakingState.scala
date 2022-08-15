@@ -14,13 +14,13 @@ class StakingState(
     stakingConfig: StakingConfig,
     plasmaParameters: PlasmaParameters,
     plasmaMap: PlasmaMap[ErgoId,Long],
-    var totalStaked: Long
+    var totalStaked: Long,
+    sortedKeys: SortedSet[String]
 ) {
-    private var _sortedKeys: SortedSet[String] = SortedSet()
 
     def stake(stakingKey: String, stakeAmount: Long): ProvenResult[Long] = {
         this.totalStaked += stakeAmount
-        this._sortedKeys.add(stakingKey) match {
+        this.sortedKeys.add(stakingKey) match {
             case true => this.plasmaMap.insert((ErgoId.create(stakingKey),stakeAmount))
             case false => throw new RuntimeException
         }
@@ -28,7 +28,7 @@ class StakingState(
 
     def unstake(stakingKey: String): ProvenResult[Long] = {
         this.totalStaked -= this.getStake(stakingKey)
-        this._sortedKeys.remove(stakingKey) match {
+        this.sortedKeys.remove(stakingKey) match {
             case true => this.plasmaMap.delete(ErgoId.create(stakingKey))
             case false => throw new RuntimeException
         }
@@ -46,15 +46,15 @@ class StakingState(
     def changeStakes(newStakes: List[(String,Long)]): ProvenResult[Long] = {
         val currentStakes = this.getStakes(newStakes.map(kv => kv._1))
         this.totalStaked = this.totalStaked -
-            currentStakes.response.foldLeft(0L)((x,y) => x+y.tryOp.getOrElse(Some(0L)).get) +
+            currentStakes.response.foldLeft(0L)((x,y) => x+y.tryOp.get.getOrElse(0L)) +
             newStakes.foldLeft(0L)((x,kv) => x+kv._2)
         this.plasmaMap.update(newStakes.map(kv => (ErgoId.create(kv._1),kv._2)): _*)
     }
 
     def getKeys(from: Int = 0, n: Int = 1): List[String] =
-        this._sortedKeys.toList.slice(from,from+n)
+        this.sortedKeys.toList.slice(from,from+n)
 
-    def size(): Int = this._sortedKeys.size
+    def size(): Int = this.sortedKeys.size
 
     override def toString(): String = {
         "State:\n" +
@@ -67,7 +67,8 @@ class StakingState(
             this.stakingConfig,
             this.plasmaParameters,
             this.plasmaMap.copy(),
-            this.totalStaked
+            this.totalStaked,
+            this.sortedKeys.clone()
         )
 }   
 
@@ -79,5 +80,6 @@ object StakingState {
             plasmaMap = new PlasmaMap[ErgoId,Long](
                 flags = AvlTreeFlags.AllOperationsAllowed,
                 params = plasmaParameters),
-            totalStaked = totalStaked)
+            totalStaked = totalStaked,
+            sortedKeys = SortedSet[String]())
 }
