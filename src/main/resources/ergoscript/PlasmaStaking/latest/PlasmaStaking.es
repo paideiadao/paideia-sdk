@@ -197,21 +197,19 @@
           }
       }
 
-      //val totalRewards = rewards.fold(0L, {(z: Long, reward: Long) => z + reward})
+      val totalRewards = rewards.fold(0L, {(z: Long, reward: Long) => z + reward})
 
-      //val correctTotalStaked = totalStaked + totalRewards == plasmaStakingOutput.R5[Coll[Long]].get(5)
+      val correctTotalStaked = totalStaked + totalRewards == plasmaStakingOutput.R5[Coll[Long]].get(5)
 
-      //val correctSnapshot = snapshots(0)._2.remove(keys, snapshotProof).get.digest == plasmaStakingOutput.R6[Coll[(Long,AvlTree)]].get(0)._2.digest
-
-      //val correctStakerCount = snapshots(0)._1 - keys.size == plasmaStakingOutput.R6[Coll[(Long,AvlTree)]].get(0)._1
+      val correctSnapshot = snapshotsTree(0).remove(keys, snapshotProof).get.digest == plasmaStakingOutput.R7[Coll[AvlTree]].get(0).digest
       
-      //val correctNewState = stakeState.update(filteredCompoundOperations, proof).get.digest == plasmaStakingOutput.R4[AvlTree].get.digest
+      val correctNewState = stakeState.update(filteredCompoundOperations, proof).get.digest == plasmaStakingOutput.R4[AvlTree].get.digest
       
       allOf(Coll(
         validCompounds,
-        //correctTotalStaked,
-        //correctSnapshot,
-        //correctNewState
+        correctTotalStaked,
+        correctSnapshot,
+        correctNewState
       ))
     } else {
       true
