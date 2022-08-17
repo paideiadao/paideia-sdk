@@ -13,7 +13,7 @@ import scala.util.Success
 class StakingState(
     stakingConfig: StakingConfig,
     plasmaParameters: PlasmaParameters,
-    plasmaMap: PlasmaMap[ErgoId,Long],
+    val plasmaMap: PlasmaMap[ErgoId,Long],
     var totalStaked: Long,
     sortedKeys: SortedSet[String]
 ) {
@@ -56,13 +56,13 @@ class StakingState(
 
     def size(): Int = this.sortedKeys.size
 
-    override def toString(): String = {
+    override def toString: String = {
         "State:\n" +
         "Number of stakers: " + this.size.toString + "\n" +
         "Total staked: " + this.totalStaked + "\n"
     }
 
-    override def clone(): StakingState = 
+    override def clone: StakingState = 
         new StakingState(
             this.stakingConfig,
             this.plasmaParameters,

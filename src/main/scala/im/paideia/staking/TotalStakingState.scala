@@ -11,15 +11,30 @@ import special.collection.CollOverArrayBuilder
 import org.ergoplatform.appkit.ErgoId
 import special.collection.PairOfCols
 import special.collection.CollOverArray
+import org.ergoplatform.appkit.ContextVar
+import org.ergoplatform.appkit.ErgoValue
+import org.ergoplatform.appkit.ErgoType
 
 class TotalStakingState(
-    stakingConfig: StakingConfig,
-    currentStakingState: StakingState,
-    snapshots: Queue[(Long,StakingState)],
+    val stakingConfig: StakingConfig,
+    val currentStakingState: StakingState,
+    val snapshots: Queue[(Long,StakingState)],
     var nextEmission: Long
 ) {
 
-    def stake(stakingKey: String, amount: Long): ProvenResult[Long] = this.currentStakingState.stake(stakingKey,amount)
+    def stake(stakingKey: String, amount: Long): List[ContextVar] = {
+        val result = this.currentStakingState.stake(stakingKey,amount)
+        val operations = ErgoValue.of(Array[(Coll[java.lang.Byte],Coll[java.lang.Byte])](ErgoValue.pairOf(
+            ErgoValue.of(ByteConversion.convertsId.convertToBytes(ErgoId.create(stakingKey))),
+            ErgoValue.of(ByteConversion.convertsLongVal.convertToBytes(amount))
+            ).getValue),ErgoType.pairType(ErgoType.collType(ErgoType.byteType()),ErgoType.collType(ErgoType.byteType())))
+        List[ContextVar](
+            new ContextVar(0.toByte,ErgoValue.of(0.toByte)),
+            new ContextVar(1.toByte,operations),
+            new ContextVar(2.toByte,result.proof.ergoValue),
+            new ContextVar(3.toByte,ErgoValue.of(Array[Byte]()))
+        )
+    }
 
     def addStake(stakingKey: String, amount: Long): ProvenResult[Long] = {
         val currentStakeAmount = this.currentStakingState.getStake(stakingKey)
@@ -86,6 +101,10 @@ class TotalStakingState(
 
 object TotalStakingState {
     def apply(stakingConfig: StakingConfig, nextEmission: Long): TotalStakingState = {
-        new TotalStakingState(stakingConfig,StakingState(stakingConfig),new Queue[(Long,StakingState)](),nextEmission: Long)
+        val currentState = StakingState(stakingConfig)
+        val snapshots = Queue[(Long,StakingState)](
+            Range(0,stakingConfig.emissionDelay.toInt).map((_) => (0L,currentState.clone())): _*
+        )
+        new TotalStakingState(stakingConfig,currentState,snapshots,nextEmission: Long)
     }
 }
