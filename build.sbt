@@ -27,7 +27,10 @@ version := "0.0.1"
 
 libraryDependencies ++= Seq(
     "org.scala-lang.modules" %% "scala-parser-combinators" % "2.1.1",
-    "io.github.getblok-io" % "getblok_plasma_2.12" % "0.0.8"
+    "io.github.getblok-io" % "getblok_plasma_2.12" % "0.0.8",
+    // https://mvnrepository.com/artifact/org.scalatest/scalatest-funsuite
+    "org.scalatest" %% "scalatest-funsuite" % "3.2.13" % Test
+
 )
 
 resolvers ++= Seq(
