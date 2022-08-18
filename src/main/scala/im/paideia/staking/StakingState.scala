@@ -26,12 +26,12 @@ class StakingState(
         }
     }
 
-    def unstake(stakingKey: String): ProvenResult[Long] = {
-        this.totalStaked -= this.getStake(stakingKey)
-        this.sortedKeys.remove(stakingKey) match {
-            case true => this.plasmaMap.delete(ErgoId.create(stakingKey))
-            case false => throw new RuntimeException
-        }
+    def unstake(stakingKeys: List[String]): ProvenResult[Long] = {
+        stakingKeys.foreach(stakingKey => { 
+            this.totalStaked -= this.getStake(stakingKey)
+            this.sortedKeys.remove(stakingKey)
+        })
+        this.plasmaMap.delete(stakingKeys.map((stakingKey: String) => ErgoId.create(stakingKey)): _*)
     }
 
     def getStakes(stakingKeys: List[String]): ProvenResult[Long] =

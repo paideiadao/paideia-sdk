@@ -35,11 +35,12 @@
       val proof   = getVar[Coll[Byte]](2).get
 
       val userOutput = OUTPUTS(1)
+      val mintedKey = userOutput.tokens(0)
 
       val stakeAmount = byteArrayToLong(stakeOperations(0)._2.slice(0,8))
 
-      val correctKeyMinted = SELF.id == stakeOperations(0)._1 && SELF.id == userOutput.tokens(0)._1
-      val correctAmountMinted = userOutput.tokens(0)._2 == 1
+      val correctKeyMinted = SELF.id == mintedKey._1 && SELF.id == stakeOperations(0)._1 
+      val correctAmountMinted = mintedKey._2 == 1
 
       val tokensStaked = stakeAmount == (plasmaStakingOutput.tokens(1)._2 - SELF.tokens(1)._2) && stakeAmount == plasmaStakingOutput.R5[Coll[Long]].get(5) - totalStaked
 
@@ -66,7 +67,7 @@
 
       val userOutput = OUTPUTS(1)
 
-      val keyInOutput = userOutput.tokens(0)._1 == stakeOperations(0)._1
+      val keyInOutput = userOutput.tokens.getOrElse(0,OUTPUTS(0).tokens(0))._1 == stakeOperations(0)._1
 
       val newStakeAmount = byteArrayToLong(stakeOperations(0)._2.slice(0,8))
 
@@ -159,7 +160,8 @@
     if (transactionType == COMPOUND) {
       val compoundOperations  = getVar[Coll[(Coll[Byte], Coll[Byte])]](1).get
       val proof = getVar[Coll[Byte]](2).get
-      val snapshotProof = if (getVar[Coll[Byte]](3).isDefined) getVar[Coll[Byte]](3).get else getVar[Coll[Byte]](2).get
+      val snapshotProof = getVar[Coll[Byte]](3).get
+      val removeProof = getVar[Coll[Byte]](4).get
 
       val keys = compoundOperations.map{(kv: (Coll[Byte], Coll[Byte])) => kv._1}
 
@@ -173,13 +175,13 @@
 
       val rewards = keys.map{
         (key: Coll[Byte]) =>
-          val index = keys.indexOf(key,0)
+          val index = keys.indexOf(key,-1)
 
           if (currentStakes(index).isDefined) {
             val snapshotStake = byteArrayToLong(snapshotStakes(index).get)
-            (snapshotStake.toBigInt * emissionAmount.toBigInt / snapshotStaked).toLong
+            (snapshotStake.toBigInt * emissionAmount.toBigInt / snapshotStaked)
           } else {
-            0L
+            0.toBigInt
           }
       }
 
@@ -197,11 +199,11 @@
           }
       }
 
-      val totalRewards = rewards.fold(0L, {(z: Long, reward: Long) => z + reward})
+      val totalRewards = rewards.fold(0.toBigInt, {(z: BigInt, reward: BigInt) => z + reward})
 
       val correctTotalStaked = totalStaked + totalRewards == plasmaStakingOutput.R5[Coll[Long]].get(5)
 
-      val correctSnapshot = snapshotsTree(0).remove(keys, snapshotProof).get.digest == plasmaStakingOutput.R7[Coll[AvlTree]].get(0).digest
+      val correctSnapshot = snapshotsTree(0).remove(keys, removeProof).get.digest == plasmaStakingOutput.R7[Coll[AvlTree]].get(0).digest
       
       val correctNewState = stakeState.update(filteredCompoundOperations, proof).get.digest == plasmaStakingOutput.R4[AvlTree].get.digest
       

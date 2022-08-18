@@ -22,19 +22,7 @@ class TotalStakingState(
     var nextEmission: Long
 ) {
 
-    def stake(stakingKey: String, amount: Long): List[ContextVar] = {
-        val result = this.currentStakingState.stake(stakingKey,amount)
-        val operations = ErgoValue.of(Array[(Coll[java.lang.Byte],Coll[java.lang.Byte])](ErgoValue.pairOf(
-            ErgoValue.of(ByteConversion.convertsId.convertToBytes(ErgoId.create(stakingKey))),
-            ErgoValue.of(ByteConversion.convertsLongVal.convertToBytes(amount))
-            ).getValue),ErgoType.pairType(ErgoType.collType(ErgoType.byteType()),ErgoType.collType(ErgoType.byteType())))
-        List[ContextVar](
-            new ContextVar(0.toByte,ErgoValue.of(0.toByte)),
-            new ContextVar(1.toByte,operations),
-            new ContextVar(2.toByte,result.proof.ergoValue),
-            new ContextVar(3.toByte,ErgoValue.of(Array[Byte]()))
-        )
-    }
+    def stake(stakingKey: String, amount: Long): List[ContextVar] = StakingContextVars.stake(stakingKey,amount,currentStakingState.stake(stakingKey,amount)).contextVars
 
     def addStake(stakingKey: String, amount: Long): ProvenResult[Long] = {
         val currentStakeAmount = this.currentStakingState.getStake(stakingKey)
@@ -44,7 +32,7 @@ class TotalStakingState(
     def unstake(stakingKey: String, amount: Long): ProvenResult[Long] = {
         val currentStakeAmount = this.currentStakingState.getStake(stakingKey)
         if (currentStakeAmount <= amount) {
-            this.currentStakingState.unstake(stakingKey)
+            this.currentStakingState.unstake(List[String](stakingKey))
         } else {
             this.currentStakingState.changeStakes(List((stakingKey, currentStakeAmount-amount)))
         }
@@ -57,10 +45,11 @@ class TotalStakingState(
         }
     }
 
-    def compound(batchSize: Int): (Coll[(Coll[Byte],Coll[Byte])],Coll[Byte],Coll[Byte]) = {
+    def compound(batchSize: Int): List[ContextVar] = {
         if (this.snapshots.size < this.stakingConfig.emissionDelay) throw new Exception("Not enough snapshots gathered yet")
         val snapshot = this.snapshots.front
         val keys = snapshot._2.getKeys(0,batchSize)
+        if (keys.size <= 0) throw new Exception("No keys found to compound")
         val snapshotTotalStaked = snapshot._1
         val currentStakesProvenResult = this.currentStakingState.getStakes(keys)
         val snapshotProvenResult = snapshot._2.getStakes(keys)
@@ -75,14 +64,11 @@ class TotalStakingState(
             }
         })
         this.currentStakingState.changeStakes(updatedStakes)
-        keys.foreach((f: String) => snapshot._2.unstake(f))
-        val byteOps = new CollOverArray[(Coll[Byte],Coll[Byte])](updatedStakes.map((kv: (String,Long)) =>
-            (new CollOverArray(ByteConversion.convertsId.convertToBytes(ErgoId.create(kv._1))),new CollOverArray(ByteConversion.convertsLongVal.convertToBytes(kv._2)))
-        ).toArray)
-        (byteOps,new CollOverArray[Byte](currentStakesProvenResult.proof.bytes),new CollOverArray(snapshotProvenResult.proof.bytes))
+        val removeProof = snapshot._2.unstake(keys)
+        StakingContextVars.compound(updatedStakes,currentStakesProvenResult,snapshotProvenResult,removeProof).contextVars
     }
 
-    def emit(currentTime: Long): Unit = {
+    def emit(currentTime: Long): List[ContextVar] = {
         if (currentTime<nextEmission) throw new Exception("Not time for new emission yet")
         if (this.snapshots.size >= this.stakingConfig.emissionDelay)
             if (this.snapshots.front._2.size()>0)
@@ -91,6 +77,7 @@ class TotalStakingState(
                 this.snapshots.dequeue()
         this.nextEmission += this.stakingConfig.cycleLength
         this.snapshots.enqueue((this.currentStakingState.totalStaked,this.currentStakingState.clone()))
+        StakingContextVars.emit.contextVars
     }
 
     override def toString(): String = {
