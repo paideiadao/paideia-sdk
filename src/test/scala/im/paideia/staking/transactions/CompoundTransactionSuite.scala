@@ -16,15 +16,7 @@ import org.ergoplatform.appkit.InputBox
 import im.paideia.staking.CompoundTransaction
 import scala.util.Random
 
-class CompoundTransactionSuite extends AnyFunSuite {
-
-    def bytes2hex(bytes: Array[Byte], sep: Option[String] = None): String = {
-        sep match {
-            case None => bytes.map("%02x".format(_)).mkString
-            case _ => bytes.map("%02x".format(_)).mkString(sep.get)
-        }
-        // bytes.foreach(println)
-    }
+class CompoundTransactionSuite extends PaideiaStakingSuite {
 
     test("Sign compound tx on 1 staker") {
         val config = StakingConfig.test
@@ -53,11 +45,7 @@ class CompoundTransactionSuite extends AnyFunSuite {
     test("Sign 2xcompound tx on 125 stakers out of 10000") {
         val config = StakingConfig.test
         val state = TotalStakingState(config, 0L)
-        Range(0,10000).foreach(_ => {
-            val testKey = new Array[Byte](32)
-            Random.nextBytes(testKey)
-            state.stake(bytes2hex(testKey),100L)
-        })
+        Range(0,10000).foreach(_ => state.stake(randomKey,100L))
         Range(0,config.emissionDelay.toInt).foreach(_ => state.emit(9999999999999999L))
         val dummyAddress = Address.create("4MQyML64GnzMxZgm")
         val ergoClient = RestApiErgoClient.create("http://ergolui.com:9053",NetworkType.MAINNET,"","https://api.ergoplatform.com")

@@ -24,17 +24,22 @@ class TotalStakingState(
 
     def stake(stakingKey: String, amount: Long): List[ContextVar] = StakingContextVars.stake(stakingKey,amount,currentStakingState.stake(stakingKey,amount)).contextVars
 
-    def addStake(stakingKey: String, amount: Long): ProvenResult[Long] = {
+    def addStake(stakingKey: String, amount: Long): List[ContextVar] = {
         val currentStakeAmount = this.currentStakingState.getStake(stakingKey)
-        this.currentStakingState.changeStakes(List((stakingKey, currentStakeAmount+amount)))
+        val operations = List((stakingKey, currentStakeAmount+amount))
+        val result = this.currentStakingState.changeStakes(operations)
+        StakingContextVars.changeStake(operations,result).contextVars
     }
 
-    def unstake(stakingKey: String, amount: Long): ProvenResult[Long] = {
+    def unstake(stakingKey: String, amount: Long): List[ContextVar] = {
         val currentStakeAmount = this.currentStakingState.getStake(stakingKey)
         if (currentStakeAmount <= amount) {
-            this.currentStakingState.unstake(List[String](stakingKey))
+            val result = this.currentStakingState.unstake(List[String](stakingKey))
+            StakingContextVars.unstake(stakingKey,result).contextVars
         } else {
-            this.currentStakingState.changeStakes(List((stakingKey, currentStakeAmount-amount)))
+            val operations = List((stakingKey, currentStakeAmount-amount))
+            val result = this.currentStakingState.changeStakes(operations)
+            StakingContextVars.changeStake(operations,result).contextVars
         }
     }
 
