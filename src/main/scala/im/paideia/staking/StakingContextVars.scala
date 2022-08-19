@@ -77,16 +77,16 @@ object StakingContextVars {
         ))
     }
 
-    def unstake(stakingKey: String, result: ProvenResult[Long]): StakingContextVars = {
+    def unstake(stakingKey: String, proof: ProvenResult[Long], removeProof: ProvenResult[Long]): StakingContextVars = {
         val operations = ErgoValue.of(Array[(Coll[java.lang.Byte],Coll[java.lang.Byte])](ErgoValue.pairOf(
             ErgoValue.of(ByteConversion.convertsId.convertToBytes(ErgoId.create(stakingKey))),
-            ErgoValue.of(Array[Byte]())
+            ErgoValue.of(ByteConversion.convertsLongVal.convertToBytes(0L))
             ).getValue),ErgoType.pairType(ErgoType.collType(ErgoType.byteType()),ErgoType.collType(ErgoType.byteType())))
         new StakingContextVars(List[ContextVar](
             new ContextVar(0.toByte,UNSTAKE),
             new ContextVar(1.toByte,operations),
-            new ContextVar(2.toByte,result.proof.ergoValue),
-            new ContextVar(3.toByte,ErgoValue.of(Array[Byte]())),
+            new ContextVar(2.toByte,proof.proof.ergoValue),
+            new ContextVar(3.toByte,removeProof.proof.ergoValue),
             new ContextVar(4.toByte,ErgoValue.of(Array[Byte]()))
         ))
     }

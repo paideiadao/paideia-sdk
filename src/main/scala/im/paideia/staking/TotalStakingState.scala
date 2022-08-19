@@ -34,8 +34,9 @@ class TotalStakingState(
     def unstake(stakingKey: String, amount: Long): List[ContextVar] = {
         val currentStakeAmount = this.currentStakingState.getStake(stakingKey)
         if (currentStakeAmount <= amount) {
-            val result = this.currentStakingState.unstake(List[String](stakingKey))
-            StakingContextVars.unstake(stakingKey,result).contextVars
+            val proof = currentStakingState.getStakes(List[String](stakingKey))
+            val removeProof = this.currentStakingState.unstake(List[String](stakingKey))
+            StakingContextVars.unstake(stakingKey,proof,removeProof).contextVars
         } else {
             val operations = List((stakingKey, currentStakeAmount-amount))
             val result = this.currentStakingState.changeStakes(operations)

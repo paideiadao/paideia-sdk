@@ -96,6 +96,7 @@
     if (transactionType == UNSTAKE) {
       val keys  = getVar[Coll[(Coll[Byte],Coll[Byte])]](1).get.map{(kv: (Coll[Byte], Coll[Byte])) => kv._1}
       val proof   = getVar[Coll[Byte]](2).get
+      val removeProof = getVar[Coll[Byte]](3).get
 
       val userInput = INPUTS(1)
 
@@ -109,7 +110,7 @@
 
       val singleStakeOp = keys.size == 1
 
-      val correctNewState = stakeState.remove(keys, proof).get.digest == plasmaStakingOutput.R4[AvlTree].get.digest
+      val correctNewState = stakeState.remove(keys, removeProof).get.digest == plasmaStakingOutput.R4[AvlTree].get.digest
       
       allOf(Coll(
         keyInInput,
