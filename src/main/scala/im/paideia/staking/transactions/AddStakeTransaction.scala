@@ -9,18 +9,32 @@ import org.ergoplatform.appkit.Eip4Token
 import org.ergoplatform.appkit.OutBox
 import org.ergoplatform.appkit.impl.ErgoTreeContract
 import org.ergoplatform.appkit.ErgoToken
+import im.paideia.governance.DAOConfig
+import org.ergoplatform.appkit.ContextVar
+import org.ergoplatform.appkit.ErgoValue
+import im.paideia.staking.contracts.PlasmaStaking
 
 class AddStakeTransaction extends PaideiaTransaction {
   
 }
 
 object AddStakeTransaction {
-    def apply(ctx: BlockchainContextImpl, stakeStateInput: InputBox, userInput: InputBox, stakingKey: String, amount: Long, state: TotalStakingState, changeAddress: ErgoAddress): AddStakeTransaction = {
+    def apply(
+        ctx: BlockchainContextImpl, 
+        stakeStateInput: InputBox, 
+        stakingConfigInput: InputBox,
+        userInput: InputBox,
+        stakingKey: String, 
+        amount: Long, 
+        state: TotalStakingState, 
+        changeAddress: ErgoAddress,
+        daoConfig: DAOConfig): AddStakeTransaction = 
+    {
         if (stakeStateInput.getRegisters().get(0).getValue.asInstanceOf[AvlTree].digest != state.currentStakingState.plasmaMap.ergoAVLTree.digest) throw new Exception("State not synced correctly")
         
         val contextVars = state.addStake(stakingKey,amount)
 
-        val stakeStateOutput = StakeStateBox(ctx,state,stakeStateInput.getTokens().get(1).getValue()+amount)
+        val stakeStateOutput = StakeStateBox(ctx,state,stakeStateInput.getTokens().get(1).getValue()+amount,daoConfig)
 
         val userOutput = ctx.newTxBuilder().outBoxBuilder().tokens(
             new ErgoToken(stakingKey,1L)
@@ -31,6 +45,7 @@ object AddStakeTransaction {
         res.changeAddress = changeAddress
         res.fee = 1000000
         res.inputs = List[InputBox](stakeStateInput.withContextVars(contextVars: _*),userInput)
+        res.dataInputs = List[InputBox](stakingConfigInput)
         res.outputs = List[OutBox](stakeStateOutput.outBox(ctx),userOutput)
         res
     }

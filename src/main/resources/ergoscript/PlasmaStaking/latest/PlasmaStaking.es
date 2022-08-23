@@ -1,11 +1,11 @@
 {
   val stakeState = SELF.R4[AvlTree].get
-  val emissionAmount = SELF.R5[Coll[Long]].get(0)
-  val emissionDelay = SELF.R5[Coll[Long]].get(1).toInt
-  val cycleLength = SELF.R5[Coll[Long]].get(2)
-  val nextSnapshot = SELF.R5[Coll[Long]].get(3)
-  val stakers = SELF.R5[Coll[Long]].get(4)
-  val totalStaked = SELF.R5[Coll[Long]].get(5)
+  val emissionAmount = config.R4[Coll[Long]].get(1)
+  val emissionDelay = config.R4[Coll[Long]].get(2).toInt
+  val cycleLength = config.R4[Coll[Long]].get(3)
+  val nextSnapshot = SELF.R5[Coll[Long]].get(0)
+  val stakers = SELF.R5[Coll[Long]].get(1)
+  val totalStaked = SELF.R5[Coll[Long]].get(2)
   val snapshotsStaked = SELF.R6[Coll[Long]].get
   val snapshotsTree = SELF.R7[Coll[AvlTree]].get
 
@@ -19,20 +19,20 @@
 
   val plasmaStakingOutput = OUTPUTS(0)
 
-  val transactionType = getVar[Byte](0).get
+  val transactionType = getVar[Byte](1).get
 
   val validTransactionType = transactionType >= 0 && transactionType <= 5
 
   val validOutput = allOf(Coll(
-    plasmaStakingOutput.propositionBytes == SELF.propositionBytes,
+    blake2b256(plasmaStakingOutput.propositionBytes) == config.R5[Coll[Byte]].get,
     plasmaStakingOutput.tokens(0) == SELF.tokens(0),
     plasmaStakingOutput.tokens(1)._1 == SELF.tokens(1)._1
   ))
 
   val validStake = {
     if (transactionType == STAKE) {
-      val stakeOperations  = getVar[Coll[(Coll[Byte], Coll[Byte])]](1).get
-      val proof   = getVar[Coll[Byte]](2).get
+      val stakeOperations  = getVar[Coll[(Coll[Byte], Coll[Byte])]](2).get
+      val proof   = getVar[Coll[Byte]](3).get
 
       val userOutput = OUTPUTS(1)
       val mintedKey = userOutput.tokens(0)
@@ -42,7 +42,7 @@
       val correctKeyMinted = SELF.id == mintedKey._1 && SELF.id == stakeOperations(0)._1 
       val correctAmountMinted = mintedKey._2 == 1
 
-      val tokensStaked = stakeAmount == (plasmaStakingOutput.tokens(1)._2 - SELF.tokens(1)._2) && stakeAmount == plasmaStakingOutput.R5[Coll[Long]].get(5) - totalStaked
+      val tokensStaked = stakeAmount == (plasmaStakingOutput.tokens(1)._2 - SELF.tokens(1)._2) && stakeAmount == plasmaStakingOutput.R5[Coll[Long]].get(2) - totalStaked
 
       val singleStakeOp = stakeOperations.size == 1
 
@@ -62,8 +62,8 @@
 
   val validChangeStake = {
     if (transactionType == CHANGE_STAKE) {
-      val stakeOperations  = getVar[Coll[(Coll[Byte], Coll[Byte])]](1).get
-      val proof   = getVar[Coll[Byte]](2).get
+      val stakeOperations  = getVar[Coll[(Coll[Byte], Coll[Byte])]](2).get
+      val proof   = getVar[Coll[Byte]](3).get
 
       val userOutput = OUTPUTS(1)
 
@@ -75,7 +75,7 @@
 
       val currentStakeAmount = byteArrayToLong(currentStakeState.slice(0,8))
 
-      val tokensStaked = newStakeAmount - currentStakeAmount == (plasmaStakingOutput.tokens(1)._2 - SELF.tokens(1)._2) && newStakeAmount - currentStakeAmount == plasmaStakingOutput.R5[Coll[Long]].get(5) - totalStaked
+      val tokensStaked = newStakeAmount - currentStakeAmount == (plasmaStakingOutput.tokens(1)._2 - SELF.tokens(1)._2) && newStakeAmount - currentStakeAmount == plasmaStakingOutput.R5[Coll[Long]].get(2) - totalStaked
 
       val singleStakeOp = stakeOperations.size == 1
 
@@ -94,9 +94,9 @@
 
   val validUnstake = {
     if (transactionType == UNSTAKE) {
-      val keys  = getVar[Coll[(Coll[Byte],Coll[Byte])]](1).get.map{(kv: (Coll[Byte], Coll[Byte])) => kv._1}
-      val proof   = getVar[Coll[Byte]](2).get
-      val removeProof = getVar[Coll[Byte]](3).get
+      val keys  = getVar[Coll[(Coll[Byte],Coll[Byte])]](2).get.map{(kv: (Coll[Byte], Coll[Byte])) => kv._1}
+      val proof   = getVar[Coll[Byte]](3).get
+      val removeProof = getVar[Coll[Byte]](4).get
 
       val userInput = INPUTS(1)
 
@@ -106,7 +106,7 @@
 
       val currentStakeAmount = byteArrayToLong(currentStakeState.slice(0,8))
 
-      val tokensUnstaked = currentStakeAmount == (SELF.tokens(1)._2 - plasmaStakingOutput.tokens(1)._2) && currentStakeAmount == totalStaked - plasmaStakingOutput.R5[Coll[Long]].get(5)
+      val tokensUnstaked = currentStakeAmount == (SELF.tokens(1)._2 - plasmaStakingOutput.tokens(1)._2) && currentStakeAmount == totalStaked - plasmaStakingOutput.R5[Coll[Long]].get(2)
 
       val singleStakeOp = keys.size == 1
 
@@ -159,10 +159,10 @@
 
   val validCompound = {
     if (transactionType == COMPOUND) {
-      val compoundOperations  = getVar[Coll[(Coll[Byte], Coll[Byte])]](1).get
-      val proof = getVar[Coll[Byte]](2).get
-      val snapshotProof = getVar[Coll[Byte]](3).get
-      val removeProof = getVar[Coll[Byte]](4).get
+      val compoundOperations  = getVar[Coll[(Coll[Byte], Coll[Byte])]](2).get
+      val proof = getVar[Coll[Byte]](3).get
+      val snapshotProof = getVar[Coll[Byte]](4).get
+      val removeProof = getVar[Coll[Byte]](5).get
 
       val keys = compoundOperations.map{(kv: (Coll[Byte], Coll[Byte])) => kv._1}
 
@@ -202,7 +202,7 @@
 
       val totalRewards = rewards.fold(0.toBigInt, {(z: BigInt, reward: BigInt) => z + reward})
 
-      val correctTotalStaked = totalStaked + totalRewards == plasmaStakingOutput.R5[Coll[Long]].get(5)
+      val correctTotalStaked = totalStaked + totalRewards == plasmaStakingOutput.R5[Coll[Long]].get(2)
 
       val correctSnapshot = snapshotsTree(0).remove(keys, removeProof).get.digest == plasmaStakingOutput.R7[Coll[AvlTree]].get(0).digest
       
@@ -219,15 +219,13 @@
     }
   }
 
-  sigmaProp(
-    allOf(Coll(
-      validTransactionType,
-      validOutput,
-      validStake,
-      validChangeStake,
-      validUnstake,
-      validSnapshot,
-      validCompound
-    ))
-  )
+  sigmaProp(allOf(Coll(
+    validTransactionType,
+    validOutput,
+    validStake,
+    validChangeStake,
+    validUnstake,
+    validSnapshot,
+    validCompound
+  )))
 }

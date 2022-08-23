@@ -13,24 +13,28 @@ import org.ergoplatform.appkit.ErgoToken
 import im.paideia.staking.StakeTransaction
 import scala.collection.JavaConverters._
 import org.ergoplatform.appkit.InputBox
+import im.paideia.governance.DAOConfig
+import im.paideia.staking.StakingConfigBox
 
 class EmitTransactionSuite extends AnyFunSuite {
     test("Sign emit tx on empty state") {
-        val config = StakingConfig.test
-        val state = TotalStakingState(config, 0L)
+        val stakingConfig = StakingConfig.test
+        val daoConfig = DAOConfig.test
+        val state = TotalStakingState(stakingConfig, 0L)
         val dummyAddress = Address.create("4MQyML64GnzMxZgm")
         val ergoClient = RestApiErgoClient.create("http://ergolui.com:9053",NetworkType.MAINNET,"","https://api.ergoplatform.com")
         ergoClient.execute(new java.util.function.Function[BlockchainContext,Unit] {
             override def apply(_ctx: BlockchainContext): Unit = {
                 val ctx = _ctx.asInstanceOf[BlockchainContextImpl]
-                val stakeStateInput = StakeStateBox(ctx,state,100000000L).inputBox(ctx)
+                val stakeStateInput = StakeStateBox(ctx,state,100000000L,daoConfig).inputBox(ctx)
+                val stakingConfigInput = StakingConfigBox(ctx,stakingConfig,daoConfig).inputBox(ctx)
                 val userInput = ctx.newTxBuilder().outBoxBuilder()
                     .contract(dummyAddress.toErgoContract())
                     .value(10000000000L)
                     .tokens(new ErgoToken(state.stakingConfig.stakedTokenId,10000000L))
                     .build().convertToInputWith("ce552663312afc2379a91f803c93e2b10b424f176fbc930055c10def2fd88a5d",2)
 
-                val emitTransaction = EmitTransaction(ctx,stakeStateInput,userInput,state,dummyAddress.getErgoAddress())
+                val emitTransaction = EmitTransaction(ctx,stakeStateInput,stakingConfigInput,userInput,state,dummyAddress.getErgoAddress(),daoConfig)
                 ctx.newProverBuilder().build().sign(emitTransaction.unsigned())
             }
         })

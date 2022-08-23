@@ -1,4 +1,4 @@
-package im.paideia.common
+package im.paideia.common.contracts
 
 import scala.io.Source
 import sigmastate.Values
@@ -14,6 +14,9 @@ trait PaideiaContract {
     val networkType: NetworkType
 
     def ergoScript: String = Source.fromResource("ergoscript/" + getClass.getSimpleName + "/" + version + "/" + getClass.getSimpleName + ".es").mkString
-    def ergoTree: Values.ErgoTree = JavaHelpers.compile(constants.asJava,ergoScript,networkType.networkPrefix)
+    def ergoTree: Values.ErgoTree = {
+        val jConstants = constants.asJava
+        JavaHelpers.compile(constants.asJava,ergoScript,networkType.networkPrefix)
+    }
     def contract: ErgoContract = new ErgoTreeContract(ergoTree, networkType)
 }

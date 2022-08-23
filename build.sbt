@@ -39,3 +39,5 @@ resolvers ++= Seq(
   "Sonatype Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/",
   "Bintray" at "https://jcenter.bintray.com/"
 )
+
+testOptions in Test += Tests.Argument("-oDF")

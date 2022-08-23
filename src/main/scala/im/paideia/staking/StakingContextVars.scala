@@ -25,11 +25,11 @@ object StakingContextVars {
             ErgoValue.of(ByteConversion.convertsLongVal.convertToBytes(amount))
             ).getValue),ErgoType.pairType(ErgoType.collType(ErgoType.byteType()),ErgoType.collType(ErgoType.byteType())))
         new StakingContextVars(List[ContextVar](
-            new ContextVar(0.toByte,STAKE),
-            new ContextVar(1.toByte,operations),
-            new ContextVar(2.toByte,result.proof.ergoValue),
-            new ContextVar(3.toByte,ErgoValue.of(Array[Byte]())),
-            new ContextVar(4.toByte,ErgoValue.of(Array[Byte]()))
+            new ContextVar(1.toByte,STAKE),
+            new ContextVar(2.toByte,operations),
+            new ContextVar(3.toByte,result.proof.ergoValue),
+            new ContextVar(4.toByte,ErgoValue.of(Array[Byte]())),
+            new ContextVar(5.toByte,ErgoValue.of(Array[Byte]()))
         ))
     }
 
@@ -39,11 +39,11 @@ object StakingContextVars {
             ErgoValue.of(ByteConversion.convertsLongVal.convertToBytes(0L))
             ).getValue),ErgoType.pairType(ErgoType.collType(ErgoType.byteType()),ErgoType.collType(ErgoType.byteType())))
         new StakingContextVars(List[ContextVar](
-            new ContextVar(0.toByte,SNAPSHOT),
-            new ContextVar(1.toByte,operations),
-            new ContextVar(2.toByte,ErgoValue.of(Array[Byte]())),
+            new ContextVar(1.toByte,SNAPSHOT),
+            new ContextVar(2.toByte,operations),
             new ContextVar(3.toByte,ErgoValue.of(Array[Byte]())),
-            new ContextVar(4.toByte,ErgoValue.of(Array[Byte]()))
+            new ContextVar(4.toByte,ErgoValue.of(Array[Byte]())),
+            new ContextVar(5.toByte,ErgoValue.of(Array[Byte]()))
         ))
     }
 
@@ -54,11 +54,11 @@ object StakingContextVars {
             ErgoValue.of(ByteConversion.convertsLongVal.convertToBytes(kv._2))
             ).getValue).toArray,ErgoType.pairType(ErgoType.collType(ErgoType.byteType()),ErgoType.collType(ErgoType.byteType())))
         new StakingContextVars(List[ContextVar](
-            new ContextVar(0.toByte,COMPOUND),
-            new ContextVar(1.toByte,operations),
-            new ContextVar(2.toByte,proof.proof.ergoValue),
-            new ContextVar(3.toByte,snapshotProof.proof.ergoValue),
-            new ContextVar(4.toByte,removeProof.proof.ergoValue)
+            new ContextVar(1.toByte,COMPOUND),
+            new ContextVar(2.toByte,operations),
+            new ContextVar(3.toByte,proof.proof.ergoValue),
+            new ContextVar(4.toByte,snapshotProof.proof.ergoValue),
+            new ContextVar(5.toByte,removeProof.proof.ergoValue)
         ))
     }
 
@@ -69,11 +69,11 @@ object StakingContextVars {
             ErgoValue.of(ByteConversion.convertsLongVal.convertToBytes(kv._2))
             ).getValue).toArray,ErgoType.pairType(ErgoType.collType(ErgoType.byteType()),ErgoType.collType(ErgoType.byteType())))
         new StakingContextVars(List[ContextVar](
-            new ContextVar(0.toByte,CHANGE_STAKE),
-            new ContextVar(1.toByte,operations),
-            new ContextVar(2.toByte,proof.proof.ergoValue),
-            new ContextVar(3.toByte,ErgoValue.of(Array[Byte]())),
-            new ContextVar(4.toByte,ErgoValue.of(Array[Byte]()))
+            new ContextVar(1.toByte,CHANGE_STAKE),
+            new ContextVar(2.toByte,operations),
+            new ContextVar(3.toByte,proof.proof.ergoValue),
+            new ContextVar(4.toByte,ErgoValue.of(Array[Byte]())),
+            new ContextVar(5.toByte,ErgoValue.of(Array[Byte]()))
         ))
     }
 
@@ -83,11 +83,11 @@ object StakingContextVars {
             ErgoValue.of(ByteConversion.convertsLongVal.convertToBytes(0L))
             ).getValue),ErgoType.pairType(ErgoType.collType(ErgoType.byteType()),ErgoType.collType(ErgoType.byteType())))
         new StakingContextVars(List[ContextVar](
-            new ContextVar(0.toByte,UNSTAKE),
-            new ContextVar(1.toByte,operations),
-            new ContextVar(2.toByte,proof.proof.ergoValue),
-            new ContextVar(3.toByte,removeProof.proof.ergoValue),
-            new ContextVar(4.toByte,ErgoValue.of(Array[Byte]()))
+            new ContextVar(1.toByte,UNSTAKE),
+            new ContextVar(2.toByte,operations),
+            new ContextVar(3.toByte,proof.proof.ergoValue),
+            new ContextVar(4.toByte,removeProof.proof.ergoValue),
+            new ContextVar(5.toByte,ErgoValue.of(Array[Byte]()))
         ))
     }
 }
