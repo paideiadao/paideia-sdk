@@ -40,7 +40,7 @@ object StakeTransaction {
                 0
             )
         ).contract(new ErgoTreeContract(userInput.getErgoTree(),ctx.getNetworkType())).build()
-
+        val reg = stakeStateOutput.registers
         val res = new StakeTransaction()
         res.ctx = ctx
         res.changeAddress = changeAddress

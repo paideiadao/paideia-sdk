@@ -34,7 +34,9 @@ class StakingConfigBox(val stakingConfig:StakingConfig, stakingErgoTree: Values.
             stakingConfig.emissionDelay,
             stakingConfig.cycleLength
         ).map(java.lang.Long.valueOf),ErgoType.longType()),
-        ErgoValue.of(Blake2b256(stakingErgoTree.bytes).array)
+        ErgoValue.of(Blake2b256(stakingErgoTree.bytes).array),
+        ErgoValue.of(stakingConfig.profitTokens.map((pt: (String,Long)) => 
+            ErgoValue.pairOf(ErgoValue.of(ErgoId.create(pt._1).getBytes()),ErgoValue.of(pt._2)).getValue).toArray,ErgoType.pairType(ErgoType.collType(ErgoType.byteType()),ErgoType.longType()))
     )
 }
 

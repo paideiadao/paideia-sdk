@@ -27,7 +27,7 @@ object EmitTransaction {
     {
         if (stakeStateInput.getRegisters().get(0).getValue.asInstanceOf[AvlTree].digest != state.currentStakingState.plasmaMap.ergoAVLTree.digest) throw new Exception("State not synced correctly")
         
-        val contextVars = state.emit(ctx.createPreHeader().build().getTimestamp())
+        val contextVars = state.emit(ctx.createPreHeader().build().getTimestamp(),stakeStateInput.getTokens().get(1).getValue()-state.currentStakingState.totalStaked)
 
         val stakeStateOutput = StakeStateBox(ctx,state,stakeStateInput.getTokens().get(1).getValue(),daoConfig)
 

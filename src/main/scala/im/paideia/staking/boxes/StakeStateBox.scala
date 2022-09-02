@@ -29,23 +29,27 @@ class StakeStateBox(val state:TotalStakingState) extends PaideiaBox {
             state.nextEmission,
             state.currentStakingState.size.toLong,
             state.currentStakingState.totalStaked
-        ).map(java.lang.Long.valueOf),ErgoType.longType()),
+        ).++(state.profit).map(java.lang.Long.valueOf),ErgoType.longType()),
         ErgoValue.of(this.state.snapshots.toArray.map(
-            (kv: (Long,StakingState)) => 
+            (kv: (Long,StakingState,List[Long])) => 
                         java.lang.Long.valueOf(kv._1)
                     ),ErgoType.longType()),
         ErgoValue.of(this.state.snapshots.toArray.map(
-            (kv: (Long,StakingState)) => 
+            (kv: (Long,StakingState,List[Long])) => 
                         kv._2.plasmaMap.ergoValue.getValue()
-                    ),ErgoType.avlTreeType())
+                    ),ErgoType.avlTreeType()),
+        ErgoValue.of(this.state.snapshots.toArray.map(
+            (kv: (Long,StakingState,List[Long])) => 
+                        ErgoValue.of(kv._3.toArray.map(java.lang.Long.valueOf),ErgoType.longType()).getValue()
+                    ),ErgoType.collType(ErgoType.longType()))
     )
 }
 
 object StakeStateBox {
-    def apply(ctx: BlockchainContextImpl, state: TotalStakingState, stakedTokenTotal: Long, daoConfig: DAOConfig): StakeStateBox = {
+    def apply(ctx: BlockchainContextImpl, state: TotalStakingState, stakedTokenTotal: Long, daoConfig: DAOConfig, value: Long = 1000000, extraTokens: List[ErgoToken] = List[ErgoToken]()): StakeStateBox = {
         val script = PlasmaStaking(networkType=ctx.getNetworkType()).ergoScript
         val res = new StakeStateBox(state)
-        res.value = 1000000
+        res.value = value
         res.contract = DAOControlled(
             constants=Map(
                 "_configIndex" -> ErgoValue.of(StakingConfigBox.configIndex).getValue(),
@@ -55,7 +59,7 @@ object StakeStateBox {
         res.tokens = List[ErgoToken](
             new ErgoToken(state.stakingConfig.nftId,1L),
             new ErgoToken(state.stakingConfig.stakedTokenId,stakedTokenTotal)
-        )
+        ) ++ extraTokens
         res
     }
 }

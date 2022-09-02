@@ -27,7 +27,8 @@ version := "0.0.1"
 
 libraryDependencies ++= Seq(
     "org.scala-lang.modules" %% "scala-parser-combinators" % "2.1.1",
-    "io.github.getblok-io" % "getblok_plasma_2.12" % "0.0.8",
+    "org.ergoplatform" %% "ergo-appkit" % "ac116c85-SNAPSHOT",
+    "io.github.getblok-io" % "getblok_plasma_2.12" % "0.0.8" exclude("org.ergoplatform"),
     // https://mvnrepository.com/artifact/org.scalatest/scalatest-funsuite
     "org.scalatest" %% "scalatest-funsuite" % "3.2.13" % Test
 

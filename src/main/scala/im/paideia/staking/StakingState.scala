@@ -13,41 +13,41 @@ import scala.util.Success
 class StakingState(
     stakingConfig: StakingConfig,
     plasmaParameters: PlasmaParameters,
-    val plasmaMap: PlasmaMap[ErgoId,Long],
+    val plasmaMap: PlasmaMap[ErgoId,StakeRecord],
     var totalStaked: Long,
     sortedKeys: SortedSet[String]
 ) {
 
-    def stake(stakingKey: String, stakeAmount: Long): ProvenResult[Long] = {
-        this.totalStaked += stakeAmount
+    def stake(stakingKey: String, stakeRecord: StakeRecord): ProvenResult[StakeRecord] = {
+        this.totalStaked += stakeRecord.stake
         this.sortedKeys.add(stakingKey) match {
-            case true => this.plasmaMap.insert((ErgoId.create(stakingKey),stakeAmount))
+            case true => this.plasmaMap.insert((ErgoId.create(stakingKey),stakeRecord))
             case false => throw new RuntimeException
         }
     }
 
-    def unstake(stakingKeys: List[String]): ProvenResult[Long] = {
+    def unstake(stakingKeys: List[String]): ProvenResult[StakeRecord] = {
         stakingKeys.foreach(stakingKey => { 
-            this.totalStaked -= this.getStake(stakingKey)
+            this.totalStaked -= this.getStake(stakingKey).stake
             this.sortedKeys.remove(stakingKey)
         })
         this.plasmaMap.delete(stakingKeys.map((stakingKey: String) => ErgoId.create(stakingKey)): _*)
     }
 
-    def getStakes(stakingKeys: List[String]): ProvenResult[Long] =
+    def getStakes(stakingKeys: List[String]): ProvenResult[StakeRecord] =
         this.plasmaMap.lookUp(stakingKeys.map(key => ErgoId.create(key)): _*)
 
-    def getStake(stakingKey: String): Long =
+    def getStake(stakingKey: String): StakeRecord =
         this.getStakes(List[String](stakingKey)).response(0).tryOp match {
             case Failure(exception) => throw exception
             case Success(value) => value.get
         }
     
-    def changeStakes(newStakes: List[(String,Long)]): ProvenResult[Long] = {
+    def changeStakes(newStakes: List[(String,StakeRecord)]): ProvenResult[StakeRecord] = {
         val currentStakes = this.getStakes(newStakes.map(kv => kv._1))
         this.totalStaked = this.totalStaked -
-            currentStakes.response.foldLeft(0L)((x,y) => x+y.tryOp.get.getOrElse(0L)) +
-            newStakes.foldLeft(0L)((x,kv) => x+kv._2)
+            currentStakes.response.foldLeft(0L)((x,y) => x+y.tryOp.get.get.stake) +
+            newStakes.foldLeft(0L)((x,kv) => x+kv._2.stake)
         this.plasmaMap.update(newStakes.map(kv => (ErgoId.create(kv._1),kv._2)): _*)
     }
 
@@ -77,7 +77,7 @@ object StakingState {
         new StakingState(
             stakingConfig = stakingConfig, 
             plasmaParameters = plasmaParameters, 
-            plasmaMap = new PlasmaMap[ErgoId,Long](
+            plasmaMap = new PlasmaMap[ErgoId,StakeRecord](
                 flags = AvlTreeFlags.AllOperationsAllowed,
                 params = plasmaParameters),
             totalStaked = totalStaked,
