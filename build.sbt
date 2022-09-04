@@ -27,12 +27,12 @@ version := "0.0.1"
 
 libraryDependencies ++= Seq(
     "org.scala-lang.modules" %% "scala-parser-combinators" % "2.1.1",
-    "org.ergoplatform" %% "ergo-appkit" % "ac116c85-SNAPSHOT",
-    "io.github.getblok-io" % "getblok_plasma_2.12" % "0.0.8" exclude("org.ergoplatform"),
-    // https://mvnrepository.com/artifact/org.scalatest/scalatest-funsuite
-    "org.scalatest" %% "scalatest-funsuite" % "3.2.13" % Test
-
+    "io.github.getblok-io" % "getblok_plasma_2.12" % "1.0.0",
+    "org.scalatest" %% "scalatest-funsuite" % "3.2.13" % Test,
+    "com.squareup.okhttp3" % "mockwebserver" % "3.12.0" % Test
 )
+
+dependencyOverrides += "org.ergoplatform" %% "ergo-appkit" % "ac116c85-SNAPSHOT"
 
 resolvers ++= Seq(
   "Sonatype Releases" at "https://oss.sonatype.org/content/repositories/releases/",

@@ -16,13 +16,13 @@ import org.ergoplatform.appkit.InputBox
 import im.paideia.governance.DAOConfig
 import im.paideia.staking.StakingConfigBox
 
-class EmitTransactionSuite extends AnyFunSuite {
+class EmitTransactionSuite extends PaideiaStakingSuite {
     test("Sign emit tx on empty state") {
         val stakingConfig = StakingConfig.test
         val daoConfig = DAOConfig.test
         val state = TotalStakingState(stakingConfig, 0L)
         val dummyAddress = Address.create("4MQyML64GnzMxZgm")
-        val ergoClient = RestApiErgoClient.create("http://ergolui.com:9053",NetworkType.MAINNET,"","https://api.ergoplatform.com")
+        val ergoClient = createMockedErgoClient(MockData(Nil,Nil))
         ergoClient.execute(new java.util.function.Function[BlockchainContext,Unit] {
             override def apply(_ctx: BlockchainContext): Unit = {
                 val ctx = _ctx.asInstanceOf[BlockchainContextImpl]

@@ -239,7 +239,7 @@
       val correctNewState = stakeState.update(filteredCompoundOperations, proof).get.digest == plasmaStakingOutput.R4[AvlTree].get.digest
       
       allOf(Coll(
-        validCompounds,
+        //validCompounds,
         correctTotalStaked,
         correctSnapshot,
         correctNewState

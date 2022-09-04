@@ -29,7 +29,7 @@ class CompoundTransactionSuite extends PaideiaStakingSuite {
         state.stake(dummyKey,100L)
         Range(0,stakingConfig.emissionDelay.toInt).foreach(_ => state.emit(9999999999999999L,9999999L))
         val dummyAddress = Address.create("4MQyML64GnzMxZgm")
-        val ergoClient = RestApiErgoClient.create("http://ergolui.com:9053",NetworkType.MAINNET,"","https://api.ergoplatform.com")
+        val ergoClient = createMockedErgoClient(MockData(Nil,Nil))
         ergoClient.execute(new java.util.function.Function[BlockchainContext,Unit] {
             override def apply(_ctx: BlockchainContext): Unit = {
                 val ctx = _ctx.asInstanceOf[BlockchainContextImpl]
@@ -55,7 +55,7 @@ class CompoundTransactionSuite extends PaideiaStakingSuite {
         Range(0,10000).foreach(_ => state.stake(Util.randomKey,100L))
         Range(0,stakingConfig.emissionDelay.toInt).foreach(_ => state.emit(9999999999999999L,999999999L))
         val dummyAddress = Address.create("4MQyML64GnzMxZgm")
-        val ergoClient = RestApiErgoClient.create("http://ergolui.com:9053",NetworkType.MAINNET,"","https://api.ergoplatform.com")
+        val ergoClient = createMockedErgoClient(MockData(Nil,Nil))
         ergoClient.execute(new java.util.function.Function[BlockchainContext,Unit] {
             override def apply(_ctx: BlockchainContext): Unit = {
                 val ctx = _ctx.asInstanceOf[BlockchainContextImpl]
@@ -67,11 +67,11 @@ class CompoundTransactionSuite extends PaideiaStakingSuite {
                     .tokens(new ErgoToken(state.stakingConfig.stakedTokenId,10000000L))
                     .build().convertToInputWith("ce552663312afc2379a91f803c93e2b10b424f176fbc930055c10def2fd88a5d",2)
 
-                val compoundTransaction = CompoundTransaction(ctx,stakeStateInput,stakingConfigInput,userInput,50,state,dummyAddress.getErgoAddress(),daoConfig)
+                val compoundTransaction = CompoundTransaction(ctx,stakeStateInput,stakingConfigInput,userInput,100,state,dummyAddress.getErgoAddress(),daoConfig)
 
                 val signed = ctx.newProverBuilder().build().sign(compoundTransaction.unsigned())
 
-                val compoundTransaction2 = CompoundTransaction(ctx,signed.getOutputsToSpend().get(0),stakingConfigInput,signed.getOutputsToSpend().get(2),50,state,dummyAddress.getErgoAddress(),daoConfig)
+                val compoundTransaction2 = CompoundTransaction(ctx,signed.getOutputsToSpend().get(0),stakingConfigInput,signed.getOutputsToSpend().get(2),100,state,dummyAddress.getErgoAddress(),daoConfig)
                 
                 ctx.newProverBuilder().build().sign(compoundTransaction2.unsigned())
             }

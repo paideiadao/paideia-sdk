@@ -26,7 +26,7 @@ class AddStakeTransactionSuite extends PaideiaStakingSuite {
         val testKey = Util.randomKey
         state.stake(testKey,100L)
         val dummyAddress = Address.create("4MQyML64GnzMxZgm")
-        val ergoClient = RestApiErgoClient.create("http://localhost:9052",NetworkType.TESTNET,"","https://testnet-api.ergoplatform.com")
+        val ergoClient = createMockedErgoClient(MockData(Nil,Nil))
         ergoClient.execute(new java.util.function.Function[BlockchainContext,Unit] {
             override def apply(_ctx: BlockchainContext): Unit = {
                 val ctx = _ctx.asInstanceOf[BlockchainContextImpl]
