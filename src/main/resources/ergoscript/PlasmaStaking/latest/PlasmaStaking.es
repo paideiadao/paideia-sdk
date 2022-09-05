@@ -147,21 +147,21 @@
         val correctNewSnapshot = allOf(Coll(
           newSnapshotsStaked(newSnapshotsStaked.size-1) == totalStaked,
           newSnapshotsTrees(newSnapshotsTrees.size-1).digest == stakeState.digest,
-          newSnapshotsProfit(newSnapshotsProfit.size-1).slice(1,profit.size) == profit.slice(1,profit.size),
+          newSnapshotsProfit(newSnapshotsProfit.size-1).slice(1,profit.size).indices.forall{(i: Int) => newSnapshotsProfit(newSnapshotsProfit.size-1)(i+1) == profit(i+1)},
           newSnapshotsProfit(newSnapshotsProfit.size-1)(0) == profit(0) + min(emissionAmount,SELF.tokens(1)._2-totalStaked-profit(0))
         ))
         
         val correctHistoryShift = allOf(Coll( 
-                newSnapshotsTrees(0).digest == emptyDigest,
-                newSnapshotsTrees.slice(0,emissionDelay-1) == newSnapshotsTrees.slice(1,emissionDelay),
-                newSnapshotsStaked.slice(0,emissionDelay-1) == newSnapshotsStaked.slice(1,emissionDelay)
+                snapshotsTree(0).digest == emptyDigest,
+                newSnapshotsTrees.slice(0,emissionDelay-1) == snapshotsTree.slice(1,emissionDelay),
+                newSnapshotsStaked.slice(0,emissionDelay-1).indices.forall{(i: Int) => newSnapshotsStaked(i) == snapshotsStaked(i+1)}
             ))
 
         val profitReset = outputProfit.forall{(p: Long) => p==0L}
 
-        val correctSize = newSnapshotsTrees.size.toLong == emissionDelay && 
-                          newSnapshotsStaked.size.toLong == emissionDelay &&
-                          newSnapshotsProfit.size.toLong == emissionDelay
+        val correctSize = newSnapshotsTrees.size == emissionDelay && 
+                          newSnapshotsStaked.size == emissionDelay &&
+                          newSnapshotsProfit.size == emissionDelay
 
         allOf(Coll(
           correctNewSnapshot,
@@ -200,7 +200,7 @@
       }
 
       val snapshotStakes = snapshotsTree(0).getMany(keys,snapshotProof).map{(b: Option[Coll[Byte]]) => longIndices.map{(i: Int) => byteArrayToLong(b.get.slice(i,i+8))}}
-      val newStakes: Coll[Coll[Long]] = compoundOperations.map{(kv: (Coll[Byte], Coll[Byte])) => notFound}//longIndices.map{(i: Int) => byteArrayToLong(kv._2.slice(i,i+8))}}
+      val newStakes: Coll[Coll[Long]] = compoundOperations.map{(kv: (Coll[Byte], Coll[Byte])) => longIndices.map{(i: Int) => byteArrayToLong(kv._2.slice(i,i+8))}}
       val snapshotStaked = snapshotsStaked(0)
 
       val snapshotProfit = snapshotsProfit(0)
@@ -210,27 +210,21 @@
       val rewards = keyIndices.map{
         (index: Int) => {
           if (currentStakes(index)(0)>=0L) {
-            snapshotProfit.map{(p: Long) => (snapshotStakes(index)(0) * p / snapshotStaked)}
+            val r = snapshotProfit.map{(p: Long) => (snapshotStakes(index)(0) * p / snapshotStaked)}
+            val newStake: Coll[Long] = currentStakes(index).zip(r).map{(ll: (Long,Long)) => ll._1+ll._2}
+            (r,newStake == newStakes(index))
           } else {
-            snapshotProfit.map{(l: Long) => 0L}
+            (snapshotProfit.map{(l: Long) => 0L},true)
           }
         }
       }
 
-      val validCompounds = allOf(keyIndices.map{
-        (index: Int) =>
-          if (currentStakes(index)(0)>=0L) {
-            val currentStake: Coll[Long] = currentStakes(index)
-            val reward: Coll[Long] = rewards(index)
-            val newStake: Coll[Long] = currentStake.zip(reward).map{(ll: (Long,Long)) => ll._1+ll._2}
-            
-            newStake == newStakes(index)
-          } else {
-            true
-          }
+      val validCompounds = allOf(rewards.map{
+        (reward: (Coll[Long],Boolean)) =>
+          reward._2
       })
 
-      val totalRewards = rewards.fold(0L, {(z: Long, reward: Coll[Long]) => z + reward(0)})
+      val totalRewards = rewards.fold(0L, {(z: Long, reward: (Coll[Long],Boolean)) => z + reward._1(0)})
 
       val correctTotalStaked = totalStaked + totalRewards == plasmaStakingOutput.R5[Coll[Long]].get(2)
 
@@ -239,7 +233,7 @@
       val correctNewState = stakeState.update(filteredCompoundOperations, proof).get.digest == plasmaStakingOutput.R4[AvlTree].get.digest
       
       allOf(Coll(
-        //validCompounds,
+        validCompounds,
         correctTotalStaked,
         correctSnapshot,
         correctNewState

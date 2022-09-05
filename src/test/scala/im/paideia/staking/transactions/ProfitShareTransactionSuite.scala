@@ -52,7 +52,7 @@ class ProfitShareTransactionSuite extends PaideiaStakingSuite {
         val daoConfig = DAOConfig.test
         val state = TotalStakingState(stakingConfig, 0L)
         val dummyAddress = Address.create("4MQyML64GnzMxZgm")
-        val ergoClient = RestApiErgoClient.create("http://ergolui.com:9053",NetworkType.MAINNET,"","https://api.ergoplatform.com")
+        val ergoClient = createMockedErgoClient(MockData(Nil,Nil))
         ergoClient.execute(new java.util.function.Function[BlockchainContext,Unit] {
             override def apply(_ctx: BlockchainContext): Unit = {
                 val ctx = _ctx.asInstanceOf[BlockchainContextImpl]
@@ -81,7 +81,7 @@ class ProfitShareTransactionSuite extends PaideiaStakingSuite {
         val daoConfig = DAOConfig.test
         val state = TotalStakingState(stakingConfig, 0L)
         val dummyAddress = Address.create("4MQyML64GnzMxZgm")
-        val ergoClient = RestApiErgoClient.create("http://ergolui.com:9053",NetworkType.MAINNET,"","https://api.ergoplatform.com")
+        val ergoClient = createMockedErgoClient(MockData(Nil,Nil))
         ergoClient.execute(new java.util.function.Function[BlockchainContext,Unit] {
             override def apply(_ctx: BlockchainContext): Unit = {
                 val ctx = _ctx.asInstanceOf[BlockchainContextImpl]

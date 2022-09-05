@@ -24,7 +24,7 @@ class TotalStakingState(
 ) {
 
     def stake(stakingKey: String, amount: Long): List[ContextVar] = {
-        val stakeRecord = StakeRecord(amount,List.fill(stakingConfig.profitTokens.size+2)(0L))
+        val stakeRecord = StakeRecord(amount,List.fill(stakingConfig.profitTokens.size+1)(0L))
         StakingContextVars.stake(stakingKey,stakeRecord,currentStakingState.stake(stakingKey,stakeRecord)).contextVars
     }
 
@@ -69,7 +69,9 @@ class TotalStakingState(
                 case -1 => kv
                 case _ => {
                     val snapshotStake = snapshot._2.getStake(kv._1).stake
-                    (kv._1,StakeRecord(kv._2.stake+(snapshotStake*snapshot._3(0)/snapshotTotalStaked),kv._2.rewards))
+                    (kv._1,StakeRecord(kv._2.stake+(snapshotStake*snapshot._3(0)/snapshotTotalStaked),
+                    kv._2.rewards.indices.map((i: Int) =>
+                        kv._2.rewards(i)+(snapshotStake*snapshot._3(i+1)/snapshotTotalStaked)).toList))
                 }
             }
         })
