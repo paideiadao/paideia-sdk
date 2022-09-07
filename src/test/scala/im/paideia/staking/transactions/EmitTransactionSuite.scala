@@ -15,8 +15,9 @@ import scala.collection.JavaConverters._
 import org.ergoplatform.appkit.InputBox
 import im.paideia.governance.DAOConfig
 import im.paideia.staking.StakingConfigBox
+import im.paideia.common.PaideiaTestSuite
 
-class EmitTransactionSuite extends PaideiaStakingSuite {
+class EmitTransactionSuite extends PaideiaTestSuite {
     test("Sign emit tx on empty state") {
         val stakingConfig = StakingConfig.test
         val daoConfig = DAOConfig.test

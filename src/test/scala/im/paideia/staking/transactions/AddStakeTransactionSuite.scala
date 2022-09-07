@@ -17,8 +17,9 @@ import im.paideia.staking.AddStakeTransaction
 import im.paideia.governance.DAOConfig
 import im.paideia.staking.StakingConfigBox
 import im.paideia.util.Util
+import im.paideia.common.PaideiaTestSuite
 
-class AddStakeTransactionSuite extends PaideiaStakingSuite {
+class AddStakeTransactionSuite extends PaideiaTestSuite {
     test("Sign add stake tx") {
         val stakingConfig = StakingConfig.test
         val daoConfig = DAOConfig.test

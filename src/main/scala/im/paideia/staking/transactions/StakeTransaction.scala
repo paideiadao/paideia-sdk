@@ -9,6 +9,9 @@ import org.ergoplatform.appkit.Eip4Token
 import org.ergoplatform.appkit.OutBox
 import org.ergoplatform.appkit.impl.ErgoTreeContract
 import im.paideia.governance.DAOConfig
+import sigmastate.Values
+import org.ergoplatform.appkit.Address
+import special.collection.Coll
 
 class StakeTransaction extends PaideiaTransaction {
   
@@ -19,7 +22,7 @@ object StakeTransaction {
         ctx: BlockchainContextImpl, 
         stakeStateInput: InputBox, 
         stakingConfigInput: InputBox,
-        userInput: InputBox, 
+        proxyInput: InputBox, 
         amount: Long, 
         state: TotalStakingState, 
         changeAddress: ErgoAddress,
@@ -39,13 +42,13 @@ object StakeTransaction {
                 "test",
                 0
             )
-        ).contract(new ErgoTreeContract(userInput.getErgoTree(),ctx.getNetworkType())).build()
+        ).contract(Address.fromPropositionBytes(ctx.getNetworkType(),proxyInput.getRegisters().get(1).getValue().asInstanceOf[Coll[Byte]].toArray).toErgoContract()).build()
         val reg = stakeStateOutput.registers
         val res = new StakeTransaction()
         res.ctx = ctx
         res.changeAddress = changeAddress
         res.fee = 1000000
-        res.inputs = List[InputBox](stakeStateInput.withContextVars(contextVars: _*),userInput)
+        res.inputs = List[InputBox](stakeStateInput.withContextVars(contextVars: _*),proxyInput)
         res.dataInputs = List[InputBox](stakingConfigInput)
         res.outputs = List[OutBox](stakeStateOutput.outBox(ctx),userOutput)
         res

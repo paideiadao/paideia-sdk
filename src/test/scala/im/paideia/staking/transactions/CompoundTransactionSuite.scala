@@ -18,8 +18,9 @@ import scala.util.Random
 import im.paideia.governance.DAOConfig
 import im.paideia.staking.StakingConfigBox
 import im.paideia.util.Util
+import im.paideia.common.PaideiaTestSuite
 
-class CompoundTransactionSuite extends PaideiaStakingSuite {
+class CompoundTransactionSuite extends PaideiaTestSuite {
 
     test("Sign compound tx on 1 staker") {
         val stakingConfig = StakingConfig.test

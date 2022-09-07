@@ -16,6 +16,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.function.Function;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
  * MockedRunner using given files to provide BlockchainContext information.
  */
@@ -51,6 +54,8 @@ public class FileMockedErgoClient implements MockedErgoClient {
 
     @Override
     public <T> T execute(Function<BlockchainContext, T> action) {
+        Logger.getLogger(MockWebServer.class.getName()).setLevel(Level.WARNING);
+
         MockWebServer node = new MockWebServer();
         enqueueResponses(node, _nodeResponses);
 

@@ -18,8 +18,9 @@ import im.paideia.staking.UnstakeTransaction
 import im.paideia.util.Util
 import im.paideia.governance.DAOConfig
 import im.paideia.staking.StakingConfigBox
+import im.paideia.common.PaideiaTestSuite
 
-class UnstakeTransactionSuite extends PaideiaStakingSuite {
+class UnstakeTransactionSuite extends PaideiaTestSuite {
     test("Sign partial unstake tx") {
         val stakingConfig = StakingConfig.test
         val daoConfig = DAOConfig.test
