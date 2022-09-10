@@ -1,6 +1,6 @@
-package im.paideia.staking
+package im.paideia.staking.transactions
 
-import im.paideia.common.PaideiaTransaction
+import im.paideia.common.transactions._
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import org.ergoplatform.appkit.InputBox
 import special.sigma.AvlTree
@@ -12,6 +12,8 @@ import im.paideia.governance.DAOConfig
 import sigmastate.Values
 import org.ergoplatform.appkit.Address
 import special.collection.Coll
+import im.paideia.staking._
+import im.paideia.staking.boxes._
 
 class StakeTransaction extends PaideiaTransaction {
   
@@ -50,7 +52,7 @@ object StakeTransaction {
         res.fee = 1000000
         res.inputs = List[InputBox](stakeStateInput.withContextVars(contextVars: _*),proxyInput)
         res.dataInputs = List[InputBox](stakingConfigInput)
-        res.outputs = List[OutBox](stakeStateOutput.outBox(ctx),userOutput)
+        res.outputs = List[OutBox](stakeStateOutput.outBox,userOutput)
         res
     }
 }

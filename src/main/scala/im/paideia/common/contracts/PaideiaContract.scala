@@ -7,6 +7,10 @@ import org.ergoplatform.appkit.ErgoContract
 import org.ergoplatform.appkit.impl.ErgoTreeContract
 import org.ergoplatform.appkit.NetworkType
 import scala.collection.JavaConverters._
+import org.ergoplatform.appkit.ErgoValue
+import scorex.crypto.hash.Blake2b256
+import special.collection.Coll
+import java.lang.{Byte => JByte}
 
 trait PaideiaContract {
     val version: String
@@ -19,4 +23,14 @@ trait PaideiaContract {
         JavaHelpers.compile(constants.asJava,ergoScript,networkType.networkPrefix)
     }
     def contract: ErgoContract = new ErgoTreeContract(ergoTree, networkType)
+
+    def ergoValue: ErgoValue[(Coll[JByte],(Coll[JByte],Coll[JByte]))] = {
+        ErgoValue.pairOf(
+            ErgoValue.of(getClass().getCanonicalName().getBytes()),
+            ErgoValue.pairOf(
+                ErgoValue.of(version.getBytes()),
+                ErgoValue.of(Blake2b256(ergoTree.bytes).array)
+            )
+        )
+    }
 }

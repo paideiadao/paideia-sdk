@@ -1,7 +1,8 @@
-package im.paideia.staking
+package im.paideia.staking.boxes
 
 import org.ergoplatform.appkit.impl.InputBoxImpl
-import im.paideia.common.PaideiaBox
+import im.paideia.common.boxes._
+import im.paideia.staking._
 import org.ergoplatform.appkit.ErgoValue
 import org.ergoplatform.appkit.ErgoType
 import org.ergoplatform.appkit.InputBox
@@ -26,10 +27,10 @@ import special.sigma.SigmaDsl
 import scorex.crypto.hash.Blake2b256
 import org.ergoplatform.appkit.ErgoId
 
-class StakingConfigBox(val stakingConfig:StakingConfig, stakingErgoTree: Values.ErgoTree) extends PaideiaBox {
+class StakingConfigBox(ctx: BlockchainContextImpl, stakingConfig:StakingConfig, stakingErgoTree: Values.ErgoTree) extends ConfigBox(ctx,ConfigBox.stakingConfigIndex) {
     override def registers = List[ErgoValue[?]](
         ErgoValue.of(Array(
-            StakingConfigBox.configIndex,
+            ConfigBox.stakingConfigIndex,
             stakingConfig.emissionAmount,
             stakingConfig.emissionDelay,
             stakingConfig.cycleLength
@@ -42,18 +43,14 @@ class StakingConfigBox(val stakingConfig:StakingConfig, stakingErgoTree: Values.
 
 object StakingConfigBox {
 
-    val configIndex = 1L
-
     def apply(ctx: BlockchainContextImpl, stakingConfig: StakingConfig, daoConfig: DAOConfig): StakingConfigBox = {
         val tree = DAOControlled(
             constants=Map(
-                "_configIndex" -> ErgoValue.of(StakingConfigBox.configIndex).getValue(),
+                "_configIndex" -> ErgoValue.of(ConfigBox.stakingConfigIndex).getValue(),
                 "_configTokenId" -> ErgoValue.of(ErgoId.create(daoConfig.configTokenId).getBytes()).getValue()),
             networkType=ctx.getNetworkType(),
             script=PlasmaStaking(networkType=ctx.getNetworkType()).ergoScript).ergoTree
-        val res = new StakingConfigBox(stakingConfig,tree)
-        res.value = 1000000
-        res.contract = Config(networkType=ctx.getNetworkType()).contract
+        val res = new StakingConfigBox(ctx,stakingConfig,tree)
         res.tokens = List[ErgoToken](
             new ErgoToken(daoConfig.configTokenId,1L)
         )

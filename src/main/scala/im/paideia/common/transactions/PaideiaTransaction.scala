@@ -1,4 +1,4 @@
-package im.paideia.common
+package im.paideia.common.transactions
 
 import org.ergoplatform.appkit.UnsignedTransaction
 import org.ergoplatform.appkit.impl.BlockchainContextImpl

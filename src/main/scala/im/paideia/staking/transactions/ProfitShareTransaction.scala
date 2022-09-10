@@ -1,6 +1,6 @@
-package im.paideia.staking
+package im.paideia.staking.transactions
 
-import im.paideia.common.PaideiaTransaction
+import im.paideia.common.transactions._
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import org.ergoplatform.appkit.InputBox
 import special.sigma.AvlTree
@@ -13,6 +13,8 @@ import im.paideia.governance.DAOConfig
 import special.collection.Coll
 import org.ergoplatform.appkit.ErgoToken
 import scala.collection.JavaConverters._
+import im.paideia.staking._
+import im.paideia.staking.boxes._
 
 class ProfitShareTransaction extends PaideiaTransaction {
   
@@ -88,7 +90,7 @@ object ProfitShareTransaction {
         res.fee = 1000000
         res.inputs = List[InputBox](stakeStateInput.withContextVars(contextVars: _*),userInput)
         res.dataInputs = List[InputBox](stakingConfigInput)
-        res.outputs = List[OutBox](stakeStateOutput.outBox(ctx))
+        res.outputs = List[OutBox](stakeStateOutput.outBox)
         res
     }
 }

@@ -8,15 +8,14 @@ import org.ergoplatform.appkit.RestApiErgoClient
 import org.ergoplatform.appkit.NetworkType
 import org.ergoplatform.appkit.BlockchainContext
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
-import im.paideia.staking.StakeStateBox
+import im.paideia.staking._
 import org.ergoplatform.appkit.ErgoToken
-import im.paideia.staking.StakeTransaction
+import im.paideia.staking.boxes._
 import scala.collection.JavaConverters._
 import org.ergoplatform.appkit.InputBox
 import im.paideia.governance.DAOConfig
-import im.paideia.staking.StakingConfigBox
+import im.paideia.staking.transactions._
 import im.paideia.common.PaideiaTestSuite
-import im.paideia.staking.boxes.ProxyStakeBox
 import sigmastate.lang.exceptions.InterpreterException
 import im.paideia.util.Util
 
@@ -30,9 +29,9 @@ class StakeTransactionSuite extends PaideiaTestSuite {
         ergoClient.execute(new java.util.function.Function[BlockchainContext,Unit] {
             override def apply(_ctx: BlockchainContext): Unit = {
                 val ctx = _ctx.asInstanceOf[BlockchainContextImpl]
-                val stakeStateInput = StakeStateBox(ctx,state,100000000L,daoConfig).inputBox(ctx)
-                val stakingConfigInput = StakingConfigBox(ctx,stakingConfig,daoConfig).inputBox(ctx)
-                val proxyInput = ProxyStakeBox(ctx,stakingConfig,daoConfig,stakeAmount=1000L,stakeKeyTarget=dummyAddress).inputBox(ctx)
+                val stakeStateInput = StakeStateBox(ctx,state,100000000L,daoConfig).inputBox()
+                val stakingConfigInput = StakingConfigBox(ctx,stakingConfig,daoConfig).inputBox()
+                val proxyInput = ProxyStakeBox(ctx,stakingConfig,daoConfig,stakeAmount=1000L,stakeKeyTarget=dummyAddress).inputBox()
                 val stakeTransaction = StakeTransaction(ctx,stakeStateInput,stakingConfigInput,proxyInput,1000L,state,dummyAddress.getErgoAddress(),daoConfig)
                 ctx.newProverBuilder().build().sign(stakeTransaction.unsigned())
             }
@@ -49,9 +48,9 @@ class StakeTransactionSuite extends PaideiaTestSuite {
         ergoClient.execute(new java.util.function.Function[BlockchainContext,Unit] {
             override def apply(_ctx: BlockchainContext): Unit = {
                 val ctx = _ctx.asInstanceOf[BlockchainContextImpl]
-                val stakeStateInput = StakeStateBox(ctx,state,100000000L,daoConfig).inputBox(ctx)
-                val stakingConfigInput = StakingConfigBox(ctx,stakingConfig,daoConfig).inputBox(ctx)
-                val proxyInput = ProxyStakeBox(ctx,stakingConfig,daoConfig,stakeAmount=1000L,stakeKeyTarget=dummyAddress).inputBox(ctx)
+                val stakeStateInput = StakeStateBox(ctx,state,100000000L,daoConfig).inputBox()
+                val stakingConfigInput = StakingConfigBox(ctx,stakingConfig,daoConfig).inputBox()
+                val proxyInput = ProxyStakeBox(ctx,stakingConfig,daoConfig,stakeAmount=1000L,stakeKeyTarget=dummyAddress).inputBox()
                 val stakeTransaction = StakeTransaction(ctx,stakeStateInput,stakingConfigInput,proxyInput,1000L,state,dummyAddress.getErgoAddress(),daoConfig)
                 val unsignedTx = stakeTransaction.unsigned()
                 val correctOutput = unsignedTx.getOutputs().get(1)
@@ -90,9 +89,9 @@ class StakeTransactionSuite extends PaideiaTestSuite {
         ergoClient.execute(new java.util.function.Function[BlockchainContext,Unit] {
             override def apply(_ctx: BlockchainContext): Unit = {
                 val ctx = _ctx.asInstanceOf[BlockchainContextImpl]
-                val stakeStateInput = StakeStateBox(ctx,state,100000000L,daoConfig).inputBox(ctx)
-                val stakingConfigInput = StakingConfigBox(ctx,falseStakingConfig,daoConfig).inputBox(ctx)
-                val proxyInput = ProxyStakeBox(ctx,stakingConfig,daoConfig,stakeAmount=1000L,stakeKeyTarget=dummyAddress).inputBox(ctx)
+                val stakeStateInput = StakeStateBox(ctx,state,100000000L,daoConfig).inputBox()
+                val stakingConfigInput = StakingConfigBox(ctx,falseStakingConfig,daoConfig).inputBox()
+                val proxyInput = ProxyStakeBox(ctx,stakingConfig,daoConfig,stakeAmount=1000L,stakeKeyTarget=dummyAddress).inputBox()
                 val stakeTransaction = StakeTransaction(ctx,stakeStateInput,stakingConfigInput,proxyInput,1000L,state,dummyAddress.getErgoAddress(),daoConfig)
                 val thrown = intercept[InterpreterException] {
                     ctx.newProverBuilder().build().sign(stakeTransaction.unsigned())

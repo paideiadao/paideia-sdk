@@ -8,15 +8,14 @@ import org.ergoplatform.appkit.RestApiErgoClient
 import org.ergoplatform.appkit.NetworkType
 import org.ergoplatform.appkit.BlockchainContext
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
-import im.paideia.staking.StakeStateBox
+import im.paideia.staking._
 import org.ergoplatform.appkit.ErgoToken
-import im.paideia.staking.StakeTransaction
+import im.paideia.staking.transactions._
 import scala.collection.JavaConverters._
 import org.ergoplatform.appkit.InputBox
-import im.paideia.staking.CompoundTransaction
+import im.paideia.staking.boxes._
 import scala.util.Random
 import im.paideia.governance.DAOConfig
-import im.paideia.staking.StakingConfigBox
 import im.paideia.util.Util
 import im.paideia.common.PaideiaTestSuite
 
@@ -34,8 +33,8 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
         ergoClient.execute(new java.util.function.Function[BlockchainContext,Unit] {
             override def apply(_ctx: BlockchainContext): Unit = {
                 val ctx = _ctx.asInstanceOf[BlockchainContextImpl]
-                val stakeStateInput = StakeStateBox(ctx,state,100000000L,daoConfig).inputBox(ctx)
-                val stakingConfigInput = StakingConfigBox(ctx,stakingConfig,daoConfig).inputBox(ctx)
+                val stakeStateInput = StakeStateBox(ctx,state,100000000L,daoConfig).inputBox()
+                val stakingConfigInput = StakingConfigBox(ctx,stakingConfig,daoConfig).inputBox()
                 val userInput = ctx.newTxBuilder().outBoxBuilder()
                     .contract(dummyAddress.toErgoContract())
                     .value(10000000000L)
@@ -60,8 +59,8 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
         ergoClient.execute(new java.util.function.Function[BlockchainContext,Unit] {
             override def apply(_ctx: BlockchainContext): Unit = {
                 val ctx = _ctx.asInstanceOf[BlockchainContextImpl]
-                val stakeStateInput = StakeStateBox(ctx,state,100000000L,daoConfig).inputBox(ctx)
-                val stakingConfigInput = StakingConfigBox(ctx,stakingConfig,daoConfig).inputBox(ctx)
+                val stakeStateInput = StakeStateBox(ctx,state,100000000L,daoConfig).inputBox()
+                val stakingConfigInput = StakingConfigBox(ctx,stakingConfig,daoConfig).inputBox()
                 val userInput = ctx.newTxBuilder().outBoxBuilder()
                     .contract(dummyAddress.toErgoContract())
                     .value(10000000000L)

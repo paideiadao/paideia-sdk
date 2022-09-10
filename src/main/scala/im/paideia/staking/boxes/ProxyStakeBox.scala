@@ -1,6 +1,6 @@
 package im.paideia.staking.boxes
 
-import im.paideia.common.PaideiaBox
+import im.paideia.common.boxes.PaideiaBox
 import im.paideia.staking.contracts.ProxyStake
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import org.ergoplatform.appkit.ErgoToken
@@ -22,6 +22,7 @@ object ProxyStakeBox {
     def apply(ctx: BlockchainContextImpl, stakingConfig: StakingConfig, daoConfig: DAOConfig, stakeKeyTarget: Address, value: Long = 1000000, stakeAmount: Long): ProxyStakeBox = {
         val res = new ProxyStakeBox(stakingConfig.nftId,stakeKeyTarget,stakeAmount)
         res.value = value
+        res.ctx = ctx
         res.contract = ProxyStake(networkType=ctx.getNetworkType()).contract
         res.tokens = List[ErgoToken](
             new ErgoToken(stakingConfig.stakedTokenId,stakeAmount)

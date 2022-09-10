@@ -28,6 +28,7 @@ version := "0.0.1"
 libraryDependencies ++= Seq(
     "org.scala-lang.modules" %% "scala-parser-combinators" % "2.1.1",
     "io.github.getblok-io" % "getblok_plasma_2.12" % "1.0.0",
+    "com.typesafe" % "config" % "1.4.0",
     "org.scalatest" %% "scalatest-funsuite" % "3.2.13" % Test,
     "com.squareup.okhttp3" % "mockwebserver" % "3.12.0" % Test
 )

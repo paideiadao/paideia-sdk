@@ -1,7 +1,7 @@
-package im.paideia.staking
+package im.paideia.staking.boxes
 
 import org.ergoplatform.appkit.impl.InputBoxImpl
-import im.paideia.common.PaideiaBox
+import im.paideia.common.boxes.PaideiaBox
 import org.ergoplatform.appkit.ErgoValue
 import org.ergoplatform.appkit.ErgoType
 import org.ergoplatform.appkit.InputBox
@@ -21,6 +21,8 @@ import im.paideia.governance.DAOConfig
 import org.ergoplatform.appkit.ErgoId
 import sigmastate.utils.Helpers
 import sigmastate.Values
+import im.paideia.staking._
+import im.paideia.common.boxes._
 
 class StakeStateBox(val state:TotalStakingState) extends PaideiaBox {
     override def registers = List[ErgoValue[?]](
@@ -50,9 +52,10 @@ object StakeStateBox {
         val script = PlasmaStaking(networkType=ctx.getNetworkType()).ergoScript
         val res = new StakeStateBox(state)
         res.value = value
+        res.ctx = ctx
         res.contract = DAOControlled(
             constants=Map(
-                "_configIndex" -> ErgoValue.of(StakingConfigBox.configIndex).getValue(),
+                "_configIndex" -> ErgoValue.of(ConfigBox.stakingConfigIndex).getValue(),
                 "_configTokenId" -> ErgoValue.of(ErgoId.create(daoConfig.configTokenId).getBytes()).getValue()),
             networkType=ctx.getNetworkType(),
             script=script).contract

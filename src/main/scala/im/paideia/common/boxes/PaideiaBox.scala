@@ -1,4 +1,4 @@
-package im.paideia.common
+package im.paideia.common.boxes
 
 import sigmastate.Values
 import org.ergoplatform.appkit.ErgoToken
@@ -16,9 +16,10 @@ trait PaideiaBox {
     private var _tokens: List[ErgoToken] = _
     private var _registers: List[ErgoValue[_]] = _
     private var _contextVars: List[ContextVar] = _
+    private var _ctx : BlockchainContextImpl = _
 
-    def inputBox(ctx: BlockchainContextImpl, withTxId: String = "ce552663312afc2379a91f803c93e2b10b424f176fbc930055c10def2fd88a5d", withIndex: Short = 0): InputBox = this.outBox(ctx).convertToInputWith(withTxId,withIndex)
-    def outBox(ctx: BlockchainContextImpl): OutBox = {
+    def inputBox(withTxId: String = "ce552663312afc2379a91f803c93e2b10b424f176fbc930055c10def2fd88a5d", withIndex: Short = 0): InputBox = this.outBox.convertToInputWith(withTxId,withIndex)
+    def outBox: OutBox = {
         ctx.newTxBuilder().outBoxBuilder()
             .value(value)
             .contract(contract)
@@ -41,4 +42,7 @@ trait PaideiaBox {
 
     def contextVars = _contextVars
     def contextVars_= (newContextVars: List[ContextVar]) = _contextVars = newContextVars
+
+    def ctx = _ctx
+    def ctx_= (newCtx: BlockchainContextImpl) = _ctx = newCtx
 }
