@@ -15,7 +15,7 @@ import scala.collection.JavaConverters._
 import org.ergoplatform.appkit.InputBox
 import im.paideia.staking.boxes._
 import scala.util.Random
-import im.paideia.governance.DAOConfig
+import im.paideia.DAOConfig
 import im.paideia.util.Util
 import im.paideia.common.PaideiaTestSuite
 

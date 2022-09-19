@@ -5,7 +5,7 @@ import im.paideia.staking.contracts.ProxyStake
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import org.ergoplatform.appkit.ErgoToken
 import im.paideia.staking.StakingConfig
-import im.paideia.governance.DAOConfig
+import im.paideia.DAOConfig
 import org.ergoplatform.appkit.ErgoValue
 import org.ergoplatform.appkit.Address
 import org.ergoplatform.appkit.ErgoId

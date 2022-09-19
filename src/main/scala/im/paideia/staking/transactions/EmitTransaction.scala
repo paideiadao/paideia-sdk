@@ -10,7 +10,7 @@ import org.ergoplatform.appkit.OutBox
 import org.ergoplatform.appkit.impl.ErgoTreeContract
 import im.paideia.staking._
 import im.paideia.staking.boxes._
-import im.paideia.governance.DAOConfig
+import im.paideia.DAOConfig
 
 class EmitTransaction extends PaideiaTransaction
 

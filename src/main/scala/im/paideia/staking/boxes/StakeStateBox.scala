@@ -17,7 +17,7 @@ import org.ergoplatform.appkit.ContextVar
 import im.paideia.staking.contracts.PlasmaStaking
 import org.ergoplatform.appkit.ErgoToken
 import im.paideia.common.contracts.DAOControlled
-import im.paideia.governance.DAOConfig
+import im.paideia.DAOConfig
 import org.ergoplatform.appkit.ErgoId
 import sigmastate.utils.Helpers
 import sigmastate.Values
@@ -56,7 +56,7 @@ object StakeStateBox {
         res.contract = DAOControlled(
             constants=Map(
                 "_configIndex" -> ErgoValue.of(ConfigBox.stakingConfigIndex).getValue(),
-                "_configTokenId" -> ErgoValue.of(ErgoId.create(daoConfig.configTokenId).getBytes()).getValue()),
+                "_configTokenId" -> ErgoValue.of(ErgoId.create(daoConfig("configTokenId")).getBytes()).getValue()),
             networkType=ctx.getNetworkType(),
             script=script).contract
         res.tokens = List[ErgoToken](

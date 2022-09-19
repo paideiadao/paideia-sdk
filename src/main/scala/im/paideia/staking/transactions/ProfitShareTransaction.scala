@@ -9,7 +9,7 @@ import org.ergoplatform.appkit.Eip4Token
 import org.ergoplatform.appkit.OutBox
 import org.ergoplatform.appkit.ErgoId
 import org.ergoplatform.appkit.impl.ErgoTreeContract
-import im.paideia.governance.DAOConfig
+import im.paideia.DAOConfig
 import special.collection.Coll
 import org.ergoplatform.appkit.ErgoToken
 import scala.collection.JavaConverters._

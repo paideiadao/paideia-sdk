@@ -8,7 +8,7 @@ import org.ergoplatform.ErgoAddress
 import org.ergoplatform.appkit.Eip4Token
 import org.ergoplatform.appkit.OutBox
 import org.ergoplatform.appkit.impl.ErgoTreeContract
-import im.paideia.governance.DAOConfig
+import im.paideia.DAOConfig
 import im.paideia.staking._
 import im.paideia.staking.boxes._
 

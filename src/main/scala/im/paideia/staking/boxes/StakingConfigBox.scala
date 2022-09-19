@@ -22,7 +22,7 @@ import org.ergoplatform.appkit.JavaHelpers
 import sigmastate.Values
 import im.paideia.common.contracts.Config
 import im.paideia.common.contracts.DAOControlled
-import im.paideia.governance.DAOConfig
+import im.paideia.DAOConfig
 import special.sigma.SigmaDsl
 import scorex.crypto.hash.Blake2b256
 import org.ergoplatform.appkit.ErgoId
@@ -47,12 +47,12 @@ object StakingConfigBox {
         val tree = DAOControlled(
             constants=Map(
                 "_configIndex" -> ErgoValue.of(ConfigBox.stakingConfigIndex).getValue(),
-                "_configTokenId" -> ErgoValue.of(ErgoId.create(daoConfig.configTokenId).getBytes()).getValue()),
+                "_configTokenId" -> ErgoValue.of(ErgoId.create(daoConfig("configTokenId")).getBytes()).getValue()),
             networkType=ctx.getNetworkType(),
             script=PlasmaStaking(networkType=ctx.getNetworkType()).ergoScript).ergoTree
         val res = new StakingConfigBox(ctx,stakingConfig,tree)
         res.tokens = List[ErgoToken](
-            new ErgoToken(daoConfig.configTokenId,1L)
+            new ErgoToken(daoConfig[String]("configTokenId"),1L)
         )
         res
     }

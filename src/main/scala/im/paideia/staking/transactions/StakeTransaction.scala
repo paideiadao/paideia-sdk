@@ -8,7 +8,7 @@ import org.ergoplatform.ErgoAddress
 import org.ergoplatform.appkit.Eip4Token
 import org.ergoplatform.appkit.OutBox
 import org.ergoplatform.appkit.impl.ErgoTreeContract
-import im.paideia.governance.DAOConfig
+import im.paideia.DAOConfig
 import sigmastate.Values
 import org.ergoplatform.appkit.Address
 import special.collection.Coll

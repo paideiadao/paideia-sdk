@@ -13,7 +13,7 @@ import org.ergoplatform.appkit.ErgoToken
 import scala.collection.JavaConverters._
 import org.ergoplatform.appkit.InputBox
 import im.paideia.staking.transactions._
-import im.paideia.governance.DAOConfig
+import im.paideia.DAOConfig
 import im.paideia.util.Util
 import im.paideia.common.PaideiaTestSuite
 
