@@ -2,16 +2,15 @@ package im.paideia.common.contracts
 
 import org.ergoplatform.appkit.NetworkType
 
-case class DAOControlled(
-    version: String = "latest", 
-    constants: Map[String,Object] = Map[String,Object](), 
-    networkType: NetworkType, 
-    script: String) extends PaideiaContract {
+class DAOControlled(contractSignature: PaideiaContractSignature) extends PaideiaContract(contractSignature) {
 
-        override def ergoScript: String = {
-            val superScript = super.ergoScript
-            val completeScript = superScript.replaceAll("_script",script)
-            completeScript
-        }
-
+    override def ergoScript = {
+        val superScript = super.ergoScript
+        val completeScript = superScript.replaceAll("_script", ergoScript)
+        completeScript
     }
+}
+
+object DAOControlled extends PaideiaActor {
+    override def apply(contractSignature: PaideiaContractSignature): DAOControlled = getContractInstance[DAOControlled](contractSignature)
+}

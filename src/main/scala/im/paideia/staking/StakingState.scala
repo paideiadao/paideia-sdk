@@ -9,9 +9,9 @@ import io.getblok.getblok_plasma.ByteConversion.convertsLongVal
 import io.getblok.getblok_plasma.collections.ProvenResult
 import scala.util.Failure
 import scala.util.Success
+import im.paideia.DAOConfig
 
 class StakingState(
-    stakingConfig: StakingConfig,
     plasmaParameters: PlasmaParameters,
     val plasmaMap: PlasmaMap[ErgoId,StakeRecord],
     var totalStaked: Long,
@@ -64,7 +64,6 @@ class StakingState(
 
     override def clone: StakingState = 
         new StakingState(
-            this.stakingConfig,
             this.plasmaParameters,
             this.plasmaMap.copy(),
             this.totalStaked,
@@ -73,9 +72,8 @@ class StakingState(
 }   
 
 object StakingState {
-    def apply(stakingConfig: StakingConfig, plasmaParameters: PlasmaParameters = PlasmaParameters.default, totalStaked: Long = 0): StakingState =
+    def apply(plasmaParameters: PlasmaParameters = PlasmaParameters.default, totalStaked: Long = 0): StakingState =
         new StakingState(
-            stakingConfig = stakingConfig, 
             plasmaParameters = plasmaParameters, 
             plasmaMap = new PlasmaMap[ErgoId,StakeRecord](
                 flags = AvlTreeFlags.AllOperationsAllowed,

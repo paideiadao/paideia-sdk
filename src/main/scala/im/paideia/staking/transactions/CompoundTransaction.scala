@@ -11,6 +11,7 @@ import org.ergoplatform.appkit.impl.ErgoTreeContract
 import im.paideia.DAOConfig
 import im.paideia.staking._
 import im.paideia.staking.boxes._
+import im.paideia.staking.contracts.PlasmaStaking
 
 class CompoundTransaction extends PaideiaTransaction {
   
@@ -25,13 +26,14 @@ object CompoundTransaction {
         amount: Int, 
         state: TotalStakingState, 
         changeAddress: ErgoAddress,
-        daoConfig: DAOConfig): CompoundTransaction = 
+        daoConfig: DAOConfig,
+        stakingContract: PlasmaStaking): CompoundTransaction = 
     {
         if (stakeStateInput.getRegisters().get(0).getValue.asInstanceOf[AvlTree].digest != state.currentStakingState.plasmaMap.ergoAVLTree.digest) throw new Exception("State not synced correctly")
         
         val contextVars = state.compound(amount)
 
-        val stakeStateOutput = StakeStateBox(ctx,state,stakeStateInput.getTokens().get(1).getValue(),daoConfig)
+        val stakeStateOutput = stakingContract.box(ctx,daoConfig,state,stakeStateInput.getTokens().get(1).getValue())
 
         val res = new CompoundTransaction()
         res.ctx = ctx

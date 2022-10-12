@@ -24,20 +24,21 @@ class AddStakeTransaction extends PaideiaTransaction {
 object AddStakeTransaction {
     def apply(
         ctx: BlockchainContextImpl, 
-        stakeStateInput: InputBox, 
-        stakingConfigInput: InputBox,
+        stakeStateInput: InputBox,
+        configInput: InputBox,
         userInput: InputBox,
         stakingKey: String, 
         amount: Long, 
         state: TotalStakingState, 
         changeAddress: ErgoAddress,
-        daoConfig: DAOConfig): AddStakeTransaction = 
+        daoConfig: DAOConfig,
+        stakingContract: PlasmaStaking): AddStakeTransaction = 
     {
         if (stakeStateInput.getRegisters().get(0).getValue.asInstanceOf[AvlTree].digest != state.currentStakingState.plasmaMap.ergoAVLTree.digest) throw new Exception("State not synced correctly")
         
         val contextVars = state.addStake(stakingKey,amount)
 
-        val stakeStateOutput = StakeStateBox(ctx,state,stakeStateInput.getTokens().get(1).getValue()+amount,daoConfig)
+        val stakeStateOutput = stakingContract.box(ctx,daoConfig,state,stakeStateInput.getTokens().get(1).getValue()+amount)
 
         val userOutput = ctx.newTxBuilder().outBoxBuilder().tokens(
             new ErgoToken(stakingKey,1L)
@@ -48,7 +49,7 @@ object AddStakeTransaction {
         res.changeAddress = changeAddress
         res.fee = 1000000
         res.inputs = List[InputBox](stakeStateInput.withContextVars(contextVars: _*),userInput)
-        res.dataInputs = List[InputBox](stakingConfigInput)
+        res.dataInputs = List[InputBox](configInput)
         res.outputs = List[OutBox](stakeStateOutput.outBox,userOutput)
         res
     }

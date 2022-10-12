@@ -9,8 +9,11 @@ import scala.reflect.runtime.universe._
 import scala.reflect.runtime.universe.weakTypeTag
 import shapeless.Lazy
 import com.google.j2objc.annotations.Weak
+import im.paideia.common.contracts.PaideiaContractSignature
+import org.ergoplatform.ErgoAddressEncoder
+import org.ergoplatform.appkit.NetworkType
 
-case class DAOConfigValue[T](value: T)
+class DAOConfigValue(val value: Any, val enc: DAOConfigValueSerializer[_])
 
 object DAOConfigValue {
     val byteTypeCode: Byte = 0
@@ -20,59 +23,62 @@ object DAOConfigValue {
     val bigIntTypeCode: Byte = 4
     val booleanTypeCode: Byte = 5
     val stringTypeCode: Byte = 6
+    val contractSignatureTypeCode: Byte = 7
     val collTypeCode: Byte = 10
     val tupleTypeCode: Byte = 20
+
+    def apply[T](value: T)(implicit enc: Lazy[DAOConfigValueSerializer[T]]): DAOConfigValue = new DAOConfigValue(value,enc.value)
 }
 
 trait DAOConfigValueSerializer[A] {
-  def serialize(value: A, includeType: Boolean): Coll[Byte]
+  def serialize(value: Any, includeType: Boolean): Array[Byte]
   val typeCode: Byte
 }
 
 object DAOConfigValueSerializer {
 
-    def apply[A](value: A, includeType: Boolean = true)(implicit enc: Lazy[DAOConfigValueSerializer[A]]): Coll[Byte] =
+    def apply[A](value: A, includeType: Boolean = true)(implicit enc: Lazy[DAOConfigValueSerializer[A]]): Array[Byte] =
         enc.value.serialize(value, includeType)
 
-    def instance[A](_typeCode: Byte, func: (A, Boolean) => Coll[Byte]): DAOConfigValueSerializer[A] =
+    def instance[A](_typeCode: Byte, func: (A, Boolean) => Array[Byte]): DAOConfigValueSerializer[A] =
         new DAOConfigValueSerializer[A] {
-            def serialize(value: A, includeType: Boolean): Coll[Byte] =
-                func(value, includeType)
+            def serialize(value: Any, includeType: Boolean): Array[Byte] =
+                func(value.asInstanceOf[A], includeType)
             val typeCode = _typeCode
         }
 
     implicit lazy val byteSerializer: DAOConfigValueSerializer[Byte] = {
         instance(DAOConfigValue.byteTypeCode,(b: Byte, includeType: Boolean) => 
-            if (includeType) new CollOverArray(Array(DAOConfigValue.byteTypeCode,b))
-            else new CollOverArray(Array(b))
+            if (includeType) Array(DAOConfigValue.byteTypeCode,b)
+            else Array(b)
         )
     }
 
     implicit lazy val shortSerializer: DAOConfigValueSerializer[Short] = {
         instance(DAOConfigValue.shortTypeCode,(s: Short, includeType: Boolean) => 
-            if (includeType) new CollOverArray(Array(DAOConfigValue.shortTypeCode)++Shorts.toByteArray(s))
-            else new CollOverArray(Shorts.toByteArray(s))
+            if (includeType) Array(DAOConfigValue.shortTypeCode)++Shorts.toByteArray(s)
+            else Shorts.toByteArray(s)
         )
     }
 
     implicit lazy val intSerializer: DAOConfigValueSerializer[Int] = {
         instance(DAOConfigValue.intTypeCode,(i: Int, includeType: Boolean) => 
-            if (includeType) new CollOverArray(Array(DAOConfigValue.intTypeCode)++Ints.toByteArray(i))
-            else new CollOverArray(Ints.toByteArray(i))
+            if (includeType) Array(DAOConfigValue.intTypeCode)++Ints.toByteArray(i)
+            else Ints.toByteArray(i)
         )
     }
 
     implicit lazy val longSerializer: DAOConfigValueSerializer[Long] = {
         instance(DAOConfigValue.longTypeCode,(l: Long, includeType: Boolean) => 
-            if (includeType) new CollOverArray(Array(DAOConfigValue.longTypeCode)++Longs.toByteArray(l))
-            else new CollOverArray(Longs.toByteArray(l))
+            if (includeType) Array(DAOConfigValue.longTypeCode)++Longs.toByteArray(l)
+            else Longs.toByteArray(l)
         )
     }
 
     implicit lazy val bigIntSerializer: DAOConfigValueSerializer[BigInt] = {
         instance(DAOConfigValue.bigIntTypeCode,(bi: BigInt, includeType: Boolean) => 
-            if (includeType) new CollOverArray(Array(DAOConfigValue.bigIntTypeCode)++bi.toByteArray)
-            else new CollOverArray(bi.toByteArray)
+            if (includeType) Array(DAOConfigValue.bigIntTypeCode)++bi.toByteArray
+            else bi.toByteArray
         )
     }
 
@@ -80,23 +86,35 @@ object DAOConfigValueSerializer {
         instance(DAOConfigValue.stringTypeCode,(s: String, includeType: Boolean) => {
                 val stringData = s.getBytes(StandardCharsets.UTF_8)
                 val data = Ints.toByteArray(stringData.size)++stringData
-                if (includeType) new CollOverArray(Array(DAOConfigValue.stringTypeCode)++data)
-                else new CollOverArray(data)
+                if (includeType) Array(DAOConfigValue.stringTypeCode)++data
+                else data
+            }
+        )
+    }
+
+    implicit lazy val paideiaContractSignatureSerializer: DAOConfigValueSerializer[PaideiaContractSignature] = {
+        instance(DAOConfigValue.contractSignatureTypeCode,(pcs: PaideiaContractSignature, includeType: Boolean) => {
+                val className = pcs.className.getBytes(StandardCharsets.UTF_8)
+                val networkType = pcs.networkType.networkPrefix
+                val version = pcs.version.getBytes(StandardCharsets.UTF_8)
+                val data = pcs.contractHash++className++version++Array(networkType)
+                if (includeType) Array(DAOConfigValue.contractSignatureTypeCode)++data
+                else data
             }
         )
     }
 
     implicit lazy val booleanSerializer: DAOConfigValueSerializer[Boolean] = {
         instance(DAOConfigValue.booleanTypeCode,(b: Boolean, includeType: Boolean) => 
-            if (includeType) new CollOverArray(Array(DAOConfigValue.booleanTypeCode,(if (b) 1.toByte else 0.toByte)))
-            else new CollOverArray(Array((if (b) 1.toByte else 0.toByte)))
+            if (includeType) Array(DAOConfigValue.booleanTypeCode,(if (b) 1.toByte else 0.toByte))
+            else Array((if (b) 1.toByte else 0.toByte))
         )
     }
 
     implicit def arrSerializer[T](implicit enc: Lazy[DAOConfigValueSerializer[T]]): DAOConfigValueSerializer[Array[T]] = {
         instance(DAOConfigValue.collTypeCode,(c: Array[T], includeType: Boolean) => {
-            val data = new CollOverArray(Array(enc.value.typeCode)++(Ints.toByteArray(c.size))++(c.flatMap{enc.value.serialize(_,false).toArray}))
-            if (includeType) new CollOverArray(Array(DAOConfigValue.collTypeCode)).append(data)
+            val data = Array(enc.value.typeCode)++(Ints.toByteArray(c.size))++(c.flatMap{enc.value.serialize(_,false)})
+            if (includeType) Array(DAOConfigValue.collTypeCode)++(data)
             else data
         })
     }
@@ -105,13 +123,13 @@ object DAOConfigValueSerializer {
         instance(DAOConfigValue.tupleTypeCode,(t: (T1,T2), includeType: Boolean) => {
             val dataLeft = enc1.value.serialize(t._1,true)
             val dataRight = enc2.value.serialize(t._2,true)
-            if (includeType) new CollOverArray(Array(DAOConfigValue.tupleTypeCode)).append(dataLeft).append(dataRight)
-            else dataLeft.append(dataRight)
+            if (includeType) Array(DAOConfigValue.tupleTypeCode)++dataLeft++dataRight
+            else dataLeft++dataRight
         })
     }
 }
 
-class DAOConfigValueDeserializer(ba: Coll[Byte]) {
+class DAOConfigValueDeserializer(ba: Array[Byte]) {
 
     private var readerIndex: Int = 0
     private var peekIndex: Int = 0
@@ -174,6 +192,17 @@ class DAOConfigValueDeserializer(ba: Coll[Byte]) {
         res
     }
 
+    def readPaideiaContractSignature: PaideiaContractSignature = {
+        val contractHash = Range.Int(0,32,1).flatMap{(_) => Array(readByte)}
+        val className = readString
+        val version = readString
+        val networkType = readByte match {
+            case ErgoAddressEncoder.MainnetNetworkPrefix => NetworkType.MAINNET
+            case ErgoAddressEncoder.TestnetNetworkPrefix => NetworkType.TESTNET
+        }
+        PaideiaContractSignature(className,version,networkType)
+    }
+
     def readColl: Array[_] = {
         val innerTpe: Byte = readByte
         val collSize: Int = readInt
@@ -190,7 +219,7 @@ class DAOConfigValueDeserializer(ba: Coll[Byte]) {
 }
 
 object DAOConfigValueDeserializer {
-    def deserialize(ba: Coll[Byte]): Any = {
+    def deserialize(ba: Array[Byte]): Any = {
         new DAOConfigValueDeserializer(ba).readValue
     }
 }

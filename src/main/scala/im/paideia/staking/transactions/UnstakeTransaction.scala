@@ -12,6 +12,7 @@ import org.ergoplatform.appkit.ErgoToken
 import im.paideia.DAOConfig
 import im.paideia.staking._
 import im.paideia.staking.boxes._
+import im.paideia.staking.contracts.PlasmaStaking
 
 class UnstakeTransaction extends PaideiaTransaction {
   
@@ -27,18 +28,19 @@ object UnstakeTransaction {
         amount: Long, 
         state: TotalStakingState, 
         changeAddress: ErgoAddress,
-        daoConfig: DAOConfig): UnstakeTransaction = 
+        daoConfig: DAOConfig,
+        stakingContract: PlasmaStaking): UnstakeTransaction = 
     {
         if (stakeStateInput.getRegisters().get(0).getValue.asInstanceOf[AvlTree].digest != state.currentStakingState.plasmaMap.ergoAVLTree.digest) throw new Exception("State not synced correctly")
         
         val contextVars = state.unstake(stakingKey,amount)
 
-        val stakeStateOutput = StakeStateBox(ctx,state,stakeStateInput.getTokens().get(1).getValue()-amount,daoConfig)
+        val stakeStateOutput = stakingContract.box(ctx,daoConfig,state,stakeStateInput.getTokens().get(1).getValue()-amount)
 
         val tokens = if (contextVars(0).getValue.getValue != StakingContextVars.UNSTAKE)
-                        List[ErgoToken](new ErgoToken(stakingKey,1L),new ErgoToken(state.stakingConfig.stakedTokenId,amount))
+                        List[ErgoToken](new ErgoToken(stakingKey,1L),new ErgoToken(daoConfig[Array[Byte]]("im.paideia.staking.stakedTokenId"),amount))
                     else
-                        List[ErgoToken](new ErgoToken(state.stakingConfig.stakedTokenId,amount))
+                        List[ErgoToken](new ErgoToken(daoConfig[Array[Byte]]("im.paideia.staking.stakedTokenId"),amount))
 
         val userOutput = ctx.newTxBuilder().outBoxBuilder().tokens(
             tokens: _*

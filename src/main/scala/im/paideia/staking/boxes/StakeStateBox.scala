@@ -47,22 +47,3 @@ class StakeStateBox(val state:TotalStakingState) extends PaideiaBox {
     )
 }
 
-object StakeStateBox {
-    def apply(ctx: BlockchainContextImpl, state: TotalStakingState, stakedTokenTotal: Long, daoConfig: DAOConfig, value: Long = 1000000, extraTokens: List[ErgoToken] = List[ErgoToken]()): StakeStateBox = {
-        val script = PlasmaStaking(networkType=ctx.getNetworkType()).ergoScript
-        val res = new StakeStateBox(state)
-        res.value = value
-        res.ctx = ctx
-        res.contract = DAOControlled(
-            constants=Map(
-                "_configIndex" -> ErgoValue.of(ConfigBox.stakingConfigIndex).getValue(),
-                "_configTokenId" -> ErgoValue.of(ErgoId.create(daoConfig("configTokenId")).getBytes()).getValue()),
-            networkType=ctx.getNetworkType(),
-            script=script).contract
-        res.tokens = List[ErgoToken](
-            new ErgoToken(state.stakingConfig.nftId,1L),
-            new ErgoToken(state.stakingConfig.stakedTokenId,stakedTokenTotal)
-        ) ++ extraTokens
-        res
-    }
-}

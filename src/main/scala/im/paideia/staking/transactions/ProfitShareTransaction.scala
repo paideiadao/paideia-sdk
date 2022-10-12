@@ -15,6 +15,7 @@ import org.ergoplatform.appkit.ErgoToken
 import scala.collection.JavaConverters._
 import im.paideia.staking._
 import im.paideia.staking.boxes._
+import im.paideia.staking.contracts.PlasmaStaking
 
 class ProfitShareTransaction extends PaideiaTransaction {
   
@@ -30,7 +31,8 @@ object ProfitShareTransaction {
         profitTokensToShare: List[ErgoToken], 
         state: TotalStakingState, 
         changeAddress: ErgoAddress,
-        daoConfig: DAOConfig): ProfitShareTransaction = 
+        daoConfig: DAOConfig,
+        stakingContract: PlasmaStaking): ProfitShareTransaction = 
     {
         if (stakeStateInput.getRegisters().get(0).getValue.asInstanceOf[AvlTree].digest != state.currentStakingState.plasmaMap.ergoAVLTree.digest) throw new Exception("State not synced correctly")
         
@@ -75,11 +77,11 @@ object ProfitShareTransaction {
 
         val contextVars = state.profitShare(profitToShare.toList)
 
-        val stakeStateOutput = StakeStateBox(
+        val stakeStateOutput = stakingContract.box(
             ctx,
+            daoConfig,
             state,
             stakeStateInput.getTokens().get(1).getValue()+extraStaked,
-            daoConfig,
             stakeStateInput.getValue()+profitErgToShare,
             extraTokens.toList ++ newExtraTokens)
       
