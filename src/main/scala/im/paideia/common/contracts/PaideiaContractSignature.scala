@@ -6,6 +6,6 @@ case class PaideiaContractSignature(
     className: String = "",
     version: String = "latest",
     networkType: NetworkType = NetworkType.TESTNET,
-    wrappedContract: String = "",
-    contractHash: Array[Byte] = Array(0.toByte)
+    contractHash: Array[Byte] = Array(0.toByte),
+    wrappedContract: String = ""
 )

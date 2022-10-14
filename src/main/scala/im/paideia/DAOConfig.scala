@@ -2,6 +2,7 @@ package im.paideia
 
 import im.paideia.util.Util
 import scala.collection.mutable.HashMap
+import scala.collection.mutable.Map
 import special.collection.Coll
 import org.ergoplatform.appkit.ErgoId
 import im.paideia.common.contracts._
@@ -19,6 +20,10 @@ case class DAOConfig(
 ) {
     def apply[T](key: String): T = DAOConfigValueDeserializer.deserialize(_config.lookUp(DAOConfigKey(key)).response.head.tryOp.get.get).asInstanceOf[T]
     def set[T](key: String, value: T)(implicit enc: DAOConfigValueSerializer[T]) = _config.insert((DAOConfigKey(key),enc.serialize(value,true).toArray))
+
+    def handleExtension(extension: Map[String,String]) = {
+        val todo = "update config based on extension"
+    }
 }
 
 object DAOConfig {

@@ -22,5 +22,5 @@ class ProxyStake(contractSignature: PaideiaContractSignature) extends PaideiaCon
 }
 
 object ProxyStake extends PaideiaActor {
-    override def apply(contractSignature: PaideiaContractSignature): ProxyStake = getContractInstance[ProxyStake](contractSignature)
+    override def apply(contractSignature: PaideiaContractSignature): ProxyStake = getContractInstance[ProxyStake](contractSignature,new ProxyStake(contractSignature))
 }

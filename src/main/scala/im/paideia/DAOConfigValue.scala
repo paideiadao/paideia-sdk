@@ -193,14 +193,14 @@ class DAOConfigValueDeserializer(ba: Array[Byte]) {
     }
 
     def readPaideiaContractSignature: PaideiaContractSignature = {
-        val contractHash = Range.Int(0,32,1).flatMap{(_) => Array(readByte)}
+        val contractHash = Range.Int(0,32,1).flatMap{(_) => Array(readByte)}.toArray
         val className = readString
         val version = readString
         val networkType = readByte match {
             case ErgoAddressEncoder.MainnetNetworkPrefix => NetworkType.MAINNET
             case ErgoAddressEncoder.TestnetNetworkPrefix => NetworkType.TESTNET
         }
-        PaideiaContractSignature(className,version,networkType)
+        PaideiaContractSignature(className,version,networkType,contractHash)
     }
 
     def readColl: Array[_] = {

@@ -26,5 +26,5 @@ class PlasmaStaking(contractSignature: PaideiaContractSignature) extends Paideia
 
 
 object PlasmaStaking extends PaideiaActor {
-   override def apply(contractSignature: PaideiaContractSignature): PlasmaStaking = getContractInstance[PlasmaStaking](contractSignature)
+   override def apply(contractSignature: PaideiaContractSignature): PlasmaStaking = getContractInstance[PlasmaStaking](contractSignature,new PlasmaStaking(contractSignature))
 }

@@ -23,5 +23,5 @@ class PaideiaOrigin(contractSignature: PaideiaContractSignature) extends Paideia
 
 object PaideiaOrigin extends PaideiaActor {
     override def apply(contractSignature: PaideiaContractSignature): PaideiaOrigin = 
-        getContractInstance[PaideiaOrigin](contractSignature)
+        getContractInstance[PaideiaOrigin](contractSignature,new PaideiaOrigin(contractSignature))
 }

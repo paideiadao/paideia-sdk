@@ -12,5 +12,5 @@ class DAOControlled(contractSignature: PaideiaContractSignature) extends Paideia
 }
 
 object DAOControlled extends PaideiaActor {
-    override def apply(contractSignature: PaideiaContractSignature): DAOControlled = getContractInstance[DAOControlled](contractSignature)
+    override def apply(contractSignature: PaideiaContractSignature): DAOControlled = getContractInstance[DAOControlled](contractSignature,new DAOControlled(contractSignature))
 }

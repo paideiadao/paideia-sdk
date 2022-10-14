@@ -9,6 +9,7 @@ import im.paideia.common.contracts.PaideiaActor
 import im.paideia.util.Env
 import im.paideia.common.PaideiaEvent
 import im.paideia.common.PaideiaEventResponse
+import scala.reflect.runtime.{universe => ru}
 
 object Paideia {
     val _daoMap : HashMap[String,DAO] = HashMap[String,DAO]()
@@ -28,4 +29,11 @@ object Paideia {
     }
 
     def addActor(actor: PaideiaActor): Boolean = _actorList.add(actor)
+
+    def instantiateActor(contractSignature: PaideiaContractSignature) = {
+        val m = ru.runtimeMirror(getClass.getClassLoader)
+        val inst = m.reflectModule(m.staticModule(contractSignature.className)).instance
+        if (inst.isInstanceOf[PaideiaActor]) true
+        else false
+    }
 }

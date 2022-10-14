@@ -10,8 +10,8 @@ trait PaideiaActor {
     
     def apply(contractSignature: PaideiaContractSignature): PaideiaContract = ???
 
-    def getContractInstance[T <: PaideiaContract](contractSignature: PaideiaContractSignature): T = {
-        val contractInstance = contractInstances.getOrElse(contractSignature,new PaideiaContract(contractSignature)).asInstanceOf[T]
+    def getContractInstance[T <: PaideiaContract](contractSignature: PaideiaContractSignature, default: T): T = {
+        val contractInstance = contractInstances.getOrElse(contractSignature,default).asInstanceOf[T]
         contractInstances(contractSignature) = contractInstance
         contractInstance
     }

@@ -23,5 +23,5 @@ class ProtoDAO(contractSignature: PaideiaContractSignature) extends PaideiaContr
 
 object ProtoDAO extends PaideiaActor {
     override def apply(contractSignature: PaideiaContractSignature): ProtoDAO = 
-        getContractInstance[ProtoDAO](contractSignature)
+        getContractInstance[ProtoDAO](contractSignature,new ProtoDAO(contractSignature))
 }

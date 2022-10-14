@@ -23,39 +23,45 @@ import org.ergoplatform.restapi.client.ErgoTransactionInput
 import org.ergoplatform.restapi.client.ErgoTransactionOutput
 import im.paideia.common.BlockEvent
 import org.ergoplatform.restapi.client.ErgoTransaction
+import scala.collection.mutable.HashMap
 
 class PaideiaContract(_contractSignature: PaideiaContractSignature) {
     val utxos: Set[String] = Set[String]()
     val mutxos: Set[String] = Set[String]()
     val mspent: Set[String] = Set[String]()
 
-    def ergoScript: String = Source.fromResource("ergoscript/" + getClass.getSimpleName + "/" + contractSignature.version + "/" + getClass.getSimpleName + ".es").mkString
+    val boxes: HashMap[String,ErgoTransactionOutput] = HashMap[String,ErgoTransactionOutput]()
+
+    def ergoScript: String = Source.fromResource("ergoscript/" + getClass.getSimpleName + "/" + _contractSignature.version + "/" + getClass.getSimpleName + ".es").mkString
     def ergoTree: Values.ErgoTree = {
-        JavaHelpers.compile(new java.util.HashMap[String,Object](),ergoScript,contractSignature.networkType.networkPrefix)
+        JavaHelpers.compile(new java.util.HashMap[String,Object](),ergoScript,_contractSignature.networkType.networkPrefix)
     }
-    def contract: ErgoContract = new ErgoTreeContract(ergoTree, contractSignature.networkType)
+    def contract: ErgoContract = new ErgoTreeContract(ergoTree, _contractSignature.networkType)
 
     def contractSignature: PaideiaContractSignature = PaideiaContractSignature(
         getClass().getCanonicalName(),
         _contractSignature.version,
         _contractSignature.networkType,
-        _contractSignature.wrappedContract,
-        Blake2b256(ergoTree.bytes).array
+        Blake2b256(ergoTree.bytes).array,
+        _contractSignature.wrappedContract
     )
 
     def spendBox(boxId: String, mempool: Boolean): Boolean = {
         if (mempool) {
             mspent.add(boxId)
         } else {
+            boxes -= boxId
             utxos.remove(boxId) || mspent.remove(boxId)
         }
     }
 
-    def newBox(boxId: String, mempool: Boolean): Boolean = {
+    def newBox(box: ErgoTransactionOutput, mempool: Boolean): Boolean = {
         if (mempool) {
-            mutxos.add(boxId)
+            boxes(box.getBoxId()) = box
+            mutxos.add(box.getBoxId())
         } else {
-            utxos.add(boxId) || mutxos.remove(boxId)
+            boxes(box.getBoxId()) = box
+            utxos.add(box.getBoxId()) || mutxos.remove(box.getBoxId())
         }
     }
 
@@ -65,7 +71,7 @@ class PaideiaContract(_contractSignature: PaideiaContractSignature) {
         event match {
             case te: TransactionEvent => {
                 val handledInputs = te.tx.getInputs().asScala.map{(input: ErgoTransactionInput) => spendBox(input.getBoxId(),te.mempool)}
-                val handledOutputs = te.tx.getOutputs().asScala.map{(output: ErgoTransactionOutput) => if (output.getErgoTree == ergoTree.bytesHex) newBox(output.getBoxId(),te.mempool) else false}
+                val handledOutputs = te.tx.getOutputs().asScala.map{(output: ErgoTransactionOutput) => if (output.getErgoTree == ergoTree.bytesHex) newBox(output,te.mempool) else false}
                 if (handledInputs.exists(identity) || handledOutputs.exists(identity)) PaideiaEventResponse(1) else PaideiaEventResponse(0)
             }
             case be: BlockEvent => {
