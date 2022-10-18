@@ -8,13 +8,17 @@ import im.paideia.common.TransactionEvent
 import im.paideia.Paideia
 import org.ergoplatform.restapi.client.ErgoTransactionInput
 import scala.collection.JavaConverters._
+import org.ergoplatform.appkit.ErgoToken
 
 class Config(contractSignature: PaideiaContractSignature) 
     extends PaideiaContract(contractSignature) {
     
     def box(ctx: BlockchainContextImpl, daoConfig: DAOConfig): ConfigBox = {
         val res = new ConfigBox(daoConfig)
+        res.ctx = ctx
         res.contract = contract
+        res.value = 1000000L
+        res.tokens = List(new ErgoToken(daoConfig[Array[Any]]("im.paideia.daoKey").map(_.asInstanceOf[Byte]),1L))
         res
     }
 
@@ -22,19 +26,19 @@ class Config(contractSignature: PaideiaContractSignature)
         val response: PaideiaEventResponse = event match {
             case te: TransactionEvent => {
                 val currentUtxos = getUtxoSet
-                te.tx.getInputs().asScala.map{(eti: ErgoTransactionInput) => {
+                PaideiaEventResponse.merge(te.tx.getInputs().asScala.map{(eti: ErgoTransactionInput) => {
                     if (currentUtxos.contains(eti.getBoxId())) {
-                        Paideia._daoMap(boxes(eti.getBoxId()).getAssets().get(0).getTokenId()).config.handleExtension(eti.getExtension().asScala)
+                        Paideia._daoMap(boxes(eti.getBoxId()).getTokens().get(0).getId().toString).config.handleExtension(eti.getExtension().asScala)
                         PaideiaEventResponse(2)
                     } else {
                         PaideiaEventResponse(0)
                     }
-                }}.max
+                }}.toList)
             }
             case _ => PaideiaEventResponse(0)
         }
         val superResponse = super.handleEvent(event)
-        response
+        PaideiaEventResponse.merge(List(response,superResponse))
     }
 }
 

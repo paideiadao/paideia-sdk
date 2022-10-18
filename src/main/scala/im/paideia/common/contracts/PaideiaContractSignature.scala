@@ -5,7 +5,7 @@ import org.ergoplatform.appkit.NetworkType
 case class PaideiaContractSignature(
     className: String = "",
     version: String = "latest",
-    networkType: NetworkType = NetworkType.TESTNET,
-    contractHash: Array[Byte] = Array(0.toByte),
+    networkType: NetworkType = NetworkType.MAINNET,
+    contractHash: List[Byte] = List(0.toByte),
     wrappedContract: String = ""
 )

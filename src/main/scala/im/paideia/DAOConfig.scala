@@ -18,7 +18,11 @@ import shapeless.Lazy
 case class DAOConfig(
    val _config: PlasmaMap[DAOConfigKey,Array[Byte]]
 ) {
-    def apply[T](key: String): T = DAOConfigValueDeserializer.deserialize(_config.lookUp(DAOConfigKey(key)).response.head.tryOp.get.get).asInstanceOf[T]
+    def apply[T](key: String): T = {
+        val check = _config.lookUp(DAOConfigKey(key)).response.head.tryOp.get.get
+        val deserialized = DAOConfigValueDeserializer.deserialize(check)
+        deserialized.asInstanceOf[T]
+    }
     def set[T](key: String, value: T)(implicit enc: DAOConfigValueSerializer[T]) = _config.insert((DAOConfigKey(key),enc.serialize(value,true).toArray))
 
     def handleExtension(extension: Map[String,String]) = {
@@ -27,24 +31,6 @@ case class DAOConfig(
 }
 
 object DAOConfig {
-    def test: DAOConfig = {
-        val stakedTokenId: Array[Byte] = ErgoId.create(Util.randomKey).getBytes()
-        val nftId: Array[Byte] = ErgoId.create(Util.randomKey).getBytes()
-        val sigUsd: Array[Byte] = ErgoId.create(Util.randomKey).getBytes()
-        val configTokenId: Array[Byte] = ErgoId.create(Util.randomKey).getBytes()
-        val stakingContract = PlasmaStaking(PaideiaContractSignature())
-        val daoConfig = DAOConfig()
-        daoConfig.set("im.paideia.configTokenId",configTokenId)
-        daoConfig.set("im.paideia.staking.nftId",nftId)
-        daoConfig.set("im.paideia.staking.stakedTokenId",stakedTokenId)
-        daoConfig.set("im.paideia.staking.emissionAmount",100000L)
-        daoConfig.set("im.paideia.staking.emissionDelay",4L)
-        daoConfig.set("im.paideia.staking.cycleLength",3600000L)
-        daoConfig.set("im.paideia.staking.profitTokens",Array(stakedTokenId,sigUsd))
-        daoConfig.set("im.paideia.staking.stakingContract",stakingContract.contractSignature)
-        daoConfig
-    }
-
     def apply() : DAOConfig = {
         new DAOConfig(new PlasmaMap[DAOConfigKey,Array[Byte]](AvlTreeFlags.AllOperationsAllowed,PlasmaParameters.default))
     }

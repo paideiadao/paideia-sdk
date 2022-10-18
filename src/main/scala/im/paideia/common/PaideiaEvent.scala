@@ -1,3 +1,5 @@
 package im.paideia.common
 
-trait PaideiaEvent
+import org.ergoplatform.appkit.impl.BlockchainContextImpl
+
+class PaideiaEvent(val ctx: BlockchainContextImpl)

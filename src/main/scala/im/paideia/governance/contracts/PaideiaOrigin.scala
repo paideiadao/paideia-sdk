@@ -9,12 +9,13 @@ import org.ergoplatform.appkit.ErgoToken
 import im.paideia.util.Env
 
 class PaideiaOrigin(contractSignature: PaideiaContractSignature) extends PaideiaContract(contractSignature) {
-    def box(ctx: BlockchainContextImpl, daoConfig: DAOConfig): PaideiaOriginBox = {
+    def box(ctx: BlockchainContextImpl, daoConfig: DAOConfig, daoTokensRemaining: Long): PaideiaOriginBox = {
         val res = new PaideiaOriginBox
         res.ctx = ctx
         res.value = 1000000L
         res.tokens = List(
-            new ErgoToken(Env.daoTokenId,1000L)
+            new ErgoToken(Env.paideiaOriginNFT,1L),
+            new ErgoToken(Env.daoTokenId,daoTokensRemaining)
         )
         res.contract = contract
         res

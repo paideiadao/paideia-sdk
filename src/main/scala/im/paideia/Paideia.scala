@@ -10,11 +10,13 @@ import im.paideia.util.Env
 import im.paideia.common.PaideiaEvent
 import im.paideia.common.PaideiaEventResponse
 import scala.reflect.runtime.{universe => ru}
+import im.paideia.common.filtering.FilterNode
+import org.ergoplatform.appkit.InputBox
 
 object Paideia {
-    val _daoMap : HashMap[String,DAO] = HashMap[String,DAO]()
+    lazy val _daoMap : HashMap[String,DAO] = HashMap[String,DAO]()
 
-    val _actorList : Set[PaideiaActor] = Set(Config)
+    lazy val _actorList : HashMap[String,PaideiaActor] = HashMap[String,PaideiaActor]()
 
     def addDAO(dao: DAO): Unit = _daoMap.put(dao.key,dao)
 
@@ -25,15 +27,24 @@ object Paideia {
     }
 
     def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
-        _actorList.map{_.handleEvent(event)}.max
+        PaideiaEventResponse.merge(_actorList.values.map{
+            _.handleEvent(event)
+        }.toList)
     }
 
-    def addActor(actor: PaideiaActor): Boolean = _actorList.add(actor)
+    def getActor[T <: PaideiaActor](className: String): PaideiaActor = _actorList(className).asInstanceOf[T]
 
     def instantiateActor(contractSignature: PaideiaContractSignature) = {
         val m = ru.runtimeMirror(getClass.getClassLoader)
         val inst = m.reflectModule(m.staticModule(contractSignature.className)).instance
-        if (inst.isInstanceOf[PaideiaActor]) true
-        else false
+        inst match {
+            case pa: PaideiaActor => _actorList.put(contractSignature.className,pa)
+        } 
     }
+
+    def getBox(boxFilter: FilterNode): List[InputBox] = {
+        _actorList.values.toList.flatMap(_.getBox(boxFilter))
+    }
+
+    def getConfig(daoKey: String): DAOConfig = _daoMap(daoKey).config
 }

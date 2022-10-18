@@ -17,40 +17,33 @@ import im.paideia.staking._
 import im.paideia.staking.contracts._
 import im.paideia.staking.boxes._
 
-class AddStakeTransaction extends PaideiaTransaction {
-  
-}
-
-object AddStakeTransaction {
-    def apply(
-        ctx: BlockchainContextImpl, 
-        stakeStateInput: InputBox,
-        configInput: InputBox,
-        userInput: InputBox,
-        stakingKey: String, 
-        amount: Long, 
-        state: TotalStakingState, 
-        changeAddress: ErgoAddress,
-        daoConfig: DAOConfig,
-        stakingContract: PlasmaStaking): AddStakeTransaction = 
-    {
-        if (stakeStateInput.getRegisters().get(0).getValue.asInstanceOf[AvlTree].digest != state.currentStakingState.plasmaMap.ergoAVLTree.digest) throw new Exception("State not synced correctly")
+case class AddStakeTransaction(
+    _ctx: BlockchainContextImpl, 
+    stakeStateInput: InputBox,
+    configInput: InputBox,
+    userInput: InputBox,
+    stakingKey: String, 
+    amount: Long, 
+    state: TotalStakingState, 
+    _changeAddress: ErgoAddress,
+    daoConfig: DAOConfig,
+    stakingContract: PlasmaStaking
+) extends PaideiaTransaction {
+    if (stakeStateInput.getRegisters().get(0).getValue.asInstanceOf[AvlTree].digest != state.currentStakingState.plasmaMap.ergoAVLTree.digest) throw new Exception("State not synced correctly")
         
-        val contextVars = state.addStake(stakingKey,amount)
+    val contextVars = state.addStake(stakingKey,amount)
 
-        val stakeStateOutput = stakingContract.box(ctx,daoConfig,state,stakeStateInput.getTokens().get(1).getValue()+amount)
+    val stakeStateOutput = stakingContract.box(ctx,daoConfig,state,stakeStateInput.getTokens().get(1).getValue()+amount)
 
-        val userOutput = ctx.newTxBuilder().outBoxBuilder().tokens(
-            new ErgoToken(stakingKey,1L)
-        ).contract(new ErgoTreeContract(userInput.getErgoTree(),ctx.getNetworkType())).build()
+    val userOutput = ctx.newTxBuilder().outBoxBuilder().tokens(
+        new ErgoToken(stakingKey,1L)
+    ).contract(new ErgoTreeContract(userInput.getErgoTree(),ctx.getNetworkType())).build()
 
-        val res = new AddStakeTransaction()
-        res.ctx = ctx
-        res.changeAddress = changeAddress
-        res.fee = 1000000
-        res.inputs = List[InputBox](stakeStateInput.withContextVars(contextVars: _*),userInput)
-        res.dataInputs = List[InputBox](configInput)
-        res.outputs = List[OutBox](stakeStateOutput.outBox,userOutput)
-        res
-    }
+    ctx = _ctx
+    fee = 1000000
+    changeAddress = _changeAddress
+    inputs = List[InputBox](stakeStateInput.withContextVars(contextVars: _*),userInput)
+    dataInputs = List[InputBox](configInput)
+    outputs = List[OutBox](stakeStateOutput.outBox,userOutput)
+
 }

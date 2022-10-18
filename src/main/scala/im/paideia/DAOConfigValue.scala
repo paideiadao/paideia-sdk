@@ -97,7 +97,7 @@ object DAOConfigValueSerializer {
                 val className = pcs.className.getBytes(StandardCharsets.UTF_8)
                 val networkType = pcs.networkType.networkPrefix
                 val version = pcs.version.getBytes(StandardCharsets.UTF_8)
-                val data = pcs.contractHash++className++version++Array(networkType)
+                val data = pcs.contractHash.toArray++className++version++Array(networkType)
                 if (includeType) Array(DAOConfigValue.contractSignatureTypeCode)++data
                 else data
             }
@@ -193,7 +193,7 @@ class DAOConfigValueDeserializer(ba: Array[Byte]) {
     }
 
     def readPaideiaContractSignature: PaideiaContractSignature = {
-        val contractHash = Range.Int(0,32,1).flatMap{(_) => Array(readByte)}.toArray
+        val contractHash = Range.Int(0,32,1).flatMap{(_) => Array(readByte)}.toList
         val className = readString
         val version = readString
         val networkType = readByte match {

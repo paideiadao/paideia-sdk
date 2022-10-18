@@ -10,4 +10,6 @@ object Env {
     def paideiaTokenId: String = conf.getString("paideiaTokenId")
     def networkType: NetworkType = NetworkType.fromValue(conf.getString("networkType"))
     def paideiaDaoKey: String = conf.getString("paideiaDaoKey")
+    def paideiaOriginNFT: String = conf.getString("paideiaOriginNFT")
+    def operatorAddress: String = conf.getString("operatorAddress")
 }
