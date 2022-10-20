@@ -16,15 +16,22 @@ import scala.collection.JavaConverters._
 import org.ergoplatform.appkit.impl.InputBoxImpl
 import org.ergoplatform.ErgoAddress
 import org.ergoplatform.appkit.Address
+import java.util.HashMap
+import org.ergoplatform.appkit.ErgoValue
+import im.paideia.DAOConfigKey
+import org.ergoplatform.appkit.ErgoId
 
 class ProtoDAOProxy(contractSignature: PaideiaContractSignature) extends PaideiaContract(contractSignature) {
-    def box(ctx: BlockchainContextImpl, paideiaDaoConfig: DAOConfig): ProtoDAOProxyBox = {
-        val res = new ProtoDAOProxyBox
+    def box(ctx: BlockchainContextImpl, 
+        paideiaDaoConfig: DAOConfig,
+        daoName: String,
+        daoGovernanceTokenId: String): ProtoDAOProxyBox = {
+        val res = new ProtoDAOProxyBox(daoName,daoGovernanceTokenId)
         res.ctx = ctx
-        res.value = 2000000L + paideiaDaoConfig[Long]("im.paideia.fees.createDAO.erg")
-        res.tokens = if (paideiaDaoConfig[Long]("im.paideia.fees.createDAO.paideia") > 0L) 
+        res.value = 3000000L + paideiaDaoConfig[Long]("im.paideia.fees.createdao.erg")
+        res.tokens = if (paideiaDaoConfig[Long]("im.paideia.fees.createdao.paideia") > 0L) 
             List(
-                new ErgoToken(Env.paideiaTokenId,paideiaDaoConfig("im.paideia.fees.createDAO.paideia"))
+                new ErgoToken(Env.paideiaTokenId,paideiaDaoConfig("im.paideia.fees.createdao.paideia"))
             ) 
             else 
                 List()
@@ -47,6 +54,17 @@ class ProtoDAOProxy(contractSignature: PaideiaContractSignature) extends Paideia
         }
         val superResponse = super.handleEvent(event)
         response
+    }
+
+    override def constants: HashMap[String,Object] = {
+        val cons = new HashMap[String,Object]()
+        cons.put("_IM_PAIDEIA_CONTRACTS_PROTODAO",ErgoValue.of(DAOConfigKey("im.paideia.contracts.protodao").hashedKey).getValue())
+        cons.put("_PAIDEIA_DAO_KEY",ErgoId.create(Env.paideiaDaoKey).getBytes())
+        cons.put("_EMPTY_CONFIG_DIGEST",ErgoValue.of(DAOConfig()._config.digest.array).getValue())
+        cons.put("_IM_PAIDEIA_DAO_NAME",ErgoValue.of(DAOConfigKey("im.paideia.dao.name").hashedKey).getValue())
+        cons.put("_IM_PAIDEIA_DAO_GOVERNANCE_TOKEN_ID",ErgoValue.of(DAOConfigKey("im.paideia.dao.tokenid").hashedKey).getValue())
+        cons.put("_IM_PAIDEIA_DAO_KEY",ErgoValue.of(DAOConfigKey("im.paideia.dao.key").hashedKey).getValue())
+        cons
     }
 }
 

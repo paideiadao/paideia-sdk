@@ -10,6 +10,7 @@ import im.paideia.util.Env
 import im.paideia.common.PaideiaEvent
 import im.paideia.common.TransactionEvent
 import org.ergoplatform.restapi.client.ErgoTransaction
+import im.paideia.util.Util
 
 class CreateProtoDAOTransactionSuite extends PaideiaTestSuite {
     test("Create proto DAO") {
@@ -18,8 +19,8 @@ class CreateProtoDAOTransactionSuite extends PaideiaTestSuite {
             override def apply(_ctx: BlockchainContext): Unit = {
                 val ctx = _ctx.asInstanceOf[BlockchainContextImpl]
                 PaideiaTestSuite.init(ctx)
-                val protoDAOProxyContract = ProtoDAOProxy(PaideiaContractSignature("im.paideia.governance.contracts.ProtoDAOProxy"))
-                val protoDAOProxyBox = ProtoDAOProxy(protoDAOProxyContract.contractSignature).box(ctx,Paideia.getConfig(Env.paideiaDaoKey)).ergoTransactionOutput()
+                val protoDAOProxyContract = ProtoDAOProxy(PaideiaContractSignature("im.paideia.governance.contracts.ProtoDAOProxy",daoKey=Env.paideiaDaoKey))
+                val protoDAOProxyBox = ProtoDAOProxy(protoDAOProxyContract.contractSignature).box(ctx,Paideia.getConfig(Env.paideiaDaoKey),"Test DAO",Util.randomKey).ergoTransactionOutput()
                 val dummyTx = (new ErgoTransaction()).addOutputsItem(protoDAOProxyBox)
                 val paideiaRef = Paideia._actorList
                 val eventResponse = Paideia.handleEvent(TransactionEvent(ctx,false,dummyTx))

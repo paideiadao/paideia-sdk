@@ -28,6 +28,16 @@ case class DAOConfig(
     def handleExtension(extension: Map[String,String]) = {
         val todo = "update config based on extension"
     }
+
+    def getProof(keys: List[String]): ErgoValue[Coll[java.lang.Byte]] = {
+        val provRes = _config.lookUp(keys.map(DAOConfigKey(_)): _*)
+        provRes.proof.ergoValue
+    }
+
+    def insertProof(operations: List[(String,Array[Byte])]): ErgoValue[Coll[java.lang.Byte]] = {
+        val provRes = _config.insert(operations.map((kv: (String,Array[Byte])) => (DAOConfigKey(kv._1),kv._2)): _*)
+        provRes.proof.ergoValue
+    }
 }
 
 object DAOConfig {

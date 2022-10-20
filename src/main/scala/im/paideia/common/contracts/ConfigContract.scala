@@ -18,7 +18,7 @@ class Config(contractSignature: PaideiaContractSignature)
         res.ctx = ctx
         res.contract = contract
         res.value = 1000000L
-        res.tokens = List(new ErgoToken(daoConfig[Array[Any]]("im.paideia.daoKey").map(_.asInstanceOf[Byte]),1L))
+        res.tokens = List(new ErgoToken(daoConfig[Array[Any]]("im.paideia.dao.key").map(_.asInstanceOf[Byte]),1L))
         res
     }
 

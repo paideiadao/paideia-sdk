@@ -10,7 +10,7 @@ import im.paideia.util.Env
 
 class ProtoDAO(contractSignature: PaideiaContractSignature) extends PaideiaContract(contractSignature) {
     def box(ctx: BlockchainContextImpl, daoConfig: DAOConfig): ProtoDAOBox = {
-        val res = new ProtoDAOBox
+        val res = new ProtoDAOBox(daoConfig)
         res.ctx = ctx
         res.value = 1000000L
         res.tokens = List(

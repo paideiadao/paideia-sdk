@@ -26,8 +26,8 @@ trait PaideiaBox {
         var b = ctx.newTxBuilder().outBoxBuilder()
             .value(value)
             .contract(contract)
-        if (_tokens.size>0) b = b.tokens(tokens: _*)
-        if (_registers.size>0) b = b.registers(registers: _*)
+        if (tokens.size>0) b = b.tokens(tokens: _*)
+        if (registers.size>0) b = b.registers(registers: _*)
         b.build()
     }
 

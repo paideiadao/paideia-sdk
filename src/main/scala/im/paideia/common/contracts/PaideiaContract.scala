@@ -37,16 +37,18 @@ class PaideiaContract(_contractSignature: PaideiaContractSignature) {
 
     def ergoScript: String = Source.fromResource("ergoscript/" + getClass.getSimpleName + "/" + _contractSignature.version + "/" + getClass.getSimpleName + ".es").mkString
     def ergoTree: Values.ErgoTree = {
-        JavaHelpers.compile(new java.util.HashMap[String,Object](),ergoScript,_contractSignature.networkType.networkPrefix)
+        JavaHelpers.compile(constants,ergoScript,_contractSignature.networkType.networkPrefix)
     }
     def contract: ErgoContract = new ErgoTreeContract(ergoTree, _contractSignature.networkType)
+
+    def constants: java.util.HashMap[String,Object] = new java.util.HashMap[String,Object]()
 
     def contractSignature: PaideiaContractSignature = PaideiaContractSignature(
         getClass().getCanonicalName(),
         _contractSignature.version,
         _contractSignature.networkType,
         Blake2b256(ergoTree.bytes).array.toList,
-        _contractSignature.wrappedContract
+        _contractSignature.daoKey
     )
 
     def spendBox(boxId: String, mempool: Boolean): Boolean = {
