@@ -20,6 +20,8 @@ import im.paideia.DAOConfig
 import im.paideia.DAO
 import special.collection.Coll
 import im.paideia.DAOConfigValueSerializer
+import im.paideia.governance.contracts.Mint
+import im.paideia.DAOConfigValueDeserializer
 
 case class CreateProtoDAOTransaction(
     _ctx: BlockchainContextImpl,
@@ -41,6 +43,14 @@ case class CreateProtoDAOTransaction(
     val paideiaOriginInput = Paideia.getBox(new FilterLeaf[String](FilterType.FTEQ,Env.paideiaOriginNFT,CompareField.ASSET,0))(0)
     val paideiaOriginOutput = PaideiaOrigin(PaideiaContractSignature(networkType = _ctx.getNetworkType(),daoKey=Env.paideiaDaoKey)).box(_ctx,paideiaConfig,paideiaOriginInput.getTokens().get(1).getValue()-1L)
     val paideiaTreasuryOutput = Treasury(PaideiaContractSignature(networkType=_ctx.getNetworkType(),daoKey=Env.paideiaDaoKey)).box(_ctx,paideiaConfig,ergFee+1000000L,List(new ErgoToken(Env.paideiaTokenId,paideiaFee)))
+    val mintOutput = Mint(PaideiaContractSignature(networkType=_ctx.getNetworkType(),daoKey=Env.paideiaDaoKey)).box(
+        _ctx,
+        protoDAOProxyInput.getId().toString(),
+        1L,
+        DAOConfigValueDeserializer.deserialize(daoParams(0).toArray).asInstanceOf[String]++" DAO Key",
+        DAOConfigValueDeserializer.deserialize(daoParams(0).toArray).asInstanceOf[String]++" DAO Key",
+        0
+    )
     val checkDigest = paideiaConfigBox.getRegisters().get(0).getValue()
     val checkDigest2 = paideiaConfig._config.ergoValue.getValue()
     val contextVarPaideiaOrigin = ContextVar.of(0.toByte,paideiaConfig.getProof(List(
@@ -50,9 +60,11 @@ case class CreateProtoDAOTransaction(
         "im.paideia.contracts.protodaoproxy",
         "im.paideia.contracts.treasury"
     )))
-    val test = DAOConfigValueSerializer[Array[Byte]](protoDAOProxyInput.getId().getBytes())
     val contextVarsProtoDAOProxy = List(
-        ContextVar.of(0.toByte,paideiaConfig.getProof(List("im.paideia.contracts.protodao"))),
+        ContextVar.of(0.toByte,paideiaConfig.getProof(List(
+            "im.paideia.contracts.protodao",
+            "im.paideia.contracts.mint"
+            ))),
         ContextVar.of(1.toByte,newDAOConfig._config.ergoValue),
         ContextVar.of(2.toByte,newDAOConfig.insertProof(List(
             ("im.paideia.dao.name",daoParams(0).toArray),
@@ -66,5 +78,5 @@ case class CreateProtoDAOTransaction(
     changeAddress = _changeAddress
     inputs = List[InputBox](protoDAOProxyInput.withContextVars(contextVarsProtoDAOProxy:_*),paideiaOriginInput.withContextVars(contextVarPaideiaOrigin))
     dataInputs = List[InputBox](paideiaConfigBox)
-    outputs = List[OutBox](protoDAOOutput.outBox,paideiaOriginOutput.outBox,paideiaTreasuryOutput.outBox)
+    outputs = List[OutBox](protoDAOOutput.outBox,paideiaOriginOutput.outBox,paideiaTreasuryOutput.outBox,mintOutput.outBox)
 }

@@ -16,6 +16,7 @@ import org.ergoplatform.appkit.ErgoId
 import im.paideia.governance.contracts.ProtoDAOProxy
 import im.paideia.common.contracts.Treasury
 import im.paideia.governance.contracts.ProtoDAO
+import im.paideia.governance.contracts.Mint
 
 class PaideiaTestSuite extends AnyFunSuite with HttpClientTesting {
     
@@ -36,14 +37,17 @@ object PaideiaTestSuite {
             val protoDaoProxyContract = ProtoDAOProxy(PaideiaContractSignature("im.paideia.governance.contracts.ProtoDAOProxy",daoKey = Env.paideiaDaoKey))
             val treasuryContract = Treasury(PaideiaContractSignature("im.paideia.common.contracts.Treasury",daoKey = Env.paideiaDaoKey))
             val protoDAOContract = ProtoDAO(PaideiaContractSignature("im.paideia.governance.contracts.ProtoDAO",daoKey = Env.paideiaDaoKey))
+            val mintContract = Mint(PaideiaContractSignature("im.paideia.governance.contracts.Mint",daoKey = Env.paideiaDaoKey))
             paideiaConfig.set("im.paideia.contracts.treasury",treasuryContract.contractSignature)
             paideiaConfig.set("im.paideia.contracts.protodao",protoDAOContract.contractSignature)
             paideiaConfig.set("im.paideia.contracts.protodaoproxy",protoDaoProxyContract.contractSignature)
+            paideiaConfig.set("im.paideia.contracts.mint",mintContract.contractSignature)
             Paideia.instantiateActor(configContract.contractSignature)
             Paideia.instantiateActor(treasuryContract.contractSignature)
             Paideia.instantiateActor(paideiaOriginContract.contractSignature)
             Paideia.instantiateActor(protoDAOContract.contractSignature)
             Paideia.instantiateActor(protoDaoProxyContract.contractSignature)
+            Paideia.instantiateActor(mintContract.contractSignature)
             configContract.newBox(configContract.box(ctx,paideiaConfig).inputBox(),false)
             paideiaOriginContract.newBox(paideiaOriginContract.box(ctx,paideiaConfig,1000000L).inputBox(),false)
             initializedPaideia = true

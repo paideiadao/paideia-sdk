@@ -3,7 +3,8 @@
     val paideiaConfig = paideiaConfigBox.R4[AvlTree].get
     val paideiaConfigProof = getVar[Coll[Byte]](0).get
     val paideiaConfigValues = paideiaConfig.getMany(Coll(
-        _IM_PAIDEIA_CONTRACTS_PROTODAO
+        _IM_PAIDEIA_CONTRACTS_PROTODAO,
+        _IM_PAIDEIA_CONTRACTS_MINT
     ),paideiaConfigProof)
 
     val correctDataInput = paideiaConfigBox.tokens(0)._1 == _PAIDEIA_DAO_KEY
@@ -20,6 +21,7 @@
     ),configInsertProof).get
 
     val protoDAOOut = OUTPUTS(0)
+    val mintOut = OUTPUTS(3)
 
     val validProtoDAOOut = allOf(Coll(
         validEmptyConfig,
@@ -27,5 +29,14 @@
         protoDAOOut.R4[AvlTree].get.digest == filledOutConfig.digest
     ))
 
-    sigmaProp(validProtoDAOOut)
+    val validMintOut = allOf(Coll(
+        blake2b256(mintOut.propositionBytes) == paideiaConfigValues(1).get.slice(1,33),
+        mintOut.tokens(0)._1 == SELF.id,
+        mintOut.tokens(0)._2 == 1L,
+        mintOut.R4[Coll[Byte]].get == configValues(0).slice(5,configValues(0).size)++_DAO_KEY,
+        mintOut.R5[Coll[Byte]].get == mintOut.R4[Coll[Byte]].get,
+        mintOut.R6[Coll[Byte]].get == Coll(48.toByte)
+    ))
+
+    sigmaProp(validProtoDAOOut && validMintOut)
 }

@@ -20,6 +20,7 @@ import java.util.HashMap
 import org.ergoplatform.appkit.ErgoValue
 import im.paideia.DAOConfigKey
 import org.ergoplatform.appkit.ErgoId
+import java.nio.charset.StandardCharsets
 
 class ProtoDAOProxy(contractSignature: PaideiaContractSignature) extends PaideiaContract(contractSignature) {
     def box(ctx: BlockchainContextImpl, 
@@ -28,7 +29,7 @@ class ProtoDAOProxy(contractSignature: PaideiaContractSignature) extends Paideia
         daoGovernanceTokenId: String): ProtoDAOProxyBox = {
         val res = new ProtoDAOProxyBox(daoName,daoGovernanceTokenId)
         res.ctx = ctx
-        res.value = 3000000L + paideiaDaoConfig[Long]("im.paideia.fees.createdao.erg")
+        res.value = 4000000L + paideiaDaoConfig[Long]("im.paideia.fees.createdao.erg")
         res.tokens = if (paideiaDaoConfig[Long]("im.paideia.fees.createdao.paideia") > 0L) 
             List(
                 new ErgoToken(Env.paideiaTokenId,paideiaDaoConfig("im.paideia.fees.createdao.paideia"))
@@ -59,11 +60,13 @@ class ProtoDAOProxy(contractSignature: PaideiaContractSignature) extends Paideia
     override def constants: HashMap[String,Object] = {
         val cons = new HashMap[String,Object]()
         cons.put("_IM_PAIDEIA_CONTRACTS_PROTODAO",ErgoValue.of(DAOConfigKey("im.paideia.contracts.protodao").hashedKey).getValue())
+        cons.put("_IM_PAIDEIA_CONTRACTS_MINT",ErgoValue.of(DAOConfigKey("im.paideia.contracts.mint").hashedKey).getValue())
         cons.put("_PAIDEIA_DAO_KEY",ErgoId.create(Env.paideiaDaoKey).getBytes())
         cons.put("_EMPTY_CONFIG_DIGEST",ErgoValue.of(DAOConfig()._config.digest.array).getValue())
         cons.put("_IM_PAIDEIA_DAO_NAME",ErgoValue.of(DAOConfigKey("im.paideia.dao.name").hashedKey).getValue())
         cons.put("_IM_PAIDEIA_DAO_GOVERNANCE_TOKEN_ID",ErgoValue.of(DAOConfigKey("im.paideia.dao.tokenid").hashedKey).getValue())
         cons.put("_IM_PAIDEIA_DAO_KEY",ErgoValue.of(DAOConfigKey("im.paideia.dao.key").hashedKey).getValue())
+        cons.put("_DAO_KEY",ErgoValue.of(" DAO Key".getBytes(StandardCharsets.UTF_8)).getValue())
         cons
     }
 }
