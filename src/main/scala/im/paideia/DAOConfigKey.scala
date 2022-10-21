@@ -5,10 +5,12 @@ import scorex.crypto.hash.Blake2b256
 import special.collection.CollOverArray
 import java.nio.charset.StandardCharsets
 import io.getblok.getblok_plasma.ByteConversion
+import org.ergoplatform.appkit.ErgoValue
 
 class DAOConfigKey(_hashedKey: Array[Byte], _originalKey: Option[String] = None) {
     val originalKey: Option[String] = _originalKey
     val hashedKey: Array[Byte] = _hashedKey
+    def ergoValue: ErgoValue[Coll[java.lang.Byte]] = ErgoValue.of(hashedKey)
 }
 
 object DAOConfigKey {
