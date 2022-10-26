@@ -22,10 +22,14 @@ import org.ergoplatform.appkit.impl.InputBoxImpl
 import special.sigma.AvlTree
 import im.paideia.governance.transactions.MintTransaction
 import org.ergoplatform.appkit.Address
+import im.paideia.util.ConfKeys
+import im.paideia.governance.transactions.CreateDAOTransaction
+import im.paideia.DAO
+import special.collection.Coll
 
 class ProtoDAO(contractSignature: PaideiaContractSignature) extends PaideiaContract(contractSignature) {
-    def box(ctx: BlockchainContextImpl, daoConfig: DAOConfig, value: Long = 1000000L): ProtoDAOBox = {
-        val res = new ProtoDAOBox(daoConfig)
+    def box(ctx: BlockchainContextImpl, dao: DAO, value: Long = 1000000L): ProtoDAOBox = {
+        val res = new ProtoDAOBox(dao)
         res.ctx = ctx
         res.value = value
         res.tokens = List(
@@ -41,10 +45,14 @@ class ProtoDAO(contractSignature: PaideiaContractSignature) extends PaideiaContr
                 PaideiaEventResponse.merge(te.tx.getOutputs().asScala.map{(eto: ErgoTransactionOutput) => {
                     if (eto.getErgoTree()==ergoTree.bytesHex) {
                         val iBox = new InputBoxImpl(eto)
-                        val config = Paideia.getConfig(contractSignature.daoKey)
+                        val dao = Paideia.getDAO(new ErgoId(iBox.getRegisters().get(1).getValue().asInstanceOf[Coll[Byte]].toArray).toString())
+                        val config = dao.config
                         if (config._config.ergoAVLTree.digest == iBox.getRegisters().get(0).getValue().asInstanceOf[AvlTree].digest) {
-                            val nextTokenToMint = ProtoDAO.tokensToMint.find((s: String) => config._config.lookUp(DAOConfigKey(s)).response(0).tryOp.get == None)
-                            PaideiaEventResponse(2,List(MintTransaction(te._ctx,iBox,config,nextTokenToMint.get,Address.create(Env.operatorAddress).getErgoAddress()).unsigned()))
+                            val nextTokenToMint = ProtoDAO.tokensToMint.find((s: DAOConfigKey) => config._config.lookUp(s).response(0).tryOp.get == None)
+                            nextTokenToMint match {
+                                case Some(value) => PaideiaEventResponse(2,List(MintTransaction(te._ctx,iBox,dao,value,Address.create(Env.operatorAddress).getErgoAddress()).unsigned()))
+                                case None => PaideiaEventResponse(2,List(CreateDAOTransaction(te._ctx,iBox,dao,Address.create(Env.operatorAddress).getErgoAddress()).unsigned()))
+                            }
                         } else {
                             PaideiaEventResponse(0)
                         }
@@ -61,13 +69,16 @@ class ProtoDAO(contractSignature: PaideiaContractSignature) extends PaideiaContr
 
     override def constants: HashMap[String,Object] = {
         val cons = new HashMap[String,Object]()
-        cons.put("_IM_PAIDEIA_CONTRACTS_PROTODAO",DAOConfigKey("im.paideia.contracts.protodao").ergoValue.getValue())
-        cons.put("_IM_PAIDEIA_CONTRACTS_MINT",DAOConfigKey("im.paideia.contracts.mint").ergoValue.getValue())
+        cons.put("_IM_PAIDEIA_CONTRACTS_PROTODAO",ConfKeys.im_paideia_contracts_protodao.ergoValue.getValue())
+        cons.put("_IM_PAIDEIA_CONTRACTS_MINT",ConfKeys.im_paideia_contracts_mint.ergoValue.getValue())
+        cons.put("_IM_PAIDEIA_CONTRACTS_DAO",ConfKeys.im_paideia_contracts_dao.ergoValue.getValue())
+        cons.put("_IM_PAIDEIA_CONTRACTS_CONFIG",ConfKeys.im_paideia_contracts_config.ergoValue.getValue())
+        cons.put("_IM_PAIDEIA_DAO_KEY",ConfKeys.im_paideia_dao_key.ergoValue.getValue())
         cons.put("_PAIDEIA_DAO_KEY",ErgoId.create(Env.paideiaDaoKey).getBytes())
-        cons.put("_IM_PAIDEIA_DAO_NAME",DAOConfigKey("im.paideia.dao.name").ergoValue.getValue())
-        cons.put("_IM_PAIDEIA_DAO_VOTE_TOKENID",DAOConfigKey("im.paideia.dao.vote.tokenid").ergoValue.getValue())
-        cons.put("_IM_PAIDEIA_DAO_PROPOSAL_TOKENID",DAOConfigKey("im.paideia.dao.proposal.tokenid").ergoValue.getValue())
-        cons.put("_IM_PAIDEIA_DAO_ACTION_TOKENID",DAOConfigKey("im.paideia.dao.action.tokenid").ergoValue.getValue())
+        cons.put("_IM_PAIDEIA_DAO_NAME",ConfKeys.im_paideia_dao_name.ergoValue.getValue())
+        cons.put("_IM_PAIDEIA_DAO_VOTE_TOKENID",ConfKeys.im_paideia_dao_vote_tokenid.ergoValue.getValue())
+        cons.put("_IM_PAIDEIA_DAO_PROPOSAL_TOKENID",ConfKeys.im_paideia_dao_proposal_tokenid.ergoValue.getValue())
+        cons.put("_IM_PAIDEIA_DAO_ACTION_TOKENID",ConfKeys.im_paideia_dao_action_tokenid.ergoValue.getValue())
         cons.put("_VOTE",ErgoValue.of(" Vote".getBytes(StandardCharsets.UTF_8)).getValue())
         cons.put("_PROPOSAL",ErgoValue.of(" Proposal".getBytes(StandardCharsets.UTF_8)).getValue())
         cons.put("_ACTION",ErgoValue.of(" Action".getBytes(StandardCharsets.UTF_8)).getValue())
@@ -79,5 +90,8 @@ object ProtoDAO extends PaideiaActor {
     override def apply(contractSignature: PaideiaContractSignature): ProtoDAO = 
         getContractInstance[ProtoDAO](contractSignature,new ProtoDAO(contractSignature))
 
-    val tokensToMint = List("im.paideia.dao.vote.tokenid","im.paideia.dao.proposal.tokenid","im.paideia.dao.action.tokenid")
+    val tokensToMint = List(
+        ConfKeys.im_paideia_dao_vote_tokenid,
+        ConfKeys.im_paideia_dao_proposal_tokenid,
+        ConfKeys.im_paideia_dao_action_tokenid)
 }

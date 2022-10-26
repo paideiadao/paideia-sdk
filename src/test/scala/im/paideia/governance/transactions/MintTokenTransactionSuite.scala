@@ -25,8 +25,8 @@ class MintTokenTransactionSuite extends PaideiaTestSuite{
                 val config = DAOConfig()
                 config.set("im.paideia.dao.name","Test DAO")
                 Paideia.addDAO(new DAO(daoKey,config))
-                val protoDAOContract = ProtoDAO(PaideiaContractSignature("im.paideia.governance.contracts.ProtoDAO",daoKey=daoKey))
-                val protoDAOBox = ProtoDAO(protoDAOContract.contractSignature).box(ctx,Paideia.getConfig(daoKey),3000000L).ergoTransactionOutput()
+                val protoDAOContract = ProtoDAO(PaideiaContractSignature("im.paideia.governance.contracts.ProtoDAO",daoKey=Env.paideiaDaoKey))
+                val protoDAOBox = ProtoDAO(protoDAOContract.contractSignature).box(ctx,Paideia.getDAO(daoKey),3000000L).ergoTransactionOutput()
                 val dummyTx = (new ErgoTransaction()).addOutputsItem(protoDAOBox)
                 val paideiaRef = Paideia._actorList
                 val eventResponse = Paideia.handleEvent(TransactionEvent(ctx,false,dummyTx))
@@ -47,8 +47,8 @@ class MintTokenTransactionSuite extends PaideiaTestSuite{
                 config.set("im.paideia.dao.name","Test DAO")
                 config.set("im.paideia.dao.vote.tokenid",ErgoId.create(Util.randomKey).getBytes())
                 Paideia.addDAO(new DAO(daoKey,config))
-                val protoDAOContract = ProtoDAO(PaideiaContractSignature("im.paideia.governance.contracts.ProtoDAO",daoKey=daoKey))
-                val protoDAOBox = ProtoDAO(protoDAOContract.contractSignature).box(ctx,Paideia.getConfig(daoKey),3000000L).ergoTransactionOutput()
+                val protoDAOContract = ProtoDAO(PaideiaContractSignature("im.paideia.governance.contracts.ProtoDAO",daoKey=Env.paideiaDaoKey))
+                val protoDAOBox = ProtoDAO(protoDAOContract.contractSignature).box(ctx,Paideia.getDAO(daoKey),3000000L).ergoTransactionOutput()
                 val dummyTx = (new ErgoTransaction()).addOutputsItem(protoDAOBox)
                 val paideiaRef = Paideia._actorList
                 val eventResponse = Paideia.handleEvent(TransactionEvent(ctx,false,dummyTx))

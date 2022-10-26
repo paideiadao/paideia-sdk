@@ -7,11 +7,14 @@ import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.governance.contracts.ProtoDAO
 import im.paideia.DAOConfig
 import org.ergoplatform.appkit.ErgoValue
+import im.paideia.DAO
+import org.ergoplatform.appkit.ErgoId
 
-class ProtoDAOBox(daoConfig: DAOConfig) extends PaideiaBox {
+class ProtoDAOBox(dao: DAO) extends PaideiaBox {
     override def registers: List[ErgoValue[_]] = {
         List(
-            daoConfig._config.ergoValue
+            dao.config._config.ergoValue,
+            ErgoValue.of(ErgoId.create(dao.key).getBytes())
         )
     }
 }

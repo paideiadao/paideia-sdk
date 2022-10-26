@@ -20,6 +20,8 @@ object Paideia {
 
     def addDAO(dao: DAO): Unit = _daoMap.put(dao.key,dao)
 
+    def getDAO(key: String): DAO = _daoMap(key)
+
     def initialize: Unit = {
         val paideiaConfig = DAOConfig()
 

@@ -14,28 +14,52 @@ import sigmastate.AvlTreeFlags
 import io.getblok.getblok_plasma.PlasmaParameters
 import io.getblok.getblok_plasma.ByteConversion
 import shapeless.Lazy
+import scala.reflect.ClassTag
 
 case class DAOConfig(
    val _config: PlasmaMap[DAOConfigKey,Array[Byte]]
 ) {
     def apply[T](key: String): T = {
-        val check = _config.lookUp(DAOConfigKey(key)).response.head.tryOp.get.get
+        apply[T](DAOConfigKey(key))
+    }
+
+    def apply[T](key: DAOConfigKey): T = {
+        val check = _config.lookUp(key).response.head.tryOp.get.get
         val deserialized = DAOConfigValueDeserializer.deserialize(check)
         deserialized.asInstanceOf[T]
     }
+
+    def getArray[T](key: String)(implicit tag: ClassTag[T]): Array[T] = {
+        getArray[T](DAOConfigKey(key))
+    }
+
+    def getArray[T](key: DAOConfigKey)(implicit tag: ClassTag[T]): Array[T] = {
+        apply[Array[Object]](key).map(_.asInstanceOf[T]).toArray
+    }
+
     def set[T](key: String, value: T)(implicit enc: DAOConfigValueSerializer[T]) = _config.insert((DAOConfigKey(key),enc.serialize(value,true).toArray))
+
+    def set[T](key: DAOConfigKey, value: T)(implicit enc: DAOConfigValueSerializer[T]) = _config.insert((key,enc.serialize(value,true).toArray))
 
     def handleExtension(extension: Map[String,String]) = {
         val todo = "update config based on extension"
     }
 
-    def getProof(keys: List[String]): ErgoValue[Coll[java.lang.Byte]] = {
-        val provRes = _config.lookUp(keys.map(DAOConfigKey(_)): _*)
+    def getProof(keys: String*): ErgoValue[Coll[java.lang.Byte]] = {
+        getProof(keys.map(DAOConfigKey(_)):_*)
+    }
+
+    def getProof(keys: DAOConfigKey*)(implicit dummy: DummyImplicit): ErgoValue[Coll[java.lang.Byte]] = {
+        val provRes = _config.lookUp(keys: _*)
         provRes.proof.ergoValue
     }
 
-    def insertProof(operations: List[(String,Array[Byte])]): ErgoValue[Coll[java.lang.Byte]] = {
-        val provRes = _config.insert(operations.map((kv: (String,Array[Byte])) => (DAOConfigKey(kv._1),kv._2)): _*)
+    def insertProof(operations: (String,Array[Byte])*): ErgoValue[Coll[java.lang.Byte]] = {
+        insertProof(operations.map((kv: (String,Array[Byte])) => (DAOConfigKey(kv._1),kv._2)):_*)
+    }
+
+    def insertProof(operations: (DAOConfigKey,Array[Byte])*)(implicit dummy: DummyImplicit): ErgoValue[Coll[java.lang.Byte]] = {
+        val provRes = _config.insert(operations: _*)
         provRes.proof.ergoValue
     }
 }

@@ -17,6 +17,8 @@ import im.paideia.governance.contracts.ProtoDAOProxy
 import im.paideia.common.contracts.Treasury
 import im.paideia.governance.contracts.ProtoDAO
 import im.paideia.governance.contracts.Mint
+import im.paideia.util.ConfKeys
+import im.paideia.governance.contracts.DAOOrigin
 
 class PaideiaTestSuite extends AnyFunSuite with HttpClientTesting {
     
@@ -30,7 +32,7 @@ object PaideiaTestSuite {
             val paideiaConfig = DAOConfig()
             paideiaConfig.set("im.paideia.fees.createdao.erg",1000000000L)
             paideiaConfig.set("im.paideia.fees.createdao.paideia",100L)
-            paideiaConfig.set("im.paideia.dao.key",ErgoId.create(Env.paideiaDaoKey).getBytes())
+            paideiaConfig.set(ConfKeys.im_paideia_dao_key,ErgoId.create(Env.paideiaDaoKey).getBytes())
             Paideia.addDAO(DAO(Env.paideiaDaoKey,paideiaConfig))
             val configContract = Config(PaideiaContractSignature("im.paideia.common.contracts.Config",daoKey = Env.paideiaDaoKey))
             val paideiaOriginContract = PaideiaOrigin(PaideiaContractSignature("im.paideia.governance.contracts.PaideiaOrigin",daoKey = Env.paideiaDaoKey))
@@ -38,17 +40,20 @@ object PaideiaTestSuite {
             val treasuryContract = Treasury(PaideiaContractSignature("im.paideia.common.contracts.Treasury",daoKey = Env.paideiaDaoKey))
             val protoDAOContract = ProtoDAO(PaideiaContractSignature("im.paideia.governance.contracts.ProtoDAO",daoKey = Env.paideiaDaoKey))
             val mintContract = Mint(PaideiaContractSignature("im.paideia.governance.contracts.Mint",daoKey = Env.paideiaDaoKey))
-            paideiaConfig.set("im.paideia.contracts.treasury",treasuryContract.contractSignature)
-            paideiaConfig.set("im.paideia.contracts.protodao",protoDAOContract.contractSignature)
-            paideiaConfig.set("im.paideia.contracts.protodaoproxy",protoDaoProxyContract.contractSignature)
-            paideiaConfig.set("im.paideia.contracts.mint",mintContract.contractSignature)
+            val daoContract = DAOOrigin(PaideiaContractSignature("im.paideia.governance.contracts.DAOOrigin",daoKey = Env.paideiaDaoKey))
+            paideiaConfig.set(ConfKeys.im_paideia_contracts_treasury,treasuryContract.contractSignature)
+            paideiaConfig.set(ConfKeys.im_paideia_contracts_protodao,protoDAOContract.contractSignature)
+            paideiaConfig.set(ConfKeys.im_paideia_contracts_protodaoproxy,protoDaoProxyContract.contractSignature)
+            paideiaConfig.set(ConfKeys.im_paideia_contracts_mint,mintContract.contractSignature)
+            paideiaConfig.set(ConfKeys.im_paideia_contracts_config,configContract.contractSignature)
+            paideiaConfig.set(ConfKeys.im_paideia_contracts_dao,daoContract.contractSignature)
             Paideia.instantiateActor(configContract.contractSignature)
             Paideia.instantiateActor(treasuryContract.contractSignature)
             Paideia.instantiateActor(paideiaOriginContract.contractSignature)
             Paideia.instantiateActor(protoDAOContract.contractSignature)
             Paideia.instantiateActor(protoDaoProxyContract.contractSignature)
             Paideia.instantiateActor(mintContract.contractSignature)
-            configContract.newBox(configContract.box(ctx,paideiaConfig).inputBox(),false)
+            configContract.newBox(configContract.box(ctx,Paideia.getDAO(Env.paideiaDaoKey)).inputBox(),false)
             paideiaOriginContract.newBox(paideiaOriginContract.box(ctx,paideiaConfig,1000000L).inputBox(),false)
             initializedPaideia = true
         }

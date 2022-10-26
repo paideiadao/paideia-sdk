@@ -5,6 +5,10 @@ import im.paideia.common.contracts.PaideiaContractSignature
 import im.paideia.common.contracts.PaideiaActor
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.governance.boxes.MintBox
+import java.util.HashMap
+import im.paideia.util.ConfKeys
+import im.paideia.util.Env
+import org.ergoplatform.appkit.ErgoId
 
 class Mint(contractSignature: PaideiaContractSignature) extends PaideiaContract(contractSignature) {
     def box(ctx: BlockchainContextImpl,tokenId: String, mintAmount: Long, tokenName: String, tokenDescription: String, tokenDecimals: Int): MintBox = {
@@ -13,6 +17,14 @@ class Mint(contractSignature: PaideiaContractSignature) extends PaideiaContract(
         res.value = 1000000L
         res.contract = contract
         res
+    }
+
+    override def constants: HashMap[String,Object] = {
+        val cons = new HashMap[String,Object]()
+        cons.put("_IM_PAIDEIA_CONTRACTS_PROTODAO",ConfKeys.im_paideia_contracts_protodao.ergoValue.getValue())
+        cons.put("_IM_PAIDEIA_CONTRACTS_DAO",ConfKeys.im_paideia_contracts_dao.ergoValue.getValue())
+        cons.put("_PAIDEIA_DAO_KEY",ErgoId.create(Env.paideiaDaoKey).getBytes())
+        cons
     }
 }
 
