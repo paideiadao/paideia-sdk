@@ -15,11 +15,12 @@ class FilterLeaf[T: Ordering](
             case CompareField.REGISTER => box.getRegisters().get(listIndex)
             case CompareField.VALUE => box.getValue()
         }).asInstanceOf[T]
-        filterType match {
+        val res = filterType match {
             case FilterType.FTEQ => compareFieldValue == compareValue
             case FilterType.FTGT => gt(compareFieldValue,compareValue)
             case FilterType.FTLT => lt(compareFieldValue,compareValue)
         }
+        res
     }
 
     def gt(v1: T, v2: T)(implicit ev: T => Ordered[T]): Boolean = v1 > v2

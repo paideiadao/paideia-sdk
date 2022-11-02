@@ -15,6 +15,9 @@ import org.ergoplatform.appkit.ContextVar
 import org.ergoplatform.appkit.ErgoValue
 import org.ergoplatform.appkit.ErgoType
 import im.paideia.DAOConfig
+import im.paideia.Paideia
+import scala.collection.mutable.HashMap
+import im.paideia.util.ConfKeys
 
 class TotalStakingState(
     val daoConfig: DAOConfig,
@@ -25,7 +28,7 @@ class TotalStakingState(
 ) {
 
     def stake(stakingKey: String, amount: Long): List[ContextVar] = {
-        val stakeRecord = StakeRecord(amount,List.fill(daoConfig[Array[Array[Byte]]]("im.paideia.staking.profitTokens").size+1)(0L))
+        val stakeRecord = StakeRecord(amount,List.fill(daoConfig.getArray[Array[Byte]](ConfKeys.im_paideia_staking_profit_tokenids).size+1)(0L))
         StakingContextVars.stake(stakingKey,stakeRecord,currentStakingState.stake(stakingKey,stakeRecord)).contextVars
     }
 
@@ -107,18 +110,25 @@ class TotalStakingState(
 }
 
 object TotalStakingState {
-    def apply(daoConfig: DAOConfig, nextEmission: Long): TotalStakingState = {
+    val _stakingStates: HashMap[String,TotalStakingState] = HashMap[String,TotalStakingState]()
+
+    def apply(daoKey: String, nextEmission: Long): TotalStakingState = {
             /* daoConfig("im.paideia.staking.nftId"),
             daoConfig("im.paideia.staking.stakedTokenId"),
             daoConfig("im.paideia.staking.emissionAmount"),
             daoConfig("im.paideia.staking.emissionDelay"),
             daoConfig("im.paideia.staking.cycleLength"),
             daoConfig("im.paideia.staking.profitTokens") */
+        val daoConfig = Paideia.getConfig(daoKey)
         val currentState = StakingState()
-        val profitTokensSize = daoConfig[Array[Array[Byte]]]("im.paideia.staking.profitTokens").size
+        val profitTokensSize = daoConfig.getArray[Array[Byte]](ConfKeys.im_paideia_staking_profit_tokenids).size
         val snapshots = Queue[(Long,StakingState,List[Long])](
-            Range(0,daoConfig[Int]("im.paideia.staking.emissionDelay")).map((_) => (0L,currentState.clone(),List.fill(profitTokensSize+2)(0L))): _*
+            Range(0,daoConfig[Long](ConfKeys.im_paideia_staking_emission_delay).toInt).map((_) => (0L,currentState.clone(),List.fill(profitTokensSize+2)(0L))): _*
         )
-        new TotalStakingState(daoConfig,currentState,snapshots,Array.fill(profitTokensSize+2)(0L),nextEmission: Long)
+        val newState = new TotalStakingState(daoConfig,currentState,snapshots,Array.fill(profitTokensSize+2)(0L),nextEmission: Long)
+        _stakingStates.put(daoKey,newState)
+        newState
     }
+
+    def apply(daoKey: String): TotalStakingState = _stakingStates(daoKey)
 }

@@ -37,11 +37,13 @@ object Paideia {
     def getActor[T <: PaideiaActor](className: String): PaideiaActor = _actorList(className).asInstanceOf[T]
 
     def instantiateActor(contractSignature: PaideiaContractSignature) = {
-        val m = ru.runtimeMirror(getClass.getClassLoader)
-        val inst = m.reflectModule(m.staticModule(contractSignature.className)).instance
-        inst match {
-            case pa: PaideiaActor => _actorList.put(contractSignature.className,pa)
-        } 
+        if (!_actorList.contains(contractSignature.className)) {
+            val m = ru.runtimeMirror(getClass.getClassLoader)
+            val inst = m.reflectModule(m.staticModule(contractSignature.className)).instance
+            inst match {
+                case pa: PaideiaActor => _actorList.put(contractSignature.className,pa)
+            } 
+        }
     }
 
     def getBox(boxFilter: FilterNode): List[InputBox] = {

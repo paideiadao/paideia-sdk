@@ -12,6 +12,7 @@ import im.paideia.staking._
 import im.paideia.staking.boxes._
 import im.paideia.DAOConfig
 import im.paideia.staking.contracts.PlasmaStaking
+import im.paideia.DAO
 
 class EmitTransaction extends PaideiaTransaction
 
@@ -23,14 +24,14 @@ object EmitTransaction {
         userInput: InputBox, 
         state: TotalStakingState, 
         changeAddress: ErgoAddress,
-        daoConfig: DAOConfig,
+        dao: DAO,
         stakingContract: PlasmaStaking): EmitTransaction = 
     {
         if (stakeStateInput.getRegisters().get(0).getValue.asInstanceOf[AvlTree].digest != state.currentStakingState.plasmaMap.ergoAVLTree.digest) throw new Exception("State not synced correctly")
         
         val contextVars = state.emit(ctx.createPreHeader().build().getTimestamp(),stakeStateInput.getTokens().get(1).getValue()-state.currentStakingState.totalStaked)
 
-        val stakeStateOutput = stakingContract.box(ctx,daoConfig,state,stakeStateInput.getTokens().get(1).getValue())
+        val stakeStateOutput = stakingContract.box(ctx,dao.config,state,stakeStateInput.getTokens().get(1).getValue())
 
         val res = new EmitTransaction()
         res.ctx = ctx

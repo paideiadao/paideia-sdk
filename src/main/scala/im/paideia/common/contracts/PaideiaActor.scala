@@ -6,15 +6,17 @@ import im.paideia.common.PaideiaEventResponse
 import scala.collection.mutable.HashMap
 import im.paideia.common.filtering.FilterNode
 import org.ergoplatform.appkit.InputBox
+import im.paideia.Paideia
 
 trait PaideiaActor {
-    val contractInstances: HashMap[PaideiaContractSignature,PaideiaContract] = HashMap[PaideiaContractSignature,PaideiaContract]()
+    val contractInstances: HashMap[List[Byte],PaideiaContract] = HashMap[List[Byte],PaideiaContract]()
     
     def apply(contractSignature: PaideiaContractSignature): PaideiaContract = ???
 
     def getContractInstance[T <: PaideiaContract](contractSignature: PaideiaContractSignature, default: T): T = {
-        val contractInstance = contractInstances.getOrElse(default.contractSignature,default).asInstanceOf[T]
-        contractInstances(default.contractSignature) = contractInstance
+        val contractInstance = contractInstances.getOrElse(default.contractSignature.contractHash,default).asInstanceOf[T]
+        contractInstances(contractInstance.contractSignature.contractHash) = contractInstance
+        Paideia.instantiateActor(contractInstance.contractSignature)
         contractInstance
     }
 

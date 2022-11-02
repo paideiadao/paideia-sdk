@@ -13,6 +13,7 @@ import im.paideia.common.TransactionEvent
 import im.paideia.DAOConfig
 import im.paideia.DAO
 import org.ergoplatform.appkit.ErgoId
+import im.paideia.util.ConfKeys
 
 class MintTokenTransactionSuite extends PaideiaTestSuite{
     test("Mint first") {
@@ -23,12 +24,11 @@ class MintTokenTransactionSuite extends PaideiaTestSuite{
                 PaideiaTestSuite.init(ctx)
                 val daoKey = Util.randomKey
                 val config = DAOConfig()
-                config.set("im.paideia.dao.name","Test DAO")
+                config.set(ConfKeys.im_paideia_dao_name,"Test DAO")
                 Paideia.addDAO(new DAO(daoKey,config))
-                val protoDAOContract = ProtoDAO(PaideiaContractSignature("im.paideia.governance.contracts.ProtoDAO",daoKey=Env.paideiaDaoKey))
-                val protoDAOBox = ProtoDAO(protoDAOContract.contractSignature).box(ctx,Paideia.getDAO(daoKey),3000000L).ergoTransactionOutput()
+                val protoDAOContract = ProtoDAO(PaideiaContractSignature(daoKey=Env.paideiaDaoKey))
+                val protoDAOBox = protoDAOContract.box(ctx,Paideia.getDAO(daoKey),3000000L).ergoTransactionOutput()
                 val dummyTx = (new ErgoTransaction()).addOutputsItem(protoDAOBox)
-                val paideiaRef = Paideia._actorList
                 val eventResponse = Paideia.handleEvent(TransactionEvent(ctx,false,dummyTx))
                 assert(eventResponse.unsignedTransactions.size===1)
                 ctx.newProverBuilder().build().sign(eventResponse.unsignedTransactions(0))
@@ -44,13 +44,12 @@ class MintTokenTransactionSuite extends PaideiaTestSuite{
                 PaideiaTestSuite.init(ctx)
                 val daoKey = Util.randomKey
                 val config = DAOConfig()
-                config.set("im.paideia.dao.name","Test DAO")
-                config.set("im.paideia.dao.vote.tokenid",ErgoId.create(Util.randomKey).getBytes())
+                config.set(ConfKeys.im_paideia_dao_name,"Test DAO")
+                config.set(ConfKeys.im_paideia_dao_vote_tokenid,ErgoId.create(Util.randomKey).getBytes())
                 Paideia.addDAO(new DAO(daoKey,config))
-                val protoDAOContract = ProtoDAO(PaideiaContractSignature("im.paideia.governance.contracts.ProtoDAO",daoKey=Env.paideiaDaoKey))
-                val protoDAOBox = ProtoDAO(protoDAOContract.contractSignature).box(ctx,Paideia.getDAO(daoKey),3000000L).ergoTransactionOutput()
+                val protoDAOContract = ProtoDAO(PaideiaContractSignature(daoKey=Env.paideiaDaoKey))
+                val protoDAOBox = protoDAOContract.box(ctx,Paideia.getDAO(daoKey),3000000L).ergoTransactionOutput()
                 val dummyTx = (new ErgoTransaction()).addOutputsItem(protoDAOBox)
-                val paideiaRef = Paideia._actorList
                 val eventResponse = Paideia.handleEvent(TransactionEvent(ctx,false,dummyTx))
                 assert(eventResponse.unsignedTransactions.size===1)
                 ctx.newProverBuilder().build().sign(eventResponse.unsignedTransactions(0))

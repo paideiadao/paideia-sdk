@@ -84,11 +84,9 @@ object StakingContextVars {
             ErgoValue.of(StakeRecord.stakeRecordConversion.convertToBytes(kv._2))
             ).getValue).toArray,ErgoType.pairType(ErgoType.collType(ErgoType.byteType()),ErgoType.collType(ErgoType.byteType())))
         new StakingContextVars(List[ContextVar](
-            new ContextVar(0.toByte,CHANGE_STAKE),
-            new ContextVar(1.toByte,operations),
-            new ContextVar(2.toByte,proof.proof.ergoValue),
-            new ContextVar(3.toByte,ErgoValue.of(Array[Byte]())),
-            new ContextVar(4.toByte,ErgoValue.of(Array[Byte]()))
+            new ContextVar(1.toByte,CHANGE_STAKE),
+            new ContextVar(2.toByte,operations),
+            new ContextVar(3.toByte,proof.proof.ergoValue)
         ))
     }
 

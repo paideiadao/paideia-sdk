@@ -94,9 +94,9 @@ object DAOConfigValueSerializer {
 
     implicit lazy val paideiaContractSignatureSerializer: DAOConfigValueSerializer[PaideiaContractSignature] = {
         instance(DAOConfigValue.contractSignatureTypeCode,(pcs: PaideiaContractSignature, includeType: Boolean) => {
-                val className = pcs.className.getBytes(StandardCharsets.UTF_8)
+                val className = DAOConfigValueSerializer(pcs.className,false)
                 val networkType = pcs.networkType.networkPrefix
-                val version = pcs.version.getBytes(StandardCharsets.UTF_8)
+                val version = DAOConfigValueSerializer(pcs.version,false)
                 val data = pcs.contractHash.toArray++className++version++Array(networkType)
                 if (includeType) Array(DAOConfigValue.contractSignatureTypeCode)++data
                 else data
@@ -145,6 +145,7 @@ class DAOConfigValueDeserializer(ba: Array[Byte]) {
             case DAOConfigValue.bigIntTypeCode => readBigInt
             case DAOConfigValue.booleanTypeCode => readBoolean
             case DAOConfigValue.stringTypeCode => readString
+            case DAOConfigValue.contractSignatureTypeCode => readPaideiaContractSignature
             case DAOConfigValue.collTypeCode => readColl
             case DAOConfigValue.tupleTypeCode => readTuple
             case _ => throw new Exception("Unknown type code: " + tpe.toString)
