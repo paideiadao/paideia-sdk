@@ -12,4 +12,5 @@ object Env {
     def paideiaDaoKey: String = conf.getString("paideiaDaoKey")
     def paideiaOriginNFT: String = conf.getString("paideiaOriginNFT")
     def operatorAddress: String = conf.getString("operatorAddress")
+    def compoundBatchSize: Int = conf.getInt("compoundBatchSize")
 }

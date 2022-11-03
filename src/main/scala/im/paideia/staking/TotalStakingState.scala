@@ -60,7 +60,7 @@ class TotalStakingState(
     }
 
     def compound(batchSize: Int): List[ContextVar] = {
-        if (this.snapshots.size < daoConfig[Int]("im.paideia.staking.emissionDelay")) throw new Exception("Not enough snapshots gathered yet")
+        if (this.snapshots.size < daoConfig[Long](ConfKeys.im_paideia_staking_emission_delay)) throw new Exception("Not enough snapshots gathered yet")
         val snapshot = this.snapshots.front
         val keys = snapshot._2.getKeys(0,batchSize)
         if (keys.size <= 0) throw new Exception("No keys found to compound")

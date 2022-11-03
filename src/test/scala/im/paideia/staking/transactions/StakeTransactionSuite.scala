@@ -65,21 +65,6 @@ class StakeTransactionSuite extends PaideiaTestSuite {
                 ctx.newProverBuilder().build().sign(eventResponse.unsignedTransactions(0))
             }
         })
-        // val stakingConfig = StakingConfig.test
-        // val daoConfig = DAOConfig.test
-        // val state = TotalStakingState(stakingConfig, 0L)
-        // val dummyAddress = Address.create("4MQyML64GnzMxZgm")
-        // val ergoClient = createMockedErgoClient(MockData(Nil,Nil))
-        // ergoClient.execute(new java.util.function.Function[BlockchainContext,Unit] {
-        //     override def apply(_ctx: BlockchainContext): Unit = {
-        //         val ctx = _ctx.asInstanceOf[BlockchainContextImpl]
-        //         val stakeStateInput = StakeStateBox(ctx,state,100000000L,daoConfig).inputBox()
-        //         val stakingConfigInput = StakingConfigBox(ctx,stakingConfig,daoConfig).inputBox()
-        //         val proxyInput = ProxyStakeBox(ctx,stakingConfig,daoConfig,stakeAmount=1000L,stakeKeyTarget=dummyAddress).inputBox()
-        //         val stakeTransaction = StakeTransaction(ctx,stakeStateInput,stakingConfigInput,proxyInput,1000L,state,dummyAddress.getErgoAddress(),daoConfig)
-        //         ctx.newProverBuilder().build().sign(stakeTransaction.unsigned())
-        //     }
-        // })
     }
 
     test("Fail stake tx on empty state with stake key address switched out") {
