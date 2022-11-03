@@ -306,9 +306,9 @@
         validOutput,
         validStake,
         validChangeStake,
-        // validUnstake,
-        // validSnapshot,
-        // validCompound,
-        // validProfitShare
+        validUnstake,
+        validSnapshot,
+        validCompound,
+        validProfitShare
     )))
 }

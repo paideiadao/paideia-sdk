@@ -34,7 +34,7 @@ class StakeTransactionSuite extends PaideiaTestSuite {
                 val ctx = _ctx.asInstanceOf[BlockchainContextImpl]
                 PaideiaTestSuite.init(ctx)
                 val dao = StakingTest.testDAO
-                val state = TotalStakingState(dao.key)
+                val state = TotalStakingState(dao.key,0L)
 
                 val dummyAddress = Address.create("4MQyML64GnzMxZgm")
 
