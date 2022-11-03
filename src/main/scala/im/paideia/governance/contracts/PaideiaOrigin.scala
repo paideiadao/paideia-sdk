@@ -26,7 +26,7 @@ class PaideiaOrigin(contractSignature: PaideiaContractSignature) extends Paideia
         res
     }
 
-    override def constants: HashMap[String,Object] = {
+    override lazy val constants: HashMap[String,Object] = {
         val cons = new HashMap[String,Object]()
         val paideiaRef = Paideia._daoMap
         cons.put("_IM_PAIDEIA_FEES_CREATEDAO_ERG",ErgoValue.of(DAOConfigKey("im.paideia.fees.createdao.erg").hashedKey).getValue())

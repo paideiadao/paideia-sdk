@@ -35,21 +35,28 @@ class PaideiaContract(_contractSignature: PaideiaContractSignature) {
 
     val boxes: HashMap[String,InputBox] = HashMap[String,InputBox]()
 
-    def ergoScript: String = Source.fromResource("ergoscript/" + getClass.getSimpleName + "/" + _contractSignature.version + "/" + getClass.getSimpleName + ".es").mkString
-    def ergoTree: Values.ErgoTree = {
+    lazy val ergoScript: String = Source.fromResource("ergoscript/" + getClass.getSimpleName + "/" + _contractSignature.version + "/" + getClass.getSimpleName + ".es").mkString
+    lazy val ergoTree: Values.ErgoTree = {
         JavaHelpers.compile(constants,ergoScript,_contractSignature.networkType.networkPrefix)
     }
-    def contract: ErgoContract = new ErgoTreeContract(ergoTree, _contractSignature.networkType)
+    lazy val contract: ErgoContract = new ErgoTreeContract(ergoTree, _contractSignature.networkType)
 
-    def constants: java.util.HashMap[String,Object] = new java.util.HashMap[String,Object]()
+    lazy val constants: java.util.HashMap[String,Object] = new java.util.HashMap[String,Object]()
 
-    def contractSignature: PaideiaContractSignature = PaideiaContractSignature(
+    lazy val contractSignature: PaideiaContractSignature = PaideiaContractSignature(
         getClass().getCanonicalName(),
         _contractSignature.version,
         _contractSignature.networkType,
         Blake2b256(ergoTree.bytes).array.toList,
         _contractSignature.daoKey
     )
+
+    def clearBoxes() = {
+        utxos.clear()
+        mutxos.clear()
+        mspent.clear()
+        boxes.clear()
+    }
 
     def spendBox(boxId: String, mempool: Boolean): Boolean = {
         if (mempool) {

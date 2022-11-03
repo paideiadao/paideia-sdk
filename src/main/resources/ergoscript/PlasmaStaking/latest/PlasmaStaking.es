@@ -93,31 +93,31 @@
 
     val validChangeStake = {
         if (transactionType == CHANGE_STAKE) {
-        val stakeOperations  = getVar[Coll[(Coll[Byte], Coll[Byte])]](2).get
-        val proof   = getVar[Coll[Byte]](3).get
+            val stakeOperations  = getVar[Coll[(Coll[Byte], Coll[Byte])]](2).get
+            val proof   = getVar[Coll[Byte]](3).get
 
-        val userOutput = OUTPUTS(1)
+            val userOutput = OUTPUTS(1)
 
-        val keyInOutput = userOutput.tokens.getOrElse(0,OUTPUTS(0).tokens(0))._1 == stakeOperations(0)._1
+            val keyInOutput = userOutput.tokens.getOrElse(0,OUTPUTS(0).tokens(0))._1 == stakeOperations(0)._1
 
-        val newStakeAmount = byteArrayToLong(stakeOperations(0)._2.slice(0,8))
+            val newStakeAmount = byteArrayToLong(stakeOperations(0)._2.slice(0,8))
 
-        val currentStakeState = stakeState.get(stakeOperations(0)._1, proof).get
+            val currentStakeState = stakeState.get(stakeOperations(0)._1, proof).get
 
-        val currentStakeAmount = byteArrayToLong(currentStakeState.slice(0,8))
+            val currentStakeAmount = byteArrayToLong(currentStakeState.slice(0,8))
 
-        val tokensStaked = newStakeAmount - currentStakeAmount == (plasmaStakingOutput.tokens(1)._2 - SELF.tokens(1)._2) && newStakeAmount - currentStakeAmount == plasmaStakingOutput.R5[Coll[Long]].get(2) - totalStaked
+            val tokensStaked = newStakeAmount - currentStakeAmount == (plasmaStakingOutput.tokens(1)._2 - SELF.tokens(1)._2) && newStakeAmount - currentStakeAmount == plasmaStakingOutput.R5[Coll[Long]].get(2) - totalStaked
 
-        val singleStakeOp = stakeOperations.size == 1
+            val singleStakeOp = stakeOperations.size == 1
 
-        val correctNewState = stakeState.update(stakeOperations, proof).get.digest == plasmaStakingOutput.R4[AvlTree].get.digest
-        
-        allOf(Coll(
-            keyInOutput,
-            tokensStaked,
-            singleStakeOp,
-            correctNewState
-        ))
+            val correctNewState = stakeState.update(stakeOperations, proof).get.digest == plasmaStakingOutput.R4[AvlTree].get.digest
+            
+            allOf(Coll(
+                keyInOutput,
+                tokensStaked,
+                singleStakeOp,
+                correctNewState
+            ))
         } else {
             true
         }
@@ -162,10 +162,10 @@
             val newSnapshotsProfit = plasmaStakingOutput.R8[Coll[Coll[Long]]].get
 
             val correctNewSnapshot = allOf(Coll(
-            newSnapshotsStaked(newSnapshotsStaked.size-1) == totalStaked,
-            newSnapshotsTrees(newSnapshotsTrees.size-1).digest == stakeState.digest,
-            newSnapshotsProfit(newSnapshotsProfit.size-1).slice(1,profit.size).indices.forall{(i: Int) => newSnapshotsProfit(newSnapshotsProfit.size-1)(i+1) == profit(i+1)},
-            newSnapshotsProfit(newSnapshotsProfit.size-1)(0) == profit(0) + min(emissionAmount,SELF.tokens(1)._2-totalStaked-profit(0))
+                newSnapshotsStaked(newSnapshotsStaked.size-1) == totalStaked,
+                newSnapshotsTrees(newSnapshotsTrees.size-1).digest == stakeState.digest,
+                newSnapshotsProfit(newSnapshotsProfit.size-1).slice(1,profit.size).indices.forall{(i: Int) => newSnapshotsProfit(newSnapshotsProfit.size-1)(i+1) == profit(i+1)},
+                newSnapshotsProfit(newSnapshotsProfit.size-1)(0) == profit(0) + min(emissionAmount,SELF.tokens(1)._2-totalStaked-profit(0))
             ))
             
             val correctHistoryShift = allOf(Coll( 
@@ -306,9 +306,9 @@
         validOutput,
         validStake,
         validChangeStake,
-        validUnstake,
-        validSnapshot,
-        validCompound,
-        validProfitShare
+        // validUnstake,
+        // validSnapshot,
+        // validCompound,
+        // validProfitShare
     )))
 }

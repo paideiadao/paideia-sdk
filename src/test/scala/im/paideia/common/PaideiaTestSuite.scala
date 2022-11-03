@@ -19,6 +19,7 @@ import im.paideia.governance.contracts.ProtoDAO
 import im.paideia.governance.contracts.Mint
 import im.paideia.util.ConfKeys
 import im.paideia.governance.contracts.DAOOrigin
+import im.paideia.common.contracts.OperatorIncentive
 
 class PaideiaTestSuite extends AnyFunSuite with HttpClientTesting {
     
@@ -41,15 +42,17 @@ object PaideiaTestSuite {
             val protoDAOContract = ProtoDAO(PaideiaContractSignature(daoKey = Env.paideiaDaoKey))
             val mintContract = Mint(PaideiaContractSignature(daoKey = Env.paideiaDaoKey))
             val daoContract = DAOOrigin(PaideiaContractSignature(daoKey = Env.paideiaDaoKey))
+            val operatorIncentiveContract = OperatorIncentive(PaideiaContractSignature(daoKey = Env.paideiaDaoKey))
             paideiaConfig.set(ConfKeys.im_paideia_contracts_treasury,treasuryContract.contractSignature)
             paideiaConfig.set(ConfKeys.im_paideia_contracts_protodao,protoDAOContract.contractSignature)
             paideiaConfig.set(ConfKeys.im_paideia_contracts_protodaoproxy,protoDaoProxyContract.contractSignature)
             paideiaConfig.set(ConfKeys.im_paideia_contracts_mint,mintContract.contractSignature)
             paideiaConfig.set(ConfKeys.im_paideia_contracts_config,configContract.contractSignature)
             paideiaConfig.set(ConfKeys.im_paideia_contracts_dao,daoContract.contractSignature)
-
+            paideiaConfig.set(ConfKeys.im_paideia_contracts_operatorincentive,operatorIncentiveContract.contractSignature)
             configContract.newBox(configContract.box(ctx,Paideia.getDAO(Env.paideiaDaoKey)).inputBox(),false)
             paideiaOriginContract.newBox(paideiaOriginContract.box(ctx,paideiaConfig,1000000L).inputBox(),false)
+            operatorIncentiveContract.newBox(operatorIncentiveContract.box(ctx,100000000000L,1000000000L).inputBox(),false)
             initializedPaideia = true
         }
     }

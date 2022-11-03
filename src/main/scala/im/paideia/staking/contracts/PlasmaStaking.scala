@@ -13,6 +13,13 @@ import java.util.HashMap
 import org.ergoplatform.appkit.ErgoId
 import im.paideia.util.ConfKeys
 import im.paideia.DAO
+import im.paideia.common.PaideiaEventResponse
+import im.paideia.common.PaideiaEvent
+import im.paideia.common.TransactionEvent
+import im.paideia.common.BlockEvent
+import im.paideia.staking.transactions.EmitTransaction
+import org.ergoplatform.appkit.Address
+import im.paideia.util.Env
 
 class PlasmaStaking(contractSig: PaideiaContractSignature) extends PaideiaContract(contractSig) {
     def box(ctx: BlockchainContextImpl, daoConfig: DAOConfig, state: TotalStakingState, stakedTokenTotal: Long, value: Long = 1000000, extraTokens: List[ErgoToken] = List[ErgoToken]()): StakeStateBox = {
@@ -27,7 +34,40 @@ class PlasmaStaking(contractSig: PaideiaContractSignature) extends PaideiaContra
         res
     }
 
-    override def constants: HashMap[String,Object] = {
+    override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
+        val response: PaideiaEventResponse = event match {
+            case te: TransactionEvent => {
+                // PaideiaEventResponse.merge(te.tx.getOutputs().asScala.map{(eto: ErgoTransactionOutput) => {
+                //     val etotree = eto.getErgoTree()
+                //     val ergotree = ergoTree.bytesHex
+                //     if (eto.getErgoTree()==ergoTree.bytesHex) {
+                //         PaideiaEventResponse(1,List(AddStakeTransaction(
+                //             event.ctx,
+                //             new InputBoxImpl(eto),
+                //             Address.create(Env.operatorAddress).getErgoAddress,
+                //             contractSignature.daoKey).unsigned))
+                //     } else {
+                //         PaideiaEventResponse(0)
+                //     }
+                // }}.toList)
+                PaideiaEventResponse(0)
+            }
+            case be: BlockEvent => {
+                if (be.block.getHeader().getTimestamp()>TotalStakingState(contractSignature.daoKey).nextEmission) {
+                    PaideiaEventResponse(1,List(
+                        EmitTransaction(be._ctx,Address.create(Env.operatorAddress).getErgoAddress,contractSignature.daoKey).unsigned()
+                    ))
+                } else {
+                    PaideiaEventResponse(0)
+                }
+            }
+            case _ => PaideiaEventResponse(0)
+        }
+        val superResponse = super.handleEvent(event)
+        response
+    }
+
+    override lazy val constants: HashMap[String,Object] = {
         val cons = new HashMap[String,Object]()
         cons.put("_IM_PAIDEIA_DAO_KEY",ErgoId.create(contractSig.daoKey).getBytes())
         cons.put("_IM_PAIDEIA_STAKING_EMISSION_AMOUNT",ConfKeys.im_paideia_staking_emission_amount.ergoValue.getValue())

@@ -57,7 +57,7 @@ class ProtoDAOProxy(contractSignature: PaideiaContractSignature) extends Paideia
         response
     }
 
-    override def constants: HashMap[String,Object] = {
+    override lazy val constants: HashMap[String,Object] = {
         val cons = new HashMap[String,Object]()
         cons.put("_IM_PAIDEIA_CONTRACTS_PROTODAO",ErgoValue.of(DAOConfigKey("im.paideia.contracts.protodao").hashedKey).getValue())
         cons.put("_IM_PAIDEIA_CONTRACTS_MINT",ErgoValue.of(DAOConfigKey("im.paideia.contracts.mint").hashedKey).getValue())

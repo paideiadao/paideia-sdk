@@ -16,7 +16,6 @@ import org.ergoplatform.appkit.impl.ErgoTreeContract
 import org.ergoplatform.appkit.ContextVar
 import im.paideia.staking.contracts.PlasmaStaking
 import org.ergoplatform.appkit.ErgoToken
-import im.paideia.common.contracts.DAOControlled
 import im.paideia.DAOConfig
 import org.ergoplatform.appkit.ErgoId
 import sigmastate.utils.Helpers

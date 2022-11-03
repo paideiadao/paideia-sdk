@@ -86,15 +86,15 @@ class TotalStakingState(
 
     def emit(currentTime: Long, tokensInPool: Long): List[ContextVar] = {
         if (currentTime<nextEmission) throw new Exception("Not time for new emission yet")
-        if (snapshots.size >= daoConfig[Int]("im.paideia.staking.emissionDelay"))
+        if (snapshots.size >= daoConfig[Long](ConfKeys.im_paideia_staking_emission_delay))
             if (snapshots.front._2.size()>0)
                 throw new Exception("Not done compounding")
             else
                 snapshots.dequeue()
-        nextEmission += daoConfig[Long]("im.paideia.staking.cycleLength")
-        profit(0) += Math.min(daoConfig[Long]("im.paideia.staking.emissionAmount"),tokensInPool-profit(0))
+        nextEmission += daoConfig[Long](ConfKeys.im_paideia_staking_cyclelength)
+        profit(0) += Math.min(daoConfig[Long](ConfKeys.im_paideia_staking_emission_amount),tokensInPool-profit(0))
         this.snapshots.enqueue((this.currentStakingState.totalStaked,this.currentStakingState.clone(),List(profit:_*)))
-        profit = Array.fill(daoConfig[Array[Array[Byte]]]("im.paideia.staking.profitTokens").size+2)(0L)
+        profit = Array.fill(daoConfig.getArray[Array[Byte]](ConfKeys.im_paideia_staking_profit_tokenids).size+2)(0L)
         StakingContextVars.emit.contextVars
     }
 

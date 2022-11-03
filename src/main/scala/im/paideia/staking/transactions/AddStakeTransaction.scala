@@ -39,14 +39,6 @@ case class AddStakeTransaction(
     val config = Paideia.getConfig(daoKey)
     
     val state = TotalStakingState(daoKey)
-    val staketest = state.currentStakingState.plasmaMap.ergoValue
-
-    val test0 = Paideia.getBox(new FilterLeaf[String](
-        FilterType.FTEQ,
-        new ErgoId(config.getArray[Byte](ConfKeys.im_paideia_staking_state_tokenid)).toString(),
-        CompareField.ASSET,
-        0
-    ))
 
     val stakeStateInput = Paideia.getBox(new FilterLeaf[String](
         FilterType.FTEQ,
@@ -57,12 +49,6 @@ case class AddStakeTransaction(
 
     if (stakeStateInput.getRegisters().get(0).getValue.asInstanceOf[AvlTree].digest != state.currentStakingState.plasmaMap.ergoAVLTree.digest) throw new Exception("State not synced correctly")
 
-    val test = Paideia.getBox(new FilterLeaf[String](
-        FilterType.FTEQ,
-        daoKey,
-        CompareField.ASSET,
-        0
-    ))  
     val configInput = Paideia.getBox(new FilterLeaf[String](
         FilterType.FTEQ,
         daoKey,

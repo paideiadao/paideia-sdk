@@ -19,7 +19,7 @@ class Mint(contractSignature: PaideiaContractSignature) extends PaideiaContract(
         res
     }
 
-    override def constants: HashMap[String,Object] = {
+    override lazy val constants: HashMap[String,Object] = {
         val cons = new HashMap[String,Object]()
         cons.put("_IM_PAIDEIA_CONTRACTS_PROTODAO",ConfKeys.im_paideia_contracts_protodao.ergoValue.getValue())
         cons.put("_IM_PAIDEIA_CONTRACTS_DAO",ConfKeys.im_paideia_contracts_dao.ergoValue.getValue())
