@@ -15,14 +15,57 @@ import org.ergoplatform.appkit.ErgoId
 import special.collection.Coll
 import org.ergoplatform.appkit.ErgoType
 import special.collection.CollOverArray
+import im.paideia.governance.contracts.ProtoDAOProxy
+import org.ergoplatform.appkit.InputBox
+import im.paideia.DAOConfigValueDeserializer
+import im.paideia.Paideia
+import scorex.crypto.hash.Blake2b256
+import im.paideia.util.ConfKeys
 
-class ProtoDAOProxyBox(daoName: String, daoGovernanceTokenId: String) extends PaideiaBox {
+case class ProtoDAOProxyBox(_ctx: BlockchainContextImpl, paideiaDaoConfig: DAOConfig, useContract: ProtoDAOProxy, daoName: String, daoGovernanceTokenId: String, stakePoolSize: Long) extends PaideiaBox {
+    ctx = _ctx
+    value = ProtoDAO.tokensToMint.size*2000000L+paideiaDaoConfig[Long](ConfKeys.im_paideia_fees_createdao_erg)+3000000L
+    contract = useContract.contract
+
     override def registers: List[ErgoValue[_]] = {
         List(
             ErgoValue.of(Array(
                     ErgoValue.of(DAOConfigValueSerializer(daoName)).getValue(),
                     ErgoValue.of(DAOConfigValueSerializer(ErgoId.create(daoGovernanceTokenId).getBytes().asInstanceOf[Array[Byte]])).getValue())
-            ,ErgoType.collType(ErgoType.byteType()))
+            ,ErgoType.collType(ErgoType.byteType())),
+            ErgoValue.of(Array[java.lang.Long](
+                stakePoolSize
+            ),ErgoType.longType())
+        )
+    }
+
+    override def tokens: List[ErgoToken] = {
+        {if (paideiaDaoConfig[Long](ConfKeys.im_paideia_fees_createdao_paideia) > 0L) 
+            List(
+                new ErgoToken(Env.paideiaTokenId,paideiaDaoConfig(ConfKeys.im_paideia_fees_createdao_paideia))
+            ) 
+        else 
+            List[ErgoToken]()}++
+        {if (stakePoolSize > 0L) 
+            List(
+                new ErgoToken(daoGovernanceTokenId,stakePoolSize)
+            ) 
+        else 
+            List[ErgoToken]()}
+    }
+}
+
+object ProtoDAOProxyBox {
+    def fromInputBox(ctx: BlockchainContextImpl, inp: InputBox): ProtoDAOProxyBox = {
+        val daoName = DAOConfigValueDeserializer.deserialize(inp.getRegisters().get(0).getValue().asInstanceOf[Coll[Coll[Byte]]](0).toArray).asInstanceOf[String]
+        val daoTokenId = new ErgoId(DAOConfigValueDeserializer.deserialize(inp.getRegisters().get(0).getValue().asInstanceOf[Coll[Coll[Byte]]](1).toArray).asInstanceOf[Array[Any]].map(_.asInstanceOf[Byte]))
+        ProtoDAOProxyBox(
+            ctx,
+            Paideia.getConfig(Env.paideiaDaoKey),
+            ProtoDAOProxy.contractInstances(Blake2b256(inp.getErgoTree.bytes).array.toList).asInstanceOf[ProtoDAOProxy],
+            daoName,
+            daoTokenId.toString(),
+            inp.getTokens().toArray.foldLeft[Long](0L){(z: Long, token) => z + (if (token.asInstanceOf[ErgoToken].getId()==daoTokenId) token.asInstanceOf[ErgoToken].getValue() else 0L)}
         )
     }
 }

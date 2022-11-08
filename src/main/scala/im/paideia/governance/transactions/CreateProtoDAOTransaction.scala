@@ -22,12 +22,15 @@ import special.collection.Coll
 import im.paideia.DAOConfigValueSerializer
 import im.paideia.governance.contracts.Mint
 import im.paideia.DAOConfigValueDeserializer
+import im.paideia.governance.boxes.ProtoDAOProxyBox
+import org.ergoplatform.appkit.ErgoId
 
 case class CreateProtoDAOTransaction(
     _ctx: BlockchainContextImpl,
     protoDAOProxyInput: InputBox,
     _changeAddress: ErgoAddress
 ) extends PaideiaTransaction {
+    val protoDAOProxyInputBox = ProtoDAOProxyBox.fromInputBox(_ctx,protoDAOProxyInput)
     val paideiaConfig = Paideia.getConfig(Env.paideiaDaoKey)
     val ergFee = paideiaConfig[Long]("im.paideia.fees.createdao.erg")
     val paideiaFee = paideiaConfig[Long]("im.paideia.fees.createdao.paideia")
@@ -40,7 +43,7 @@ case class CreateProtoDAOTransaction(
     val newDAOConfig = DAOConfig()
     val newDAO = new DAO(protoDAOProxyInput.getId().toString(),newDAOConfig)
     Paideia.addDAO(newDAO)
-    val daoParams : Coll[Coll[Byte]] = protoDAOProxyInput.getRegisters().get(0).getValue().asInstanceOf[Coll[Coll[Byte]]]
+
     val paideiaOriginInput = Paideia.getBox(new FilterLeaf[String](FilterType.FTEQ,Env.paideiaOriginNFT,CompareField.ASSET,0))(0)
     val paideiaOriginOutput = PaideiaOrigin(PaideiaContractSignature(networkType = _ctx.getNetworkType(),daoKey=Env.paideiaDaoKey)).box(_ctx,paideiaConfig,paideiaOriginInput.getTokens().get(1).getValue()-1L)
     val paideiaTreasuryOutput = Treasury(PaideiaContractSignature(networkType=_ctx.getNetworkType(),daoKey=Env.paideiaDaoKey)).box(_ctx,paideiaConfig,ergFee+1000000L,List(new ErgoToken(Env.paideiaTokenId,paideiaFee)))
@@ -48,8 +51,8 @@ case class CreateProtoDAOTransaction(
         _ctx,
         protoDAOProxyInput.getId().toString(),
         1L,
-        DAOConfigValueDeserializer.deserialize(daoParams(0).toArray).asInstanceOf[String]++" DAO Key",
-        DAOConfigValueDeserializer.deserialize(daoParams(0).toArray).asInstanceOf[String]++" DAO Key",
+        protoDAOProxyInputBox.daoName++" DAO Key",
+        protoDAOProxyInputBox.daoName++" DAO Key",
         0
     )
     val checkDigest = paideiaConfigBox.getRegisters().get(0).getValue()
@@ -68,12 +71,12 @@ case class CreateProtoDAOTransaction(
             )),
         ContextVar.of(1.toByte,newDAOConfig._config.ergoValue),
         ContextVar.of(2.toByte,newDAOConfig.insertProof(
-            ("im.paideia.dao.name",daoParams(0).toArray),
-            ("im.paideia.dao.tokenid",daoParams(1).toArray),
+            ("im.paideia.dao.name",DAOConfigValueSerializer(protoDAOProxyInputBox.daoName)),
+            ("im.paideia.dao.tokenid",DAOConfigValueSerializer(ErgoId.create(protoDAOProxyInputBox.daoGovernanceTokenId).getBytes())),
             ("im.paideia.dao.key",DAOConfigValueSerializer[Array[Byte]](protoDAOProxyInput.getId().getBytes()))
         ))
     )
-    val protoDAOOutput = ProtoDAO(PaideiaContractSignature(networkType=_ctx.getNetworkType(),daoKey=Env.paideiaDaoKey)).box(_ctx,newDAO)
+    val protoDAOOutput = ProtoDAO(PaideiaContractSignature(daoKey=Env.paideiaDaoKey)).box(_ctx,newDAO,protoDAOProxyInputBox.stakePoolSize)
     ctx = _ctx
     fee = 1000000
     changeAddress = _changeAddress

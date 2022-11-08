@@ -10,20 +10,24 @@ import org.ergoplatform.appkit.ErgoToken
 import im.paideia.util.Env
 import im.paideia.util.ConfKeys
 import im.paideia.DAO
+import java.util.HashMap
+import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.appkit.ErgoValue
+import java.nio.charset.StandardCharsets
 
 class DAOOrigin(contractSignature: PaideiaContractSignature) extends PaideiaContract(contractSignature) {
     def box(ctx: BlockchainContextImpl, dao: DAO, propTokens: Long, voteTokens: Long, actionTokens: Long): DAOOriginBox = {
-        val res = new DAOOriginBox(dao.key)
-        res.ctx = ctx
-        res.value = 1000000L
-        res.tokens = List(
-            new ErgoToken(Env.daoTokenId,1L),
-            new ErgoToken(dao.config.getArray[Byte](ConfKeys.im_paideia_dao_proposal_tokenid),propTokens),
-            new ErgoToken(dao.config.getArray[Byte](ConfKeys.im_paideia_dao_vote_tokenid),voteTokens),
-            new ErgoToken(dao.config.getArray[Byte](ConfKeys.im_paideia_dao_action_tokenid),actionTokens)
-        )
-        res.contract = contract
-        res
+        DAOOriginBox(ctx,dao,propTokens,voteTokens,actionTokens,this)
+    }
+
+    override lazy val constants: HashMap[String,Object] = {
+        val cons = new HashMap[String,Object]()
+        cons.put("_IM_PAIDEIA_CONTRACTS_VOTE",ConfKeys.im_paideia_contracts_vote.ergoValue.getValue())
+        cons.put("_IM_PAIDEIA_CONTRACTS_DAO",ConfKeys.im_paideia_contracts_dao.ergoValue.getValue())
+        cons.put("_IM_PAIDEIA_STAKING_STATE_TOKENID",ConfKeys.im_paideia_staking_state_tokenid.ergoValue.getValue())   
+        cons.put("_IM_PAIDEIA_DAO_KEY",ErgoId.create(contractSignature.daoKey).getBytes())
+        cons.put("_PAIDEIA_DAO_KEY",ErgoId.create(Env.paideiaDaoKey).getBytes())
+        cons
     }
 }
 

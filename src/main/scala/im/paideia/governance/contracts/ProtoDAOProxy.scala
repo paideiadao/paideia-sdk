@@ -26,18 +26,9 @@ class ProtoDAOProxy(contractSignature: PaideiaContractSignature) extends Paideia
     def box(ctx: BlockchainContextImpl, 
         paideiaDaoConfig: DAOConfig,
         daoName: String,
-        daoGovernanceTokenId: String): ProtoDAOProxyBox = {
-        val res = new ProtoDAOProxyBox(daoName,daoGovernanceTokenId)
-        res.ctx = ctx
-        res.value = 4000000L + paideiaDaoConfig[Long]("im.paideia.fees.createdao.erg")
-        res.tokens = if (paideiaDaoConfig[Long]("im.paideia.fees.createdao.paideia") > 0L) 
-            List(
-                new ErgoToken(Env.paideiaTokenId,paideiaDaoConfig("im.paideia.fees.createdao.paideia"))
-            ) 
-            else 
-                List()
-        res.contract = contract
-        res
+        daoGovernanceTokenId: String,
+        stakePoolSize: Long): ProtoDAOProxyBox = {
+        ProtoDAOProxyBox(ctx,paideiaDaoConfig,this,daoName,daoGovernanceTokenId,stakePoolSize)
     }
 
     override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {

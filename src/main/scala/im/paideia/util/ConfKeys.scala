@@ -13,6 +13,7 @@ object ConfKeys {
     val im_paideia_contracts_treasury = DAOConfigKey("im.paideia.contracts.treasury")
     val im_paideia_contracts_staking = DAOConfigKey("im.paideia.contracts.staking")
     val im_paideia_contracts_operatorincentive = DAOConfigKey("im.paideia.contracts.operatorincentive")
+    val im_paideia_contracts_vote = DAOConfigKey("im.paideia.contracts.vote")
     val im_paideia_dao_name = DAOConfigKey("im.paideia.dao.name")
     val im_paideia_dao_tokenid = DAOConfigKey("im.paideia.dao.tokenid")
     val im_paideia_dao_vote_tokenid = DAOConfigKey("im.paideia.dao.vote.tokenid")

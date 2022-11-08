@@ -1,6 +1,8 @@
 package im.paideia.common.filtering
 
 import org.ergoplatform.appkit.InputBox
+import org.ergoplatform.appkit.ErgoValue
+import special.collection.Coll
 
 class FilterLeaf[T: Ordering](
     filterType: FilterType.Value,
@@ -12,7 +14,10 @@ class FilterLeaf[T: Ordering](
         val compareFieldValue = (compareField match {
             case CompareField.ERGO_TREE => box.getErgoTree().bytesHex
             case CompareField.ASSET => if (box.getTokens().size > listIndex) box.getTokens().get(listIndex).getId().toString() else ""
-            case CompareField.REGISTER => box.getRegisters().get(listIndex)
+            case CompareField.REGISTER => if (box.getRegisters().size > listIndex) box.getRegisters().get(listIndex).getValue() match {
+                case c: Coll[_] => c.toArray.toIterable
+                case v: T => v
+            } else None
             case CompareField.VALUE => box.getValue()
         }).asInstanceOf[T]
         val res = filterType match {

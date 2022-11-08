@@ -8,13 +8,48 @@ import im.paideia.governance.contracts.ProtoDAO
 import im.paideia.DAOConfig
 import org.ergoplatform.appkit.ErgoValue
 import im.paideia.DAO
+import im.paideia.Paideia
 import org.ergoplatform.appkit.ErgoId
+import im.paideia.util.ConfKeys
+import scorex.crypto.hash.Blake2b256
+import org.ergoplatform.appkit.InputBox
 
-class ProtoDAOBox(dao: DAO) extends PaideiaBox {
+case class ProtoDAOBox(_ctx: BlockchainContextImpl, dao: DAO, stakePool: Long, useContract: ProtoDAO, _value: Long = 1000000L) extends PaideiaBox {
+    ctx = _ctx
+    contract = useContract.contract
+
+    value = _value
     override def registers: List[ErgoValue[_]] = {
         List(
             dao.config._config.ergoValue,
             ErgoValue.of(ErgoId.create(dao.key).getBytes())
+        )
+    }
+
+    override def tokens: List[ErgoToken] = {
+        List(
+            new ErgoToken(Env.daoTokenId,1L)
+        )++{
+            if (stakePool > 0) {
+                List(
+                    new ErgoToken(dao.config.getArray[Byte](ConfKeys.im_paideia_dao_tokenid),stakePool)
+                )
+            } else {
+                List[ErgoToken]()
+            }
+        }
+    }
+}
+
+object ProtoDAOBox {
+    def fromInputBox(ctx: BlockchainContextImpl, inp: InputBox): ProtoDAOBox = {
+        val contract = ProtoDAO.contractInstances(Blake2b256(inp.getErgoTree.bytes).array.toList).asInstanceOf[ProtoDAO]
+        ProtoDAOBox(
+            ctx,
+            Paideia.getDAO(contract.contractSignature.daoKey),
+            if (inp.getTokens().size > 1) inp.getTokens().get(1).getValue() else 0L,
+            contract,
+            inp.getValue()
         )
     }
 }

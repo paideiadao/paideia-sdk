@@ -44,7 +44,11 @@
                 if (mintAction == _IM_PAIDEIA_DAO_ACTION_TOKENID) {
                     (daoName++_ACTION,maxLong)
                 } else {
-                    (daoName,-1L)
+                    if (mintAction == _IM_PAIDEIA_STAKING_STATE_TOKENID) {
+                        (daoName++_STAKE_STATE,1L)
+                    } else {
+                        (daoName,-1L)
+                    }
                 }
             }
         }

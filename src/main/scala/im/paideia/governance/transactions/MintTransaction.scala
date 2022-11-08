@@ -17,6 +17,7 @@ import im.paideia.common.filtering._
 import org.ergoplatform.appkit.OutBox
 import im.paideia.util.ConfKeys
 import im.paideia.DAO
+import im.paideia.governance.boxes.ProtoDAOBox
 
 final case class MintTransaction(_ctx: BlockchainContextImpl,
     protoDAOInput: InputBox,
@@ -24,6 +25,7 @@ final case class MintTransaction(_ctx: BlockchainContextImpl,
     tokenToMint: DAOConfigKey,
     _changeAddress: ErgoAddress) extends PaideiaTransaction 
 {
+    val protoDAOInputBox = ProtoDAOBox.fromInputBox(_ctx,protoDAOInput)
     val paideiaConfigBox = Paideia.getBox(new FilterLeaf[String](
         FilterType.FTEQ,
         Env.paideiaDaoKey,
@@ -36,6 +38,7 @@ final case class MintTransaction(_ctx: BlockchainContextImpl,
         case ConfKeys.im_paideia_dao_proposal_tokenid => (daoName++" Proposal", Long.MaxValue)
         case ConfKeys.im_paideia_dao_vote_tokenid => (daoName++" Vote", Long.MaxValue)
         case ConfKeys.im_paideia_dao_action_tokenid => (daoName++" Action", Long.MaxValue)
+        case ConfKeys.im_paideia_staking_state_tokenid => (daoName++" Stake State", 1L)
     }
     val mintOutput = Mint(PaideiaContractSignature(networkType=_ctx.getNetworkType(),daoKey=Env.paideiaDaoKey)).box(
         _ctx,
@@ -57,7 +60,7 @@ final case class MintTransaction(_ctx: BlockchainContextImpl,
             (tokenToMint,DAOConfigValueSerializer[Array[Byte]](protoDAOInput.getId().getBytes()))
         ))
     )
-    val protoDAOOutput = ProtoDAO(PaideiaContractSignature(networkType=_ctx.getNetworkType(),daoKey=Env.paideiaDaoKey)).box(_ctx,dao)
+    val protoDAOOutput = ProtoDAO(PaideiaContractSignature(networkType=_ctx.getNetworkType(),daoKey=Env.paideiaDaoKey)).box(_ctx,dao,protoDAOInputBox.stakePool,protoDAOInputBox.value-2000000L)
     ctx = _ctx
     fee = 1000000
     changeAddress = _changeAddress

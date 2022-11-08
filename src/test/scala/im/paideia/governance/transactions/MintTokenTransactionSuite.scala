@@ -24,10 +24,12 @@ class MintTokenTransactionSuite extends PaideiaTestSuite{
                 PaideiaTestSuite.init(ctx)
                 val daoKey = Util.randomKey
                 val config = DAOConfig()
+                val daoTokenId = Util.randomKey
                 config.set(ConfKeys.im_paideia_dao_name,"Test DAO")
+                config.set(ConfKeys.im_paideia_dao_tokenid,ErgoId.create(daoTokenId).getBytes())
                 Paideia.addDAO(new DAO(daoKey,config))
                 val protoDAOContract = ProtoDAO(PaideiaContractSignature(daoKey=Env.paideiaDaoKey))
-                val protoDAOBox = protoDAOContract.box(ctx,Paideia.getDAO(daoKey),3000000L).ergoTransactionOutput()
+                val protoDAOBox = protoDAOContract.box(ctx,Paideia.getDAO(daoKey),0L,3000000L).ergoTransactionOutput()
                 val dummyTx = (new ErgoTransaction()).addOutputsItem(protoDAOBox)
                 val eventResponse = Paideia.handleEvent(TransactionEvent(ctx,false,dummyTx))
                 assert(eventResponse.unsignedTransactions.size===1)
@@ -44,11 +46,13 @@ class MintTokenTransactionSuite extends PaideiaTestSuite{
                 PaideiaTestSuite.init(ctx)
                 val daoKey = Util.randomKey
                 val config = DAOConfig()
+                val daoTokenId = Util.randomKey
                 config.set(ConfKeys.im_paideia_dao_name,"Test DAO")
+                config.set(ConfKeys.im_paideia_dao_tokenid,ErgoId.create(daoTokenId).getBytes())
                 config.set(ConfKeys.im_paideia_dao_vote_tokenid,ErgoId.create(Util.randomKey).getBytes())
                 Paideia.addDAO(new DAO(daoKey,config))
                 val protoDAOContract = ProtoDAO(PaideiaContractSignature(daoKey=Env.paideiaDaoKey))
-                val protoDAOBox = protoDAOContract.box(ctx,Paideia.getDAO(daoKey),3000000L).ergoTransactionOutput()
+                val protoDAOBox = protoDAOContract.box(ctx,Paideia.getDAO(daoKey),0L,3000000L).ergoTransactionOutput()
                 val dummyTx = (new ErgoTransaction()).addOutputsItem(protoDAOBox)
                 val eventResponse = Paideia.handleEvent(TransactionEvent(ctx,false,dummyTx))
                 assert(eventResponse.unsignedTransactions.size===1)

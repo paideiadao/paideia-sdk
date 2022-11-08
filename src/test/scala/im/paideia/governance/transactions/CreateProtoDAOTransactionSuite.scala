@@ -20,7 +20,7 @@ class CreateProtoDAOTransactionSuite extends PaideiaTestSuite {
                 val ctx = _ctx.asInstanceOf[BlockchainContextImpl]
                 PaideiaTestSuite.init(ctx)
                 val protoDAOProxyContract = ProtoDAOProxy(PaideiaContractSignature(daoKey=Env.paideiaDaoKey))
-                val protoDAOProxyBox = protoDAOProxyContract.box(ctx,Paideia.getConfig(Env.paideiaDaoKey),"Test DAO",Util.randomKey).ergoTransactionOutput()
+                val protoDAOProxyBox = protoDAOProxyContract.box(ctx,Paideia.getConfig(Env.paideiaDaoKey),"Test DAO",Util.randomKey,0L).ergoTransactionOutput()
                 val dummyTx = (new ErgoTransaction()).addOutputsItem(protoDAOProxyBox)
                 val eventResponse = Paideia.handleEvent(TransactionEvent(ctx,false,dummyTx))
                 assert(eventResponse.unsignedTransactions.size===1)
