@@ -5,6 +5,7 @@ import im.paideia.DAOConfigKey
 object ConfKeys {
     val im_paideia_fees_createdao_erg = DAOConfigKey("im.paideia.fees.createdao.erg")
     val im_paideia_fees_createdao_paideia = DAOConfigKey("im.paideia.fees.createdao.paideia")
+    val im_paideia_fees_createproposal_paideia = DAOConfigKey("im.paideia.fees.createproposal.paideia")
     val im_paideia_contracts_protodao = DAOConfigKey("im.paideia.contracts.protodao")
     val im_paideia_contracts_protodaoproxy = DAOConfigKey("im.paideia.contracts.protodaoproxy")
     val im_paideia_contracts_mint = DAOConfigKey("im.paideia.contracts.mint")
@@ -20,6 +21,7 @@ object ConfKeys {
     val im_paideia_dao_proposal_tokenid = DAOConfigKey("im.paideia.dao.proposal.tokenid")
     val im_paideia_dao_action_tokenid = DAOConfigKey("im.paideia.dao.action.tokenid")
     val im_paideia_dao_key = DAOConfigKey("im.paideia.dao.key")
+    val im_paideia_dao_quorum = DAOConfigKey("im.paideia.dao.quorum")
     val im_paideia_staking_state_tokenid = DAOConfigKey("im.paideia.staking.state.tokenid")
     val im_paideia_staking_emission_amount = DAOConfigKey("im.paideia.staking.emission.amount")
     val im_paideia_staking_emission_delay = DAOConfigKey("im.paideia.staking.emission.delay")
