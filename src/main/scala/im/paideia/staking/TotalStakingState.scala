@@ -112,20 +112,15 @@ class TotalStakingState(
 object TotalStakingState {
     val _stakingStates: HashMap[String,TotalStakingState] = HashMap[String,TotalStakingState]()
 
-    def apply(daoKey: String, nextEmission: Long): TotalStakingState = {
-            /* daoConfig("im.paideia.staking.nftId"),
-            daoConfig("im.paideia.staking.stakedTokenId"),
-            daoConfig("im.paideia.staking.emissionAmount"),
-            daoConfig("im.paideia.staking.emissionDelay"),
-            daoConfig("im.paideia.staking.cycleLength"),
-            daoConfig("im.paideia.staking.profitTokens") */
+    def apply(daoKey: String, nextEmission: Long, clearAll: Boolean = false): TotalStakingState = {
+        if (clearAll) _stakingStates.clear()
         val daoConfig = Paideia.getConfig(daoKey)
         val currentState = StakingState()
         val profitTokensSize = daoConfig.getArray[Array[Byte]](ConfKeys.im_paideia_staking_profit_tokenids).size
         val snapshots = Queue[(Long,StakingState,List[Long])](
             Range(0,daoConfig[Long](ConfKeys.im_paideia_staking_emission_delay).toInt).map((_) => (0L,currentState.clone(),List.fill(profitTokensSize+2)(0L))): _*
         )
-        val newState = new TotalStakingState(daoConfig,currentState,snapshots,Array.fill(profitTokensSize+2)(0L),nextEmission: Long)
+        val newState = new TotalStakingState(daoConfig,currentState,snapshots,Array.fill(profitTokensSize+2)(0L),nextEmission)
         _stakingStates.put(daoKey,newState)
         newState
     }

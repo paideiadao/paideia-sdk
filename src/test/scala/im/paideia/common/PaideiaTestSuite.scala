@@ -20,6 +20,7 @@ import im.paideia.governance.contracts.Mint
 import im.paideia.util.ConfKeys
 import im.paideia.governance.contracts.DAOOrigin
 import im.paideia.common.contracts.OperatorIncentive
+import im.paideia.staking.contracts.PlasmaStaking
 
 class PaideiaTestSuite extends AnyFunSuite with HttpClientTesting {
     
@@ -29,6 +30,7 @@ object PaideiaTestSuite {
     var initializedPaideia: Boolean = false
 
     def init(ctx: BlockchainContextImpl) = {
+        PlasmaStaking.contractInstances.clear()
         if (!initializedPaideia) {
             val paideiaConfig = DAOConfig()
             paideiaConfig.set(ConfKeys.im_paideia_fees_createdao_erg,1000000000L)

@@ -35,7 +35,7 @@ class EmitTransactionSuite extends PaideiaTestSuite {
                 val ctx = _ctx.asInstanceOf[BlockchainContextImpl]
                 PaideiaTestSuite.init(ctx)
                 val dao = StakingTest.testDAO
-                val state = TotalStakingState(dao.key,0L)
+                val state = TotalStakingState(dao.key,0L,true)
 
                 val stakingContract = PlasmaStaking(PaideiaContractSignature(daoKey = dao.key))
                 dao.config.set(ConfKeys.im_paideia_contracts_staking,stakingContract.contractSignature)

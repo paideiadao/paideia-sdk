@@ -34,7 +34,7 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
                 val ctx = _ctx.asInstanceOf[BlockchainContextImpl]
                 PaideiaTestSuite.init(ctx)
                 val dao = StakingTest.testDAO
-                val state = TotalStakingState(dao.key)
+                val state = TotalStakingState(dao.key,0L)
                 state.stake(Util.randomKey,100L)
                 Range(0,dao.config[Long](ConfKeys.im_paideia_staking_emission_delay).toInt).foreach(_ => state.emit(9999999999999999L,9999999L))
                 val dummyAddress = Address.create("4MQyML64GnzMxZgm")
@@ -47,7 +47,6 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
                 val configBox = Config(configContract.contractSignature).box(ctx,dao).inputBox()
                 configContract.clearBoxes()
                 configContract.newBox(configBox,false)
-
                 
                 val stakingStateBox = stakingContract.box(
                     ctx,

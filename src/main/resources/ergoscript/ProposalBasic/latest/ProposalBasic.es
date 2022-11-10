@@ -40,8 +40,7 @@
             proposalBasicOutput.value >= proposalBasicInput.value - 3000000L,
             proposalBasicOutput.tokens(0) == proposalBasicInput.tokens(0),
             proposalBasicOutput.R4[Int].get == proposalBasicInput.R4[Int].get,
-            proposalBasicOutput.R5[Coll[Long]].get.zip(proposalBasicInput.R5[Coll[Long]].get).forall{(ll: (Long,Long)) => ll._1 == ll._2},
-            proposalBasicOutput.R5[Coll[Long]].get.size == proposalBasicInput.R5[Coll[Long]].get.size,
+            proposalBasicOutput.R5[Coll[Long]].get == proposalBasicInput.R5[Coll[Long]].get,
             proposalBasicOutput.R7[AvlTree].get == proposalBasicInput.R7[AvlTree].get,
             proposalBasicOutput.R6[Short].get == passed
         ))

@@ -13,6 +13,8 @@ import scorex.crypto.hash.Blake2b256
 import special.collection.Coll
 import im.paideia.Paideia
 import im.paideia.util.Env
+import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
+import sigmastate.eval.Colls
 
 case class ProposalBasicBox(_ctx: BlockchainContextImpl, dao: DAO, paideiaTokens: Long, proposalIndex: Int, voteCount: Array[Long], totalVotes: Long, endTime: Long, passed: Short, useContract: ProposalBasic) extends PaideiaBox
 {
@@ -28,15 +30,11 @@ case class ProposalBasicBox(_ctx: BlockchainContextImpl, dao: DAO, paideiaTokens
 
     override def registers: List[ErgoValue[_]] = {
         List(
-            ErgoValue.of(proposalIndex),
-            ErgoValue.of(
-                Array(
-                    endTime,
-                    totalVotes
-                ).++(voteCount).map(java.lang.Long.valueOf),
-                ErgoType.longType()
+            ErgoValueBuilder.buildFor(proposalIndex),
+            ErgoValueBuilder.buildFor(
+                Colls.fromArray(Array[Long](endTime,totalVotes) ++ voteCount)
             ),
-            ErgoValue.of(passed),
+            ErgoValueBuilder.buildFor(passed),
             dao.proposals(proposalIndex.toInt).votes.ergoValue
         )
     }

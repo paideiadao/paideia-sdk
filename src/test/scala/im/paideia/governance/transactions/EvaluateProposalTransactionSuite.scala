@@ -55,7 +55,7 @@ class EvaluateProposalTransactionSuite extends PaideiaTestSuite {
 
                 val paiRef = Paideia._actorList
 
-                val state = TotalStakingState(dao.key,100000L)
+                val state = TotalStakingState(dao.key,100000L,true)
                 val stakeKey = Util.randomKey
 
                 state.stake(stakeKey,1000L)
