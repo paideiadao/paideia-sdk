@@ -21,6 +21,7 @@ import im.paideia.DAOConfigValueDeserializer
 import im.paideia.Paideia
 import scorex.crypto.hash.Blake2b256
 import im.paideia.util.ConfKeys
+import sigmastate.eval.Colls
 
 case class ProtoDAOProxyBox(_ctx: BlockchainContextImpl, paideiaDaoConfig: DAOConfig, useContract: ProtoDAOProxy, daoName: String, daoGovernanceTokenId: String, stakePoolSize: Long) extends PaideiaBox {
     ctx = _ctx
@@ -29,13 +30,11 @@ case class ProtoDAOProxyBox(_ctx: BlockchainContextImpl, paideiaDaoConfig: DAOCo
 
     override def registers: List[ErgoValue[_]] = {
         List(
-            ErgoValue.of(Array(
-                    ErgoValue.of(DAOConfigValueSerializer(daoName)).getValue(),
-                    ErgoValue.of(DAOConfigValueSerializer(ErgoId.create(daoGovernanceTokenId).getBytes().asInstanceOf[Array[Byte]])).getValue())
-            ,ErgoType.collType(ErgoType.byteType())),
-            ErgoValue.of(Array[java.lang.Long](
-                stakePoolSize
-            ),ErgoType.longType())
+            ErgoValueBuilder.buildFor(Colls.fromArray(Array(
+                Colls.fromArray(DAOConfigValueSerializer(daoName)),
+                Colls.fromArray(DAOConfigValueSerializer(ErgoId.create(daoGovernanceTokenId).getBytes().asInstanceOf[Array[Byte]]))
+            ))),
+            ErgoValueBuilder.buildFor(Colls.fromArray(Array(stakePoolSize)))
         )
     }
 

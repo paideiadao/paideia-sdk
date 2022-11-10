@@ -13,6 +13,8 @@ import org.ergoplatform.appkit.ErgoId
 import im.paideia.util.ConfKeys
 import scorex.crypto.hash.Blake2b256
 import org.ergoplatform.appkit.InputBox
+import sigmastate.eval.Colls
+import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 
 case class ProtoDAOBox(_ctx: BlockchainContextImpl, dao: DAO, stakePool: Long, useContract: ProtoDAO, _value: Long = 1000000L) extends PaideiaBox {
     ctx = _ctx
@@ -22,7 +24,7 @@ case class ProtoDAOBox(_ctx: BlockchainContextImpl, dao: DAO, stakePool: Long, u
     override def registers: List[ErgoValue[_]] = {
         List(
             dao.config._config.ergoValue,
-            ErgoValue.of(ErgoId.create(dao.key).getBytes())
+            ErgoValueBuilder.buildFor(Colls.fromArray(ErgoId.create(dao.key).getBytes()))
         )
     }
 

@@ -22,27 +22,29 @@ import sigmastate.utils.Helpers
 import sigmastate.Values
 import im.paideia.staking._
 import im.paideia.common.boxes._
+import sigmastate.eval.Colls
+import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 
 class StakeStateBox(val state:TotalStakingState) extends PaideiaBox {
     override def registers = List[ErgoValue[?]](
         state.currentStakingState.plasmaMap.ergoValue,
-        ErgoValue.of(Array(
+        ErgoValueBuilder.buildFor(Colls.fromArray(Array(
             state.nextEmission,
             state.currentStakingState.size.toLong,
             state.currentStakingState.totalStaked
-        ).++(state.profit).map(java.lang.Long.valueOf),ErgoType.longType()),
-        ErgoValue.of(this.state.snapshots.toArray.map(
+        ).++(state.profit))),
+        ErgoValueBuilder.buildFor(Colls.fromArray(state.snapshots.toArray.map(
             (kv: (Long,StakingState,List[Long])) => 
-                        java.lang.Long.valueOf(kv._1)
-                    ),ErgoType.longType()),
-        ErgoValue.of(this.state.snapshots.toArray.map(
+                        kv._1
+                    ))),
+        ErgoValueBuilder.buildFor(Colls.fromArray(state.snapshots.toArray.map(
             (kv: (Long,StakingState,List[Long])) => 
                         kv._2.plasmaMap.ergoValue.getValue()
-                    ),ErgoType.avlTreeType()),
-        ErgoValue.of(this.state.snapshots.toArray.map(
+                    ))),
+        ErgoValueBuilder.buildFor(Colls.fromArray(state.snapshots.toArray.map(
             (kv: (Long,StakingState,List[Long])) => 
-                        ErgoValue.of(kv._3.toArray.map(java.lang.Long.valueOf),ErgoType.longType()).getValue()
-                    ),ErgoType.collType(ErgoType.longType()))
+                        Colls.fromArray(kv._3.toArray)
+                    )))
     )
 }
 

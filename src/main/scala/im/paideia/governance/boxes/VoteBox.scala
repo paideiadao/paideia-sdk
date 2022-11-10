@@ -8,6 +8,8 @@ import org.ergoplatform.appkit.ErgoId
 import im.paideia.DAOConfig
 import org.ergoplatform.appkit.ErgoToken
 import im.paideia.util.ConfKeys
+import sigmastate.eval.Colls
+import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 
 case class VoteBox(_ctx: BlockchainContextImpl, daoConfig: DAOConfig, voteKey: String, stakeKey: String, releaseTime: Long, useContract: Vote) extends PaideiaBox
 {
@@ -17,8 +19,8 @@ case class VoteBox(_ctx: BlockchainContextImpl, daoConfig: DAOConfig, voteKey: S
 
     override def registers: List[ErgoValue[_]] = {
         List(
-            ErgoValue.of(releaseTime),
-            ErgoValue.of(ErgoId.create(voteKey).getBytes())
+            ErgoValueBuilder.buildFor(releaseTime),
+            ErgoValueBuilder.buildFor(Colls.fromArray(ErgoId.create(voteKey).getBytes()))
         )
     }
 

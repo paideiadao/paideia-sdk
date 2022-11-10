@@ -8,6 +8,8 @@ import org.ergoplatform.appkit.ErgoToken
 import im.paideia.util.ConfKeys
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.staking.contracts.AddStakeProxy
+import sigmastate.eval.Colls
+import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 
 case class AddStakeProxyBox(
     _ctx: BlockchainContextImpl, 
@@ -23,8 +25,8 @@ case class AddStakeProxyBox(
 
     override def registers: List[ErgoValue[_]] = {
         List(
-            ErgoValue.of(
-                Address.create(userAddress).toPropositionBytes()
+            ErgoValueBuilder.buildFor(
+                Colls.fromArray(Address.create(userAddress).toPropositionBytes())
             )
         )
     }

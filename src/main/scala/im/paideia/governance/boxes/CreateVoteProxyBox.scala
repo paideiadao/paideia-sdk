@@ -13,6 +13,8 @@ import im.paideia.util.Env
 import special.collection.Coll
 import sigmastate.serialization.ErgoTreeSerializer
 import org.ergoplatform.appkit.impl.ErgoTreeContract
+import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
+import sigmastate.eval.Colls
 
 case class CreateVoteProxyBox(_ctx: BlockchainContextImpl, stakeKey: String, userAddress: Address, useContract: CreateVoteProxy) extends PaideiaBox
 {
@@ -22,7 +24,7 @@ case class CreateVoteProxyBox(_ctx: BlockchainContextImpl, stakeKey: String, use
 
     override def registers: List[ErgoValue[_]] = {
         List(
-            ErgoValue.of(userAddress.toPropositionBytes())
+            ErgoValueBuilder.buildFor(Colls.fromArray(userAddress.toPropositionBytes()))
         )
     }
 
