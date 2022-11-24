@@ -7,6 +7,9 @@ import scala.collection.mutable.HashMap
 import im.paideia.common.filtering.FilterNode
 import org.ergoplatform.appkit.InputBox
 import im.paideia.Paideia
+import im.paideia.governance.contracts.ProposalContract
+import scala.util.Success
+import scala.util.Try
 
 trait PaideiaActor {
     val contractInstances: HashMap[List[Byte],PaideiaContract] = HashMap[List[Byte],PaideiaContract]()
@@ -23,4 +26,12 @@ trait PaideiaActor {
     def handleEvent(event: PaideiaEvent) : PaideiaEventResponse = PaideiaEventResponse.merge(contractInstances.values.map(_.handleEvent(event)).toList)
 
     def getBox(boxFilter: FilterNode): List[InputBox] = contractInstances.values.flatMap(_.getBox(boxFilter)).toList
+
+    def getProposalContract(contractHash: List[Byte]): Try[ProposalContract] = 
+        Try {
+            contractInstances(contractHash) match {
+                case contract: ProposalContract => contract
+                case _ => throw new Exception("Not a proposal contract")
+            }
+        }
 }

@@ -35,7 +35,7 @@ case class CreateVoteTransaction(
     ctx = _ctx
     changeAddress = _changeAddress
 
-    val daoOriginInput = Paideia.getBox(new FilterNode(
+    val daoOriginInputs = Paideia.getBox(new FilterNode(
         FilterType.FTALL,
         List(
             new FilterLeaf(
@@ -51,7 +51,9 @@ case class CreateVoteTransaction(
                 0
             )
         )
-    ))(0)
+    ))
+
+    val daoOriginInput = daoOriginInputs(0)
 
     val paideiaConfigInput = Paideia.getBox(new FilterLeaf[String](
         FilterType.FTEQ,

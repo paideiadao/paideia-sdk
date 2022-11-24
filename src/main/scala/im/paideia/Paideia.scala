@@ -12,6 +12,8 @@ import im.paideia.common.PaideiaEventResponse
 import scala.reflect.runtime.{universe => ru}
 import im.paideia.common.filtering.FilterNode
 import org.ergoplatform.appkit.InputBox
+import im.paideia.governance.contracts.ProposalContract
+import scorex.crypto.hash.Blake2b256
 
 object Paideia {
     lazy val _daoMap : HashMap[String,DAO] = HashMap[String,DAO]()
@@ -51,4 +53,9 @@ object Paideia {
     }
 
     def getConfig(daoKey: String): DAOConfig = _daoMap(daoKey).config
+
+    def getProposalContract(box: InputBox): ProposalContract = {
+        val contractHash = Blake2b256(box.getErgoTree().bytes).array.toList
+        _actorList.values.find(_.getProposalContract(contractHash).isSuccess).get.getProposalContract(contractHash).get
+    }
 }

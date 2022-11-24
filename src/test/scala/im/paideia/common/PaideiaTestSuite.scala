@@ -21,6 +21,7 @@ import im.paideia.util.ConfKeys
 import im.paideia.governance.contracts.DAOOrigin
 import im.paideia.common.contracts.OperatorIncentive
 import im.paideia.staking.contracts.PlasmaStaking
+import im.paideia.util.Util
 
 class PaideiaTestSuite extends AnyFunSuite with HttpClientTesting {
     
@@ -36,6 +37,7 @@ object PaideiaTestSuite {
             paideiaConfig.set(ConfKeys.im_paideia_fees_createdao_erg,1000000000L)
             paideiaConfig.set(ConfKeys.im_paideia_fees_createdao_paideia,100L)
             paideiaConfig.set(ConfKeys.im_paideia_dao_key,ErgoId.create(Env.paideiaDaoKey).getBytes())
+            paideiaConfig.set(ConfKeys.im_paideia_dao_action_tokenid,ErgoId.create(Util.randomKey).getBytes())
             Paideia.addDAO(DAO(Env.paideiaDaoKey,paideiaConfig))
             val configContract = Config(PaideiaContractSignature(daoKey = Env.paideiaDaoKey))
             val paideiaOriginContract = PaideiaOrigin(PaideiaContractSignature(daoKey = Env.paideiaDaoKey))

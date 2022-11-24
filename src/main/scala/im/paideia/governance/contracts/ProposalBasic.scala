@@ -17,8 +17,11 @@ import org.ergoplatform.appkit.InputBox
 import im.paideia.util.ConfKeys
 import java.util.HashMap
 import org.ergoplatform.appkit.ErgoId
+import im.paideia.common.boxes.PaideiaBox
+import org.ergoplatform.appkit.ContextVar
+import im.paideia.governance.VoteRecord
 
-class ProposalBasic(contractSignature: PaideiaContractSignature) extends PaideiaContract(contractSignature) {
+class ProposalBasic(contractSignature: PaideiaContractSignature) extends PaideiaContract(contractSignature) with ProposalContract {
 
     def box(
         ctx: BlockchainContextImpl,
@@ -26,7 +29,7 @@ class ProposalBasic(contractSignature: PaideiaContractSignature) extends Paideia
         voteCount: Array[Long],
         totalVotes: Long,
         endTime: Long,
-        passed: Short
+        passed: Int
         ): ProposalBasicBox = {
             ProposalBasicBox(ctx,Paideia.getDAO(contractSignature.daoKey),Paideia.getConfig(Env.paideiaDaoKey)(ConfKeys.im_paideia_fees_createproposal_paideia),proposalIndex, voteCount, totalVotes, endTime, passed, this)
         }
@@ -36,7 +39,8 @@ class ProposalBasic(contractSignature: PaideiaContractSignature) extends Paideia
             case be: BlockEvent => {
                 PaideiaEventResponse.merge(
                     boxes.values.map((b: InputBox) => {
-                        if (be.block.getHeader().getTimestamp()>b.getRegisters().get(1).getValue().asInstanceOf[Coll[Long]](0)) {
+                        if ((b.getRegisters().get(0).getValue().asInstanceOf[Coll[Int]](1)<0) 
+                        && (be.block.getHeader().getTimestamp()>b.getRegisters().get(1).getValue().asInstanceOf[Coll[Long]](0))) {
                             PaideiaEventResponse(1,List(
                                 EvaluateProposalBasicTransaction(be.ctx,Paideia.getDAO(contractSignature.daoKey),b,Address.create(Env.operatorAddress).getErgoAddress).unsigned()
                             ))
@@ -61,6 +65,40 @@ class ProposalBasic(contractSignature: PaideiaContractSignature) extends Paideia
         cons.put("_PAIDEIA_DAO_KEY",ErgoId.create(Env.paideiaDaoKey).getBytes())
         cons.put("_PAIDEIA_TOKEN_ID",ErgoId.create(Env.paideiaTokenId).getBytes())
         cons
+    }
+
+    def castVote(ctx: BlockchainContextImpl, inputBox: InputBox, vote: VoteRecord, voteKey: String): (List[ContextVar], PaideiaBox) = {
+        val inp = ProposalBasicBox.fromInputBox(ctx, inputBox)
+        val proposal = Paideia.getDAO(contractSignature.daoKey).proposals(inp.proposalIndex)
+        val voteId = ErgoId.create(voteKey)
+        val lookUp = proposal.votes.lookUp(voteId)
+        val lookUpProof = ContextVar.of(1.toByte,lookUp.proof.ergoValue)
+        val currentVote = lookUp.response(0).tryOp.get
+        currentVote match {
+            case None => {
+                val insert = proposal.votes.insert(((voteId,vote)))
+                (
+                    List(
+                        lookUpProof,
+                        ContextVar.of(2.toByte,insert.proof.ergoValue)
+                    ),
+                    box(ctx,inp.proposalIndex,inp.voteCount.zip(vote.votes).map{(ll: (Long,Long)) => ll._1+ll._2},inp.totalVotes+vote.voteCount,inp.endTime,inp.passed)
+                )
+            }
+            case Some(currentVoteRecord) => {
+                val voteChange = vote - currentVoteRecord
+
+                val update = proposal.votes.update((voteId,vote))
+
+                (
+                    List(
+                        lookUpProof,
+                        ContextVar.of(2.toByte,update.proof.ergoValue)
+                    ),
+                    box(ctx,inp.proposalIndex,inp.voteCount.zip(voteChange.votes).map{(ll: (Long,Long)) => ll._1+ll._2},inp.totalVotes+voteChange.voteCount,inp.endTime,inp.passed)
+                )
+            }
+        }
     }
   
 }

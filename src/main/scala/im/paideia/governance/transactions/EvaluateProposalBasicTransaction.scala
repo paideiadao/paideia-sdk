@@ -18,6 +18,7 @@ import org.ergoplatform.ErgoAddress
 import im.paideia.common.contracts.Treasury
 import org.ergoplatform.appkit.ErgoToken
 import org.ergoplatform.appkit.ContextVar
+import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 
 final case class EvaluateProposalBasicTransaction(
     _ctx: BlockchainContextImpl,
@@ -57,35 +58,44 @@ final case class EvaluateProposalBasicTransaction(
 
     val quorumMet = proposalInputBox.totalVotes > (totalStaked*quorumNeeded/1000)
 
+    val winningVoteAmount = proposalInputBox.voteCount.max
+    val winningVoteIndex = proposalInputBox.voteCount.indexOf(winningVoteAmount)
+
     val proposalBasicOut = ProposalBasic(PaideiaContractSignature(daoKey=dao.key)).box(
         _ctx,
         proposalInputBox.proposalIndex,
         proposalInputBox.voteCount,
         proposalInputBox.totalVotes,
         proposalInputBox.endTime,
-        if (quorumMet) 1 else -1
+        if (quorumMet) 
+            winningVoteIndex
+        else 
+            -2
         )
 
     val paideiaConfig = Paideia.getConfig(Env.paideiaDaoKey)
-    val treasuryOut = Treasury(PaideiaContractSignature(Env.paideiaDaoKey)).box(
+    val treasuryOut = Treasury(PaideiaContractSignature(daoKey=Env.paideiaDaoKey)).box(
         ctx,
         paideiaConfig,
         1000000L,
         List(new ErgoToken(Env.paideiaTokenId,paideiaConfig(ConfKeys.im_paideia_fees_createproposal_paideia))))
 
     val context = List(
-        ContextVar.of(0.toByte,paideiaConfig.getProof(
+        ContextVar.of(0.toByte,dao.config.getProof(
+            ConfKeys.im_paideia_dao_quorum,
+            ConfKeys.im_paideia_staking_state_tokenid
+        )),
+        ContextVar.of(1.toByte,paideiaConfig.getProof(
             ConfKeys.im_paideia_fees_createproposal_paideia,
             ConfKeys.im_paideia_contracts_treasury
         )),
-        ContextVar.of(1.toByte,dao.config.getProof(
-            ConfKeys.im_paideia_dao_quorum,
-            ConfKeys.im_paideia_staking_state_tokenid
-        ))
+        ContextVar.of(2.toByte,Array[Byte]()),
+        ContextVar.of(3.toByte,Array[Byte]()),
+        ContextVar.of(4.toByte,ErgoValueBuilder.buildFor((winningVoteIndex,winningVoteAmount)))
     )
 
     inputs = List(proposalInput.withContextVars(context:_*))
-    dataInputs = List(paideiaConfigInput,configInput,stakeStateInput)
+    dataInputs = List(configInput,stakeStateInput,paideiaConfigInput)
     outputs = List(proposalBasicOut.outBox,treasuryOut.outBox)
 
     fee = 1000000L

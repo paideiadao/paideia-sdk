@@ -48,9 +48,10 @@ class CreateVoteTransactionSuite extends PaideiaTestSuite{
                 config.set(ConfKeys.im_paideia_staking_cyclelength,1000000L)
                 config.set(ConfKeys.im_paideia_staking_profit_thresholds,Array(0L,0L))
                 val dao = new DAO(daoKey,config)
+                Paideia.addDAO(dao)
+
                 val voteContract = Vote(PaideiaContractSignature(daoKey=dao.key))
                 config.set(ConfKeys.im_paideia_contracts_vote,voteContract.contractSignature)
-                Paideia.addDAO(dao)
 
                 val state = TotalStakingState(dao.key,0L)
                 val stakeKey = Util.randomKey
@@ -78,6 +79,8 @@ class CreateVoteTransactionSuite extends PaideiaTestSuite{
 
                 val createVoteProxyContract = CreateVoteProxy(PaideiaContractSignature(daoKey=dao.key))
                 val createVoteBox = createVoteProxyContract.box(ctx,stakeKey,dummyAddress).ergoTransactionOutput()
+
+                val paiRef = Paideia._actorList
 
                 val dummyTx = (new ErgoTransaction()).addOutputsItem(createVoteBox)
                 val eventResponse = Paideia.handleEvent(TransactionEvent(ctx,false,dummyTx))

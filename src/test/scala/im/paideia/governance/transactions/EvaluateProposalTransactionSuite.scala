@@ -33,6 +33,7 @@ class EvaluateProposalTransactionSuite extends PaideiaTestSuite {
                 val daoKey = Util.randomKey
                 val config = DAOConfig()
                 val proposalTokenId = Util.randomKey
+                val actionTokenId = Util.randomKey
                 val stakeStateTokenId = Util.randomKey
                 val daoGovTokenId = Util.randomKey
                 config.set(ConfKeys.im_paideia_dao_name,"Test DAO")
@@ -46,6 +47,7 @@ class EvaluateProposalTransactionSuite extends PaideiaTestSuite {
                 config.set(ConfKeys.im_paideia_staking_cyclelength,1000000L)
                 config.set(ConfKeys.im_paideia_staking_profit_thresholds,Array(0L,0L))
                 config.set(ConfKeys.im_paideia_dao_quorum,100L)
+                config.set(ConfKeys.im_paideia_dao_action_tokenid,ErgoId.create(actionTokenId).getBytes())
                 val dao = new DAO(daoKey,config)
                 Paideia.addDAO(dao)
 
@@ -75,7 +77,7 @@ class EvaluateProposalTransactionSuite extends PaideiaTestSuite {
                 ).inputBox()
                 stakingContract.clearBoxes()
                 stakingContract.newBox(stakingStateBox,false)
-                val proposalBox = proposalContract.box(ctx,0,Array(1000L,0L),1000L,1000L,0)
+                val proposalBox = proposalContract.box(ctx,0,Array(1000L,0L),1000L,1000L,-1)
                 proposalContract.newBox(proposalBox.inputBox(),false)
 
                 val dummyBlock = (new FullBlock()).header(new BlockHeader().timestamp(proposalBox.endTime+1000L)).blockTransactions(new BlockTransactions().transactions(new Transactions()))
