@@ -17,6 +17,9 @@ name := "paideia-sdk"
 organization := "im.paideia"
 version := "0.0.1"
 
+githubOwner := "Luivatra"
+githubRepository := "paideia-sdk"
+
 // Note, it's not required for you to define these three settings. These are
 // mostly only necessary if you intend to publish your library's binaries on a
 // place like Sonatype.

@@ -15,10 +15,13 @@ import io.getblok.getblok_plasma.PlasmaParameters
 import io.getblok.getblok_plasma.ByteConversion
 import shapeless.Lazy
 import scala.reflect.ClassTag
+import scala.collection.mutable
 
 case class DAOConfig(
    val _config: PlasmaMap[DAOConfigKey,Array[Byte]]
 ) {
+    var keys = mutable.Set[String]()
+
     def apply[T](key: String): T = {
         apply[T](DAOConfigKey(key))
     }
@@ -37,9 +40,15 @@ case class DAOConfig(
         apply[Array[Object]](key).map(_.asInstanceOf[T]).toArray
     }
 
-    def set[T](key: String, value: T)(implicit enc: DAOConfigValueSerializer[T]) = _config.insert((DAOConfigKey(key),enc.serialize(value,true).toArray))
+    def set[T](key: String, value: T)(implicit enc: DAOConfigValueSerializer[T]) = {
+        keys.add(key)
+        _config.insert((DAOConfigKey(key),enc.serialize(value,true).toArray))
+    }
 
-    def set[T](key: DAOConfigKey, value: T)(implicit enc: DAOConfigValueSerializer[T]) = _config.insert((key,enc.serialize(value,true).toArray))
+    def set[T](key: DAOConfigKey, value: T)(implicit enc: DAOConfigValueSerializer[T]) = {
+        keys.add(key.originalKey.getOrElse(""))
+        _config.insert((key,enc.serialize(value,true).toArray))
+    }
 
     def handleExtension(extension: Map[String,String]) = {
         val todo = "update config based on extension"
