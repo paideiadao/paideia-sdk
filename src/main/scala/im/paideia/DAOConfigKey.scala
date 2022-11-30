@@ -9,6 +9,7 @@ import org.ergoplatform.appkit.ErgoValue
 
 class DAOConfigKey(_hashedKey: Array[Byte], _originalKey: Option[String] = None) {
     val originalKey: Option[String] = _originalKey
+    def originalKeyBytes: Array[Byte] = Blake2b256(originalKey.get.getBytes(StandardCharsets.UTF_8)).array
     val hashedKey: Array[Byte] = _hashedKey
     def ergoValue: ErgoValue[Coll[java.lang.Byte]] = ErgoValue.of(hashedKey)
 }

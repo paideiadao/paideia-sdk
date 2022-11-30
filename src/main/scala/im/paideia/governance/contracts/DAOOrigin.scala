@@ -14,6 +14,7 @@ import java.util.HashMap
 import org.ergoplatform.appkit.ErgoId
 import org.ergoplatform.appkit.ErgoValue
 import java.nio.charset.StandardCharsets
+import sigmastate.eval.Colls
 
 class DAOOrigin(contractSignature: PaideiaContractSignature) extends PaideiaContract(contractSignature) {
     def box(ctx: BlockchainContextImpl, dao: DAO, propTokens: Long, voteTokens: Long, actionTokens: Long): DAOOriginBox = {
@@ -27,6 +28,10 @@ class DAOOrigin(contractSignature: PaideiaContractSignature) extends PaideiaCont
         cons.put("_IM_PAIDEIA_STAKING_STATE_TOKENID",ConfKeys.im_paideia_staking_state_tokenid.ergoValue.getValue())   
         cons.put("_IM_PAIDEIA_DAO_KEY",ErgoId.create(contractSignature.daoKey).getBytes())
         cons.put("_PAIDEIA_DAO_KEY",ErgoId.create(Env.paideiaDaoKey).getBytes())
+        cons.put("_PAIDEIA_TOKENID",ErgoId.create(Env.paideiaTokenId).getBytes())
+        cons.put("_IM_PAIDEIA_FEES_CREATEPROPOSAL_PAIDEIA",ConfKeys.im_paideia_fees_createproposal_paideia.ergoValue.getValue())
+        cons.put("_IM_PAIDEIA_CONTRACTS_PROPOSAL",Colls.fromArray(ConfKeys.im_paideia_contracts_proposal("").originalKeyBytes))
+        cons.put("_IM_PAIDEIA_CONTRACTS_ACTION",Colls.fromArray(ConfKeys.im_paideia_contracts_action("").originalKeyBytes))
         cons
     }
 }

@@ -98,8 +98,12 @@ case class CreateVoteTransaction(
     ).contract(createVoteProxyBox.userAddress.toErgoContract()).build()
 
     val daoOriginContext = List(
-        ContextVar.of(0.toByte,Paideia.getConfig(Env.paideiaDaoKey).getProof(ConfKeys.im_paideia_contracts_dao)),
-        ContextVar.of(1.toByte,dao.config.getProof(ConfKeys.im_paideia_contracts_vote,ConfKeys.im_paideia_staking_state_tokenid)),
+        ContextVar.of(0.toByte,Paideia.getConfig(Env.paideiaDaoKey).getProof(
+            ConfKeys.im_paideia_contracts_dao,
+            ConfKeys.im_paideia_fees_createproposal_paideia)),
+        ContextVar.of(1.toByte,dao.config.getProof(
+            ConfKeys.im_paideia_contracts_vote,
+            ConfKeys.im_paideia_staking_state_tokenid)),
         ContextVar.of(2.toByte,TotalStakingState(dao.key).currentStakingState.getStakes(List(createVoteProxyBox.stakeKey)).proof.bytes)
     )
 

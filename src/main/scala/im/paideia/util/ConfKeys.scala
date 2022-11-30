@@ -28,8 +28,8 @@ object ConfKeys {
     val im_paideia_staking_cyclelength = DAOConfigKey("im.paideia.staking.cyclelength")
     val im_paideia_staking_profit_tokenids = DAOConfigKey("im.paideia.staking.profit.tokenids")
     val im_paideia_staking_profit_thresholds = DAOConfigKey("im.paideia.staking.profit.thresholds")
-    val im_paideia_contracts_proposal_base = "im.paideia.contracts.proposal"
-    def im_paideia_contracts_proposal(contractHash: String) = DAOConfigKey(im_paideia_contracts_proposal_base++"."++contractHash)
-    val im_paideia_contracts_action_base = "im.paideia.contracts.action"
-    def im_paideia_contracts_action(contractHash: String) = DAOConfigKey(im_paideia_contracts_action_base++"."++contractHash)
+    val im_paideia_contracts_proposal_base = "im.paideia.contracts.proposal."
+    def im_paideia_contracts_proposal(contractHash: String) = DAOConfigKey(im_paideia_contracts_proposal_base++contractHash)
+    val im_paideia_contracts_action_base = "im.paideia.contracts.action."
+    def im_paideia_contracts_action(contractHash: String) = DAOConfigKey(im_paideia_contracts_action_base++contractHash)
 }
