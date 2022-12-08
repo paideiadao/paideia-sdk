@@ -31,6 +31,7 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
         ergoClient.execute(new java.util.function.Function[BlockchainContext,Unit] {
             override def apply(_ctx: BlockchainContext): Unit = {
                 val ctx = _ctx.asInstanceOf[BlockchainContextImpl]
+                
                 PaideiaTestSuite.init(ctx)
                 val daoKey = Util.randomKey
                 val config = DAOConfig()
