@@ -28,7 +28,7 @@ final case class ActionSendFundsBasicBox(
     useContract: ActionSendFundsBasic) extends PaideiaBox 
 {
     ctx = _ctx
-    value = 10000000L
+    value = 1000000L
     contract = useContract.contract
 
     override def tokens: List[ErgoToken] = List(

@@ -30,8 +30,8 @@ class DAOOrigin(contractSignature: PaideiaContractSignature) extends PaideiaCont
         cons.put("_PAIDEIA_DAO_KEY",ErgoId.create(Env.paideiaDaoKey).getBytes())
         cons.put("_PAIDEIA_TOKENID",ErgoId.create(Env.paideiaTokenId).getBytes())
         cons.put("_IM_PAIDEIA_FEES_CREATEPROPOSAL_PAIDEIA",ConfKeys.im_paideia_fees_createproposal_paideia.ergoValue.getValue())
-        cons.put("_IM_PAIDEIA_CONTRACTS_PROPOSAL",Colls.fromArray(ConfKeys.im_paideia_contracts_proposal("").originalKeyBytes))
-        cons.put("_IM_PAIDEIA_CONTRACTS_ACTION",Colls.fromArray(ConfKeys.im_paideia_contracts_action("").originalKeyBytes))
+        cons.put("_IM_PAIDEIA_CONTRACTS_PROPOSAL",Colls.fromArray(ConfKeys.im_paideia_contracts_proposal(Array[Byte]()).originalKeyBytes))
+        cons.put("_IM_PAIDEIA_CONTRACTS_ACTION",Colls.fromArray(ConfKeys.im_paideia_contracts_action(Array[Byte]()).originalKeyBytes))
         cons
     }
 }

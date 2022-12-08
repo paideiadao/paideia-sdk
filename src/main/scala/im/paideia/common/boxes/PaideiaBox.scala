@@ -13,6 +13,8 @@ import org.ergoplatform.restapi.client.ErgoTransactionOutput
 import org.ergoplatform.appkit.impl.ScalaBridge
 import org.ergoplatform.appkit.impl.InputBoxImpl
 import im.paideia.util.Util
+import special.sigma.Box
+import sigmastate.eval.CostingBox
 
 trait PaideiaBox {
     private var _value: Long = _
@@ -22,7 +24,7 @@ trait PaideiaBox {
     private var _contextVars: List[ContextVar] = _
     private var _ctx : BlockchainContextImpl = _
 
-    def inputBox(withTxId: String = Util.randomKey, withIndex: Short = 0): InputBox = this.outBox.convertToInputWith(withTxId,withIndex)
+    def inputBox(withTxId: String = Util.randomKey, withIndex: Short = 0): InputBoxImpl = this.outBox.convertToInputWith(withTxId,withIndex).asInstanceOf[InputBoxImpl]
     def outBox: OutBox = {
         var b = ctx.newTxBuilder().outBoxBuilder()
             .value(value)
@@ -51,4 +53,6 @@ trait PaideiaBox {
     def ctx_= (newCtx: BlockchainContextImpl) = _ctx = newCtx
 
     def ergoTransactionOutput(withTxId: String = Util.randomKey, withIndex: Short = 0): ErgoTransactionOutput = ScalaBridge.isoErgoTransactionOutput.from(inputBox(withTxId,withIndex).asInstanceOf[InputBoxImpl].getErgoBox())
+
+    def box(): Box = CostingBox(false,inputBox().getErgoBox())
 }

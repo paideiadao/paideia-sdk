@@ -13,6 +13,8 @@ import org.ergoplatform.restapi.client.ErgoTransactionOutput
 import im.paideia.governance.transactions.CreateProposalTransaction
 import org.ergoplatform.appkit.impl.InputBoxImpl
 import im.paideia.util.Env
+import java.util.HashMap
+import org.ergoplatform.appkit.ErgoId
 
 class CreateProposal(contractSignature: PaideiaContractSignature) extends PaideiaContract(contractSignature) {
     def box(ctx: BlockchainContextImpl, proposalBox: Box, actionBoxes: Array[Box], voteKey: String, userAddress: Address): CreateProposalBox = 
@@ -33,6 +35,12 @@ class CreateProposal(contractSignature: PaideiaContractSignature) extends Paidei
         }
         val superResponse = super.handleEvent(event)
         response
+    }
+
+    override lazy val constants: HashMap[String,Object] = {
+        val cons = new HashMap[String,Object]()
+        cons.put("_IM_PAIDEIA_DAO_KEY",ErgoId.create(contractSignature.daoKey).getBytes())
+        cons
     }
 }
 

@@ -82,15 +82,15 @@ final case class CreateProposalTransaction(
         new OutBoxImpl((new CostingSigmaDslBuilder()).toErgoBox(b).toCandidate)
     }.toList
 
-    val userOutput = ctx.newTxBuilder().outBoxBuilder().contract(createProposalInputBox.userAddress.toErgoContract()).value(100000L).tokens(new ErgoToken(createProposalInputBox.voteKey,1L)).build()
+    val userOutput = ctx.newTxBuilder().outBoxBuilder().contract(createProposalInputBox.userAddress.toErgoContract()).value(1000000L).tokens(new ErgoToken(createProposalInputBox.voteKey,1L)).build()
 
     val daoOriginContext = List(
         ContextVar.of(0.toByte,Paideia.getConfig(Env.paideiaDaoKey).getProof(
             ConfKeys.im_paideia_contracts_dao,
             ConfKeys.im_paideia_fees_createproposal_paideia)),
         ContextVar.of(1.toByte,dao.config.getProof(
-            List(ConfKeys.im_paideia_contracts_proposal(new String(proposalOutput.getErgoTree().bytes,StandardCharsets.UTF_8)))++
-            actionOutputs.map((ao: OutBox) => ConfKeys.im_paideia_contracts_action(new String(ao.getErgoTree().bytes,StandardCharsets.UTF_8))):_*)
+            List(ConfKeys.im_paideia_contracts_proposal(proposalOutput.getErgoTree().bytes))++
+            actionOutputs.map((ao: OutBox) => ConfKeys.im_paideia_contracts_action(ao.getErgoTree().bytes)):_*)
         )
     )
 

@@ -28,7 +28,7 @@ final case class CreateProposalBox(
 {
     ctx = _ctx
     contract = useContract.contract
-    value = 1000000L
+    value = 2000000L + proposalBox.value + actionBoxes.foldLeft(0L){(z: Long, b: Box) => z+b.value}
 
     override def tokens: List[ErgoToken] = List(
         new ErgoToken(voteKey, 1L),

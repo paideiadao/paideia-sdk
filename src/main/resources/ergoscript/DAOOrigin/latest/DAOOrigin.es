@@ -73,8 +73,8 @@
 
             val proposalId = maxLong-daoInput.tokens(1)._2
 
-            val configValues = configInput.R4[AvlTree].get.getMany(Coll(
-                blake2b256(_IM_PAIDEIA_CONTRACTS_PROPOSAL++proposalBox.propositionBytes))++
+            val configValues = configInput.R4[AvlTree].get.getMany(
+                Coll(blake2b256(_IM_PAIDEIA_CONTRACTS_PROPOSAL++proposalBox.propositionBytes))++
                 actionBoxes.map{
                     (box: Box) =>
                     blake2b256(_IM_PAIDEIA_CONTRACTS_ACTION++box.propositionBytes)
@@ -101,6 +101,7 @@
                 proposalOutput.tokens(0)._2 == 1L,
                 proposalOutput.tokens(1)._1 == _PAIDEIA_TOKENID,
                 proposalOutput.tokens(1)._2 == byteArrayToLong(paideiaConfigValues(1).get.slice(1,9)),
+                proposalOutput.propositionBytes == createProposalInput.R5[Coll[Box]].get(0).propositionBytes,
                 blake2b256(proposalOutput.propositionBytes) == configValues(0).get.slice(1,33)
             ))
 
