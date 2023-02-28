@@ -59,7 +59,7 @@ class EmitTransactionSuite extends PaideiaTestSuite {
                 val dummyBlock = (new FullBlock()).header(new BlockHeader().timestamp(state.nextEmission+1000L)).blockTransactions(new BlockTransactions().transactions(new Transactions()))
                 val eventResponse = Paideia.handleEvent(BlockEvent(ctx,dummyBlock))
                 assert(eventResponse.unsignedTransactions.size===1)
-                ctx.newProverBuilder().build().sign(eventResponse.unsignedTransactions(0))
+                ctx.newProverBuilder().build().sign(eventResponse.unsignedTransactions(0).unsigned)
             }
         })
     }
@@ -96,7 +96,7 @@ class EmitTransactionSuite extends PaideiaTestSuite {
                 val dummyBlock = (new FullBlock()).header(new BlockHeader().timestamp(state.nextEmission+1000L)).blockTransactions(new BlockTransactions().transactions(new Transactions()))
                 val eventResponse = Paideia.handleEvent(BlockEvent(ctx,dummyBlock))
                 assert(eventResponse.unsignedTransactions.size===1)
-                ctx.newProverBuilder().build().sign(eventResponse.unsignedTransactions(0))
+                ctx.newProverBuilder().build().sign(eventResponse.unsignedTransactions(0).unsigned)
             }
         })
     }

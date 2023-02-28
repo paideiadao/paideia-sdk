@@ -59,7 +59,7 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
                 val dummyTx = (new ErgoTransaction()).addOutputsItem(stakingStateBox)
                 val eventResponse = Paideia.handleEvent(TransactionEvent(ctx,false,dummyTx))
                 assert(eventResponse.unsignedTransactions.size===1)
-                ctx.newProverBuilder().build().sign(eventResponse.unsignedTransactions(0))
+                ctx.newProverBuilder().build().sign(eventResponse.unsignedTransactions(0).unsigned)
             }
         })
     }
@@ -97,7 +97,7 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
                 val dummyTx = (new ErgoTransaction()).addOutputsItem(stakingStateBox)
                 val eventResponse = Paideia.handleEvent(TransactionEvent(ctx,false,dummyTx))
                 assert(eventResponse.unsignedTransactions.size===1)
-                ctx.newProverBuilder().build().sign(eventResponse.unsignedTransactions(0))
+                ctx.newProverBuilder().build().sign(eventResponse.unsignedTransactions(0).unsigned)
             }
         })
         // val stakingConfig = StakingConfig.test

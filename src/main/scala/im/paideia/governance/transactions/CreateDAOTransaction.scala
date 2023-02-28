@@ -23,6 +23,10 @@ import javax.naming.Context
 import im.paideia.staking.contracts.PlasmaStaking
 import im.paideia.staking.TotalStakingState
 import im.paideia.governance.boxes.ProtoDAOBox
+import im.paideia.common.contracts.Treasury
+import im.paideia.DAOConfigValueSerializer
+import sigmastate.eval.Colls
+import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 
 case class CreateDAOTransaction(
     _ctx: BlockchainContextImpl,
@@ -85,20 +89,9 @@ case class CreateDAOTransaction(
     val state = TotalStakingState(dao.key,_ctx.createPreHeader().build().getTimestamp()+dao.config[Long](ConfKeys.im_paideia_staking_cyclelength))
     val stakeStateOutput = PlasmaStaking(PaideiaContractSignature(daoKey=dao.key)).box(_ctx,dao.config,state,protoDAOInputBox.stakePool,1000000L)
 
-    val contextVarsProtoDAO = List(
-        ContextVar.of(0.toByte,1.toByte),
-        ContextVar.of(1.toByte,paideiaConfig.getProof(
-            ConfKeys.im_paideia_contracts_dao,
-            ConfKeys.im_paideia_contracts_config
-        )),
-        ContextVar.of(2.toByte,dao.config.getProof(
-            ConfKeys.im_paideia_dao_proposal_tokenid,
-            ConfKeys.im_paideia_dao_vote_tokenid,
-            ConfKeys.im_paideia_dao_action_tokenid,
-            ConfKeys.im_paideia_dao_key,
-            ConfKeys.im_paideia_staking_state_tokenid
-        ))
-    )
+    val treasury = Treasury(PaideiaContractSignature(daoKey=dao.key))
+    val treasuryContract = treasury.contractSignature
+
     val mintPaideiaConfigProof = ContextVar.of(0.toByte,paideiaConfig.getProof(
         ConfKeys.im_paideia_contracts_protodao,
         ConfKeys.im_paideia_contracts_dao))
@@ -127,6 +120,32 @@ case class CreateDAOTransaction(
         ContextVar.of(1.toByte,dao.config.getProof(ConfKeys.im_paideia_staking_state_tokenid)),
         ContextVar.of(2.toByte,ConfKeys.im_paideia_staking_state_tokenid.ergoValue)
     )
+
+    val contextVarsProtoDAO = List(
+        ContextVar.of(0.toByte,1.toByte),
+        ContextVar.of(1.toByte,paideiaConfig.getProof(
+            ConfKeys.im_paideia_contracts_dao,
+            ConfKeys.im_paideia_contracts_config,
+            ConfKeys.im_paideia_default_treasury,
+            ConfKeys.im_paideia_default_treasury_signature
+        )),
+        ContextVar.of(2.toByte,dao.config.getProof(
+            ConfKeys.im_paideia_dao_proposal_tokenid,
+            ConfKeys.im_paideia_dao_vote_tokenid,
+            ConfKeys.im_paideia_dao_action_tokenid,
+            ConfKeys.im_paideia_dao_key,
+            ConfKeys.im_paideia_staking_state_tokenid
+        )),
+        ContextVar.of(3.toByte,dao.config.insertProof(
+            (ConfKeys.im_paideia_contracts_treasury,DAOConfigValueSerializer(treasuryContract))
+        )),
+        ContextVar.of(4.toByte,
+            ErgoValueBuilder.buildFor(Colls.fromArray(Array(
+                Colls.fromArray(DAOConfigValueSerializer(treasuryContract))
+            )))
+        )
+    )
+
     ctx = _ctx
     fee = 1000000
     changeAddress = _changeAddress

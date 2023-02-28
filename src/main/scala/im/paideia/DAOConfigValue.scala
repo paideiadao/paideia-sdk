@@ -220,6 +220,9 @@ class DAOConfigValueDeserializer(ba: Array[Byte]) {
 }
 
 object DAOConfigValueDeserializer {
+    def apply[T](ba: Array[Byte]): T = 
+        DAOConfigValueDeserializer.deserialize(ba).asInstanceOf[T]
+
     def deserialize(ba: Array[Byte]): Any = {
         new DAOConfigValueDeserializer(ba).readValue
     }

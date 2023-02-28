@@ -85,7 +85,7 @@ class CreateVoteTransactionSuite extends PaideiaTestSuite{
                 val dummyTx = (new ErgoTransaction()).addOutputsItem(createVoteBox)
                 val eventResponse = Paideia.handleEvent(TransactionEvent(ctx,false,dummyTx))
                 assert(eventResponse.unsignedTransactions.size===1)
-                ctx.newProverBuilder().build().sign(eventResponse.unsignedTransactions(0))
+                ctx.newProverBuilder().build().sign(eventResponse.unsignedTransactions(0).unsigned)
             }
         })
     }

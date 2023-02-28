@@ -42,7 +42,7 @@ class CastVote(contractSignature: PaideiaContractSignature) extends PaideiaContr
                                     te._ctx,
                                     new InputBoxImpl(eto),
                                     Paideia.getDAO(contractSignature.daoKey),
-                                    Address.create(Env.operatorAddress)).unsigned
+                                    Address.create(Env.operatorAddress))
                                 )
                             )
                     } else {

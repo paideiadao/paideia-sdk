@@ -25,7 +25,7 @@ class CreateProposal(contractSignature: PaideiaContractSignature) extends Paidei
             case te: TransactionEvent => {
                 PaideiaEventResponse.merge(te.tx.getOutputs().asScala.map{(eto: ErgoTransactionOutput) => {
                     if (eto.getErgoTree()==ergoTree.bytesHex) {
-                        PaideiaEventResponse(1,List(CreateProposalTransaction(te._ctx,new InputBoxImpl(eto),Address.create(Env.operatorAddress)).unsigned))
+                        PaideiaEventResponse(1,List(CreateProposalTransaction(te._ctx,new InputBoxImpl(eto),Address.create(Env.operatorAddress))))
                     } else {
                         PaideiaEventResponse(0)
                     }

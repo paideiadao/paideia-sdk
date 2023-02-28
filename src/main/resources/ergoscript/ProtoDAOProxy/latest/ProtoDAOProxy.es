@@ -17,7 +17,14 @@
     val filledOutConfig = emptyConfig.insert(Coll(
         (_IM_PAIDEIA_DAO_NAME,configValues(0)),
         (_IM_PAIDEIA_DAO_GOVERNANCE_TOKEN_ID,configValues(1)),
-        (_IM_PAIDEIA_DAO_KEY,Coll(10.toByte,0.toByte,0.toByte,0.toByte,0.toByte,32.toByte) ++ SELF.id)
+        (_IM_PAIDEIA_DAO_KEY,Coll(10.toByte,0.toByte,0.toByte,0.toByte,0.toByte,32.toByte) ++ SELF.id),
+        (_IM_PAIDEIA_DAO_GOVERNANCE_TYPE,configValues(2)),
+        (_IM_PAIDEIA_DAO_QUORUM,configValues(3)),
+        (_IM_PAIDEIA_DAO_THRESHOLD,configValues(4)),
+        (_IM_PAIDEIA_STAKING_EMISSION_AMOUNT,configValues(5)),
+        (_IM_PAIDEIA_STAKING_EMISSION_DELAY,configValues(6)),
+        (_IM_PAIDEIA_STAKING_CYCLE_LENGTH,configValues(7)),
+        (_IM_PAIDEIA_STAKING_PROFITSHARE_PCT,configValues(8))
     ),configInsertProof).get
 
     val protoDAOOut = OUTPUTS(0)

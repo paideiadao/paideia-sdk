@@ -1,10 +1,11 @@
 package im.paideia.common
 
 import org.ergoplatform.appkit.UnsignedTransaction
+import im.paideia.common.transactions.PaideiaTransaction
 
 final case class PaideiaEventResponse(
     status: Int,
-    unsignedTransactions: List[UnsignedTransaction] = List[UnsignedTransaction]()
+    unsignedTransactions: List[PaideiaTransaction] = List[PaideiaTransaction]()
 ) {
   def +(that: PaideiaEventResponse): PaideiaEventResponse = {
     PaideiaEventResponse(this.status.max(that.status),this.unsignedTransactions++that.unsignedTransactions)

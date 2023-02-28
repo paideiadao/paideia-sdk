@@ -49,10 +49,10 @@ class PlasmaStaking(contractSig: PaideiaContractSignature) extends PaideiaContra
                         if (TotalStakingState(contractSignature.daoKey).snapshots.front._2.size()>0) {
                             PaideiaEventResponse(1,List(
                                 CompoundTransaction(
-                                    event.ctx,
+                                    te.ctx,
                                     new InputBoxImpl(eto),
                                     Address.create(Env.operatorAddress).getErgoAddress,
-                                    contractSignature.daoKey).unsigned()
+                                    contractSignature.daoKey)
                             ))
                         } else {
                             PaideiaEventResponse(0)
@@ -65,7 +65,7 @@ class PlasmaStaking(contractSig: PaideiaContractSignature) extends PaideiaContra
             case be: BlockEvent => {
                 if (be.block.getHeader().getTimestamp()>TotalStakingState(contractSignature.daoKey).nextEmission) {
                     PaideiaEventResponse(1,List(
-                        EmitTransaction(be._ctx,Address.create(Env.operatorAddress).getErgoAddress,contractSignature.daoKey).unsigned()
+                        EmitTransaction(be._ctx,Address.create(Env.operatorAddress).getErgoAddress,contractSignature.daoKey)
                     ))
                 } else {
                     PaideiaEventResponse(0)

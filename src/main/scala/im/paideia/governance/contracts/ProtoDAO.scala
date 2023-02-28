@@ -43,10 +43,10 @@ class ProtoDAO(contractSignature: PaideiaContractSignature) extends PaideiaContr
                         if (config._config.ergoAVLTree.digest == iBox.getRegisters().get(0).getValue().asInstanceOf[AvlTree].digest) {
                             val nextTokenToMint = ProtoDAO.tokensToMint.find((s: DAOConfigKey) => config._config.lookUp(s).response(0).tryOp.get == None)
                             nextTokenToMint match {
-                                case Some(value) => PaideiaEventResponse(2,List(MintTransaction(te._ctx,iBox,dao,value,Address.create(Env.operatorAddress).getErgoAddress()).unsigned()))
+                                case Some(value) => PaideiaEventResponse(2,List(MintTransaction(te._ctx,iBox,dao,value,Address.create(Env.operatorAddress).getErgoAddress())))
                                 case None => {
                                     val newTx = CreateDAOTransaction(te._ctx,iBox,dao,Address.create(Env.operatorAddress).getErgoAddress())
-                                    PaideiaEventResponse(2,List(newTx.unsigned()))
+                                    PaideiaEventResponse(2,List(newTx))
                                 }
                             }
                         } else {
@@ -69,6 +69,7 @@ class ProtoDAO(contractSignature: PaideiaContractSignature) extends PaideiaContr
         cons.put("_IM_PAIDEIA_CONTRACTS_MINT",ConfKeys.im_paideia_contracts_mint.ergoValue.getValue())
         cons.put("_IM_PAIDEIA_CONTRACTS_DAO",ConfKeys.im_paideia_contracts_dao.ergoValue.getValue())
         cons.put("_IM_PAIDEIA_CONTRACTS_CONFIG",ConfKeys.im_paideia_contracts_config.ergoValue.getValue())
+        cons.put("_IM_PAIDEIA_CONTRACTS_TREASURY",ConfKeys.im_paideia_contracts_treasury.ergoValue.getValue())
         cons.put("_IM_PAIDEIA_DAO_KEY",ConfKeys.im_paideia_dao_key.ergoValue.getValue())
         cons.put("_PAIDEIA_DAO_KEY",ErgoId.create(Env.paideiaDaoKey).getBytes())
         cons.put("_IM_PAIDEIA_DAO_NAME",ConfKeys.im_paideia_dao_name.ergoValue.getValue())
@@ -80,6 +81,8 @@ class ProtoDAO(contractSignature: PaideiaContractSignature) extends PaideiaContr
         cons.put("_PROPOSAL",ErgoValue.of(" Proposal".getBytes(StandardCharsets.UTF_8)).getValue())
         cons.put("_ACTION",ErgoValue.of(" Action".getBytes(StandardCharsets.UTF_8)).getValue())
         cons.put("_STAKE_STATE",ErgoValue.of(" Stake State".getBytes(StandardCharsets.UTF_8)).getValue())
+        cons.put("_IM_PAIDEIA_DEFAULT_TREASURY",ConfKeys.im_paideia_default_treasury.ergoValue.getValue())
+        cons.put("_IM_PAIDEIA_DEFAULT_TREASURY_SIGNATURE",ConfKeys.im_paideia_default_treasury_signature.ergoValue.getValue())
         cons
     }
 }

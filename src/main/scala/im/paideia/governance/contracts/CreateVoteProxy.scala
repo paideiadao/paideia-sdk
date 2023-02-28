@@ -31,7 +31,7 @@ class CreateVoteProxy(contractSignature: PaideiaContractSignature) extends Paide
             case te: TransactionEvent => {
                 PaideiaEventResponse.merge(te.tx.getOutputs().asScala.map{(eto: ErgoTransactionOutput) => {
                     if (eto.getErgoTree()==ergoTree.bytesHex) {
-                        PaideiaEventResponse(1,List(CreateVoteTransaction(te._ctx,new InputBoxImpl(eto),Paideia.getDAO(contractSignature.daoKey),Address.create(Env.operatorAddress).getErgoAddress).unsigned))
+                        PaideiaEventResponse(1,List(CreateVoteTransaction(te._ctx,new InputBoxImpl(eto),Paideia.getDAO(contractSignature.daoKey),Address.create(Env.operatorAddress).getErgoAddress)))
                     } else {
                         PaideiaEventResponse(0)
                     }

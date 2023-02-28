@@ -29,7 +29,7 @@ class ActionSendFundsBasic(contractSignature: PaideiaContractSignature) extends 
                     boxes.values.map((b: InputBox) => {
                         if (be.block.getHeader().getTimestamp()>b.getRegisters().get(0).getValue().asInstanceOf[Coll[Long]](3)) {
                             PaideiaEventResponse(1,List(
-                                SendFundsBasicTransaction(be.ctx,Paideia.getDAO(contractSignature.daoKey),b).unsigned()
+                                SendFundsBasicTransaction(be.ctx,Paideia.getDAO(contractSignature.daoKey),b)
                             ))
                         } else {
                             PaideiaEventResponse(0)

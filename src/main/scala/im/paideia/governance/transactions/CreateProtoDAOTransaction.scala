@@ -24,6 +24,7 @@ import im.paideia.governance.contracts.Mint
 import im.paideia.DAOConfigValueDeserializer
 import im.paideia.governance.boxes.ProtoDAOProxyBox
 import org.ergoplatform.appkit.ErgoId
+import im.paideia.util.ConfKeys
 
 case class CreateProtoDAOTransaction(
     _ctx: BlockchainContextImpl,
@@ -71,9 +72,16 @@ case class CreateProtoDAOTransaction(
             )),
         ContextVar.of(1.toByte,newDAOConfig._config.ergoValue),
         ContextVar.of(2.toByte,newDAOConfig.insertProof(
-            ("im.paideia.dao.name",DAOConfigValueSerializer(protoDAOProxyInputBox.daoName)),
-            ("im.paideia.dao.tokenid",DAOConfigValueSerializer(ErgoId.create(protoDAOProxyInputBox.daoGovernanceTokenId).getBytes())),
-            ("im.paideia.dao.key",DAOConfigValueSerializer[Array[Byte]](protoDAOProxyInput.getId().getBytes()))
+            (ConfKeys.im_paideia_dao_name,DAOConfigValueSerializer(protoDAOProxyInputBox.daoName)),
+            (ConfKeys.im_paideia_dao_tokenid,DAOConfigValueSerializer(ErgoId.create(protoDAOProxyInputBox.daoGovernanceTokenId).getBytes())),
+            (ConfKeys.im_paideia_dao_key,DAOConfigValueSerializer[Array[Byte]](protoDAOProxyInput.getId().getBytes())),
+            (ConfKeys.im_paideia_dao_governance_type,DAOConfigValueSerializer[Byte](protoDAOProxyInputBox.governanceType.id.toByte)),
+            (ConfKeys.im_paideia_dao_quorum,DAOConfigValueSerializer[Byte](protoDAOProxyInputBox.quorum)),
+            (ConfKeys.im_paideia_dao_threshold,DAOConfigValueSerializer[Byte](protoDAOProxyInputBox.threshold)),
+            (ConfKeys.im_paideia_staking_emission_amount,DAOConfigValueSerializer[Long](protoDAOProxyInputBox.stakingEmissionAmount)),
+            (ConfKeys.im_paideia_staking_emission_delay,DAOConfigValueSerializer[Byte](protoDAOProxyInputBox.stakingEmissionDelay)),
+            (ConfKeys.im_paideia_staking_cyclelength,DAOConfigValueSerializer[Long](protoDAOProxyInputBox.stakingCycleLength)),
+            (ConfKeys.im_paideia_staking_profit_share_pct,DAOConfigValueSerializer[Byte](protoDAOProxyInputBox.stakingProfitSharePct))
         ))
     )
     val protoDAOOutput = ProtoDAO(PaideiaContractSignature(daoKey=Env.paideiaDaoKey)).box(_ctx,newDAO,protoDAOProxyInputBox.stakePoolSize)

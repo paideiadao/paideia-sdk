@@ -55,6 +55,8 @@ object PaideiaTestSuite {
             paideiaConfig.set(ConfKeys.im_paideia_contracts_dao,daoContract.contractSignature)
             paideiaConfig.set(ConfKeys.im_paideia_contracts_operatorincentive,operatorIncentiveContract.contractSignature)
             paideiaConfig.set(ConfKeys.im_paideia_fees_createproposal_paideia,10000L)
+            paideiaConfig.set(ConfKeys.im_paideia_default_treasury,treasuryContract.ergoTree.bytes)
+            paideiaConfig.set(ConfKeys.im_paideia_default_treasury_signature,treasuryContract.contractSignature)
             configContract.newBox(configContract.box(ctx,Paideia.getDAO(Env.paideiaDaoKey)).inputBox(),false)
             paideiaOriginContract.newBox(paideiaOriginContract.box(ctx,paideiaConfig,1000000L).inputBox(),false)
             operatorIncentiveContract.newBox(operatorIncentiveContract.box(ctx,100000000000L,1000000000L).inputBox(),false)

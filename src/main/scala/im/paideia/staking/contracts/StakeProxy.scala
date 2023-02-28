@@ -30,10 +30,10 @@ class StakeProxy(contractSignature: PaideiaContractSignature) extends PaideiaCon
                     val ergotree = ergoTree.bytesHex
                     if (eto.getErgoTree()==ergoTree.bytesHex) {
                         PaideiaEventResponse(1,List(StakeTransaction(
-                            event.ctx,
+                            te.ctx,
                             new InputBoxImpl(eto),
                             Address.create(Env.operatorAddress).getErgoAddress,
-                            contractSignature.daoKey).unsigned))
+                            contractSignature.daoKey)))
                     } else {
                         PaideiaEventResponse(0)
                     }

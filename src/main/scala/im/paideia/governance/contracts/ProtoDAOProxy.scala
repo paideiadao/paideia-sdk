@@ -21,14 +21,37 @@ import org.ergoplatform.appkit.ErgoValue
 import im.paideia.DAOConfigKey
 import org.ergoplatform.appkit.ErgoId
 import java.nio.charset.StandardCharsets
+import im.paideia.util.ConfKeys
+import im.paideia.governance.GovernanceType
 
 class ProtoDAOProxy(contractSignature: PaideiaContractSignature) extends PaideiaContract(contractSignature) {
     def box(ctx: BlockchainContextImpl, 
         paideiaDaoConfig: DAOConfig,
         daoName: String,
         daoGovernanceTokenId: String,
-        stakePoolSize: Long): ProtoDAOProxyBox = {
-        ProtoDAOProxyBox(ctx,paideiaDaoConfig,this,daoName,daoGovernanceTokenId,stakePoolSize)
+        stakePoolSize: Long,
+        governanceType: GovernanceType.Value,
+        quorum: Byte,
+        threshold: Byte,
+        stakingEmissionAmount: Long,
+        stakingEmissionDelay: Byte,
+        stakingCycleLength: Long,
+        stakingProfitSharePct: Byte): ProtoDAOProxyBox = {
+        ProtoDAOProxyBox(
+            ctx,
+            paideiaDaoConfig,
+            this,
+            daoName,
+            daoGovernanceTokenId,
+            stakePoolSize,
+            governanceType,
+            quorum,
+            threshold,
+            stakingEmissionAmount,
+            stakingEmissionDelay,
+            stakingCycleLength,
+            stakingProfitSharePct
+        )
     }
 
     override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
@@ -36,7 +59,7 @@ class ProtoDAOProxy(contractSignature: PaideiaContractSignature) extends Paideia
             case te: TransactionEvent => {
                 PaideiaEventResponse.merge(te.tx.getOutputs().asScala.map{(eto: ErgoTransactionOutput) => {
                     if (eto.getErgoTree()==ergoTree.bytesHex) {
-                        PaideiaEventResponse(1,List(CreateProtoDAOTransaction(event.ctx,new InputBoxImpl(eto),Address.create(Env.operatorAddress).getErgoAddress).unsigned))
+                        PaideiaEventResponse(1,List(CreateProtoDAOTransaction(te.ctx,new InputBoxImpl(eto),Address.create(Env.operatorAddress).getErgoAddress)))
                     } else {
                         PaideiaEventResponse(0)
                     }
@@ -58,6 +81,13 @@ class ProtoDAOProxy(contractSignature: PaideiaContractSignature) extends Paideia
         cons.put("_IM_PAIDEIA_DAO_GOVERNANCE_TOKEN_ID",ErgoValue.of(DAOConfigKey("im.paideia.dao.tokenid").hashedKey).getValue())
         cons.put("_IM_PAIDEIA_DAO_KEY",ErgoValue.of(DAOConfigKey("im.paideia.dao.key").hashedKey).getValue())
         cons.put("_DAO_KEY",ErgoValue.of(" DAO Key".getBytes(StandardCharsets.UTF_8)).getValue())
+        cons.put("_IM_PAIDEIA_DAO_GOVERNANCE_TYPE",ConfKeys.im_paideia_dao_governance_type.hashedKey)
+        cons.put("_IM_PAIDEIA_DAO_QUORUM",ConfKeys.im_paideia_dao_quorum.hashedKey)
+        cons.put("_IM_PAIDEIA_DAO_THRESHOLD",ConfKeys.im_paideia_dao_threshold.hashedKey)
+        cons.put("_IM_PAIDEIA_STAKING_EMISSION_AMOUNT",ConfKeys.im_paideia_staking_emission_amount.hashedKey)
+        cons.put("_IM_PAIDEIA_STAKING_EMISSION_DELAY",ConfKeys.im_paideia_staking_emission_delay.hashedKey)
+        cons.put("_IM_PAIDEIA_STAKING_CYCLE_LENGTH",ConfKeys.im_paideia_staking_cyclelength.hashedKey)
+        cons.put("_IM_PAIDEIA_STAKING_PROFITSHARE_PCT",ConfKeys.im_paideia_staking_profit_share_pct.hashedKey)
         cons
     }
 }

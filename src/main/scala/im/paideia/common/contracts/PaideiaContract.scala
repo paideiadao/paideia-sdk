@@ -87,7 +87,7 @@ class PaideiaContract(_contractSignature: PaideiaContractSignature) {
                 if (handledInputs.exists(identity) || handledOutputs.exists(identity)) PaideiaEventResponse(1) else PaideiaEventResponse(0)
             }
             case be: BlockEvent => {
-                PaideiaEventResponse.merge(be.block.getBlockTransactions().getTransactions().asScala.map{(tx: ErgoTransaction) => handleEvent(TransactionEvent(event.ctx,false,tx))}.toList)     
+                PaideiaEventResponse.merge(be.block.getBlockTransactions().getTransactions().asScala.map{(tx: ErgoTransaction) => handleEvent(TransactionEvent(be.ctx,false,tx))}.toList)     
             }
         }
     }
