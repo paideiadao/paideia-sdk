@@ -46,3 +46,5 @@ resolvers ++= Seq(
 )
 
 testOptions in Test += Tests.Argument("-oDF")
+
+Test / parallelExecution := false
