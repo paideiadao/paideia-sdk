@@ -14,8 +14,11 @@ scalaVersion := "2.12.16"
 // It's possible to define many kinds of settings, such as:
 
 name := "paideia-sdk"
-organization := "im.paideia"
+organization := "ergo-pad"
 version := "0.0.1"
+
+//githubOwner := "ergo-pad"
+//githubRepository := "paideia-sdk"
 
 // Note, it's not required for you to define these three settings. These are
 // mostly only necessary if you intend to publish your library's binaries on a
@@ -33,7 +36,7 @@ libraryDependencies ++= Seq(
     "com.squareup.okhttp3" % "mockwebserver" % "3.12.0" % Test
 )
 
-dependencyOverrides += "org.ergoplatform" %% "ergo-appkit" % "ac116c85-SNAPSHOT"
+dependencyOverrides += "org.ergoplatform" %% "ergo-appkit" % "5.0.0"
 
 resolvers ++= Seq(
   "Sonatype Releases" at "https://oss.sonatype.org/content/repositories/releases/",

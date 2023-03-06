@@ -16,53 +16,35 @@ import org.ergoplatform.appkit.impl.ErgoTreeContract
 import org.ergoplatform.appkit.ContextVar
 import im.paideia.staking.contracts.PlasmaStaking
 import org.ergoplatform.appkit.ErgoToken
-import im.paideia.common.contracts.DAOControlled
-import im.paideia.governance.DAOConfig
+import im.paideia.DAOConfig
 import org.ergoplatform.appkit.ErgoId
 import sigmastate.utils.Helpers
 import sigmastate.Values
 import im.paideia.staking._
 import im.paideia.common.boxes._
+import sigmastate.eval.Colls
+import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 
 class StakeStateBox(val state:TotalStakingState) extends PaideiaBox {
     override def registers = List[ErgoValue[?]](
         state.currentStakingState.plasmaMap.ergoValue,
-        ErgoValue.of(Array(
+        ErgoValueBuilder.buildFor(Colls.fromArray(Array(
             state.nextEmission,
             state.currentStakingState.size.toLong,
             state.currentStakingState.totalStaked
-        ).++(state.profit).map(java.lang.Long.valueOf),ErgoType.longType()),
-        ErgoValue.of(this.state.snapshots.toArray.map(
+        ).++(state.profit))),
+        ErgoValueBuilder.buildFor(Colls.fromArray(state.snapshots.toArray.map(
             (kv: (Long,StakingState,List[Long])) => 
-                        java.lang.Long.valueOf(kv._1)
-                    ),ErgoType.longType()),
-        ErgoValue.of(this.state.snapshots.toArray.map(
+                        kv._1
+                    ))),
+        ErgoValueBuilder.buildFor(Colls.fromArray(state.snapshots.toArray.map(
             (kv: (Long,StakingState,List[Long])) => 
                         kv._2.plasmaMap.ergoValue.getValue()
-                    ),ErgoType.avlTreeType()),
-        ErgoValue.of(this.state.snapshots.toArray.map(
+                    ))),
+        ErgoValueBuilder.buildFor(Colls.fromArray(state.snapshots.toArray.map(
             (kv: (Long,StakingState,List[Long])) => 
-                        ErgoValue.of(kv._3.toArray.map(java.lang.Long.valueOf),ErgoType.longType()).getValue()
-                    ),ErgoType.collType(ErgoType.longType()))
+                        Colls.fromArray(kv._3.toArray)
+                    )))
     )
 }
 
-object StakeStateBox {
-    def apply(ctx: BlockchainContextImpl, state: TotalStakingState, stakedTokenTotal: Long, daoConfig: DAOConfig, value: Long = 1000000, extraTokens: List[ErgoToken] = List[ErgoToken]()): StakeStateBox = {
-        val script = PlasmaStaking(networkType=ctx.getNetworkType()).ergoScript
-        val res = new StakeStateBox(state)
-        res.value = value
-        res.ctx = ctx
-        res.contract = DAOControlled(
-            constants=Map(
-                "_configIndex" -> ErgoValue.of(ConfigBox.stakingConfigIndex).getValue(),
-                "_configTokenId" -> ErgoValue.of(ErgoId.create(daoConfig.configTokenId).getBytes()).getValue()),
-            networkType=ctx.getNetworkType(),
-            script=script).contract
-        res.tokens = List[ErgoToken](
-            new ErgoToken(state.stakingConfig.nftId,1L),
-            new ErgoToken(state.stakingConfig.stakedTokenId,stakedTokenTotal)
-        ) ++ extraTokens
-        res
-    }
-}

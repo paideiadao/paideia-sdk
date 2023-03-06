@@ -11,26 +11,88 @@ import org.ergoplatform.appkit.ErgoValue
 import scorex.crypto.hash.Blake2b256
 import special.collection.Coll
 import java.lang.{Byte => JByte}
+import im.paideia.DAOConfigValue
+import im.paideia.common.boxes.PaideiaBox
+import org.ergoplatform.appkit.impl.BlockchainContextImpl
+import im.paideia.DAOConfig
+import scala.collection.mutable.Set
+import im.paideia.common.PaideiaEvent
+import im.paideia.common.PaideiaEventResponse
+import im.paideia.common.TransactionEvent
+import org.ergoplatform.restapi.client.ErgoTransactionInput
+import org.ergoplatform.restapi.client.ErgoTransactionOutput
+import im.paideia.common.BlockEvent
+import org.ergoplatform.restapi.client.ErgoTransaction
+import scala.collection.mutable.HashMap
+import org.ergoplatform.appkit.InputBox
+import org.ergoplatform.appkit.impl.InputBoxImpl
+import im.paideia.common.filtering.FilterNode
 
-trait PaideiaContract {
-    val version: String
-    val constants: Map[String,Object]
-    val networkType: NetworkType
+class PaideiaContract(_contractSignature: PaideiaContractSignature) {
+    val utxos: Set[String] = Set[String]()
+    val mutxos: Set[String] = Set[String]()
+    val mspent: Set[String] = Set[String]()
 
-    def ergoScript: String = Source.fromResource("ergoscript/" + getClass.getSimpleName + "/" + version + "/" + getClass.getSimpleName + ".es").mkString
-    def ergoTree: Values.ErgoTree = {
-        val jConstants = constants.asJava
-        JavaHelpers.compile(constants.asJava,ergoScript,networkType.networkPrefix)
+    val boxes: HashMap[String,InputBox] = HashMap[String,InputBox]()
+
+    lazy val ergoScript: String = Source.fromResource("ergoscript/" + getClass.getSimpleName + "/" + _contractSignature.version + "/" + getClass.getSimpleName + ".es").mkString
+    lazy val ergoTree: Values.ErgoTree = {
+        JavaHelpers.compile(constants,ergoScript,_contractSignature.networkType.networkPrefix)
     }
-    def contract: ErgoContract = new ErgoTreeContract(ergoTree, networkType)
+    lazy val contract: ErgoContract = new ErgoTreeContract(ergoTree, _contractSignature.networkType)
 
-    def ergoValue: ErgoValue[(Coll[JByte],(Coll[JByte],Coll[JByte]))] = {
-        ErgoValue.pairOf(
-            ErgoValue.of(getClass().getCanonicalName().getBytes()),
-            ErgoValue.pairOf(
-                ErgoValue.of(version.getBytes()),
-                ErgoValue.of(Blake2b256(ergoTree.bytes).array)
-            )
-        )
+    lazy val constants: java.util.HashMap[String,Object] = new java.util.HashMap[String,Object]()
+
+    lazy val contractSignature: PaideiaContractSignature = PaideiaContractSignature(
+        getClass().getCanonicalName(),
+        _contractSignature.version,
+        _contractSignature.networkType,
+        Blake2b256(ergoTree.bytes).array.toList,
+        _contractSignature.daoKey
+    )
+
+    def clearBoxes() = {
+        utxos.clear()
+        mutxos.clear()
+        mspent.clear()
+        boxes.clear()
+    }
+
+    def spendBox(boxId: String, mempool: Boolean): Boolean = {
+        if (mempool) {
+            mspent.add(boxId)
+        } else {
+            boxes -= boxId
+            utxos.remove(boxId) || mspent.remove(boxId)
+        }
+    }
+
+    def newBox(box: InputBox, mempool: Boolean): Boolean = {
+        if (mempool) {
+            boxes(box.getId().toString()) = box
+            mutxos.add(box.getId().toString())
+        } else {
+            boxes(box.getId().toString()) = box
+            utxos.add(box.getId().toString()) || mutxos.remove(box.getId().toString())
+        }
+    }
+
+    def getUtxoSet: Set[String] = utxos ++ mutxos -- mspent
+
+    def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
+        event match {
+            case te: TransactionEvent => {
+                val handledInputs = te.tx.getInputs().asScala.map{(input: ErgoTransactionInput) => spendBox(input.getBoxId(),te.mempool)}
+                val handledOutputs = te.tx.getOutputs().asScala.map{(output: ErgoTransactionOutput) => if (output.getErgoTree == ergoTree.bytesHex) newBox(new InputBoxImpl(output),te.mempool) else false}
+                if (handledInputs.exists(identity) || handledOutputs.exists(identity)) PaideiaEventResponse(1) else PaideiaEventResponse(0)
+            }
+            case be: BlockEvent => {
+                PaideiaEventResponse.merge(be.block.getBlockTransactions().getTransactions().asScala.map{(tx: ErgoTransaction) => handleEvent(TransactionEvent(be.ctx,false,tx))}.toList)     
+            }
+        }
+    }
+
+    def getBox(boxFilter: FilterNode): List[InputBox] = {
+        boxes.values.filter(boxFilter.matchBox(_)).toList
     }
 }

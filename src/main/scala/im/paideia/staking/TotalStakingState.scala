@@ -14,9 +14,13 @@ import special.collection.CollOverArray
 import org.ergoplatform.appkit.ContextVar
 import org.ergoplatform.appkit.ErgoValue
 import org.ergoplatform.appkit.ErgoType
+import im.paideia.DAOConfig
+import im.paideia.Paideia
+import scala.collection.mutable.HashMap
+import im.paideia.util.ConfKeys
 
 class TotalStakingState(
-    val stakingConfig: StakingConfig,
+    val daoConfig: DAOConfig,
     val currentStakingState: StakingState,
     val snapshots: Queue[(Long,StakingState,List[Long])],
     var profit: Array[Long],
@@ -24,7 +28,7 @@ class TotalStakingState(
 ) {
 
     def stake(stakingKey: String, amount: Long): List[ContextVar] = {
-        val stakeRecord = StakeRecord(amount,List.fill(stakingConfig.profitTokens.size+1)(0L))
+        val stakeRecord = StakeRecord(amount,List.fill(daoConfig.getArray[Array[Byte]](ConfKeys.im_paideia_staking_profit_tokenids).size+1)(0L))
         StakingContextVars.stake(stakingKey,stakeRecord,currentStakingState.stake(stakingKey,stakeRecord)).contextVars
     }
 
@@ -56,7 +60,7 @@ class TotalStakingState(
     }
 
     def compound(batchSize: Int): List[ContextVar] = {
-        if (this.snapshots.size < this.stakingConfig.emissionDelay) throw new Exception("Not enough snapshots gathered yet")
+        if (this.snapshots.size < daoConfig[Long](ConfKeys.im_paideia_staking_emission_delay)) throw new Exception("Not enough snapshots gathered yet")
         val snapshot = this.snapshots.front
         val keys = snapshot._2.getKeys(0,batchSize)
         if (keys.size <= 0) throw new Exception("No keys found to compound")
@@ -82,20 +86,20 @@ class TotalStakingState(
 
     def emit(currentTime: Long, tokensInPool: Long): List[ContextVar] = {
         if (currentTime<nextEmission) throw new Exception("Not time for new emission yet")
-        if (this.snapshots.size >= this.stakingConfig.emissionDelay)
-            if (this.snapshots.front._2.size()>0)
+        if (snapshots.size >= daoConfig[Long](ConfKeys.im_paideia_staking_emission_delay))
+            if (snapshots.front._2.size()>0)
                 throw new Exception("Not done compounding")
             else
-                this.snapshots.dequeue()
-        this.nextEmission += this.stakingConfig.cycleLength
-        profit(0) += Math.min(stakingConfig.emissionAmount,tokensInPool-profit(0))
+                snapshots.dequeue()
+        nextEmission += daoConfig[Long](ConfKeys.im_paideia_staking_cyclelength)
+        profit(0) += Math.min(daoConfig[Long](ConfKeys.im_paideia_staking_emission_amount),tokensInPool-profit(0))
         this.snapshots.enqueue((this.currentStakingState.totalStaked,this.currentStakingState.clone(),List(profit:_*)))
-        profit = Array.fill(stakingConfig.profitTokens.size+2)(0L)
+        profit = Array.fill(daoConfig.getArray[Array[Byte]](ConfKeys.im_paideia_staking_profit_tokenids).size+2)(0L)
         StakingContextVars.emit.contextVars
     }
 
     def profitShare(profitToShare: List[Long]): List[ContextVar] = {
-        profit.indices.map((i: Int) => profit(i) += profitToShare(i))
+        profit = profitToShare.indices.map((i: Int) => if (i >= profit.size) profitToShare(i) else profit(i) + profitToShare(i)).toArray
         StakingContextVars.profitShare.contextVars
     }
 
@@ -106,11 +110,20 @@ class TotalStakingState(
 }
 
 object TotalStakingState {
-    def apply(stakingConfig: StakingConfig, nextEmission: Long): TotalStakingState = {
-        val currentState = StakingState(stakingConfig)
+    val _stakingStates: HashMap[String,TotalStakingState] = HashMap[String,TotalStakingState]()
+
+    def apply(daoKey: String, nextEmission: Long, clearAll: Boolean = false): TotalStakingState = {
+        if (clearAll) _stakingStates.clear()
+        val daoConfig = Paideia.getConfig(daoKey)
+        val currentState = StakingState()
+        val profitTokensSize = daoConfig.getArray[Array[Byte]](ConfKeys.im_paideia_staking_profit_tokenids).size
         val snapshots = Queue[(Long,StakingState,List[Long])](
-            Range(0,stakingConfig.emissionDelay.toInt).map((_) => (0L,currentState.clone(),List.fill(stakingConfig.profitTokens.size+2)(0L))): _*
+            Range(0,daoConfig[Long](ConfKeys.im_paideia_staking_emission_delay).toInt).map((_) => (0L,currentState.clone(),List.fill(profitTokensSize+2)(0L))): _*
         )
-        new TotalStakingState(stakingConfig,currentState,snapshots,Array.fill(stakingConfig.profitTokens.size+2)(0L),nextEmission: Long)
+        val newState = new TotalStakingState(daoConfig,currentState,snapshots,Array.fill(profitTokensSize+2)(0L),nextEmission)
+        _stakingStates.put(daoKey,newState)
+        newState
     }
+
+    def apply(daoKey: String): TotalStakingState = _stakingStates(daoKey)
 }

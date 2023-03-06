@@ -1,3 +1,0 @@
-{
-    sigmaProp(true)
-}

@@ -1,7 +1,6 @@
 package im.paideia.staking.transactions
 
 import org.scalatest.funsuite.AnyFunSuite
-import im.paideia.staking.StakingConfig
 import im.paideia.staking.TotalStakingState
 import org.ergoplatform.appkit.Address
 import org.ergoplatform.appkit.RestApiErgoClient
@@ -13,32 +12,62 @@ import org.ergoplatform.appkit.ErgoToken
 import scala.collection.JavaConverters._
 import org.ergoplatform.appkit.InputBox
 import im.paideia.staking.transactions._
-import im.paideia.governance.DAOConfig
+import im.paideia.DAOConfig
 import im.paideia.util.Util
 import im.paideia.common.PaideiaTestSuite
+import im.paideia.util.ConfKeys
+import org.ergoplatform.appkit.ErgoId
+import im.paideia.DAO
+import im.paideia.Paideia
+import im.paideia.common.TransactionEvent
+import org.ergoplatform.restapi.client.ErgoTransaction
+import im.paideia.common.contracts.PaideiaContractSignature
+import im.paideia.common.contracts.Config
+import im.paideia.staking.contracts.PlasmaStaking
+import im.paideia.staking.contracts.AddStakeProxy
+import im.paideia.staking.StakingTest
 
 class AddStakeTransactionSuite extends PaideiaTestSuite {
     test("Sign add stake tx") {
-        val stakingConfig = StakingConfig.test
-        val daoConfig = DAOConfig.test
-        val state = TotalStakingState(stakingConfig, 0L)
-        val testKey = Util.randomKey
-        state.stake(testKey,100L)
-        val dummyAddress = Address.create("4MQyML64GnzMxZgm")
         val ergoClient = createMockedErgoClient(MockData(Nil,Nil))
         ergoClient.execute(new java.util.function.Function[BlockchainContext,Unit] {
             override def apply(_ctx: BlockchainContext): Unit = {
                 val ctx = _ctx.asInstanceOf[BlockchainContextImpl]
-                val stakeStateInput = StakeStateBox(ctx,state,100000000L,daoConfig).inputBox()
-                val stakingConfigInput = StakingConfigBox(ctx,stakingConfig,daoConfig).inputBox()
-                val userInput = ctx.newTxBuilder().outBoxBuilder()
-                    .contract(dummyAddress.toErgoContract())
-                    .value(10000000000L)
-                    .tokens(new ErgoToken(state.stakingConfig.stakedTokenId,10000000L),new ErgoToken(testKey,1L))
-                    .build().convertToInputWith("ce552663312afc2379a91f803c93e2b10b424f176fbc930055c10def2fd88a5d",2)
+                PaideiaTestSuite.init(ctx)
+                val dao = StakingTest.testDAO
+                val state = TotalStakingState(dao.key)
 
-                val addStakeTransaction = AddStakeTransaction(ctx,stakeStateInput,stakingConfigInput,userInput,testKey,1000L,state,dummyAddress.getErgoAddress(),daoConfig)
-                ctx.newProverBuilder().build().sign(addStakeTransaction.unsigned())
+                val testKey = Util.randomKey
+
+                state.stake(testKey,100L)
+
+                val dummyAddress = Address.create("4MQyML64GnzMxZgm")
+
+                val stakingContract = PlasmaStaking(PaideiaContractSignature(daoKey = dao.key))
+                dao.config.set(ConfKeys.im_paideia_contracts_staking,stakingContract.contractSignature)
+
+                val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
+                
+                val configBox = Config(configContract.contractSignature).box(ctx,dao).inputBox()
+                configContract.clearBoxes()
+                configContract.newBox(configBox,false)
+
+                
+                val stakingStateBox = PlasmaStaking(stakingContract.contractSignature).box(
+                    ctx,
+                    dao.config,
+                    state,
+                    100000000L
+                ).inputBox()
+                stakingContract.clearBoxes()
+                stakingContract.newBox(stakingStateBox,false)
+
+                val addStakeProxyContract = AddStakeProxy(PaideiaContractSignature(daoKey=dao.key))
+                val addStakeProxyBox = addStakeProxyContract.box(ctx,testKey,3000000L,dummyAddress.toString()).ergoTransactionOutput()
+                val dummyTx = (new ErgoTransaction()).addOutputsItem(addStakeProxyBox)
+                val eventResponse = Paideia.handleEvent(TransactionEvent(ctx,false,dummyTx))
+                assert(eventResponse.unsignedTransactions.size===1)
+                ctx.newProverBuilder().build().sign(eventResponse.unsignedTransactions(0).unsigned)
             }
         })
     }
