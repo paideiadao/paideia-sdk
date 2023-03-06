@@ -12,7 +12,11 @@ import scala.util.Success
 import scala.util.Try
 
 trait PaideiaActor {
-    val contractInstances: HashMap[List[Byte],PaideiaContract] = HashMap[List[Byte],PaideiaContract]()
+    var contractInstances: HashMap[List[Byte],PaideiaContract] = HashMap[List[Byte],PaideiaContract]()
+
+    def clear = {
+        contractInstances = HashMap[List[Byte],PaideiaContract]()
+    }
     
     def apply(contractSignature: PaideiaContractSignature): PaideiaContract = ???
 

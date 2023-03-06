@@ -99,7 +99,7 @@ class TotalStakingState(
     }
 
     def profitShare(profitToShare: List[Long]): List[ContextVar] = {
-        profit.indices.map((i: Int) => profit(i) += profitToShare(i))
+        profit = profitToShare.indices.map((i: Int) => if (i >= profit.size) profitToShare(i) else profit(i) + profitToShare(i)).toArray
         StakingContextVars.profitShare.contextVars
     }
 

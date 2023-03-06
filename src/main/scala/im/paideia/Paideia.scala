@@ -16,9 +16,15 @@ import im.paideia.governance.contracts.ProposalContract
 import scorex.crypto.hash.Blake2b256
 
 object Paideia {
-    lazy val _daoMap : HashMap[String,DAO] = HashMap[String,DAO]()
+    var _daoMap : HashMap[String,DAO] = HashMap[String,DAO]()
 
-    lazy val _actorList : HashMap[String,PaideiaActor] = HashMap[String,PaideiaActor]()
+    var _actorList : HashMap[String,PaideiaActor] = HashMap[String,PaideiaActor]()
+
+    def clear = {
+        _actorList.values.foreach(_.clear)
+        _daoMap = HashMap[String,DAO]()
+        _actorList = HashMap[String,PaideiaActor]()
+    }
 
     def addDAO(dao: DAO): Unit = _daoMap.put(dao.key,dao)
 

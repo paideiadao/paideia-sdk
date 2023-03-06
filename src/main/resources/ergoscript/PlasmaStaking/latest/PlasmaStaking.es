@@ -26,11 +26,9 @@
     val snapshotsTree = SELF.R7[Coll[AvlTree]].get
     val snapshotsProfit = SELF.R8[Coll[Coll[Long]]].get
     val longIndices = profit.indices.map{(i: Int) => i*8}
-    val whiteListedProfit = profit.indices.slice(0,profit.indices.size-2).map{
-        (i: Int) =>
-        (configValues(3).get.slice(6+(5*(i+1))+(32*i),6+(5*(i+1))+(32*(i+1))),byteArrayToLong(configValues(4).get.slice(6+(i*8),6*((i+1)*8))))
+    val whiteListedTokenIds = configValues(3).get.slice(0,(configValues(3).get.size-6)/37).indices.map{(i: Int) =>
+        configValues(3).get.slice(6+(37*i)+5,6+(37*(i+1)))
     }
-    val whiteListedTokenIds = whiteListedProfit.map{(token: (Coll[Byte],Long)) => token._1}
 
     val STAKE = 0.toByte
     val CHANGE_STAKE = 1.toByte
@@ -273,20 +271,20 @@
             val profitIndex = whiteListedTokenIds.indexOf(i._1,-1)
             val tokenProfit = o._2 - i._2
             allOf(Coll(
-            i._1 == o._1,
-            profitIndex >= 0,
-            tokenProfit == outputProfit(profitIndex)-profit(profitIndex),
-            tokenProfit >= 0L
+                i._1 == o._1,
+                profitIndex >= 0,
+                tokenProfit == outputProfit(profitIndex+2)-profit(profitIndex+2),
+                tokenProfit >= 0L
             ))
         }
         val correctNewProfit = plasmaStakingOutput.tokens.slice(SELF.tokens.size,plasmaStakingOutput.tokens.size).forall{
             (o: (Coll[Byte],Long)) =>
-            val profitIndex = whiteListedTokenIds.indexOf(o._1,-1)
+            val profitIndex = whiteListedTokenIds.indexOf(o._1,-3)
             val tokenProfit = o._2
             allOf(Coll(
-            profitIndex >= 0,
-            tokenProfit == outputProfit(profitIndex)-profit(profitIndex),
-            tokenProfit >= 0L
+                profitIndex >= 0,
+                tokenProfit == outputProfit(profitIndex+2),
+                tokenProfit >= 0L
             ))
         }
         allOf(Coll(

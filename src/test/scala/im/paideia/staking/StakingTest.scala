@@ -8,7 +8,7 @@ import org.ergoplatform.appkit.ErgoId
 import im.paideia.Paideia
 
 object StakingTest {
-    lazy val testDAO: DAO = {
+    def testDAO: DAO = {
         val daoKey = Util.randomKey
         val config = DAOConfig()
         val stakeStateTokenId = Util.randomKey

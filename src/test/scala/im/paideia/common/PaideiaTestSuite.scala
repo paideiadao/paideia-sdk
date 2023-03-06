@@ -31,6 +31,7 @@ object PaideiaTestSuite {
     var initializedPaideia: Boolean = false
 
     def init(ctx: BlockchainContextImpl) = {
+        Paideia.clear
         PlasmaStaking.contractInstances.clear()
         if (!initializedPaideia) {
             val paideiaConfig = DAOConfig()
@@ -60,7 +61,7 @@ object PaideiaTestSuite {
             configContract.newBox(configContract.box(ctx,Paideia.getDAO(Env.paideiaDaoKey)).inputBox(),false)
             paideiaOriginContract.newBox(paideiaOriginContract.box(ctx,paideiaConfig,1000000L).inputBox(),false)
             operatorIncentiveContract.newBox(operatorIncentiveContract.box(ctx,100000000000L,1000000000L).inputBox(),false)
-            initializedPaideia = true
+            //initializedPaideia = true
         }
     }
 }

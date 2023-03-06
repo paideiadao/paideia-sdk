@@ -46,8 +46,12 @@ case class DAOConfig(
     }
 
     def set[T](key: DAOConfigKey, value: T)(implicit enc: DAOConfigValueSerializer[T]) = {
-        keys.add(key.originalKey.getOrElse(""))
-        _config.insert((key,enc.serialize(value,true).toArray))
+        if (keys.contains(key.originalKey.getOrElse(""))) {
+            _config.update((key,enc.serialize(value,true).toArray))
+        } else {
+            keys.add(key.originalKey.getOrElse(""))
+            _config.insert((key,enc.serialize(value,true).toArray))
+        }
     }
 
     def handleExtension(extension: Map[String,String]) = {
