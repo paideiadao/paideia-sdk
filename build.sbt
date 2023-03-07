@@ -1,6 +1,23 @@
 import sbt.url
 // The simplest possible sbt build file is just one line:
 
+inThisBuild(List(
+  organization := "im.paideia",
+  homepage := Some(url("https://paideia.im")),
+  // Alternatively License.Apache2 see https://github.com/sbt/librarymanagement/blob/develop/core/src/main/scala/sbt/librarymanagement/License.scala
+  licenses := List(License.MIT),
+  developers := List(
+    Developer(
+      "luivatra",
+      "Rob van Leeuwen",
+      "luivatra@gmail.com"
+    )
+  )
+))
+
+sonatypeCredentialHost := "s01.oss.sonatype.org"
+sonatypeRepository := "https://s01.oss.sonatype.org/service/local"
+
 scalaVersion := "2.12.16"
 // That is, to create a valid sbt build, all you've got to do is define the
 // version of Scala you'd like your project to use.
@@ -14,8 +31,7 @@ scalaVersion := "2.12.16"
 // It's possible to define many kinds of settings, such as:
 
 name := "paideia-sdk"
-organization := "ergo-pad"
-version := "0.0.1"
+organization := "im.paideia"
 
 //githubOwner := "ergo-pad"
 //githubRepository := "paideia-sdk"

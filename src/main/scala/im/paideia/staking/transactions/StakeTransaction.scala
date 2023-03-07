@@ -74,7 +74,9 @@ case class StakeTransaction(
             "test",
             0
         )
-    ).contract(Address.fromPropositionBytes(ctx.getNetworkType(),stakeProxyInput.getRegisters().get(0).getValue().asInstanceOf[Coll[Byte]].toArray).toErgoContract()).build()
+    )
+    .value(1000000L)
+    .contract(Address.fromPropositionBytes(ctx.getNetworkType(),stakeProxyInput.getRegisters().get(0).getValue().asInstanceOf[Coll[Byte]].toArray).toErgoContract()).build()
 
     fee = 1000000L
     inputs = List[InputBox](stakeStateInput.withContextVars(contextVars: _*),stakeProxyInput)
