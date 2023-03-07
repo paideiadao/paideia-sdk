@@ -10,7 +10,8 @@ inThisBuild(List(
     Developer(
       "luivatra",
       "Rob van Leeuwen",
-      "luivatra@gmail.com"
+      "luivatra@gmail.com",
+      url("https://github.com/luivatra")
     )
   )
 ))
@@ -18,7 +19,7 @@ inThisBuild(List(
 sonatypeCredentialHost := "s01.oss.sonatype.org"
 sonatypeRepository := "https://s01.oss.sonatype.org/service/local"
 
-scalaVersion := "2.12.16"
+scalaVersion := "2.12.17"
 // That is, to create a valid sbt build, all you've got to do is define the
 // version of Scala you'd like your project to use.
 
@@ -46,13 +47,13 @@ organization := "im.paideia"
 
 libraryDependencies ++= Seq(
     "org.scala-lang.modules" %% "scala-parser-combinators" % "2.1.1",
-    "io.github.getblok-io" % "getblok_plasma_2.12" % "1.0.0",
+    "io.github.getblok-io" % "getblok_plasma_2.12" % "1.0.1",
     "com.typesafe" % "config" % "1.4.0",
     "org.scalatest" %% "scalatest-funsuite" % "3.2.13" % Test,
     "com.squareup.okhttp3" % "mockwebserver" % "3.12.0" % Test
 )
 
-dependencyOverrides += "org.ergoplatform" %% "ergo-appkit" % "5.0.0"
+//dependencyOverrides += "org.ergoplatform" %% "ergo-appkit" % "5.0.0"
 
 resolvers ++= Seq(
   "Sonatype Releases" at "https://oss.sonatype.org/content/repositories/releases/",
