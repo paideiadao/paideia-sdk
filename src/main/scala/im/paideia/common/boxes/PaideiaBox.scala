@@ -1,4 +1,4 @@
-package im.paideia.common
+package im.paideia.common.boxes
 
 import sigmastate.Values
 import org.ergoplatform.appkit.ErgoToken
@@ -9,22 +9,29 @@ import org.ergoplatform.appkit.InputBox
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import org.ergoplatform.appkit.impl.ErgoTreeContract
 import org.ergoplatform.appkit.ErgoContract
+import org.ergoplatform.restapi.client.ErgoTransactionOutput
+import org.ergoplatform.appkit.impl.ScalaBridge
+import org.ergoplatform.appkit.impl.InputBoxImpl
+import im.paideia.util.Util
+import special.sigma.Box
+import sigmastate.eval.CostingBox
 
 trait PaideiaBox {
     private var _value: Long = _
     private var _contract: ErgoContract = _
-    private var _tokens: List[ErgoToken] = _
-    private var _registers: List[ErgoValue[_]] = _
+    private var _tokens: List[ErgoToken] = List[ErgoToken]()
+    private var _registers: List[ErgoValue[_]] = List[ErgoValue[_]]()
     private var _contextVars: List[ContextVar] = _
+    private var _ctx : BlockchainContextImpl = _
 
-    def inputBox(ctx: BlockchainContextImpl, withTxId: String = "ce552663312afc2379a91f803c93e2b10b424f176fbc930055c10def2fd88a5d", withIndex: Short = 0): InputBox = this.outBox(ctx).convertToInputWith(withTxId,withIndex)
-    def outBox(ctx: BlockchainContextImpl): OutBox = {
-        ctx.newTxBuilder().outBoxBuilder()
+    def inputBox(withTxId: String = Util.randomKey, withIndex: Short = 0): InputBoxImpl = this.outBox.convertToInputWith(withTxId,withIndex).asInstanceOf[InputBoxImpl]
+    def outBox: OutBox = {
+        var b = ctx.newTxBuilder().outBoxBuilder()
             .value(value)
             .contract(contract)
-            .tokens(tokens: _*)
-            .registers(registers: _*)
-            .build()
+        if (tokens.size>0) b = b.tokens(tokens: _*)
+        if (registers.size>0) b = b.registers(registers: _*)
+        b.build()
     }
 
     def registers = _registers
@@ -41,4 +48,11 @@ trait PaideiaBox {
 
     def contextVars = _contextVars
     def contextVars_= (newContextVars: List[ContextVar]) = _contextVars = newContextVars
+
+    def ctx = _ctx
+    def ctx_= (newCtx: BlockchainContextImpl) = _ctx = newCtx
+
+    def ergoTransactionOutput(withTxId: String = Util.randomKey, withIndex: Short = 0): ErgoTransactionOutput = ScalaBridge.isoErgoTransactionOutput.from(inputBox(withTxId,withIndex).asInstanceOf[InputBoxImpl].getErgoBox())
+
+    def box(): Box = CostingBox(false,inputBox().getErgoBox())
 }

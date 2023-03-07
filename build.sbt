@@ -1,7 +1,25 @@
 import sbt.url
 // The simplest possible sbt build file is just one line:
 
-scalaVersion := "2.12.16"
+inThisBuild(List(
+  organization := "im.paideia",
+  homepage := Some(url("https://paideia.im")),
+  // Alternatively License.Apache2 see https://github.com/sbt/librarymanagement/blob/develop/core/src/main/scala/sbt/librarymanagement/License.scala
+  licenses := List(License.MIT),
+  developers := List(
+    Developer(
+      "luivatra",
+      "Rob van Leeuwen",
+      "luivatra@gmail.com",
+      url("https://github.com/luivatra")
+    )
+  )
+))
+
+sonatypeCredentialHost := "s01.oss.sonatype.org"
+sonatypeRepository := "https://s01.oss.sonatype.org/service/local"
+
+scalaVersion := "2.12.17"
 // That is, to create a valid sbt build, all you've got to do is define the
 // version of Scala you'd like your project to use.
 
@@ -15,7 +33,9 @@ scalaVersion := "2.12.16"
 
 name := "paideia-sdk"
 organization := "im.paideia"
-version := "0.0.1"
+
+//githubOwner := "ergo-pad"
+//githubRepository := "paideia-sdk"
 
 // Note, it's not required for you to define these three settings. These are
 // mostly only necessary if you intend to publish your library's binaries on a
@@ -27,11 +47,13 @@ version := "0.0.1"
 
 libraryDependencies ++= Seq(
     "org.scala-lang.modules" %% "scala-parser-combinators" % "2.1.1",
-    "io.github.getblok-io" % "getblok_plasma_2.12" % "0.0.8",
-    // https://mvnrepository.com/artifact/org.scalatest/scalatest-funsuite
-    "org.scalatest" %% "scalatest-funsuite" % "3.2.13" % Test
-
+    "io.github.getblok-io" % "getblok_plasma_2.12" % "1.0.1",
+    "com.typesafe" % "config" % "1.4.0",
+    "org.scalatest" %% "scalatest-funsuite" % "3.2.13" % Test,
+    "com.squareup.okhttp3" % "mockwebserver" % "3.12.0" % Test
 )
+
+//dependencyOverrides += "org.ergoplatform" %% "ergo-appkit" % "5.0.0"
 
 resolvers ++= Seq(
   "Sonatype Releases" at "https://oss.sonatype.org/content/repositories/releases/",
@@ -41,3 +63,5 @@ resolvers ++= Seq(
 )
 
 testOptions in Test += Tests.Argument("-oDF")
+
+Test / parallelExecution := false

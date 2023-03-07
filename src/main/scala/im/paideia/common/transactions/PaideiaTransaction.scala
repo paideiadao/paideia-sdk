@@ -1,4 +1,4 @@
-package im.paideia.common
+package im.paideia.common.transactions
 
 import org.ergoplatform.appkit.UnsignedTransaction
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
@@ -11,6 +11,7 @@ import org.ergoplatform.appkit.OutBox
 
 trait PaideiaTransaction {
     var inputs: List[InputBox] = _
+    var userInputs: List[InputBox] = List[InputBox]()
     var dataInputs: List[InputBox] = List[InputBox]()
     var outputs: List[OutBox] = _
     var tokensToBurn: List[ErgoToken] = List[ErgoToken]()
@@ -25,7 +26,7 @@ trait PaideiaTransaction {
             .tokensToBurn(this.tokensToBurn: _*)
             .preHeader(this.ctx.createPreHeader().build())
             .fee(this.fee)
-            .boxesToSpend(this.inputs.asJava)
+            .boxesToSpend((this.inputs++this.userInputs).asJava)
             .withDataInputs(this.dataInputs.asJava)
             .build()
     }

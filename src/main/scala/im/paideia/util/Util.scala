@@ -3,6 +3,7 @@ package im.paideia.util
 import scala.util.Random
 
 object Util {
+
     def bytes2hex(bytes: Array[Byte], sep: Option[String] = None): String = {
         sep match {
             case None => bytes.map("%02x".format(_)).mkString
