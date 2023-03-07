@@ -10,6 +10,7 @@ import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.staking.contracts.AddStakeProxy
 import sigmastate.eval.Colls
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
+import im.paideia.util.Env
 
 case class AddStakeProxyBox(
     _ctx: BlockchainContextImpl, 
@@ -20,7 +21,7 @@ case class AddStakeProxyBox(
     addAmount: Long) extends PaideiaBox {
 
     ctx = _ctx
-    value = 1000000L
+    value = 3000000L
     contract = useContract.contract
 
     override def registers: List[ErgoValue[_]] = {
@@ -34,7 +35,8 @@ case class AddStakeProxyBox(
     override def tokens: List[ErgoToken] = {
         List(
             new ErgoToken(stakeKey, 1L),
-            new ErgoToken(daoConfig.getArray[Byte](ConfKeys.im_paideia_dao_tokenid),addAmount)
+            new ErgoToken(daoConfig.getArray[Byte](ConfKeys.im_paideia_dao_tokenid),addAmount),
+            new ErgoToken(Env.paideiaTokenId, Env.defaultBotFee)
         )
     }
 }

@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets
 import im.paideia.staking.boxes.AddStakeProxyBox
 import im.paideia.Paideia
 import im.paideia.staking.transactions.AddStakeTransaction
+import im.paideia.util.ConfKeys
 
 class AddStakeProxy(contractSignature: PaideiaContractSignature) extends PaideiaContract(contractSignature) {
     def box(ctx: BlockchainContextImpl, 
@@ -50,6 +51,13 @@ class AddStakeProxy(contractSignature: PaideiaContractSignature) extends Paideia
         }
         val superResponse = super.handleEvent(event)
         response
+    }
+
+    override lazy val constants: HashMap[String,Object] = {
+        val cons = new HashMap[String,Object]()
+        cons.put("_IM_PAIDEIA_DAO_KEY",ErgoId.create(contractSignature.daoKey).getBytes())
+        cons.put("_IM_PAIDEIA_STAKING_STATE_TOKENID",ConfKeys.im_paideia_staking_state_tokenid.ergoValue.getValue())
+        cons
     }
 }
 

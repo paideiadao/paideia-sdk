@@ -67,6 +67,14 @@ case class AddStakeTransaction(
         ConfKeys.im_paideia_contracts_staking
     )))
 
+    val proxyContextVars = List(
+        ContextVar.of(0.toByte,config.getProof(
+            ConfKeys.im_paideia_staking_state_tokenid
+        )),
+        ContextVar.of(1.toByte, contextVars(2).getValue()),
+        ContextVar.of(2.toByte, contextVars(3).getValue())
+    )
+
     val stakingContract = PlasmaStaking(config[PaideiaContractSignature](ConfKeys.im_paideia_contracts_staking))
 
     val stakeStateOutput = stakingContract.box(_ctx,config,state,stakeStateInput.getTokens().get(1).getValue()+amount)
@@ -78,7 +86,7 @@ case class AddStakeTransaction(
     ctx = _ctx
     fee = 1000000
     changeAddress = _changeAddress
-    inputs = List[InputBox](stakeStateInput.withContextVars(contextVars: _*),addStakeProxyInput)
+    inputs = List[InputBox](stakeStateInput.withContextVars(contextVars: _*),addStakeProxyInput.withContextVars(proxyContextVars:_*))
     dataInputs = List[InputBox](configInput)
     outputs = List[OutBox](stakeStateOutput.outBox,userOutput)
 

@@ -35,7 +35,7 @@ case class StakeProxyBox(
     override def tokens: List[ErgoToken] = {
         List(
             new ErgoToken(daoConfig.getArray[Byte](ConfKeys.im_paideia_dao_tokenid),stakeAmount),
-            new ErgoToken(Env.paideiaTokenId, 10000L)
+            new ErgoToken(Env.paideiaTokenId, Env.defaultBotFee)
         )
     }
 }

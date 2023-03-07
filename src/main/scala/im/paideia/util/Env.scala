@@ -13,4 +13,5 @@ object Env {
     def paideiaOriginNFT: String = conf.getString("paideiaOriginNFT")
     def operatorAddress: String = conf.getString("operatorAddress")
     def compoundBatchSize: Int = conf.getInt("compoundBatchSize")
+    def defaultBotFee: Long = conf.getLong("defaultBotFee")
 }
