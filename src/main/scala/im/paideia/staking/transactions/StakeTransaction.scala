@@ -62,6 +62,15 @@ case class StakeTransaction(
         ConfKeys.im_paideia_contracts_staking
     )))
 
+    val proxyContextVars = List(
+        ContextVar.of(0.toByte,config.getProof(
+            ConfKeys.im_paideia_staking_state_tokenid,
+            ConfKeys.im_paideia_dao_name
+        )),
+        ContextVar.of(1.toByte, contextVars(2).getValue()),
+        ContextVar.of(2.toByte, contextVars(3).getValue())
+    )
+
     val stakingContract = PlasmaStaking(config[PaideiaContractSignature](ConfKeys.im_paideia_contracts_staking))
 
     val stakeStateOutput = stakingContract.box(ctx,config,state,stakeStateInput.getTokens().get(1).getValue()+amount)
@@ -70,8 +79,8 @@ case class StakeTransaction(
         new Eip4Token(
             stakeKey,
             1L,
-            "test",
-            "test",
+            config[String](ConfKeys.im_paideia_dao_name)++" Stake Key",
+            "Powered by Paideia",
             0
         )
     )
@@ -79,7 +88,7 @@ case class StakeTransaction(
     .contract(Address.fromPropositionBytes(ctx.getNetworkType(),stakeProxyInput.getRegisters().get(0).getValue().asInstanceOf[Coll[Byte]].toArray).toErgoContract()).build()
 
     fee = 1000000L
-    inputs = List[InputBox](stakeStateInput.withContextVars(contextVars: _*),stakeProxyInput)
+    inputs = List[InputBox](stakeStateInput.withContextVars(contextVars: _*),stakeProxyInput.withContextVars(proxyContextVars:_*))
     dataInputs = List[InputBox](configInput)
     outputs = List[OutBox](stakeStateOutput.outBox,userOutput)
     changeAddress=_changeAddress
