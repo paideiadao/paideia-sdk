@@ -60,8 +60,12 @@ class UnstakeTransactionSuite extends PaideiaTestSuite {
                 stakingContract.clearBoxes()
                 stakingContract.newBox(stakingStateBox,false)
 
+                val currentStake = state.getStake(testKey)
+
+                currentStake.stake -= 300L
+
                 val unstakeProxyContract = UnstakeProxy(PaideiaContractSignature(daoKey=dao.key))
-                val unstakeProxyBox = unstakeProxyContract.box(ctx,testKey,300L,dummyAddress.toString()).ergoTransactionOutput()
+                val unstakeProxyBox = unstakeProxyContract.box(ctx,testKey,currentStake,dummyAddress.toString()).ergoTransactionOutput()
                 val dummyTx = (new ErgoTransaction()).addOutputsItem(unstakeProxyBox)
                 val eventResponse = Paideia.handleEvent(TransactionEvent(ctx,false,dummyTx))
                 assert(eventResponse.unsignedTransactions.size===1)
@@ -103,9 +107,10 @@ class UnstakeTransactionSuite extends PaideiaTestSuite {
                 ).inputBox()
                 stakingContract.clearBoxes()
                 stakingContract.newBox(stakingStateBox,false)
-
+                val currentStake = state.getStake(testKey)
+                currentStake.clear
                 val unstakeProxyContract = UnstakeProxy(PaideiaContractSignature(daoKey=dao.key))
-                val unstakeProxyBox = unstakeProxyContract.box(ctx,testKey,30000L,dummyAddress.toString()).ergoTransactionOutput()
+                val unstakeProxyBox = unstakeProxyContract.box(ctx,testKey,currentStake,dummyAddress.toString()).ergoTransactionOutput()
                 val dummyTx = (new ErgoTransaction()).addOutputsItem(unstakeProxyBox)
                 val eventResponse = Paideia.handleEvent(TransactionEvent(ctx,false,dummyTx))
                 assert(eventResponse.unsignedTransactions.size===1)

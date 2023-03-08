@@ -22,11 +22,12 @@ import java.nio.charset.StandardCharsets
 import im.paideia.staking.boxes.UnstakeProxyBox
 import im.paideia.Paideia
 import im.paideia.staking.transactions.UnstakeTransaction
+import im.paideia.staking.StakeRecord
 
 class UnstakeProxy(contractSignature: PaideiaContractSignature) extends PaideiaContract(contractSignature) {
     def box(ctx: BlockchainContextImpl, 
-        stakeKey: String, removeAmount: Long, userAddress: String): UnstakeProxyBox = {
-        UnstakeProxyBox(ctx,this,Paideia.getConfig(contractSignature.daoKey),stakeKey,userAddress,removeAmount)
+        stakeKey: String, newStakeRecord: StakeRecord, userAddress: String): UnstakeProxyBox = {
+        UnstakeProxyBox(ctx,this,Paideia.getConfig(contractSignature.daoKey),stakeKey,userAddress,newStakeRecord)
     }
 
     override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {

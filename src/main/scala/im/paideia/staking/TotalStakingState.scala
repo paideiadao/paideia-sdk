@@ -39,14 +39,14 @@ class TotalStakingState(
         StakingContextVars.changeStake(operations,result).contextVars
     }
 
-    def unstake(stakingKey: String, amount: Long): List[ContextVar] = {
+    def unstake(stakingKey: String, newStakeRecord: StakeRecord): List[ContextVar] = {
         val currentStake = this.currentStakingState.getStake(stakingKey)
-        if (currentStake.stake <= amount) {
+        if (newStakeRecord.stake <= 0L) {
             val proof = currentStakingState.getStakes(List[String](stakingKey))
             val removeProof = this.currentStakingState.unstake(List[String](stakingKey))
             StakingContextVars.unstake(stakingKey,proof,removeProof).contextVars
         } else {
-            val operations = List((stakingKey, StakeRecord(currentStake.stake-amount,currentStake.rewards)))
+            val operations = List((stakingKey, newStakeRecord))
             val result = this.currentStakingState.changeStakes(operations)
             StakingContextVars.changeStake(operations,result).contextVars
         }
