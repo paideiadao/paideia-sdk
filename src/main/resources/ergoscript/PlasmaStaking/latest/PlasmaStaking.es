@@ -182,6 +182,7 @@
                 newSnapshotsProfit(newSnapshotsProfit.size-1)(0) == profit(0) + min(emissionAmount,SELF.tokens(1)._2-totalStaked-profit(0))
             ))
             
+            //When a staker gets rewarded for the staking period his entry gets removed from the snapshot. An empty snapshot is proof of having handled all staker rewards for that period.
             val correctHistoryShift = allOf(Coll( 
                     snapshotsTree(0).digest == emptyDigest,
                     newSnapshotsTrees.slice(0,emissionDelay-1) == snapshotsTree.slice(1,emissionDelay),
