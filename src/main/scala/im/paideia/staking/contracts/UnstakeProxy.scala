@@ -23,6 +23,7 @@ import im.paideia.staking.boxes.UnstakeProxyBox
 import im.paideia.Paideia
 import im.paideia.staking.transactions.UnstakeTransaction
 import im.paideia.staking.StakeRecord
+import im.paideia.util.ConfKeys
 
 class UnstakeProxy(contractSignature: PaideiaContractSignature) extends PaideiaContract(contractSignature) {
     def box(ctx: BlockchainContextImpl, 
@@ -51,6 +52,14 @@ class UnstakeProxy(contractSignature: PaideiaContractSignature) extends PaideiaC
         }
         val superResponse = super.handleEvent(event)
         response
+    }
+
+    override lazy val constants: HashMap[String,Object] = {
+        val cons = new HashMap[String,Object]()
+        cons.put("_IM_PAIDEIA_DAO_KEY",ErgoId.create(contractSignature.daoKey).getBytes())
+        cons.put("_IM_PAIDEIA_STAKING_STATE_TOKENID",ConfKeys.im_paideia_staking_state_tokenid.ergoValue.getValue())
+        cons.put("_IM_PAIDEIA_STAKING_PROFIT_TOKENIDS",ConfKeys.im_paideia_staking_profit_tokenids.ergoValue.getValue())
+        cons
     }
 }
 

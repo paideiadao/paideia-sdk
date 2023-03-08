@@ -73,6 +73,15 @@ case class UnstakeTransaction(
         ConfKeys.im_paideia_contracts_staking
     )))
 
+    val proxyContextVars = List(
+        ContextVar.of(0.toByte, config.getProof(
+            ConfKeys.im_paideia_staking_state_tokenid,
+            ConfKeys.im_paideia_staking_profit_tokenids
+        )),
+        ContextVar.of(1.toByte, contextVars(3).getValue()),
+        ContextVar.of(2.toByte, contextVars(4).getValue())
+    )
+
     val stakingContractSignature = config[PaideiaContractSignature](ConfKeys.im_paideia_contracts_staking)
     stakingContractSignature.daoKey = daoKey
     val stakingContract = PlasmaStaking(stakingContractSignature)
@@ -116,7 +125,7 @@ case class UnstakeTransaction(
 
     changeAddress = _changeAddress
     fee = 1000000L
-    inputs = List[InputBox](stakeStateInput.withContextVars(contextVars: _*),unstakeProxyInput)
+    inputs = List[InputBox](stakeStateInput.withContextVars(contextVars: _*),unstakeProxyInput.withContextVars(proxyContextVars:_*))
     dataInputs = List[InputBox](configInput)
     outputs = List[OutBox](stakeStateOutput.outBox,userOutput)
 }
