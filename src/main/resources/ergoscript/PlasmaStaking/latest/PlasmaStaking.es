@@ -148,10 +148,19 @@
         val keyInInput = userInput.tokens(0)._1 == keys(0)
 
         val currentStakeState = stakeState.get(keys(0), proof).get
+        val currentProfits = longIndices.map{(i: Int) => byteArrayToLong(currentStakeState.slice(i,i+8))}
 
-        val currentStakeAmount = byteArrayToLong(currentStakeState.slice(0,8))
+        val currentStakeAmount = currentProfits(0)
 
         val tokensUnstaked = currentStakeAmount == (SELF.tokens(1)._2 - plasmaStakingOutput.tokens(1)._2) && currentStakeAmount == totalStaked - plasmaStakingOutput.R5[Coll[Long]].get(2)
+        val correctErgProfit = currentProfits(1) == SELF.value - plasmaStakingOutput.value
+
+        val correctTokenProfit = SELF.tokens.slice(2,SELF.tokens.size).forall{
+                (token: (Coll[Byte], Long)) =>
+                val profitIndex = whiteListedTokenIds.indexOf(token._1,-3)
+                val tokenAmountInOutput = plasmaStakingOutput.tokens.fold(0L, {(z: Long, outputToken: (Coll[Byte], Long)) => if (outputToken._1 == token._1) z + outputToken._2 else z})
+                token._2 - tokenAmountInOutput == currentProfits(profitIndex+2)
+            }
 
         val singleStakeOp = keys.size == 1
 
@@ -160,6 +169,8 @@
         allOf(Coll(
             keyInInput,
             tokensUnstaked,
+            correctErgProfit,
+            correctTokenProfit,
             singleStakeOp,
             correctNewState
         ))
