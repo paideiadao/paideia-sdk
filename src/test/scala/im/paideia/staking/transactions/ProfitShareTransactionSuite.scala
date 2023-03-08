@@ -88,7 +88,6 @@ class ProfitShareTransactionSuite extends PaideiaTestSuite {
                 val stakingContract = PlasmaStaking(PaideiaContractSignature(daoKey = dao.key))
                 dao.config.set(ConfKeys.im_paideia_contracts_staking,stakingContract.contractSignature)
                 dao.config.set(ConfKeys.im_paideia_staking_profit_share_pct, 50.toByte)
-                dao.config.set(ConfKeys.im_paideia_dao_action_tokenid, ErgoId.create(Util.randomKey).getBytes())
                 val treasuryContract = Treasury(PaideiaContractSignature(daoKey=dao.key))
                 dao.config.set(ConfKeys.im_paideia_contracts_treasury,treasuryContract.contractSignature)
                 val sigUsd = Util.randomKey

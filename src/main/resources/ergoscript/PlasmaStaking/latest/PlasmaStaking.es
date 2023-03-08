@@ -21,14 +21,14 @@
     val nextSnapshot = SELF.R5[Coll[Long]].get(0)
     val stakers = SELF.R5[Coll[Long]].get(1)
     val totalStaked = SELF.R5[Coll[Long]].get(2)
-    val profit = SELF.R5[Coll[Long]].get.slice(3,SELF.R5[Coll[Long]].get.size)
+    val whiteListedTokenIds = configValues(3).get.slice(0,(configValues(3).get.size-6)/37).indices.map{(i: Int) =>
+        configValues(3).get.slice(6+(37*i)+5,6+(37*(i+1)))
+    }
+    val profit = SELF.R5[Coll[Long]].get.slice(3,SELF.R5[Coll[Long]].get.size).append(whiteListedTokenIds.slice(SELF.R5[Coll[Long]].get.size-2,whiteListedTokenIds.size).map{(tokId: Coll[Byte]) => 0L})
     val snapshotsStaked = SELF.R6[Coll[Long]].get
     val snapshotsTree = SELF.R7[Coll[AvlTree]].get
     val snapshotsProfit = SELF.R8[Coll[Coll[Long]]].get
     val longIndices = profit.indices.map{(i: Int) => i*8}
-    val whiteListedTokenIds = configValues(3).get.slice(0,(configValues(3).get.size-6)/37).indices.map{(i: Int) =>
-        configValues(3).get.slice(6+(37*i)+5,6+(37*(i+1)))
-    }
 
     val STAKE = 0.toByte
     val CHANGE_STAKE = 1.toByte
@@ -98,23 +98,39 @@
 
             val keyInOutput = userOutput.tokens.getOrElse(0,OUTPUTS(0).tokens(0))._1 == stakeOperations(0)._1
 
-            val newStakeAmount = byteArrayToLong(stakeOperations(0)._2.slice(0,8))
-
             val currentStakeState = stakeState.get(stakeOperations(0)._1, proof).get
+            val currentProfits = longIndices.map{(i: Int) => byteArrayToLong(currentStakeState.slice(i,i+8))}
+            val newProfits = longIndices.map{(i: Int) => byteArrayToLong(stakeOperations(0)._2.slice(i,i+8))}
+            val combinedProfit = currentProfits.zip(newProfits)
 
-            val currentStakeAmount = byteArrayToLong(currentStakeState.slice(0,8))
+            val currentStakeAmount = currentProfits(0)
+            val newStakeAmount = newProfits(0)
 
             val tokensStaked = newStakeAmount - currentStakeAmount == (plasmaStakingOutput.tokens(1)._2 - SELF.tokens(1)._2) && newStakeAmount - currentStakeAmount == plasmaStakingOutput.R5[Coll[Long]].get(2) - totalStaked
 
             val singleStakeOp = stakeOperations.size == 1
 
             val correctNewState = stakeState.update(stakeOperations, proof).get.digest == plasmaStakingOutput.R4[AvlTree].get.digest
+
+            val noAddedOrNegativeProfit = combinedProfit.slice(1,combinedProfit.size).forall{(p: (Long, Long)) => p._1 >= p._2 && p._2 >= 0L}
+
+            val correctErgProfit = currentProfits(1)-newProfits(1) == SELF.value - plasmaStakingOutput.value
+
+            val correctTokenProfit = SELF.tokens.slice(2,SELF.tokens.size).forall{
+                (token: (Coll[Byte], Long)) =>
+                val profitIndex = whiteListedTokenIds.indexOf(token._1,-3)
+                val tokenAmountInOutput = plasmaStakingOutput.tokens.fold(0L, {(z: Long, outputToken: (Coll[Byte], Long)) => if (outputToken._1 == token._1) z + outputToken._2 else z})
+                token._2 - tokenAmountInOutput == currentProfits(profitIndex+2) - newProfits(profitIndex+2)
+            }
             
             allOf(Coll(
                 keyInOutput,
                 tokensStaked,
                 singleStakeOp,
-                correctNewState
+                correctNewState,
+                noAddedOrNegativeProfit,
+                correctErgProfit,
+                correctTokenProfit
             ))
         } else {
             true
@@ -300,6 +316,7 @@
     }
 
     sigmaProp(allOf(Coll(
+        correctConfigTokenId,
         validTransactionType,
         validOutput,
         validStake,

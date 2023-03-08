@@ -68,8 +68,8 @@ class ProtoDAO(contractSignature: PaideiaContractSignature) extends PaideiaContr
         cons.put("_IM_PAIDEIA_CONTRACTS_PROTODAO",ConfKeys.im_paideia_contracts_protodao.ergoValue.getValue())
         cons.put("_IM_PAIDEIA_CONTRACTS_MINT",ConfKeys.im_paideia_contracts_mint.ergoValue.getValue())
         cons.put("_IM_PAIDEIA_CONTRACTS_DAO",ConfKeys.im_paideia_contracts_dao.ergoValue.getValue())
-        cons.put("_IM_PAIDEIA_CONTRACTS_CONFIG",ConfKeys.im_paideia_contracts_config.ergoValue.getValue())
         cons.put("_IM_PAIDEIA_CONTRACTS_TREASURY",ConfKeys.im_paideia_contracts_treasury.ergoValue.getValue())
+        cons.put("_IM_PAIDEIA_CONTRACTS_CONFIG",ConfKeys.im_paideia_contracts_config.ergoValue.getValue())
         cons.put("_IM_PAIDEIA_DAO_KEY",ConfKeys.im_paideia_dao_key.ergoValue.getValue())
         cons.put("_PAIDEIA_DAO_KEY",ErgoId.create(Env.paideiaDaoKey).getBytes())
         cons.put("_IM_PAIDEIA_DAO_NAME",ConfKeys.im_paideia_dao_name.ergoValue.getValue())
@@ -83,6 +83,8 @@ class ProtoDAO(contractSignature: PaideiaContractSignature) extends PaideiaContr
         cons.put("_STAKE_STATE",ErgoValue.of(" Stake State".getBytes(StandardCharsets.UTF_8)).getValue())
         cons.put("_IM_PAIDEIA_DEFAULT_TREASURY",ConfKeys.im_paideia_default_treasury.ergoValue.getValue())
         cons.put("_IM_PAIDEIA_DEFAULT_TREASURY_SIGNATURE",ConfKeys.im_paideia_default_treasury_signature.ergoValue.getValue())
+        cons.put("_IM_PAIDEIA_DEFAULT_CONFIG",ConfKeys.im_paideia_default_config.ergoValue.getValue())
+        cons.put("_IM_PAIDEIA_DEFAULT_CONFIG_SIGNATURE",ConfKeys.im_paideia_default_config_signature.ergoValue.getValue())
         cons
     }
 }

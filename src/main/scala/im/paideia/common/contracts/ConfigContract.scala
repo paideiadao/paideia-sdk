@@ -10,6 +10,8 @@ import org.ergoplatform.restapi.client.ErgoTransactionInput
 import scala.collection.JavaConverters._
 import org.ergoplatform.appkit.ErgoToken
 import im.paideia.DAO
+import java.util.HashMap
+import im.paideia.util.ConfKeys
 
 class Config(contractSignature: PaideiaContractSignature) 
     extends PaideiaContract(contractSignature) {
@@ -40,6 +42,13 @@ class Config(contractSignature: PaideiaContractSignature)
         }
         val superResponse = super.handleEvent(event)
         PaideiaEventResponse.merge(List(response,superResponse))
+    }
+
+    override lazy val constants: HashMap[String,Object] = {
+        val cons = new HashMap[String,Object]()
+        cons.put("_IM_PAIDEIA_DAO_ACTION_TOKENID",Paideia.getConfig(contractSignature.daoKey).getArray[Byte](ConfKeys.im_paideia_dao_action_tokenid))
+        cons.put("_IM_PAIDEIA_CONTRACTS_CONFIG",ConfKeys.im_paideia_contracts_config.ergoValue.getValue())
+        cons
     }
 }
 

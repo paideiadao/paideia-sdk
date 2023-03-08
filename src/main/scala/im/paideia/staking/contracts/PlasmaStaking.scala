@@ -26,7 +26,7 @@ import scala.collection.JavaConverters._
 import im.paideia.Paideia
 import org.ergoplatform.appkit.impl.InputBoxImpl
 
-class PlasmaStaking(contractSig: PaideiaContractSignature) extends PaideiaContract(contractSig) {
+class PlasmaStaking(contractSignature: PaideiaContractSignature) extends PaideiaContract(contractSignature) {
     def box(ctx: BlockchainContextImpl, daoConfig: DAOConfig, state: TotalStakingState, stakedTokenTotal: Long, value: Long = 1000000, extraTokens: List[ErgoToken] = List[ErgoToken]()): StakeStateBox = {
         val res = new StakeStateBox(state)
         res.value = value
@@ -79,7 +79,7 @@ class PlasmaStaking(contractSig: PaideiaContractSignature) extends PaideiaContra
 
     override lazy val constants: HashMap[String,Object] = {
         val cons = new HashMap[String,Object]()
-        cons.put("_IM_PAIDEIA_DAO_KEY",ErgoId.create(contractSig.daoKey).getBytes())
+        cons.put("_IM_PAIDEIA_DAO_KEY",ErgoId.create(contractSignature.daoKey).getBytes())
         cons.put("_IM_PAIDEIA_STAKING_EMISSION_AMOUNT",ConfKeys.im_paideia_staking_emission_amount.ergoValue.getValue())
         cons.put("_IM_PAIDEIA_STAKING_EMISSION_DELAY",ConfKeys.im_paideia_staking_emission_delay.ergoValue.getValue())   
         cons.put("_IM_PAIDEIA_STAKING_CYCLELENGTH",ConfKeys.im_paideia_staking_cyclelength.ergoValue.getValue()) 

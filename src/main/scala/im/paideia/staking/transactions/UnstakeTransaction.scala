@@ -66,7 +66,9 @@ case class UnstakeTransaction(
         ConfKeys.im_paideia_contracts_staking
     )))
 
-    val stakingContract = PlasmaStaking(config[PaideiaContractSignature](ConfKeys.im_paideia_contracts_staking))
+    val stakingContractSignature = config[PaideiaContractSignature](ConfKeys.im_paideia_contracts_staking)
+    stakingContractSignature.daoKey = daoKey
+    val stakingContract = PlasmaStaking(stakingContractSignature)
 
     val stakeStateOutput = stakingContract.box(ctx,config,state,stakeStateInput.getTokens().get(1).getValue()-removeAmount)
 

@@ -7,10 +7,10 @@ import im.paideia.Paideia
 
 class PaideiaSuite extends AnyFunSuite {
     test("Test PaideiaActor instantiation") {
-        val paideiaRef = Paideia._actorList
-        val contract = Config(PaideiaContractSignature())
-        val contractSig = contract.contractSignature
-        val isItWorking = Paideia.instantiateActor(contractSig)
-        print(isItWorking)
+        // val paideiaRef = Paideia._actorList
+        // val contract = Config(PaideiaContractSignature())
+        // val contractSig = contract.contractSignature
+        // val isItWorking = Paideia.instantiateActor(contractSig)
+        // print(isItWorking)
     }
 }

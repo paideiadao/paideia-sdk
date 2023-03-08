@@ -48,12 +48,12 @@ class AddStakeTransactionSuite extends PaideiaTestSuite {
 
                 val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
                 
-                val configBox = Config(configContract.contractSignature).box(ctx,dao).inputBox()
+                val configBox = configContract.box(ctx,dao).inputBox()
                 configContract.clearBoxes()
                 configContract.newBox(configBox,false)
 
                 
-                val stakingStateBox = PlasmaStaking(stakingContract.contractSignature).box(
+                val stakingStateBox = stakingContract.box(
                     ctx,
                     dao.config,
                     state,

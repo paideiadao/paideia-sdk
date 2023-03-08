@@ -79,7 +79,8 @@
         if (transactionType == 1.toByte) {
             val paideiaConfigValues = paideiaConfig.getMany(Coll(
                 _IM_PAIDEIA_CONTRACTS_DAO,
-                _IM_PAIDEIA_CONTRACTS_CONFIG,
+                _IM_PAIDEIA_DEFAULT_CONFIG,
+                _IM_PAIDEIA_DEFAULT_CONFIG_SIGNATURE,
                 _IM_PAIDEIA_DEFAULT_TREASURY,
                 _IM_PAIDEIA_DEFAULT_TREASURY_SIGNATURE
             ),paideiaConfigProof)
@@ -113,13 +114,15 @@
             val insertValues = getVar[Coll[Coll[Byte]]](4).get
 
             val treasuryContractSignature = insertValues(0)
+            val configContractSignature = insertValues(1)
 
             val finalConfig = config.insert(Coll(
-                (_IM_PAIDEIA_CONTRACTS_TREASURY,treasuryContractSignature)
+                (_IM_PAIDEIA_CONTRACTS_TREASURY,treasuryContractSignature),
+                (_IM_PAIDEIA_CONTRACTS_CONFIG,configContractSignature)
             ),insertProof)
 
             val correctConfigOutput = allOf(Coll(
-                blake2b256(configOutput.propositionBytes) == paideiaConfigValues(1).get.slice(1,33),
+                blake2b256(configOutput.propositionBytes) == configContractSignature.slice(1,33),
                 configOutput.value >= 1000000L,
                 configOutput.tokens(0)._1 == configValues(3).get.slice(6,38),
                 configOutput.tokens(0)._2 == 1L,
@@ -127,10 +130,12 @@
                 configOutput.R4[AvlTree].get.digest == finalConfig.get.digest
             ))
 
-            val correctTreasuryContract = blake2b256(substConstants(paideiaConfigValues(2).get.slice(6,paideiaConfigValues(2).get.size),Coll(2),Coll(configValues(2).get.slice(6,38))))
+            val correctConfigContract = blake2b256(substConstants(paideiaConfigValues(1).get.slice(6,paideiaConfigValues(1).get.size),Coll(7),Coll(configValues(2).get.slice(6,38))))
+            val correctTreasuryContract = blake2b256(substConstants(paideiaConfigValues(3).get.slice(6,paideiaConfigValues(3).get.size),Coll(2),Coll(configValues(2).get.slice(6,38))))
 
             val correctContracts = allOf(Coll(
-                paideiaConfigValues(3).get.patch(1,correctTreasuryContract,32) == treasuryContractSignature
+                paideiaConfigValues(2).get.patch(1,correctConfigContract,32) == configContractSignature,
+                paideiaConfigValues(4).get.patch(1,correctTreasuryContract,32) == treasuryContractSignature
             ))
 
             allOf(Coll(

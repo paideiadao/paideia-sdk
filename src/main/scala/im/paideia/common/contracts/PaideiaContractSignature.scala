@@ -7,5 +7,5 @@ case class PaideiaContractSignature(
     version: String = "latest",
     networkType: NetworkType = NetworkType.MAINNET,
     contractHash: List[Byte] = List(0.toByte),
-    daoKey: String = ""
+    var daoKey: String = ""
 )

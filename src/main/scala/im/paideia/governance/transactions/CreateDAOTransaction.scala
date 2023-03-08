@@ -84,13 +84,16 @@ case class CreateDAOTransaction(
         Long.MaxValue
     )
 
-    val configOutput = Config(PaideiaContractSignature(networkType=_ctx.getNetworkType(),daoKey=dao.key)).box(_ctx,dao)
+    val configContract = Config(PaideiaContractSignature(networkType=_ctx.getNetworkType(),daoKey=dao.key))
+    val configContractSignature = configContract.contractSignature
+
+    val configOutput = configContract.box(_ctx,dao)
 
     val state = TotalStakingState(dao.key,_ctx.createPreHeader().build().getTimestamp()+dao.config[Long](ConfKeys.im_paideia_staking_cyclelength))
     val stakeStateOutput = PlasmaStaking(PaideiaContractSignature(daoKey=dao.key)).box(_ctx,dao.config,state,protoDAOInputBox.stakePool,1000000L)
 
-    val treasury = Treasury(PaideiaContractSignature(daoKey=dao.key))
-    val treasuryContract = treasury.contractSignature
+    val treasuryContract = Treasury(PaideiaContractSignature(daoKey=dao.key))
+    val treasuryContractSignature = treasuryContract.contractSignature
 
     val mintPaideiaConfigProof = ContextVar.of(0.toByte,paideiaConfig.getProof(
         ConfKeys.im_paideia_contracts_protodao,
@@ -125,7 +128,8 @@ case class CreateDAOTransaction(
         ContextVar.of(0.toByte,1.toByte),
         ContextVar.of(1.toByte,paideiaConfig.getProof(
             ConfKeys.im_paideia_contracts_dao,
-            ConfKeys.im_paideia_contracts_config,
+            ConfKeys.im_paideia_default_config,
+            ConfKeys.im_paideia_default_config_signature,
             ConfKeys.im_paideia_default_treasury,
             ConfKeys.im_paideia_default_treasury_signature
         )),
@@ -137,11 +141,13 @@ case class CreateDAOTransaction(
             ConfKeys.im_paideia_staking_state_tokenid
         )),
         ContextVar.of(3.toByte,dao.config.insertProof(
-            (ConfKeys.im_paideia_contracts_treasury,DAOConfigValueSerializer(treasuryContract))
+            (ConfKeys.im_paideia_contracts_treasury,DAOConfigValueSerializer(treasuryContractSignature)),
+            (ConfKeys.im_paideia_contracts_config,DAOConfigValueSerializer(configContractSignature))
         )),
         ContextVar.of(4.toByte,
             ErgoValueBuilder.buildFor(Colls.fromArray(Array(
-                Colls.fromArray(DAOConfigValueSerializer(treasuryContract))
+                Colls.fromArray(DAOConfigValueSerializer(treasuryContractSignature)),
+                Colls.fromArray(DAOConfigValueSerializer(configContractSignature))
             )))
         )
     )
