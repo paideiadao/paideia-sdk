@@ -26,6 +26,7 @@ import im.paideia.util.ConfKeys
 import org.ergoplatform.restapi.client.BlockTransactions
 import org.ergoplatform.restapi.client.Transactions
 import im.paideia.util.Util
+import org.ergoplatform.appkit.ErgoId
 
 class EmitTransactionSuite extends PaideiaTestSuite {
     test("Sign emit tx on empty state") {
@@ -87,6 +88,47 @@ class EmitTransactionSuite extends PaideiaTestSuite {
                     ctx,
                     dao.key,
                     100000000L
+                ).inputBox()
+                stakingContract.clearBoxes()
+                stakingContract.newBox(stakingStateBox,false)
+
+                val dummyBlock = (new FullBlock()).header(new BlockHeader().timestamp(state.nextEmission+1000L)).blockTransactions(new BlockTransactions().transactions(new Transactions()))
+                val eventResponse = Paideia.handleEvent(BlockEvent(ctx,dummyBlock))
+                assert(eventResponse.unsignedTransactions.size===1)
+                ctx.newProverBuilder().build().sign(eventResponse.unsignedTransactions(0).unsigned)
+            }
+        })
+    }
+
+    test("Sign emit tx on non-empty state with profit") {
+        val ergoClient = createMockedErgoClient(MockData(Nil,Nil))
+        ergoClient.execute(new java.util.function.Function[BlockchainContext,Unit] {
+            override def apply(_ctx: BlockchainContext): Unit = {
+                val ctx = _ctx.asInstanceOf[BlockchainContextImpl]
+                PaideiaTestSuite.init(ctx)
+                val dao = StakingTest.testDAO
+                val state = TotalStakingState(dao.key,0L)
+                state.stake(Util.randomKey,100000L)
+
+                val stakingContract = PlasmaStaking(PaideiaContractSignature(daoKey = dao.key))
+                dao.config.set(ConfKeys.im_paideia_contracts_staking,stakingContract.contractSignature)
+                val sigUsd = Util.randomKey
+                dao.config.set(ConfKeys.im_paideia_staking_profit_tokenids, Array(ErgoId.create(sigUsd).getBytes()))
+
+                state.profitShare(List(0L, 1000L, 1000L))
+
+                val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
+                
+                val configBox = Config(configContract.contractSignature).box(ctx,dao).inputBox()
+                configContract.clearBoxes()
+                configContract.newBox(configBox,false)
+
+                
+                val stakingStateBox = stakingContract.box(
+                    ctx,
+                    dao.key,
+                    100000000L,
+                    List(new ErgoToken(sigUsd, 1000L))
                 ).inputBox()
                 stakingContract.clearBoxes()
                 stakingContract.newBox(stakingStateBox,false)

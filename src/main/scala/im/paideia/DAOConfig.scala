@@ -75,6 +75,16 @@ case class DAOConfig(
         val provRes = _config.insert(operations: _*)
         provRes.proof.ergoValue
     }
+
+    def removeProof(operations: DAOConfigKey*)(implicit dummy: DummyImplicit): ErgoValue[Coll[java.lang.Byte]] = {
+        val provRes = _config.delete(operations: _*)
+        provRes.proof.ergoValue
+    }
+
+    def updateProof(operations: (DAOConfigKey,Array[Byte])*)(implicit dummy: DummyImplicit): ErgoValue[Coll[java.lang.Byte]] = {
+        val provRes = _config.update(operations: _*)
+        provRes.proof.ergoValue
+    }
 }
 
 object DAOConfig {

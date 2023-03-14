@@ -94,7 +94,7 @@ class TotalStakingState(
         nextEmission += daoConfig[Long](ConfKeys.im_paideia_staking_cyclelength)
         profit(0) += Math.min(daoConfig[Long](ConfKeys.im_paideia_staking_emission_amount),tokensInPool-profit(0))
         this.snapshots.enqueue((this.currentStakingState.totalStaked,this.currentStakingState.clone(),List(profit:_*)))
-        profit = Array.fill(daoConfig.getArray[Array[Byte]](ConfKeys.im_paideia_staking_profit_tokenids).size+2)(0L)
+        profit = Array.fill(daoConfig.getArray[Object](ConfKeys.im_paideia_staking_profit_tokenids).size+2)(0L)
         StakingContextVars.emit.contextVars
     }
 
