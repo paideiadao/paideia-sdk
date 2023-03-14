@@ -24,8 +24,23 @@ import im.paideia.staking._
 import im.paideia.common.boxes._
 import sigmastate.eval.Colls
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
+import im.paideia.util.ConfKeys
+import scorex.crypto.hash.Blake2b256
+import im.paideia.Paideia
 
-class StakeStateBox(val state:TotalStakingState) extends PaideiaBox {
+case class StakeStateBox(
+    _ctx: BlockchainContextImpl,
+    useContract: PlasmaStaking,
+    state: TotalStakingState, 
+    _value: Long, 
+    extraTokens: List[ErgoToken], 
+    daoConfig: DAOConfig, 
+    stakedTokenTotal: Long)  extends PaideiaBox {
+
+    ctx = _ctx
+    value = _value
+    contract = useContract.contract
+
     override def registers = List[ErgoValue[?]](
         state.currentStakingState.plasmaMap.ergoValue,
         ErgoValueBuilder.buildFor(Colls.fromArray(Array(
@@ -46,5 +61,29 @@ class StakeStateBox(val state:TotalStakingState) extends PaideiaBox {
                         Colls.fromArray(kv._3.toArray)
                     )))
     )
+
+    override def tokens: List[ErgoToken] = {
+        List[ErgoToken](
+            new ErgoToken(daoConfig.getArray[Byte](ConfKeys.im_paideia_staking_state_tokenid),1L),
+            new ErgoToken(daoConfig.getArray[Byte](ConfKeys.im_paideia_dao_tokenid),stakedTokenTotal+1L)
+        ) ++ extraTokens
+    }
+}
+
+object StakeStateBox {
+    def fromInputBox(ctx: BlockchainContextImpl, inp: InputBox): StakeStateBox = {
+        val contract = PlasmaStaking.contractInstances(Blake2b256(inp.getErgoTree.bytes).array.toList).asInstanceOf[PlasmaStaking]
+        val dao = Paideia.getDAO(contract.contractSignature.daoKey)
+        val state = TotalStakingState(dao.key)
+        StakeStateBox(
+            ctx,
+            contract,
+            state,
+            state.profit(1)+1000000L,
+            inp.getTokens().subList(2, inp.getTokens().size()).asScala.toList,
+            dao.config,
+            inp.getTokens().get(1).getValue()-1L
+        )
+    }
 }
 

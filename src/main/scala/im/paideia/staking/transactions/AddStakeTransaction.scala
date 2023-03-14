@@ -49,6 +49,8 @@ case class AddStakeTransaction(
 
     if (stakeStateInput.getRegisters().get(0).getValue.asInstanceOf[AvlTree].digest != state.currentStakingState.plasmaMap.ergoAVLTree.digest) throw new Exception("State not synced correctly")
 
+    val stakeStateInputBox = StakeStateBox.fromInputBox(ctx, stakeStateInput)
+
     val configInput = Paideia.getBox(new FilterLeaf[String](
         FilterType.FTEQ,
         daoKey,
@@ -79,7 +81,7 @@ case class AddStakeTransaction(
     stakingContractSignature.daoKey = daoKey
     val stakingContract = PlasmaStaking(stakingContractSignature)
 
-    val stakeStateOutput = stakingContract.box(_ctx,config,state,stakeStateInput.getTokens().get(1).getValue()+amount)
+    val stakeStateOutput = stakingContract.box(_ctx, daoKey, stakeStateInputBox.stakedTokenTotal+amount, stakeStateInputBox.extraTokens)
 
     val userOutput = _ctx.newTxBuilder().outBoxBuilder().tokens(
         new ErgoToken(stakingKey,1L)

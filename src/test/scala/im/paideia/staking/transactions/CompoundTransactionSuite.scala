@@ -50,8 +50,7 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
                 
                 val stakingStateBox = stakingContract.box(
                     ctx,
-                    dao.config,
-                    state,
+                    dao.key,
                     100000000L
                 ).ergoTransactionOutput()
                 stakingContract.clearBoxes()
@@ -88,8 +87,7 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
                 
                 val stakingStateBox = stakingContract.box(
                     ctx,
-                    dao.config,
-                    state,
+                    dao.key,
                     100000000L
                 ).ergoTransactionOutput()
                 stakingContract.clearBoxes()

@@ -53,8 +53,7 @@ class UnstakeTransactionSuite extends PaideiaTestSuite {
                 
                 val stakingStateBox = PlasmaStaking(stakingContract.contractSignature).box(
                     ctx,
-                    dao.config,
-                    state,
+                    dao.key,
                     100000000L
                 ).inputBox()
                 stakingContract.clearBoxes()
@@ -101,8 +100,7 @@ class UnstakeTransactionSuite extends PaideiaTestSuite {
                 
                 val stakingStateBox = PlasmaStaking(stakingContract.contractSignature).box(
                     ctx,
-                    dao.config,
-                    state,
+                    dao.key,
                     100000000L
                 ).inputBox()
                 stakingContract.clearBoxes()

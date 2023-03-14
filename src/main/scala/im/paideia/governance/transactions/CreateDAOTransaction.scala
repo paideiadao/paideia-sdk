@@ -90,7 +90,7 @@ case class CreateDAOTransaction(
     val configOutput = configContract.box(_ctx,dao)
 
     val state = TotalStakingState(dao.key,_ctx.createPreHeader().build().getTimestamp()+dao.config[Long](ConfKeys.im_paideia_staking_cyclelength))
-    val stakeStateOutput = PlasmaStaking(PaideiaContractSignature(daoKey=dao.key)).box(_ctx,dao.config,state,protoDAOInputBox.stakePool,1000000L)
+    val stakeStateOutput = PlasmaStaking(PaideiaContractSignature(daoKey=dao.key)).box(_ctx, dao.key, protoDAOInputBox.stakePool)
 
     val treasuryContract = Treasury(PaideiaContractSignature(daoKey=dao.key))
     val treasuryContractSignature = treasuryContract.contractSignature

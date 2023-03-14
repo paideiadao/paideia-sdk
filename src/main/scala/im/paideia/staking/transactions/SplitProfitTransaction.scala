@@ -66,6 +66,8 @@ object SplitProfitTransaction {
                 CompareField.ASSET,
                 0
             ))(0)
+
+            val stakeStateInputBox = StakeStateBox.fromInputBox(ctx, stakeStateInput)
             
             val whiteListedTokens = dao.config.getArray[Object](ConfKeys.im_paideia_staking_profit_tokenids).map(
                 (arrB: Object) =>
@@ -116,10 +118,8 @@ object SplitProfitTransaction {
 
             val stakeStateOutput = stakingContract.box(
                 ctx,
-                dao.config,
-                state,
-                stakeStateInput.getTokens().get(1).getValue()+profitToShare(0),
-                stakeStateInput.getValue()+profitToShare(1),
+                dao.key,
+                stakeStateInputBox.stakedTokenTotal+profitToShare(0),
                 extraTokens.toList ++ newExtraTokens.toList)
         
             val res = new SplitProfitTransaction()

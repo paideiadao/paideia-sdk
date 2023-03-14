@@ -53,6 +53,8 @@ case class UnstakeTransaction(
         0
     ))(0)
 
+    val stakeStateInputBox = StakeStateBox.fromInputBox(ctx, stakeStateInput)
+
     if (stakeStateInput.getRegisters().get(0).getValue.asInstanceOf[AvlTree].digest != state.currentStakingState.plasmaMap.ergoAVLTree.digest) throw new Exception("State not synced correctly")
 
     val configInput = Paideia.getBox(new FilterLeaf[String](
@@ -88,11 +90,9 @@ case class UnstakeTransaction(
 
     val stakeStateOutput = stakingContract.box(
         ctx,
-        config,
-        state,
-        stakeStateInput.getTokens().get(1).getValue()-(currentStakeRecord.stake-newStakeRecord.stake),
-        stakeStateInput.getValue()-(currentStakeRecord.rewards(0)-newStakeRecord.rewards(0)),
-        stakeStateInput.getTokens().subList(2,stakeStateInput.getTokens().size()).asScala.map{
+        daoKey,
+        stakeStateInputBox.stakedTokenTotal-(currentStakeRecord.stake-newStakeRecord.stake),
+        stakeStateInputBox.extraTokens.map{
             (et: ErgoToken) =>
                 val stakeRecordIndex = whiteListedTokens.indexOf(et.getId())
                 new ErgoToken(et.getId(),et.getValue()-(currentStakeRecord.rewards(1+stakeRecordIndex)-newStakeRecord.rewards(1+stakeRecordIndex)))

@@ -27,16 +27,10 @@ import im.paideia.Paideia
 import org.ergoplatform.appkit.impl.InputBoxImpl
 
 class PlasmaStaking(contractSignature: PaideiaContractSignature) extends PaideiaContract(contractSignature) {
-    def box(ctx: BlockchainContextImpl, daoConfig: DAOConfig, state: TotalStakingState, stakedTokenTotal: Long, value: Long = 1000000, extraTokens: List[ErgoToken] = List[ErgoToken]()): StakeStateBox = {
-        val res = new StakeStateBox(state)
-        res.value = value
-        res.ctx = ctx
-        res.contract = contract
-        res.tokens = List[ErgoToken](
-            new ErgoToken(daoConfig.getArray[Byte](ConfKeys.im_paideia_staking_state_tokenid),1L),
-            new ErgoToken(daoConfig.getArray[Byte](ConfKeys.im_paideia_dao_tokenid),stakedTokenTotal)
-        ) ++ extraTokens
-        res
+    def box(ctx: BlockchainContextImpl, daoKey: String, stakedTokenTotal: Long, extraTokens: List[ErgoToken] = List[ErgoToken]()): StakeStateBox = {
+        val daoConfig = Paideia.getConfig(daoKey)
+        val state = TotalStakingState(daoKey)
+        StakeStateBox(ctx, this, state, state.profit(1)+1000000L, extraTokens, daoConfig, stakedTokenTotal)
     }
 
     override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {

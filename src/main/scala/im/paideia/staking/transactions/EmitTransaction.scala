@@ -60,6 +60,8 @@ case class EmitTransaction(
 
     if (stakeStateInput.getRegisters().get(0).getValue.asInstanceOf[AvlTree].digest != state.currentStakingState.plasmaMap.ergoAVLTree.digest) throw new Exception("State not synced correctly")
 
+    val stakeStateInputBox = StakeStateBox.fromInputBox(ctx, stakeStateInput)
+
     val configInput = Paideia.getBox(new FilterLeaf[String](
         FilterType.FTEQ,
         daoKey,
@@ -82,7 +84,7 @@ case class EmitTransaction(
     val stakingContractSignature = config[PaideiaContractSignature](ConfKeys.im_paideia_contracts_staking)
     stakingContractSignature.daoKey = daoKey
     val stakingContract = PlasmaStaking(stakingContractSignature)
-    val stakeStateOutput = stakingContract.box(ctx,config,state,stakeStateInput.getTokens().get(1).getValue())
+    val stakeStateOutput = stakingContract.box(ctx, daoKey, stakeStateInputBox.stakedTokenTotal, stakeStateInputBox.extraTokens)
 
     changeAddress = _changeAddress
     fee = 1000000L

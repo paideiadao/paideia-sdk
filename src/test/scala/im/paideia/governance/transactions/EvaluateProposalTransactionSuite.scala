@@ -71,8 +71,7 @@ class EvaluateProposalTransactionSuite extends PaideiaTestSuite {
 
                 val stakingStateBox = stakingContract.box(
                     ctx,
-                    dao.config,
-                    state,
+                    dao.key,
                     100000000L
                 ).inputBox()
                 stakingContract.clearBoxes()

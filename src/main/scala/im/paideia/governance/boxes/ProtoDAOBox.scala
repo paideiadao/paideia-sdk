@@ -30,16 +30,9 @@ case class ProtoDAOBox(_ctx: BlockchainContextImpl, dao: DAO, stakePool: Long, u
 
     override def tokens: List[ErgoToken] = {
         List(
-            new ErgoToken(Env.daoTokenId,1L)
-        )++{
-            if (stakePool > 0) {
-                List(
-                    new ErgoToken(dao.config.getArray[Byte](ConfKeys.im_paideia_dao_tokenid),stakePool)
-                )
-            } else {
-                List[ErgoToken]()
-            }
-        }
+            new ErgoToken(Env.daoTokenId,1L),
+            new ErgoToken(dao.config.getArray[Byte](ConfKeys.im_paideia_dao_tokenid),stakePool+1L)
+        )
     }
 }
 
@@ -49,7 +42,7 @@ object ProtoDAOBox {
         ProtoDAOBox(
             ctx,
             Paideia.getDAO(contract.contractSignature.daoKey),
-            if (inp.getTokens().size > 1) inp.getTokens().get(1).getValue() else 0L,
+            if (inp.getTokens().size > 1) inp.getTokens().get(1).getValue()-1L else 0L,
             contract,
             inp.getValue()
         )

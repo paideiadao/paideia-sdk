@@ -42,6 +42,8 @@ case class StakeTransaction(
         0
     ))(0)
 
+    val stakeStateInputBox = StakeStateBox.fromInputBox(ctx, stakeStateInput)
+
     if (stakeStateInput.getRegisters().get(0).getValue.asInstanceOf[AvlTree].digest != state.currentStakingState.plasmaMap.ergoAVLTree.digest) throw new Exception("State not synced correctly")
 
     val configInput = Paideia.getBox(new FilterLeaf[String](
@@ -75,7 +77,7 @@ case class StakeTransaction(
     stakingContractSignature.daoKey = daoKey
     val stakingContract = PlasmaStaking(stakingContractSignature)
 
-    val stakeStateOutput = stakingContract.box(ctx,config,state,stakeStateInput.getTokens().get(1).getValue()+amount)
+    val stakeStateOutput = stakingContract.box(ctx, daoKey, stakeStateInputBox.stakedTokenTotal+amount, stakeStateInputBox.extraTokens)
 
     val userOutput = ctx.newTxBuilder().outBoxBuilder().mintToken(
         new Eip4Token(
