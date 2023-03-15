@@ -68,7 +68,6 @@
         correctConfig,
         correctProposal,
         activationTimePassed,
-        repeatOrBurn,
         correctConfigOutput,
         correctOutputNumber,
         noExtraBurn
