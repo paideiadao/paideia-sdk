@@ -7,7 +7,7 @@
         _IM_PAIDEIA_FEES_CREATEDAO_PAIDEIA,
         _IM_PAIDEIA_CONTRACTS_PROTODAO,
        _IM_PAIDEIA_CONTRACTS_PROTODAOPROXY,
-       _IM_PAIDEIA_CONTRACTS_TREASURY
+       _IM_PAIDEIA_CONTRACTS_SPLIT_PROFIT
     ),paideiaConfigProof)
 
     val correctDataInput = paideiaConfigBox.tokens(0)._1 == _PAIDEIA_DAO_KEY
@@ -17,13 +17,11 @@
 
     val protoDAOContract = configValues(2).get.slice(1,33)
     val protoDAOProxyContract = configValues(3).get.slice(1,33)
-    val paideiaTreasuryContract = configValues(4).get.slice(1,33)
-    //val paideiaProfitShareContract = paideiaContracts(3)._2._2
+    val paideiaProfitShareContract = configValues(4).get.slice(1,33)
 
     val originOut = OUTPUTS(1)
     val protoDAOOut = OUTPUTS(0)
-    val paideiaTreasuryOut = OUTPUTS(2)
-    //val paideiaProfitShareOut = OUTPUTS(3)
+    val paideiaProfitShareOut = OUTPUTS(2)
     val protoDAOProxyIn = INPUTS(0)
 
     val validProtoDAOCreation = allOf(Coll(
@@ -36,10 +34,10 @@
         blake2b256(protoDAOOut.propositionBytes) == protoDAOContract,
         protoDAOOut.tokens(0)._1 == SELF.tokens(1)._1,
         protoDAOOut.tokens(0)._2 == 1L,
-        blake2b256(paideiaTreasuryOut.propositionBytes) == paideiaTreasuryContract,
-        paideiaTreasuryOut.value == createDAOFeeErg + 1000000L,
-        paideiaTreasuryOut.tokens(0)._1 == _PAIDEIA_TOKEN_ID,
-        paideiaTreasuryOut.tokens(0)._2 == createDAOFeePaideia,
+        blake2b256(paideiaProfitShareOut.propositionBytes) == paideiaProfitShareContract,
+        paideiaProfitShareOut.value == createDAOFeeErg + 1000000L,
+        paideiaProfitShareOut.tokens(0)._1 == _PAIDEIA_TOKEN_ID,
+        paideiaProfitShareOut.tokens(0)._2 == createDAOFeePaideia,
         blake2b256(protoDAOProxyIn.propositionBytes) == protoDAOProxyContract
     ))
 

@@ -19,7 +19,6 @@ import im.paideia.governance.contracts.ProtoDAO
 import im.paideia.governance.contracts.Mint
 import im.paideia.util.ConfKeys
 import im.paideia.governance.contracts.DAOOrigin
-import im.paideia.common.contracts.OperatorIncentive
 import im.paideia.staking.contracts.PlasmaStaking
 import im.paideia.util.Util
 import im.paideia.staking.contracts.SplitProfit

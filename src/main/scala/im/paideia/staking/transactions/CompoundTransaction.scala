@@ -108,7 +108,7 @@ case class CompoundTransaction(
 
   val stakingContractSignature =
     config[PaideiaContractSignature](ConfKeys.im_paideia_contracts_staking)
-  stakingContractSignature.daoKey = daoKey
+      .withDaoKey(daoKey)
   val stakingContract = PlasmaStaking(stakingContractSignature)
 
   val stakeStateOutput = stakingContract.box(

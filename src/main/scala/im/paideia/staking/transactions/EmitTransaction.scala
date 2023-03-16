@@ -125,7 +125,7 @@ case class EmitTransaction(
 
   val stakingContractSignature =
     config[PaideiaContractSignature](ConfKeys.im_paideia_contracts_staking)
-  stakingContractSignature.daoKey = daoKey
+      .withDaoKey(daoKey)
   val stakingContract = PlasmaStaking(stakingContractSignature)
 
   val stakeStateOutput = stakingContract.box(
@@ -150,7 +150,7 @@ case class EmitTransaction(
 
   val paideiaSplitProfitContractSignature =
     paideiaConfig[PaideiaContractSignature](ConfKeys.im_paideia_contracts_split_profit)
-  paideiaSplitProfitContractSignature.daoKey = Env.paideiaDaoKey
+      .withDaoKey(Env.paideiaDaoKey)
 
   val paideiaSplitProfitContract = SplitProfit(
     paideiaSplitProfitContractSignature

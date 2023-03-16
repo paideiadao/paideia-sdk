@@ -18,6 +18,7 @@ import org.ergoplatform.appkit.InputBox
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 import special.collection.Coll
+import im.paideia.staking.contracts.SplitProfit
 
 /**
   * This class represents an implementation of a `PaideiaTransaction`
@@ -98,14 +99,12 @@ final case class EvaluateProposalBasicTransaction(
 
   val paideiaConfig = Paideia.getConfig(Env.paideiaDaoKey)
 
-  /**
-    * Computes the output for the Treasury from the given input parameters.
-    *
-    * @return The resulting Treasury output.
-    */
-  val treasuryOut = Treasury(PaideiaContractSignature(daoKey = Env.paideiaDaoKey)).box(
+  val paideiaSplitProfitContractSig = paideiaConfig[PaideiaContractSignature](
+    ConfKeys.im_paideia_contracts_split_profit
+  ).withDaoKey(Env.paideiaDaoKey)
+
+  val splitProfitOut = SplitProfit(paideiaSplitProfitContractSig).box(
     ctx,
-    paideiaConfig,
     1000000L,
     List(
       new ErgoToken(
@@ -127,7 +126,7 @@ final case class EvaluateProposalBasicTransaction(
       1.toByte,
       paideiaConfig.getProof(
         ConfKeys.im_paideia_fees_createproposal_paideia,
-        ConfKeys.im_paideia_contracts_treasury
+        ConfKeys.im_paideia_contracts_split_profit
       )
     ),
     ContextVar.of(2.toByte, Array[Byte]()),
@@ -142,7 +141,7 @@ final case class EvaluateProposalBasicTransaction(
     */
   inputs     = List(proposalInput.withContextVars(context: _*))
   dataInputs = List(configInput, stakeStateInput, paideiaConfigInput)
-  outputs    = List(proposalBasicOut.outBox, treasuryOut.outBox)
+  outputs    = List(proposalBasicOut.outBox, splitProfitOut.outBox)
 
   fee = 1000000L
 }

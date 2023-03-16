@@ -16,5 +16,9 @@ case class PaideiaContractSignature(
   version: String          = "latest",
   networkType: NetworkType = NetworkType.MAINNET,
   contractHash: List[Byte] = List(0.toByte),
-  var daoKey: String       = ""
-)
+  daoKey: String           = ""
+) {
+
+  def withDaoKey(_daoKey: String): PaideiaContractSignature =
+    PaideiaContractSignature(className, version, networkType, contractHash, _daoKey)
+}

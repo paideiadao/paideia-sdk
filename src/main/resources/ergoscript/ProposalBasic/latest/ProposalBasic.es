@@ -30,7 +30,7 @@
 
         val paideiaConfigValues = paideiaConfigInput.R4[AvlTree].get.getMany(Coll(
             _IM_PAIDEIA_FEES_CREATE_PROPOSAL_PAIDEIA,
-            _IM_PAIDEIA_CONTRACTS_TREASURY
+            _IM_PAIDEIA_CONTRACTS_SPLIT_PROFIT
         ),paideiaConfigProof)
 
         val quorumNeeded = byteArrayToLong(configValues(0).get.slice(1,9))
@@ -60,16 +60,16 @@
             correctWinningVote
         ))
 
-        val treasuryOut = OUTPUTS(1)
+        val splitProfitOut = OUTPUTS(1)
 
         val padFee = byteArrayToLong(paideiaConfigValues(0).get.slice(1,9))
         val padTokens = if (SELF.tokens(1)._2 >= padFee) SELF.tokens(1)._2 else padFee
 
-        val correctTreasuryOut = allOf(Coll(
-            blake2b256(treasuryOut.propositionBytes) == paideiaConfigValues(1).get.slice(1,33),
-            treasuryOut.value >= 1000000L,
-            treasuryOut.tokens(0)._1 == _PAIDEIA_TOKEN_ID,
-            treasuryOut.tokens(0)._2 >= padTokens
+        val correctSplitProfitOut = allOf(Coll(
+            blake2b256(splitProfitOut.propositionBytes) == paideiaConfigValues(1).get.slice(1,33),
+            splitProfitOut.value >= 1000000L,
+            splitProfitOut.tokens(0)._1 == _PAIDEIA_TOKEN_ID,
+            splitProfitOut.tokens(0)._2 >= padTokens
         ))
 
         val passedEnd = CONTEXT.preHeader.timestamp > proposalBasicInput.R5[Coll[Long]].get(0)
@@ -78,7 +78,7 @@
             paideiaCorrectConfig,
             correctOut,
             passedEnd,
-            correctTreasuryOut
+            correctSplitProfitOut
         ))
     } else {
         if (proposalBasicInput.R5[Coll[Long]].get != proposalBasicOutput.R5[Coll[Long]].get) {
