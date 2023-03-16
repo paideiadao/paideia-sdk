@@ -21,66 +21,131 @@ import im.paideia.util.Env
 import org.ergoplatform.appkit.ErgoId
 import im.paideia.util.ConfKeys
 import org.ergoplatform.appkit.ContextVar
+import im.paideia.common.contracts.Treasury
+import org.ergoplatform.appkit.ErgoToken
+import im.paideia.staking.contracts.SplitProfit
 
 case class CompoundTransaction(
-        _ctx: BlockchainContextImpl,
-        stakeStateInput: InputBox,
-        _changeAddress: ErgoAddress,
-        daoKey: String
-    ) extends PaideiaTransaction 
-{
-    ctx = _ctx
-    
-    val config = Paideia.getConfig(daoKey)
+  _ctx: BlockchainContextImpl,
+  stakeStateInput: InputBox,
+  operatorAddress: ErgoAddress,
+  daoKey: String
+) extends PaideiaTransaction {
+  ctx = _ctx
 
-    val state = TotalStakingState(daoKey)
+  val config = Paideia.getConfig(daoKey)
 
-    val incentiveInput = Paideia.getBox(new FilterNode(
-        FilterType.FTALL,
-        List(
-            new FilterLeaf[String](
-                FilterType.FTEQ,
-                OperatorIncentive(PaideiaContractSignature(daoKey = Env.paideiaDaoKey)).ergoTree.bytesHex,
-                CompareField.ERGO_TREE,
-                0
-            ),
-            new FilterLeaf[Long](
-                FilterType.FTGT,
-                1000000L,
-                CompareField.VALUE,
-                0
-            )
-        )))(0)
+  val state = TotalStakingState(daoKey)
 
-    if (stakeStateInput.getRegisters().get(0).getValue.asInstanceOf[AvlTree].digest != state.currentStakingState.plasmaMap.ergoAVLTree.digest) throw new Exception("State not synced correctly")
+  val treasuryContract = Treasury(PaideiaContractSignature(daoKey = daoKey))
 
-    val stakeStateInputBox = StakeStateBox.fromInputBox(ctx, stakeStateInput)
+  val treasuryAddress = treasuryContract.contract.toAddress()
 
-    val configInput = Paideia.getBox(new FilterLeaf[String](
-        FilterType.FTEQ,
-        daoKey,
-        CompareField.ASSET,
-        0
-    ))(0)
+  if (stakeStateInput
+        .getRegisters()
+        .get(0)
+        .getValue
+        .asInstanceOf[AvlTree]
+        .digest != state.currentStakingState.plasmaMap.ergoAVLTree.digest)
+    throw new Exception("State not synced correctly")
 
-    if (configInput.getRegisters().get(0).getValue.asInstanceOf[AvlTree].digest != config._config.ergoAVLTree.digest) throw new Exception("Config not synced correctly")
-       
-    val contextVars = state.compound(Env.compoundBatchSize).::(ContextVar.of(0.toByte,config.getProof(
-        ConfKeys.im_paideia_staking_emission_amount,
-        ConfKeys.im_paideia_staking_emission_delay,
-        ConfKeys.im_paideia_staking_cyclelength,
-        ConfKeys.im_paideia_staking_profit_tokenids,
-        ConfKeys.im_paideia_staking_profit_thresholds,
-        ConfKeys.im_paideia_contracts_staking
-    )))
-    val stakingContractSignature = config[PaideiaContractSignature](ConfKeys.im_paideia_contracts_staking)
-    stakingContractSignature.daoKey = daoKey
-    val stakingContract = PlasmaStaking(stakingContractSignature)
-    val stakeStateOutput = stakingContract.box(ctx, daoKey, stakeStateInputBox.stakedTokenTotal, stakeStateInputBox.extraTokens)
+  val stakeStateInputBox = StakeStateBox.fromInputBox(ctx, stakeStateInput)
 
-    changeAddress = _changeAddress
-    fee = 1000000L
-    inputs = List[InputBox](stakeStateInput.withContextVars(contextVars: _*),incentiveInput)
-    dataInputs = List[InputBox](configInput)
-    outputs = List[OutBox](stakeStateOutput.outBox)
+  val configInput = Paideia.getBox(
+    new FilterLeaf[String](
+      FilterType.FTEQ,
+      daoKey,
+      CompareField.ASSET,
+      0
+    )
+  )(0)
+
+  val paideiaConfigInput = Paideia.getBox(
+    new FilterLeaf[String](
+      FilterType.FTEQ,
+      Env.paideiaDaoKey,
+      CompareField.ASSET,
+      0
+    )
+  )(0)
+
+  if (configInput
+        .getRegisters()
+        .get(0)
+        .getValue
+        .asInstanceOf[AvlTree]
+        .digest != config._config.ergoAVLTree.digest)
+    throw new Exception("Config not synced correctly")
+
+  val paideiaConfig = Paideia.getConfig(Env.paideiaDaoKey)
+
+  val coveringTreasuryBoxes = treasuryContract
+    .findBoxes(
+      paideiaConfig[Long](ConfKeys.im_paideia_fees_operator_max_erg) + 1000000L,
+      Array(
+        new ErgoToken(
+          Env.paideiaTokenId,
+          paideiaConfig[Long](ConfKeys.im_paideia_fees_compound_operator_paideia)
+        )
+      )
+    )
+    .get
+
+  val contextVars = state
+    .compound(Env.compoundBatchSize)
+    .::(
+      ContextVar.of(
+        0.toByte,
+        config.getProof(
+          ConfKeys.im_paideia_staking_emission_amount,
+          ConfKeys.im_paideia_staking_emission_delay,
+          ConfKeys.im_paideia_staking_cyclelength,
+          ConfKeys.im_paideia_staking_profit_tokenids,
+          ConfKeys.im_paideia_staking_profit_thresholds,
+          ConfKeys.im_paideia_contracts_staking
+        )
+      )
+    )
+
+  val stakingContractSignature =
+    config[PaideiaContractSignature](ConfKeys.im_paideia_contracts_staking)
+  stakingContractSignature.daoKey = daoKey
+  val stakingContract = PlasmaStaking(stakingContractSignature)
+
+  val stakeStateOutput = stakingContract.box(
+    ctx,
+    daoKey,
+    stakeStateInputBox.stakedTokenTotal,
+    stakeStateInputBox.extraTokens
+  )
+
+  val operatorOutput = ctx
+    .newTxBuilder()
+    .outBoxBuilder()
+    .contract(new ErgoTreeContract(operatorAddress.script, ctx.getNetworkType()))
+    .value(1000000L)
+    .tokens(
+      new ErgoToken(
+        Env.paideiaTokenId,
+        paideiaConfig[Long](ConfKeys.im_paideia_fees_compound_operator_paideia)
+      )
+    )
+    .build()
+
+  val treasuryContextVars = List(
+    ContextVar.of(
+      0.toByte,
+      paideiaConfig.getProof(
+        ConfKeys.im_paideia_fees_compound_operator_paideia,
+        ConfKeys.im_paideia_fees_operator_max_erg
+      )
+    )
+  )
+
+  changeAddress = treasuryAddress.getErgoAddress()
+  fee           = 1000000L
+  inputs = List[InputBox](stakeStateInput.withContextVars(contextVars: _*)) ++ coveringTreasuryBoxes
+      .map(_.withContextVars(treasuryContextVars: _*))
+  dataInputs = List[InputBox](configInput, paideiaConfigInput)
+  outputs    = List[OutBox](stakeStateOutput.outBox, operatorOutput)
 }

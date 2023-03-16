@@ -8,6 +8,8 @@ import java.util.HashMap
 import im.paideia.Paideia
 import im.paideia.util.ConfKeys
 import org.ergoplatform.appkit.InputBox
+import im.paideia.util.Env
+import org.ergoplatform.appkit.ErgoId
 
 /**
   * Treasury class represents the main contract for the Paideia Treasury which manages and holds assets and tokens
@@ -52,6 +54,28 @@ class Treasury(contractSignature: PaideiaContractSignature)
       Paideia
         .getConfig(contractSignature.daoKey)
         .getArray[Byte](ConfKeys.im_paideia_dao_action_tokenid)
+    )
+    cons.put("_IM_PAIDEIA_DAO_KEY", ErgoId.create(Env.paideiaDaoKey).getBytes())
+    cons.put("_IM_PAIDEIA_TOKEN_ID", ErgoId.create(Env.paideiaTokenId).getBytes())
+    cons.put(
+      "_IM_PAIDEIA_FEE_EMIT_PAIDEIA",
+      ConfKeys.im_paideia_fees_emit_paideia.ergoValue.getValue()
+    )
+    cons.put(
+      "_IM_PAIDEIA_FEE_EMIT_OPERATOR_PAIDEIA",
+      ConfKeys.im_paideia_fees_emit_operator_paideia.ergoValue.getValue()
+    )
+    cons.put(
+      "_IM_PAIDEIA_CONTRACTS_SPLIT_PROFIT",
+      ConfKeys.im_paideia_contracts_split_profit.ergoValue.getValue()
+    )
+    cons.put(
+      "_IM_PAIDEIA_FEE_OPERATOR_MAX_ERG",
+      ConfKeys.im_paideia_fees_operator_max_erg.ergoValue.getValue()
+    )
+    cons.put(
+      "_IM_PAIDEIA_FEE_COMPOUND_OPERATOR_PAIDEIA",
+      ConfKeys.im_paideia_fees_compound_operator_paideia.ergoValue.getValue()
     )
     cons
   }

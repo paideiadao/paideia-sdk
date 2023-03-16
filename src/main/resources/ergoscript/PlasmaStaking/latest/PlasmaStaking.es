@@ -206,11 +206,16 @@
                             newSnapshotsStaked.size == emissionDelay &&
                             newSnapshotsProfit.size == emissionDelay
 
+            val correctNextShapshot = plasmaStakingOutput.R5[Coll[Long]].get(0) == nextSnapshot + cycleLength
+            val correctTime = nextSnapshot <= CONTEXT.preHeader.timestamp
+
             allOf(Coll(
                 correctNewSnapshot,
                 correctHistoryShift,
                 correctSize,
-                profitReset
+                profitReset,
+                correctNextShapshot,
+                correctTime
             ))
         }
 
