@@ -1,29 +1,28 @@
 package im.paideia.staking.transactions
 
-import im.paideia.common.transactions._
-import org.ergoplatform.appkit.impl.BlockchainContextImpl
-import org.ergoplatform.appkit.InputBox
-import special.sigma.AvlTree
-import org.ergoplatform.ErgoAddress
-import org.ergoplatform.appkit.Eip4Token
-import org.ergoplatform.appkit.OutBox
-import org.ergoplatform.appkit.impl.ErgoTreeContract
+import im.paideia.DAO
 import im.paideia.DAOConfig
+import im.paideia.Paideia
+import im.paideia.common.contracts.PaideiaContractSignature
+import im.paideia.common.contracts.Treasury
+import im.paideia.common.filtering._
+import im.paideia.common.transactions._
 import im.paideia.staking._
 import im.paideia.staking.boxes._
 import im.paideia.staking.contracts.PlasmaStaking
-import im.paideia.DAO
-import im.paideia.Paideia
-import im.paideia.common.filtering._
-import im.paideia.common.contracts.OperatorIncentive
-import im.paideia.common.contracts.PaideiaContractSignature
-import im.paideia.util.Env
-import org.ergoplatform.appkit.ErgoId
-import im.paideia.util.ConfKeys
-import org.ergoplatform.appkit.ContextVar
-import im.paideia.common.contracts.Treasury
-import org.ergoplatform.appkit.ErgoToken
 import im.paideia.staking.contracts.SplitProfit
+import im.paideia.util.ConfKeys
+import im.paideia.util.Env
+import org.ergoplatform.ErgoAddress
+import org.ergoplatform.appkit.ContextVar
+import org.ergoplatform.appkit.Eip4Token
+import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.appkit.InputBox
+import org.ergoplatform.appkit.OutBox
+import org.ergoplatform.appkit.impl.BlockchainContextImpl
+import org.ergoplatform.appkit.impl.ErgoTreeContract
+import special.sigma.AvlTree
 
 case class CompoundTransaction(
   _ctx: BlockchainContextImpl,

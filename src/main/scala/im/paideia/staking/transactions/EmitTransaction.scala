@@ -3,7 +3,6 @@ package im.paideia.staking.transactions
 import im.paideia.DAO
 import im.paideia.DAOConfig
 import im.paideia.Paideia
-import im.paideia.common.contracts.OperatorIncentive
 import im.paideia.common.contracts.PaideiaContractSignature
 import im.paideia.common.contracts.Treasury
 import im.paideia.common.filtering._
