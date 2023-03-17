@@ -24,7 +24,7 @@ import scorex.crypto.hash.Digest32
 import scorex.crypto.hash.Blake2b256
 
 case class DAOConfig(
-  val _config: PlasmaMap[DAOConfigKey, Array[Byte]],
+  val _config: ProxyPlasmaMap[DAOConfigKey, Array[Byte]],
   val daoKey: String
 ) {
   var keys = mutable.Set[String]()
@@ -34,7 +34,7 @@ case class DAOConfig(
   }
 
   def apply[T](key: DAOConfigKey): T = {
-    //if (!_config.getTempMap.isDefined) _config.initiate()
+    if (!_config.getTempMap.isDefined) _config.initiate()
     val check        = _config.lookUp(key).response.head.tryOp.get.get
     val deserialized = DAOConfigValueDeserializer.deserialize(check)
     deserialized.asInstanceOf[T]
@@ -54,14 +54,14 @@ case class DAOConfig(
   }
 
   def set[T](key: DAOConfigKey, value: T)(implicit enc: DAOConfigValueSerializer[T]) = {
-    //_config.initiate()
+    _config.initiate()
     if (keys.contains(key.originalKey.getOrElse(""))) {
       _config.update((key, enc.serialize(value, true).toArray))
     } else {
       keys.add(key.originalKey.getOrElse(""))
       _config.insert((key, enc.serialize(value, true).toArray))
     }
-    //_config.commitChanges()
+    _config.commitChanges()
   }
 
   def handleExtension(extension: Map[String, String]) = {
@@ -75,7 +75,7 @@ case class DAOConfig(
   def getProof(
     keys: DAOConfigKey*
   )(implicit dummy: DummyImplicit): ErgoValue[Coll[java.lang.Byte]] = {
-    //if (!_config.getTempMap.isDefined) _config.initiate()
+    if (!_config.getTempMap.isDefined) _config.initiate()
     val provRes = _config.lookUp(keys: _*)
     provRes.proof.ergoValue
   }
@@ -89,7 +89,7 @@ case class DAOConfig(
   def insertProof(
     operations: (DAOConfigKey, Array[Byte])*
   )(implicit dummy: DummyImplicit): ErgoValue[Coll[java.lang.Byte]] = {
-    //if (!_config.getTempMap.isDefined) _config.initiate()
+    if (!_config.getTempMap.isDefined) _config.initiate()
     val provRes = _config.insert(operations: _*)
     provRes.proof.ergoValue
   }
@@ -97,7 +97,7 @@ case class DAOConfig(
   def removeProof(
     operations: DAOConfigKey*
   )(implicit dummy: DummyImplicit): ErgoValue[Coll[java.lang.Byte]] = {
-    //if (!_config.getTempMap.isDefined) _config.initiate()
+    if (!_config.getTempMap.isDefined) _config.initiate()
     val provRes = _config.delete(operations: _*)
     provRes.proof.ergoValue
   }
@@ -105,7 +105,7 @@ case class DAOConfig(
   def updateProof(
     operations: (DAOConfigKey, Array[Byte])*
   )(implicit dummy: DummyImplicit): ErgoValue[Coll[java.lang.Byte]] = {
-    //if (!_config.getTempMap.isDefined) _config.initiate()
+    if (!_config.getTempMap.isDefined) _config.initiate()
     val provRes = _config.update(operations: _*)
     provRes.proof.ergoValue
   }
@@ -123,8 +123,8 @@ object DAOConfig {
     )(Blake2b256)
 
     new DAOConfig(
-      new PlasmaMap[DAOConfigKey, Array[Byte]](
-        //avlStorage,
+      new ProxyPlasmaMap[DAOConfigKey, Array[Byte]](
+        avlStorage,
         AvlTreeFlags.AllOperationsAllowed,
         PlasmaParameters.default
       ),
