@@ -14,7 +14,7 @@ object StakingTest {
 
   def testDAO: DAO = {
     val daoKey            = Util.randomKey
-    val config            = DAOConfig()
+    val config            = DAOConfig(daoKey)
     val stakeStateTokenId = Util.randomKey
     val daoTokenId        = Util.randomKey
 

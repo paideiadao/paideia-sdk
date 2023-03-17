@@ -32,7 +32,7 @@ object PaideiaTestSuite {
     Paideia.clear
     PlasmaStaking.contractInstances.clear()
     if (!initializedPaideia) {
-      val paideiaConfig = DAOConfig()
+      val paideiaConfig = DAOConfig(Env.paideiaDaoKey)
       paideiaConfig.set(ConfKeys.im_paideia_fees_createdao_erg, 1000000000L)
       paideiaConfig.set(ConfKeys.im_paideia_fees_createdao_paideia, 100L)
       paideiaConfig.set(

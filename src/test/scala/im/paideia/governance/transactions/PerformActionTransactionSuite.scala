@@ -38,7 +38,7 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
 
         PaideiaTestSuite.init(ctx)
         val daoKey            = Util.randomKey
-        val config            = DAOConfig()
+        val config            = DAOConfig(daoKey)
         val daoGovTokenId     = Util.randomKey
         val proposalTokenId   = Util.randomKey
         val actionTokenId     = Util.randomKey
@@ -166,7 +166,7 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
 
         PaideiaTestSuite.init(ctx)
         val daoKey            = Util.randomKey
-        val config            = DAOConfig()
+        val config            = DAOConfig(daoKey)
         val daoGovTokenId     = Util.randomKey
         val proposalTokenId   = Util.randomKey
         val actionTokenId     = Util.randomKey
@@ -258,7 +258,7 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
 
         PaideiaTestSuite.init(ctx)
         val daoKey            = Util.randomKey
-        val config            = DAOConfig()
+        val config            = DAOConfig(daoKey)
         val daoGovTokenId     = Util.randomKey
         val proposalTokenId   = Util.randomKey
         val actionTokenId     = Util.randomKey
@@ -350,7 +350,7 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
 
         PaideiaTestSuite.init(ctx)
         val daoKey            = Util.randomKey
-        val config            = DAOConfig()
+        val config            = DAOConfig(daoKey)
         val daoGovTokenId     = Util.randomKey
         val proposalTokenId   = Util.randomKey
         val actionTokenId     = Util.randomKey

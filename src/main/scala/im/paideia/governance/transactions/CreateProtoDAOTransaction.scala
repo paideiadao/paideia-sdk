@@ -45,7 +45,7 @@ case class CreateProtoDAOTransaction(
       0
     )
   )(0)
-  val newDAOConfig = DAOConfig()
+  val newDAOConfig = DAOConfig(protoDAOProxyInput.getId().toString())
   val newDAO       = new DAO(protoDAOProxyInput.getId().toString(), newDAOConfig)
   Paideia.addDAO(newDAO)
 
@@ -86,6 +86,8 @@ case class CreateProtoDAOTransaction(
   )
   val checkDigest  = paideiaConfigBox.getRegisters().get(0).getValue()
   val checkDigest2 = paideiaConfig._config.ergoValue.getValue()
+
+  val test = Paideia._actorList
 
   val contextVarPaideiaOrigin = ContextVar.of(
     0.toByte,
@@ -172,4 +174,5 @@ case class CreateProtoDAOTransaction(
     paideiaSplitProfitOutput.outBox,
     mintOutput.outBox
   )
+  val bla = "meh"
 }
