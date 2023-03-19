@@ -22,6 +22,8 @@ import scorex.db.LDBVersionedStore
 import scorex.crypto.authds.avltree.batch.VersionedLDBAVLStorage
 import scorex.crypto.hash.Digest32
 import scorex.crypto.hash.Blake2b256
+import io.getblok.getblok_plasma.collections.LocalPlasmaMap
+import scorex.crypto.authds.avltree.batch.BatchAVLProver
 
 case class DAOConfig(
   val _config: ProxyPlasmaMap[DAOConfigKey, Array[Byte]],
@@ -54,7 +56,7 @@ case class DAOConfig(
   }
 
   def set[T](key: DAOConfigKey, value: T)(implicit enc: DAOConfigValueSerializer[T]) = {
-    _config.initiate()
+    initiate()
     if (keys.contains(key.originalKey.getOrElse(""))) {
       _config.update((key, enc.serialize(value, true).toArray))
     } else {
@@ -75,7 +77,7 @@ case class DAOConfig(
   def getProof(
     keys: DAOConfigKey*
   )(implicit dummy: DummyImplicit): ErgoValue[Coll[java.lang.Byte]] = {
-    if (!_config.getTempMap.isDefined) _config.initiate()
+    if (!_config.getTempMap.isDefined) initiate()
     val provRes = _config.lookUp(keys: _*)
     provRes.proof.ergoValue
   }
@@ -89,7 +91,8 @@ case class DAOConfig(
   def insertProof(
     operations: (DAOConfigKey, Array[Byte])*
   )(implicit dummy: DummyImplicit): ErgoValue[Coll[java.lang.Byte]] = {
-    if (!_config.getTempMap.isDefined) _config.initiate()
+    if (!_config.getTempMap.isDefined)
+      initiate()
     val provRes = _config.insert(operations: _*)
     provRes.proof.ergoValue
   }
@@ -97,7 +100,7 @@ case class DAOConfig(
   def removeProof(
     operations: DAOConfigKey*
   )(implicit dummy: DummyImplicit): ErgoValue[Coll[java.lang.Byte]] = {
-    if (!_config.getTempMap.isDefined) _config.initiate()
+    if (!_config.getTempMap.isDefined) initiate()
     val provRes = _config.delete(operations: _*)
     provRes.proof.ergoValue
   }
@@ -105,9 +108,14 @@ case class DAOConfig(
   def updateProof(
     operations: (DAOConfigKey, Array[Byte])*
   )(implicit dummy: DummyImplicit): ErgoValue[Coll[java.lang.Byte]] = {
-    if (!_config.getTempMap.isDefined) _config.initiate()
+    if (!_config.getTempMap.isDefined) initiate()
     val provRes = _config.update(operations: _*)
     provRes.proof.ergoValue
+  }
+
+  def initiate() = {
+    _config.initiate()
+    _config.getTempMap.get.prover.generateProof()
   }
 }
 

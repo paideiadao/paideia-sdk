@@ -26,6 +26,10 @@ import im.paideia.governance.boxes.ProtoDAOProxyBox
 import org.ergoplatform.appkit.ErgoId
 import im.paideia.util.ConfKeys
 import im.paideia.staking.contracts.SplitProfit
+import io.getblok.getblok_plasma.collections.PlasmaMap
+import sigmastate.AvlTreeFlags
+import io.getblok.getblok_plasma.PlasmaParameters
+import im.paideia.DAOConfigKey
 
 case class CreateProtoDAOTransaction(
   _ctx: BlockchainContextImpl,
