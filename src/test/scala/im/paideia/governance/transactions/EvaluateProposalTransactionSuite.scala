@@ -61,7 +61,7 @@ class EvaluateProposalTransactionSuite extends PaideiaTestSuite {
         val dao = new DAO(daoKey, config)
         Paideia.addDAO(dao)
 
-        dao.proposals(0) = Proposal()
+        dao.proposals(0) = Proposal(dao.key, 0)
 
         val proposalContract = ProposalBasic(PaideiaContractSignature(daoKey = dao.key))
 

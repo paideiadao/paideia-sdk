@@ -90,7 +90,7 @@ class CreateProposalTransactionSuite extends PaideiaTestSuite {
           false
         )
 
-        dao.proposals(0) = Proposal()
+        dao.proposals(0) = Proposal(daoKey, 0)
 
         val stakingContract = PlasmaStaking(PaideiaContractSignature(daoKey = dao.key))
 

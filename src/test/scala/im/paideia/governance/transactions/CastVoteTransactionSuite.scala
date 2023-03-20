@@ -63,7 +63,7 @@ class CastVoteTransactionSuite extends PaideiaTestSuite {
         config.set(ConfKeys.im_paideia_staking_profit_thresholds, Array(0L, 0L))
         val dao = new DAO(daoKey, config)
         Paideia.addDAO(dao)
-        dao.proposals(0) = new Proposal()
+        dao.proposals(0) = Proposal(dao.key, 0)
 
         val voteContract = Vote(PaideiaContractSignature(daoKey = dao.key))
         config.set(ConfKeys.im_paideia_contracts_vote, voteContract.contractSignature)

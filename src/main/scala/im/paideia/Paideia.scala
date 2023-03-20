@@ -27,6 +27,8 @@ object Paideia {
     _daoMap    = HashMap[String, DAO]()
     _actorList = HashMap[String, PaideiaActor]()
     FileUtils.deleteDirectory(new File("./daoconfigs"))
+    FileUtils.deleteDirectory(new File("./proposals"))
+    FileUtils.deleteDirectory(new File("./stakingStates"))
   }
 
   def addDAO(dao: DAO): Unit = _daoMap.put(dao.key, dao)

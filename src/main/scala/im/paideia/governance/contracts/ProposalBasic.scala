@@ -114,8 +114,9 @@ class ProposalBasic(contractSignature: PaideiaContractSignature)
     vote: VoteRecord,
     voteKey: String
   ): (List[ContextVar], PaideiaBox) = {
-    val inp         = ProposalBasicBox.fromInputBox(ctx, inputBox)
-    val proposal    = Paideia.getDAO(contractSignature.daoKey).proposals(inp.proposalIndex)
+    val inp      = ProposalBasicBox.fromInputBox(ctx, inputBox)
+    val proposal = Paideia.getDAO(contractSignature.daoKey).proposals(inp.proposalIndex)
+    if (!proposal.votes.getTempMap.isDefined) proposal.votes.initiate()
     val voteId      = ErgoId.create(voteKey)
     val lookUp      = proposal.votes.lookUp(voteId)
     val lookUpProof = ContextVar.of(1.toByte, lookUp.proof.ergoValue)

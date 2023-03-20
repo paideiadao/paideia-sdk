@@ -99,7 +99,7 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
         )
         config
           .set(ConfKeys.im_paideia_contracts_treasury, treasuryContract.contractSignature)
-        dao.proposals(0) = new Proposal()
+        dao.newProposal
 
         val proposalContract = ProposalBasic(PaideiaContractSignature(daoKey = dao.key))
         val proposalBox = proposalContract.box(
@@ -194,7 +194,7 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
 
         Paideia.addDAO(dao)
 
-        dao.proposals(0) = new Proposal()
+        dao.newProposal
 
         val proposalContract = ProposalBasic(PaideiaContractSignature(daoKey = dao.key))
         val proposalBox = proposalContract.box(
@@ -286,7 +286,7 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
 
         Paideia.addDAO(dao)
 
-        dao.proposals(0) = new Proposal()
+        dao.newProposal
 
         val proposalContract = ProposalBasic(PaideiaContractSignature(daoKey = dao.key))
         val proposalBox = proposalContract.box(
@@ -378,7 +378,7 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
 
         Paideia.addDAO(dao)
 
-        dao.proposals(0) = new Proposal()
+        dao.newProposal
 
         val proposalContract = ProposalBasic(PaideiaContractSignature(daoKey = dao.key))
         val proposalBox = proposalContract.box(
