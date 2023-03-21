@@ -10,11 +10,12 @@ import scorex.db.LDBVersionedStore
 import scorex.crypto.authds.avltree.batch.VersionedLDBAVLStorage
 import scorex.crypto.hash.Digest32
 import scorex.crypto.hash.Blake2b256
+import im.paideia.util.MempoolPlasmaMap
 
 case class Proposal(
   daoKey: String,
   proposalIndex: Int,
-  votes: ProxyPlasmaMap[ErgoId, VoteRecord]
+  votes: MempoolPlasmaMap[ErgoId, VoteRecord]
 )
 
 object Proposal {
@@ -31,7 +32,7 @@ object Proposal {
     new Proposal(
       daoKey,
       proposalIndex,
-      new ProxyPlasmaMap[ErgoId, VoteRecord](
+      new MempoolPlasmaMap[ErgoId, VoteRecord](
         avlStorage,
         AvlTreeFlags.AllOperationsAllowed,
         PlasmaParameters.default

@@ -74,6 +74,15 @@ final case class CastVoteTransaction(
         .asInstanceOf[Coll[Int]](0) == castVoteBox.proposalIndex
     )(0)
 
+  val proposalDigest =
+    ADDigest @@ proposalInput
+      .getRegisters()
+      .get(2)
+      .getValue()
+      .asInstanceOf[AvlTree]
+      .digest
+      .toArray
+
   val configInput = Paideia.getBox(
     new FilterLeaf[String](
       FilterType.FTEQ,
@@ -95,7 +104,13 @@ final case class CastVoteTransaction(
 
   val result = Paideia
     .getProposalContract(proposalInput)
-    .castVote(ctx, proposalInput, castVoteBox.vote, castVoteBox.voteKey)
+    .castVote(
+      ctx,
+      proposalInput,
+      castVoteBox.vote,
+      castVoteBox.voteKey,
+      Left(proposalDigest)
+    )
 
   val compareDigest = dao.config._config.digest
 

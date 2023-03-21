@@ -20,6 +20,7 @@ import org.ergoplatform.appkit.ErgoId
 import im.paideia.common.boxes.PaideiaBox
 import org.ergoplatform.appkit.ContextVar
 import im.paideia.governance.VoteRecord
+import scorex.crypto.authds.ADDigest
 
 class ProposalBasic(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature)
@@ -31,7 +32,8 @@ class ProposalBasic(contractSignature: PaideiaContractSignature)
     voteCount: Array[Long],
     totalVotes: Long,
     endTime: Long,
-    passed: Int
+    passed: Int,
+    digestOpt: Option[ADDigest] = None
   ): ProposalBasicBox = {
     ProposalBasicBox(
       ctx,
@@ -44,7 +46,8 @@ class ProposalBasic(contractSignature: PaideiaContractSignature)
       totalVotes,
       endTime,
       passed,
-      this
+      this,
+      digestOpt
     )
   }
 
@@ -112,33 +115,40 @@ class ProposalBasic(contractSignature: PaideiaContractSignature)
     ctx: BlockchainContextImpl,
     inputBox: InputBox,
     vote: VoteRecord,
-    voteKey: String
+    voteKey: String,
+    digestOrHeight: Either[ADDigest, Int]
   ): (List[ContextVar], PaideiaBox) = {
-    val inp      = ProposalBasicBox.fromInputBox(ctx, inputBox)
-    val proposal = Paideia.getDAO(contractSignature.daoKey).proposals(inp.proposalIndex)
-    if (!proposal.votes.getTempMap.isDefined) proposal.votes.initiate()
+    val inp         = ProposalBasicBox.fromInputBox(ctx, inputBox)
+    val proposal    = Paideia.getDAO(contractSignature.daoKey).proposals(inp.proposalIndex)
     val voteId      = ErgoId.create(voteKey)
-    val lookUp      = proposal.votes.lookUp(voteId)
+    val lookUp      = proposal.votes.lookUpWithDigest(voteId)(digestOrHeight.left.toOption)
     val lookUpProof = ContextVar.of(1.toByte, lookUp.proof.ergoValue)
     val currentVote = lookUp.response(0).tryOp.get
     currentVote match {
       case None => {
-        val insert = proposal.votes.insert(((voteId, vote)))
+        val insert = proposal.votes.insertWithDigest(((voteId, vote)))(digestOrHeight)
         (
           List(
             lookUpProof,
             ContextVar.of(2.toByte, insert.proof.ergoValue)
           ),
-          box(ctx, inp.proposalIndex, inp.voteCount.zip(vote.votes).map {
-            (ll: (Long, Long)) =>
+          box(
+            ctx,
+            inp.proposalIndex,
+            inp.voteCount.zip(vote.votes).map { (ll: (Long, Long)) =>
               ll._1 + ll._2
-          }, inp.totalVotes + vote.voteCount, inp.endTime, inp.passed)
+            },
+            inp.totalVotes + vote.voteCount,
+            inp.endTime,
+            inp.passed,
+            Some(insert.digest)
+          )
         )
       }
       case Some(currentVoteRecord) => {
         val voteChange = vote - currentVoteRecord
 
-        val update = proposal.votes.update((voteId, vote))
+        val update = proposal.votes.updateWithDigest((voteId, vote))(digestOrHeight)
 
         (
           List(
@@ -153,7 +163,8 @@ class ProposalBasic(contractSignature: PaideiaContractSignature)
             },
             inp.totalVotes + voteChange.voteCount,
             inp.endTime,
-            inp.passed
+            inp.passed,
+            Some(update.digest)
           )
         )
       }
