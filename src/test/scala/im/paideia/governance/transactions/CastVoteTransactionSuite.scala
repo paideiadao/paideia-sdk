@@ -36,6 +36,9 @@ class CastVoteTransactionSuite extends PaideiaTestSuite {
         val actionTokenId     = Util.randomKey
         val voteTokenId       = Util.randomKey
         val stakeStateTokenId = Util.randomKey
+
+        val digest1 = config._config.digest
+
         config.set(ConfKeys.im_paideia_dao_name, "Test DAO")
         config
           .set(ConfKeys.im_paideia_dao_tokenid, ErgoId.create(daoGovTokenId).getBytes())
@@ -61,7 +64,8 @@ class CastVoteTransactionSuite extends PaideiaTestSuite {
         config.set(ConfKeys.im_paideia_staking_emission_amount, 100000L)
         config.set(ConfKeys.im_paideia_staking_cyclelength, 1000000L)
         config.set(ConfKeys.im_paideia_staking_profit_thresholds, Array(0L, 0L))
-        val dao = new DAO(daoKey, config)
+        val digest2 = config._config.digest
+        val dao     = new DAO(daoKey, config)
         Paideia.addDAO(dao)
         dao.proposals(0) = Proposal(dao.key, 0)
 

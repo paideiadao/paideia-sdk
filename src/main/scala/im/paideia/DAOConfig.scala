@@ -16,7 +16,6 @@ import io.getblok.getblok_plasma.ByteConversion
 import shapeless.Lazy
 import scala.reflect.ClassTag
 import scala.collection.mutable
-import io.getblok.getblok_plasma.collections.ProxyPlasmaMap
 import java.io.File
 import scorex.db.LDBVersionedStore
 import scorex.crypto.authds.avltree.batch.VersionedLDBAVLStorage
@@ -24,9 +23,12 @@ import scorex.crypto.hash.Digest32
 import scorex.crypto.hash.Blake2b256
 import io.getblok.getblok_plasma.collections.LocalPlasmaMap
 import scorex.crypto.authds.avltree.batch.BatchAVLProver
+import im.paideia.util.MempoolPlasmaMap
+import scorex.crypto.authds.ADDigest
+import org.ergoplatform.restapi.client.ErgoTransactionInput
 
 case class DAOConfig(
-  val _config: ProxyPlasmaMap[DAOConfigKey, Array[Byte]],
+  val _config: MempoolPlasmaMap[DAOConfigKey, Array[Byte]],
   val daoKey: String
 ) {
   var keys = mutable.Set[String]()
@@ -35,88 +37,81 @@ case class DAOConfig(
     apply[T](DAOConfigKey(key))
   }
 
-  def apply[T](key: DAOConfigKey): T = {
-    if (!_config.getTempMap.isDefined) _config.initiate()
-    val check        = _config.lookUp(key).response.head.tryOp.get.get
+  def apply[T](key: DAOConfigKey, digestOpt: Option[ADDigest] = None): T = {
+    val check        = _config.lookUpWithDigest(key)(digestOpt).response.head.tryOp.get.get
     val deserialized = DAOConfigValueDeserializer.deserialize(check)
     deserialized.asInstanceOf[T]
   }
 
-  def getArray[T](key: String)(implicit tag: ClassTag[T]): Array[T] = {
-    getArray[T](DAOConfigKey(key))
+  def getArray[T](key: DAOConfigKey, digestOpt: Option[ADDigest] = None)(
+    implicit tag: ClassTag[T]
+  ): Array[T] = {
+    apply[Array[Object]](key, digestOpt).map(_.asInstanceOf[T]).toArray
   }
 
-  def getArray[T](key: DAOConfigKey)(implicit tag: ClassTag[T]): Array[T] = {
-    apply[Array[Object]](key).map(_.asInstanceOf[T]).toArray
-  }
-
-  def set[T](key: String, value: T)(implicit enc: DAOConfigValueSerializer[T]) = {
-    keys.add(key)
-    _config.insert((DAOConfigKey(key), enc.serialize(value, true).toArray))
-  }
-
-  def set[T](key: DAOConfigKey, value: T)(implicit enc: DAOConfigValueSerializer[T]) = {
-    initiate()
+  def set[T](key: DAOConfigKey, value: T, height: Int = 0)(
+    implicit enc: DAOConfigValueSerializer[T]
+  ) = {
     if (keys.contains(key.originalKey.getOrElse(""))) {
-      _config.update((key, enc.serialize(value, true).toArray))
+      _config.updateWithDigest((key, enc.serialize(value, true).toArray))(Right(height))
     } else {
       keys.add(key.originalKey.getOrElse(""))
-      _config.insert((key, enc.serialize(value, true).toArray))
+      _config.insertWithDigest((key, enc.serialize(value, true).toArray))(Right(height))
     }
-    _config.commitChanges()
   }
 
-  def handleExtension(extension: Map[String, String]) = {
-    val todo = "update config based on extension"
-  }
+  def handleExtension(input: ErgoTransactionInput) = {}
 
-  def getProof(keys: String*): ErgoValue[Coll[java.lang.Byte]] = {
-    getProof(keys.map(DAOConfigKey(_)): _*)
+  def getProof(
+    keys: String*
+  )(digestOpt: Option[ADDigest]): ErgoValue[Coll[java.lang.Byte]] = {
+    getProof(keys.map(DAOConfigKey(_)): _*)(digestOpt)
   }
 
   def getProof(
     keys: DAOConfigKey*
+  )(
+    digestOpt: Option[ADDigest]
   )(implicit dummy: DummyImplicit): ErgoValue[Coll[java.lang.Byte]] = {
-    if (!_config.getTempMap.isDefined) initiate()
-    val provRes = _config.lookUp(keys: _*)
+    val provRes = _config.lookUpWithDigest(keys: _*)(digestOpt)
     provRes.proof.ergoValue
   }
 
-  def insertProof(operations: (String, Array[Byte])*): ErgoValue[Coll[java.lang.Byte]] = {
+  def insertProof(operations: (String, Array[Byte])*)(
+    digestOrHeight: Either[ADDigest, Int]
+  ): (ErgoValue[Coll[java.lang.Byte]], ADDigest) = {
     insertProof(
       operations.map((kv: (String, Array[Byte])) => (DAOConfigKey(kv._1), kv._2)): _*
-    )
+    )(digestOrHeight)
   }
 
   def insertProof(
     operations: (DAOConfigKey, Array[Byte])*
-  )(implicit dummy: DummyImplicit): ErgoValue[Coll[java.lang.Byte]] = {
-    if (!_config.getTempMap.isDefined)
-      initiate()
-    val provRes = _config.insert(operations: _*)
-    provRes.proof.ergoValue
+  )(
+    digestOrHeight: Either[ADDigest, Int]
+  )(implicit dummy: DummyImplicit): (ErgoValue[Coll[java.lang.Byte]], ADDigest) = {
+    val provRes = _config.insertWithDigest(operations: _*)(digestOrHeight)
+    (provRes.proof.ergoValue, provRes.digest)
   }
 
   def removeProof(
     operations: DAOConfigKey*
-  )(implicit dummy: DummyImplicit): ErgoValue[Coll[java.lang.Byte]] = {
-    if (!_config.getTempMap.isDefined) initiate()
-    val provRes = _config.delete(operations: _*)
-    provRes.proof.ergoValue
+  )(
+    digestOrHeight: Either[ADDigest, Int]
+  )(implicit dummy: DummyImplicit): (ErgoValue[Coll[java.lang.Byte]], ADDigest) = {
+    val provRes = _config.deleteWithDigest(operations: _*)(digestOrHeight)
+    (provRes.proof.ergoValue, provRes.digest)
   }
 
   def updateProof(
     operations: (DAOConfigKey, Array[Byte])*
-  )(implicit dummy: DummyImplicit): ErgoValue[Coll[java.lang.Byte]] = {
-    if (!_config.getTempMap.isDefined) initiate()
-    val provRes = _config.update(operations: _*)
-    provRes.proof.ergoValue
+  )(
+    digestOrHeight: Either[ADDigest, Int]
+  )(implicit dummy: DummyImplicit): (ErgoValue[Coll[java.lang.Byte]], ADDigest) = {
+    val provRes = _config.updateWithDigest(operations: _*)(digestOrHeight)
+    (provRes.proof.ergoValue, provRes.digest)
   }
 
-  def initiate() = {
-    _config.initiate()
-    _config.getTempMap.get.prover.generateProof()
-  }
 }
 
 object DAOConfig {
@@ -131,7 +126,7 @@ object DAOConfig {
     )(Blake2b256)
 
     new DAOConfig(
-      new ProxyPlasmaMap[DAOConfigKey, Array[Byte]](
+      new MempoolPlasmaMap[DAOConfigKey, Array[Byte]](
         avlStorage,
         AvlTreeFlags.AllOperationsAllowed,
         PlasmaParameters.default

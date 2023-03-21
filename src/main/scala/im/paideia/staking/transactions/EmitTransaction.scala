@@ -23,6 +23,7 @@ import org.ergoplatform.appkit.OutBox
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import org.ergoplatform.appkit.impl.ErgoTreeContract
 import special.sigma.AvlTree
+import scorex.crypto.authds.ADDigest
 
 case class EmitTransaction(
   _ctx: BlockchainContextImpl,
@@ -73,12 +74,25 @@ case class EmitTransaction(
     )
   )(0)
 
-  if (configInput
-        .getRegisters()
-        .get(0)
-        .getValue
-        .asInstanceOf[AvlTree]
-        .digest != config._config.ergoAVLTree.digest)
+  val configDigest =
+    ADDigest @@ configInput
+      .getRegisters()
+      .get(0)
+      .getValue()
+      .asInstanceOf[AvlTree]
+      .digest
+      .toArray
+
+  val paideiaConfigDigest =
+    ADDigest @@ paideiaConfigInput
+      .getRegisters()
+      .get(0)
+      .getValue()
+      .asInstanceOf[AvlTree]
+      .digest
+      .toArray
+
+  if (!configDigest.sameElements(config._config.digest))
     throw new Exception("Config not synced correctly")
 
   val paideiaConfig = Paideia.getConfig(Env.paideiaDaoKey)
@@ -119,7 +133,7 @@ case class EmitTransaction(
           ConfKeys.im_paideia_staking_profit_tokenids,
           ConfKeys.im_paideia_staking_profit_thresholds,
           ConfKeys.im_paideia_contracts_staking
-        )
+        )(Some(configDigest))
       )
     )
 
@@ -178,7 +192,7 @@ case class EmitTransaction(
         ConfKeys.im_paideia_fees_emit_operator_paideia,
         ConfKeys.im_paideia_contracts_split_profit,
         ConfKeys.im_paideia_fees_operator_max_erg
-      )
+      )(Some(paideiaConfigDigest))
     )
   )
 

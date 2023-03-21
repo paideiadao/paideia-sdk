@@ -26,122 +26,177 @@ import im.paideia.common.contracts.Treasury
 import im.paideia.common.contracts.PaideiaContractSignature
 import org.ergoplatform.appkit.commands.ErgoIdPType
 import org.ergoplatform.appkit.ContextVar
+import scorex.crypto.authds.ADDigest
 
-case class SplitProfitTransaction() extends PaideiaTransaction {
-  
-}
+case class SplitProfitTransaction() extends PaideiaTransaction {}
 
 object SplitProfitTransaction {
-    def apply(
-        ctx: BlockchainContextImpl, 
-        splitProfitInputs: List[InputBox],
-        dao: DAO): SplitProfitTransaction = 
-    {
-        val profitSharePct: Byte = dao.config(ConfKeys.im_paideia_staking_profit_share_pct)
 
-        val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
+  def apply(
+    ctx: BlockchainContextImpl,
+    splitProfitInputs: List[InputBox],
+    dao: DAO
+  ): SplitProfitTransaction = {
+    val profitSharePct: Byte = dao.config(ConfKeys.im_paideia_staking_profit_share_pct)
 
-        val totalErg = splitProfitInputs.foldLeft(0L)((z, spi) => z + spi.getValue()) - 2000000L
+    val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
 
-        val configInput = Paideia.getBox(new FilterLeaf[String](
-            FilterType.FTEQ,
-            dao.key,
-            CompareField.ASSET,
-            0
-        ))(0)
+    val totalErg = splitProfitInputs.foldLeft(0L)((z, spi) => z + spi.getValue()) - 2000000L
 
-        val splitProfitContext = ContextVar.of(0.toByte,dao.config.getProof(
-            ConfKeys.im_paideia_contracts_treasury,
-            ConfKeys.im_paideia_contracts_staking,
-            ConfKeys.im_paideia_staking_profit_share_pct,
-            ConfKeys.im_paideia_dao_tokenid,
-            ConfKeys.im_paideia_staking_profit_tokenids
-        ))
+    val configInput = Paideia.getBox(
+      new FilterLeaf[String](
+        FilterType.FTEQ,
+        dao.key,
+        CompareField.ASSET,
+        0
+      )
+    )(0)
 
-        if (profitSharePct > 0) {
+    val configDigest =
+      ADDigest @@ configInput
+        .getRegisters()
+        .get(0)
+        .getValue()
+        .asInstanceOf[AvlTree]
+        .digest
+        .toArray
 
-            val stakeStateInput = Paideia.getBox(new FilterLeaf[String](
-                FilterType.FTEQ,
-                new ErgoId(dao.config.getArray[Byte](ConfKeys.im_paideia_staking_state_tokenid)).toString(),
-                CompareField.ASSET,
-                0
-            ))(0)
+    val splitProfitContext = ContextVar.of(
+      0.toByte,
+      dao.config.getProof(
+        ConfKeys.im_paideia_contracts_treasury,
+        ConfKeys.im_paideia_contracts_staking,
+        ConfKeys.im_paideia_staking_profit_share_pct,
+        ConfKeys.im_paideia_dao_tokenid,
+        ConfKeys.im_paideia_staking_profit_tokenids
+      )(Some(configDigest))
+    )
 
-            val stakeStateInputBox = StakeStateBox.fromInputBox(ctx, stakeStateInput)
-            
-            val whiteListedTokens = dao.config.getArray[Object](ConfKeys.im_paideia_staking_profit_tokenids).map(
-                (arrB: Object) =>
-                    new ErgoId(arrB.asInstanceOf[Array[Object]].map(_.asInstanceOf[Byte]))
+    if (profitSharePct > 0) {
+
+      val stakeStateInput = Paideia.getBox(
+        new FilterLeaf[String](
+          FilterType.FTEQ,
+          new ErgoId(dao.config.getArray[Byte](ConfKeys.im_paideia_staking_state_tokenid))
+            .toString(),
+          CompareField.ASSET,
+          0
+        )
+      )(0)
+
+      val stakeStateInputBox = StakeStateBox.fromInputBox(ctx, stakeStateInput)
+
+      val whiteListedTokens = dao.config
+        .getArray[Object](ConfKeys.im_paideia_staking_profit_tokenids)
+        .map((arrB: Object) =>
+          new ErgoId(arrB.asInstanceOf[Array[Object]].map(_.asInstanceOf[Byte]))
+        )
+
+      val profitToShare = Array.fill(whiteListedTokens.size + 2)(0L)
+
+      val govToken = new ErgoId(
+        dao.config.getArray[Byte](ConfKeys.im_paideia_dao_tokenid)
+      )
+
+      profitToShare(0) = (splitProfitInputs.foldLeft(0L)((z, spi) =>
+          z + spi
+            .getTokens()
+            .asScala
+            .foldLeft(0L)((x, et) =>
+              if (et.getId() == govToken)
+                x + et.getValue()
+              else
+                x
             )
+        ) * profitSharePct) / 100
+      profitToShare(1) = (totalErg * profitSharePct) / 100
+      whiteListedTokens.indices.foreach(i =>
+        profitToShare(i + 2) = (splitProfitInputs.foldLeft(0L)((z, spi) =>
+            z + spi
+              .getTokens()
+              .asScala
+              .foldLeft(0L)((x, et) =>
+                if (et.getId() == whiteListedTokens(i)) x + et.getValue()
+                else x
+              )
+          ) * profitSharePct) / 100
+      )
 
-            val profitToShare = Array.fill(whiteListedTokens.size+2)(0L)
+      val extraTokens = stakeStateInput
+        .getTokens()
+        .subList(2, stakeStateInput.getTokens().size)
+        .asScala
+        .map((token: ErgoToken) =>
+          whiteListedTokens.find(_ == token.getId()) match {
+            case None => token
+            case Some(value) =>
+              new ErgoToken(
+                token.getId(),
+                token.getValue() + profitToShare(whiteListedTokens.indexOf(value) + 2)
+              )
+          }
+        )
 
-            val govToken = new ErgoId(dao.config.getArray[Byte](ConfKeys.im_paideia_dao_tokenid))
+      val newExtraTokens = whiteListedTokens
+        .filter((tokenId: ErgoId) =>
+          stakeStateInput
+            .getTokens()
+            .asScala
+            .find((t: ErgoToken) => t.getId() == tokenId) match {
+            case None        => profitToShare(2 + whiteListedTokens.indexOf(tokenId)) > 0L
+            case Some(value) => false
+          }
+        )
+        .map(tId => new ErgoToken(tId, profitToShare(2 + whiteListedTokens.indexOf(tId))))
 
-            profitToShare(0) = (splitProfitInputs.foldLeft(0L)((z, spi) => z + spi.getTokens().asScala.foldLeft(0L)((x, et) => 
-                if (et.getId()==govToken) 
-                    x+et.getValue() 
-                else 
-                    x
-                ))*profitSharePct)/100 
-            profitToShare(1) = (totalErg * profitSharePct)/100
-            whiteListedTokens.indices.foreach(i =>
-                profitToShare(i+2) = (splitProfitInputs.foldLeft(0L)((z, spi) => z + spi.getTokens().asScala.foldLeft(0L)((x, et) => if (et.getId()==whiteListedTokens(i)) x+et.getValue() else x))*profitSharePct)/100  
-            )
-            
-            val extraTokens = stakeStateInput.getTokens().subList(2,stakeStateInput.getTokens().size).asScala.map((token: ErgoToken) =>
-                whiteListedTokens.find(_==token.getId()) match {
-                    case None => token
-                    case Some(value) => new ErgoToken(token.getId(),token.getValue()+profitToShare(whiteListedTokens.indexOf(value)+2))
-                }  
-            )
+      val state = TotalStakingState(dao.key)
 
-            val newExtraTokens = whiteListedTokens.filter((tokenId: ErgoId) =>
-                stakeStateInput.getTokens().asScala.find((t: ErgoToken) => t.getId()==tokenId) match {
-                    case None => profitToShare(2+whiteListedTokens.indexOf(tokenId)) > 0L
-                    case Some(value) => false
-                }  
-            ).map(tId => new ErgoToken(tId, profitToShare(2+whiteListedTokens.indexOf(tId))))
+      val contextVars = state
+        .profitShare(profitToShare.toList)
+        .::(
+          ContextVar.of(
+            0.toByte,
+            dao.config.getProof(
+              ConfKeys.im_paideia_staking_emission_amount,
+              ConfKeys.im_paideia_staking_emission_delay,
+              ConfKeys.im_paideia_staking_cyclelength,
+              ConfKeys.im_paideia_staking_profit_tokenids,
+              ConfKeys.im_paideia_staking_profit_thresholds,
+              ConfKeys.im_paideia_contracts_staking
+            )(Some(configDigest))
+          )
+        )
 
-            val state = TotalStakingState(dao.key)
+      val stakingContract = PlasmaStaking(PaideiaContractSignature(daoKey = dao.key))
 
-            val contextVars = state.profitShare(profitToShare.toList).::(ContextVar.of(0.toByte,dao.config.getProof(
-                ConfKeys.im_paideia_staking_emission_amount,
-                ConfKeys.im_paideia_staking_emission_delay,
-                ConfKeys.im_paideia_staking_cyclelength,
-                ConfKeys.im_paideia_staking_profit_tokenids,
-                ConfKeys.im_paideia_staking_profit_thresholds,
-                ConfKeys.im_paideia_contracts_staking
-            )))
+      val stakeStateOutput = stakingContract.box(
+        ctx,
+        dao.key,
+        stakeStateInputBox.stakedTokenTotal + profitToShare(0),
+        extraTokens.toList ++ newExtraTokens.toList
+      )
 
-            val stakingContract = PlasmaStaking(PaideiaContractSignature(daoKey = dao.key))
+      val res = new SplitProfitTransaction()
+      res.ctx           = ctx
+      res.changeAddress = treasuryContract.contract.toAddress().getErgoAddress()
+      res.fee           = 1000000
+      res.inputs = List[InputBox](stakeStateInput.withContextVars(contextVars: _*)) ++ splitProfitInputs
+          .map(_.withContextVars(splitProfitContext))
+      res.dataInputs = List[InputBox](configInput)
+      res.outputs    = List[OutBox](stakeStateOutput.outBox)
+      res
 
-            val stakeStateOutput = stakingContract.box(
-                ctx,
-                dao.key,
-                stakeStateInputBox.stakedTokenTotal+profitToShare(0),
-                extraTokens.toList ++ newExtraTokens.toList)
-        
-            val res = new SplitProfitTransaction()
-            res.ctx = ctx
-            res.changeAddress = treasuryContract.contract.toAddress().getErgoAddress()
-            res.fee = 1000000
-            res.inputs = List[InputBox](stakeStateInput.withContextVars(contextVars: _*))++splitProfitInputs.map(_.withContextVars(splitProfitContext))
-            res.dataInputs = List[InputBox](configInput)
-            res.outputs = List[OutBox](stakeStateOutput.outBox)
-            res
+    } else {
 
-        } else {
+      val res = new SplitProfitTransaction()
+      res.ctx           = ctx
+      res.changeAddress = treasuryContract.contract.toAddress().getErgoAddress()
+      res.fee           = 1000000
+      res.inputs        = splitProfitInputs.map(_.withContextVars(splitProfitContext))
+      res.dataInputs    = List[InputBox](configInput)
+      res.outputs       = List[OutBox]()
+      res
 
-            val res = new SplitProfitTransaction()
-            res.ctx = ctx
-            res.changeAddress = treasuryContract.contract.toAddress().getErgoAddress()
-            res.fee = 1000000
-            res.inputs = splitProfitInputs.map(_.withContextVars(splitProfitContext))
-            res.dataInputs = List[InputBox](configInput)
-            res.outputs = List[OutBox]()
-            res
-
-        }
     }
+  }
 }

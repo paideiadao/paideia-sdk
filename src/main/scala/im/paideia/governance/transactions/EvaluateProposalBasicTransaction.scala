@@ -19,6 +19,8 @@ import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 import special.collection.Coll
 import im.paideia.staking.contracts.SplitProfit
+import scorex.crypto.authds.ADDigest
+import special.sigma.AvlTree
 
 /**
   * This class represents an implementation of a `PaideiaTransaction`
@@ -114,20 +116,38 @@ final case class EvaluateProposalBasicTransaction(
     )
   )
 
+  val configDigest =
+    ADDigest @@ configInput
+      .getRegisters()
+      .get(0)
+      .getValue()
+      .asInstanceOf[AvlTree]
+      .digest
+      .toArray
+
+  val paideiaConfigDigest =
+    ADDigest @@ paideiaConfigInput
+      .getRegisters()
+      .get(0)
+      .getValue()
+      .asInstanceOf[AvlTree]
+      .digest
+      .toArray
+
   val context = List(
     ContextVar.of(
       0.toByte,
       dao.config.getProof(
         ConfKeys.im_paideia_dao_quorum,
         ConfKeys.im_paideia_staking_state_tokenid
-      )
+      )(Some(configDigest))
     ),
     ContextVar.of(
       1.toByte,
       paideiaConfig.getProof(
         ConfKeys.im_paideia_fees_createproposal_paideia,
         ConfKeys.im_paideia_contracts_split_profit
-      )
+      )(Some(paideiaConfigDigest))
     ),
     ContextVar.of(2.toByte, Array[Byte]()),
     ContextVar.of(3.toByte, Array[Byte]()),

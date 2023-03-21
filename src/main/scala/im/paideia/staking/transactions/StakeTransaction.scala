@@ -22,6 +22,7 @@ import im.paideia.common.filtering._
 import im.paideia.util.ConfKeys
 import org.ergoplatform.appkit.ErgoId
 import org.ergoplatform.appkit.ContextVar
+import scorex.crypto.authds.ADDigest
 
 case class StakeTransaction(
   _ctx: BlockchainContextImpl,
@@ -65,12 +66,16 @@ case class StakeTransaction(
     )
   )(0)
 
-  if (configInput
-        .getRegisters()
-        .get(0)
-        .getValue
-        .asInstanceOf[AvlTree]
-        .digest != config._config.ergoAVLTree.digest)
+  val configDigest =
+    ADDigest @@ configInput
+      .getRegisters()
+      .get(0)
+      .getValue()
+      .asInstanceOf[AvlTree]
+      .digest
+      .toArray
+
+  if (!configDigest.sameElements(config._config.digest))
     throw new Exception("Config not synced correctly")
   val stakeKey = stakeStateInput.getId().toString()
 
@@ -86,7 +91,7 @@ case class StakeTransaction(
           ConfKeys.im_paideia_staking_profit_tokenids,
           ConfKeys.im_paideia_staking_profit_thresholds,
           ConfKeys.im_paideia_contracts_staking
-        )
+        )(Some(configDigest))
       )
     )
 
@@ -96,7 +101,7 @@ case class StakeTransaction(
       config.getProof(
         ConfKeys.im_paideia_staking_state_tokenid,
         ConfKeys.im_paideia_dao_name
-      )
+      )(Some(configDigest))
     ),
     ContextVar.of(1.toByte, contextVars(2).getValue()),
     ContextVar.of(2.toByte, contextVars(3).getValue())

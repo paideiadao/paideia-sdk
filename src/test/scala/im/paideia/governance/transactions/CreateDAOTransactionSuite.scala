@@ -110,7 +110,7 @@ class CreateDAOTransactionSuite extends PaideiaTestSuite {
         val protoDAOContract =
           ProtoDAO(PaideiaContractSignature(daoKey = Env.paideiaDaoKey))
         val protoDAOBox = protoDAOContract
-          .box(ctx, Paideia.getDAO(daoKey), 1L, 5000000L)
+          .box(ctx, Paideia.getDAO(daoKey), 1L, value = 5000000L)
           .ergoTransactionOutput()
         val dummyTx       = (new ErgoTransaction()).addOutputsItem(protoDAOBox)
         val eventResponse = Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))

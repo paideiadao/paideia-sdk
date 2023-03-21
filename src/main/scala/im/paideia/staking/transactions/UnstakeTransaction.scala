@@ -23,6 +23,7 @@ import org.ergoplatform.appkit.ContextVar
 import org.ergoplatform.appkit.Address
 import special.collection.Coll
 import scala.collection.JavaConverters._
+import scorex.crypto.authds.ADDigest
 
 case class UnstakeTransaction(
   _ctx: BlockchainContextImpl,
@@ -79,12 +80,16 @@ case class UnstakeTransaction(
     )
   )(0)
 
-  if (configInput
-        .getRegisters()
-        .get(0)
-        .getValue
-        .asInstanceOf[AvlTree]
-        .digest != config._config.ergoAVLTree.digest)
+  val configDigest =
+    ADDigest @@ configInput
+      .getRegisters()
+      .get(0)
+      .getValue()
+      .asInstanceOf[AvlTree]
+      .digest
+      .toArray
+
+  if (!configDigest.sameElements(config._config.digest))
     throw new Exception("Config not synced correctly")
 
   val contextVars = state
@@ -99,7 +104,7 @@ case class UnstakeTransaction(
           ConfKeys.im_paideia_staking_profit_tokenids,
           ConfKeys.im_paideia_staking_profit_thresholds,
           ConfKeys.im_paideia_contracts_staking
-        )
+        )(Some(configDigest))
       )
     )
 
@@ -109,7 +114,7 @@ case class UnstakeTransaction(
       config.getProof(
         ConfKeys.im_paideia_staking_state_tokenid,
         ConfKeys.im_paideia_staking_profit_tokenids
-      )
+      )(Some(configDigest))
     ),
     ContextVar.of(1.toByte, contextVars(3).getValue()),
     ContextVar.of(2.toByte, contextVars(4).getValue())

@@ -31,7 +31,7 @@ class MintTokenTransactionSuite extends PaideiaTestSuite {
         val protoDAOContract =
           ProtoDAO(PaideiaContractSignature(daoKey = Env.paideiaDaoKey))
         val protoDAOBox = protoDAOContract
-          .box(ctx, Paideia.getDAO(daoKey), 0L, 3000000L)
+          .box(ctx, Paideia.getDAO(daoKey), 0L, value = 3000000L)
           .ergoTransactionOutput()
         val dummyTx       = (new ErgoTransaction()).addOutputsItem(protoDAOBox)
         val eventResponse = Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
@@ -63,7 +63,7 @@ class MintTokenTransactionSuite extends PaideiaTestSuite {
         val protoDAOContract =
           ProtoDAO(PaideiaContractSignature(daoKey = Env.paideiaDaoKey))
         val protoDAOBox = protoDAOContract
-          .box(ctx, Paideia.getDAO(daoKey), 0L, 3000000L)
+          .box(ctx, Paideia.getDAO(daoKey), 0L, value = 3000000L)
           .ergoTransactionOutput()
         val dummyTx       = (new ErgoTransaction()).addOutputsItem(protoDAOBox)
         val eventResponse = Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))

@@ -14,6 +14,7 @@ import org.ergoplatform.restapi.client.ErgoTransactionInput
 
 import java.util.HashMap
 import scala.collection.JavaConverters._
+import scorex.crypto.authds.ADDigest
 
 /**
   * This class represents a configuration contract and extends the PaideiaContract abstract class.
@@ -30,8 +31,12 @@ class Config(contractSignature: PaideiaContractSignature)
     * @param dao The DAO to use when creating the ConfigBox.
     * @return A ConfigBox object.
     */
-  def box(ctx: BlockchainContextImpl, dao: DAO): ConfigBox = {
-    val res = new ConfigBox(dao.config)
+  def box(
+    ctx: BlockchainContextImpl,
+    dao: DAO,
+    digestOpt: Option[ADDigest] = None
+  ): ConfigBox = {
+    val res = new ConfigBox(dao.config, digestOpt)
     res.ctx      = ctx
     res.contract = contract
     res.value    = 1000000L
@@ -48,18 +53,18 @@ class Config(contractSignature: PaideiaContractSignature)
   override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
     val response: PaideiaEventResponse = event match {
       case te: TransactionEvent => {
-        val currentUtxos = getUtxoSet
+        val utxoSet = if (te.mempool) getUtxoSet else utxos
         PaideiaEventResponse.merge(
           te.tx
             .getInputs()
             .asScala
             .map { (eti: ErgoTransactionInput) =>
               {
-                if (currentUtxos.contains(eti.getBoxId())) {
+                if (utxoSet.contains(eti.getBoxId())) {
                   Paideia
                     ._daoMap(boxes(eti.getBoxId()).getTokens().get(0).getId().toString)
                     .config
-                    .handleExtension(eti.getExtension().asScala)
+                    .handleExtension(eti)
                   PaideiaEventResponse(2)
                 } else {
                   PaideiaEventResponse(0)
