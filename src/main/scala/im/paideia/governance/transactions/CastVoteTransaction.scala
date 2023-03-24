@@ -21,6 +21,7 @@ import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 import special.sigma.AvlTree
 import scorex.crypto.authds.ADDigest
 import im.paideia.staking.boxes.StakeStateBox
+import scorex.crypto.hash.Blake2b256
 
 final case class CastVoteTransaction(
   _ctx: BlockchainContextImpl,
@@ -106,7 +107,7 @@ final case class CastVoteTransaction(
   val stakeStateInputBox = StakeStateBox.fromInputBox(ctx, stakeStateInput)
 
   val result = Paideia
-    .getProposalContract(proposalInput)
+    .getProposalContract(Blake2b256(proposalInput.getErgoTree().bytes).array.toList)
     .castVote(
       ctx,
       proposalInput,

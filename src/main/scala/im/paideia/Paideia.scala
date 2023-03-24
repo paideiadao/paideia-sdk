@@ -66,8 +66,7 @@ object Paideia {
 
   def getConfig(daoKey: String): DAOConfig = _daoMap(daoKey).config
 
-  def getProposalContract(box: InputBox): ProposalContract = {
-    val contractHash = Blake2b256(box.getErgoTree().bytes).array.toList
+  def getProposalContract(contractHash: List[Byte]): ProposalContract = {
     _actorList.values
       .find(_.getProposalContract(contractHash).isSuccess)
       .get

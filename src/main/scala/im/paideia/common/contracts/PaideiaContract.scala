@@ -136,9 +136,13 @@ class PaideiaContract(_contractSignature: PaideiaContractSignature) {
     if (mempool) {
       mspent.add(boxId)
     } else {
-      boxes -= boxId
       utxos.remove(boxId) || mspent.remove(boxId)
     }
+  }
+
+  def clearSpentBoxes {
+    boxes.foreach(f => if (!(utxos.contains(f._1) || mutxos.contains(f._1))) boxes -= f._1
+    )
   }
 
   /**
