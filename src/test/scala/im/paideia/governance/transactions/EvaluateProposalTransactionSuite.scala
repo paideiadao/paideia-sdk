@@ -18,7 +18,7 @@ import im.paideia.staking.contracts.PlasmaStaking
 import org.ergoplatform.restapi.client.FullBlock
 import org.ergoplatform.restapi.client.BlockHeader
 import org.ergoplatform.restapi.client.BlockTransactions
-import im.paideia.common.BlockEvent
+import im.paideia.common.events.BlockEvent
 import org.ergoplatform.restapi.client.Transactions
 import im.paideia.governance.Proposal
 import com.typesafe.config.ConfigList

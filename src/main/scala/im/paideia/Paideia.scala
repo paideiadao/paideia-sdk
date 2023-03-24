@@ -7,8 +7,8 @@ import org.ergoplatform.appkit.NetworkType
 import im.paideia.common.contracts.Config
 import im.paideia.common.contracts.PaideiaActor
 import im.paideia.util.Env
-import im.paideia.common.PaideiaEvent
-import im.paideia.common.PaideiaEventResponse
+import im.paideia.common.events.PaideiaEvent
+import im.paideia.common.events.PaideiaEventResponse
 import scala.reflect.runtime.{universe => ru}
 import im.paideia.common.filtering.FilterNode
 import org.ergoplatform.appkit.InputBox

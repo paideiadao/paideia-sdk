@@ -17,7 +17,7 @@ import im.paideia.staking.boxes._
 import im.paideia.common.PaideiaTestSuite
 import org.ergoplatform.restapi.client.FullBlock
 import org.ergoplatform.restapi.client.BlockHeader
-import im.paideia.common.BlockEvent
+import im.paideia.common.events.BlockEvent
 import im.paideia.Paideia
 import im.paideia.staking.contracts.PlasmaStaking
 import im.paideia.common.contracts.Config

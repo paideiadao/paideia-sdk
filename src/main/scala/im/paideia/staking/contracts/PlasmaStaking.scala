@@ -13,10 +13,10 @@ import java.util.HashMap
 import org.ergoplatform.appkit.ErgoId
 import im.paideia.util.ConfKeys
 import im.paideia.DAO
-import im.paideia.common.PaideiaEventResponse
-import im.paideia.common.PaideiaEvent
-import im.paideia.common.TransactionEvent
-import im.paideia.common.BlockEvent
+import im.paideia.common.events.PaideiaEventResponse
+import im.paideia.common.events.PaideiaEvent
+import im.paideia.common.events.TransactionEvent
+import im.paideia.common.events.BlockEvent
 import im.paideia.staking.transactions.EmitTransaction
 import org.ergoplatform.appkit.Address
 import im.paideia.util.Env

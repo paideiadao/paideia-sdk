@@ -2,10 +2,10 @@ package im.paideia.common.contracts
 
 import im.paideia.DAOConfig
 import im.paideia.DAOConfigValue
-import im.paideia.common.BlockEvent
-import im.paideia.common.PaideiaEvent
-import im.paideia.common.PaideiaEventResponse
-import im.paideia.common.TransactionEvent
+import im.paideia.common.events.BlockEvent
+import im.paideia.common.events.PaideiaEvent
+import im.paideia.common.events.PaideiaEventResponse
+import im.paideia.common.events.TransactionEvent
 import im.paideia.common.boxes.PaideiaBox
 import im.paideia.common.filtering.FilterNode
 import org.ergoplatform.appkit.ErgoContract
@@ -195,7 +195,9 @@ class PaideiaContract(_contractSignature: PaideiaContractSignature) {
             .getTransactions()
             .asScala
             .map { (tx: ErgoTransaction) =>
-              handleEvent(TransactionEvent(be.ctx, false, tx))
+              handleEvent(
+                TransactionEvent(be.ctx, false, tx, be.block.getHeader().getHeight())
+              )
             }
             .toList
         )

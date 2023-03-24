@@ -1,4 +1,4 @@
-package im.paideia.common
+package im.paideia.common.events
 
 import org.ergoplatform.appkit.Address
 import org.ergoplatform.appkit.impl.BlockchainContextImpl

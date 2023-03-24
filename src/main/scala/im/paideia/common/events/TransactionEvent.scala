@@ -1,4 +1,4 @@
-package im.paideia.common
+package im.paideia.common.events
 
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import org.ergoplatform.restapi.client.ErgoTransaction
@@ -13,5 +13,6 @@ import org.ergoplatform.restapi.client.ErgoTransaction
 final case class TransactionEvent(
   ctx: BlockchainContextImpl,
   mempool: Boolean,
-  tx: ErgoTransaction
+  tx: ErgoTransaction,
+  height: Int = 0
 ) extends PaideiaEvent(ctx)

@@ -1,8 +1,8 @@
 package im.paideia.common.contracts
 
 import im.paideia.Paideia
-import im.paideia.common.PaideiaEvent
-import im.paideia.common.PaideiaEventResponse
+import im.paideia.common.events.PaideiaEvent
+import im.paideia.common.events.PaideiaEventResponse
 import im.paideia.common.filtering.FilterNode
 import im.paideia.governance.contracts.ProposalContract
 import org.ergoplatform.appkit.InputBox

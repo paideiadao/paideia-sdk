@@ -19,7 +19,7 @@ import im.paideia.util.ConfKeys
 import org.ergoplatform.appkit.ErgoId
 import im.paideia.DAO
 import im.paideia.Paideia
-import im.paideia.common.TransactionEvent
+import im.paideia.common.events.TransactionEvent
 import org.ergoplatform.restapi.client.ErgoTransaction
 import im.paideia.common.contracts.PaideiaContractSignature
 import im.paideia.common.contracts.Config

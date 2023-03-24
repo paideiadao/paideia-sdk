@@ -19,7 +19,7 @@ import im.paideia.governance.contracts.CastVote
 import im.paideia.governance.Proposal
 import im.paideia.governance.VoteRecord
 import org.ergoplatform.restapi.client.ErgoTransaction
-import im.paideia.common.TransactionEvent
+import im.paideia.common.events.TransactionEvent
 import im.paideia.governance.contracts.ProposalBasic
 
 class CastVoteTransactionSuite extends PaideiaTestSuite {

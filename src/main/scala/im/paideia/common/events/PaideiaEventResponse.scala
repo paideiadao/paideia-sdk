@@ -1,4 +1,4 @@
-package im.paideia.common
+package im.paideia.common.events
 
 import im.paideia.common.transactions.PaideiaTransaction
 import org.ergoplatform.appkit.UnsignedTransaction

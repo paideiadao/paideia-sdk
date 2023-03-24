@@ -25,7 +25,7 @@ import org.ergoplatform.restapi.client.BlockHeader
 import org.ergoplatform.restapi.client.BlockTransactions
 import org.ergoplatform.restapi.client.Transactions
 import im.paideia.Paideia
-import im.paideia.common.BlockEvent
+import im.paideia.common.events.BlockEvent
 import im.paideia.util.Util
 import org.ergoplatform.appkit.ErgoId
 import im.paideia.common.contracts.Treasury

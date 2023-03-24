@@ -3,9 +3,9 @@ package im.paideia.common.contracts
 import im.paideia.DAO
 import im.paideia.DAOConfig
 import im.paideia.Paideia
-import im.paideia.common.PaideiaEvent
-import im.paideia.common.PaideiaEventResponse
-import im.paideia.common.TransactionEvent
+import im.paideia.common.events.PaideiaEvent
+import im.paideia.common.events.PaideiaEventResponse
+import im.paideia.common.events.TransactionEvent
 import im.paideia.common.boxes.ConfigBox
 import im.paideia.util.ConfKeys
 import org.ergoplatform.appkit.ErgoToken
@@ -15,6 +15,8 @@ import org.ergoplatform.restapi.client.ErgoTransactionInput
 import java.util.HashMap
 import scala.collection.JavaConverters._
 import scorex.crypto.authds.ADDigest
+import im.paideia.common.events.UpdateConfigEvent
+import im.paideia.common.transactions.PaideiaTransaction
 
 /**
   * This class represents a configuration contract and extends the PaideiaContract abstract class.
@@ -42,42 +44,6 @@ class Config(contractSignature: PaideiaContractSignature)
     res.value    = 1000000L
     res.tokens   = List(new ErgoToken(dao.key, 1L))
     res
-  }
-
-  /**
-    * Handles events related to the configuration contract, primarily TransactionEvents.
-    *
-    * @param event The PaideiaEvent to handle.
-    * @return A PaideiaEventResponse object, either empty or with a response code if the event was successfully handled.
-    */
-  override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
-    val response: PaideiaEventResponse = event match {
-      case te: TransactionEvent => {
-        val utxoSet = if (te.mempool) getUtxoSet else utxos
-        PaideiaEventResponse.merge(
-          te.tx
-            .getInputs()
-            .asScala
-            .map { (eti: ErgoTransactionInput) =>
-              {
-                if (utxoSet.contains(eti.getBoxId())) {
-                  Paideia
-                    ._daoMap(boxes(eti.getBoxId()).getTokens().get(0).getId().toString)
-                    .config
-                    .handleExtension(eti)
-                  PaideiaEventResponse(2)
-                } else {
-                  PaideiaEventResponse(0)
-                }
-              }
-            }
-            .toList
-        )
-      }
-      case _ => PaideiaEventResponse(0)
-    }
-    val superResponse = super.handleEvent(event)
-    PaideiaEventResponse.merge(List(response, superResponse))
   }
 
   /**

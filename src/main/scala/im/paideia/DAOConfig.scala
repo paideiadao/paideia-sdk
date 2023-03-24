@@ -26,6 +26,11 @@ import scorex.crypto.authds.avltree.batch.BatchAVLProver
 import im.paideia.util.MempoolPlasmaMap
 import scorex.crypto.authds.ADDigest
 import org.ergoplatform.restapi.client.ErgoTransactionInput
+import im.paideia.common.events.TransactionEvent
+import im.paideia.governance.boxes.ActionUpdateConfigBox
+import org.ergoplatform.appkit.impl.InputBoxImpl
+import org.ergoplatform.restapi.client.ErgoTransactionOutput
+import im.paideia.common.events.UpdateConfigEvent
 
 case class DAOConfig(
   val _config: MempoolPlasmaMap[DAOConfigKey, Array[Byte]],
@@ -60,7 +65,28 @@ case class DAOConfig(
     }
   }
 
-  def handleExtension(input: ErgoTransactionInput) = {}
+  def handleUpdateEvent(event: UpdateConfigEvent) = {
+    event.digestOrHeight match {
+      case Left(value) =>
+        val digestAfterRemove =
+          if (event.removedKeys.size > 0)
+            removeProof(event.removedKeys: _*)(event.digestOrHeight)._2
+          else value
+        val digestAfterUpdate =
+          if (event.updatedEntries.size > 0)
+            updateProof(event.updatedEntries: _*)(Left(digestAfterRemove))._2
+          else digestAfterRemove
+        if (event.insertEntries.size > 0)
+          insertProof(event.insertEntries: _*)(Left(digestAfterUpdate))
+      case Right(value) =>
+        if (event.removedKeys.size > 0)
+          removeProof(event.removedKeys: _*)(event.digestOrHeight)
+        if (event.updatedEntries.size > 0)
+          updateProof(event.updatedEntries: _*)(event.digestOrHeight)
+        if (event.insertEntries.size > 0)
+          insertProof(event.insertEntries: _*)(event.digestOrHeight)
+    }
+  }
 
   def getProof(
     keys: String*

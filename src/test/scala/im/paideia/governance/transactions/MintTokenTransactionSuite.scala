@@ -9,7 +9,7 @@ import im.paideia.governance.contracts.ProtoDAO
 import im.paideia.common.contracts.PaideiaContractSignature
 import im.paideia.Paideia
 import org.ergoplatform.restapi.client.ErgoTransaction
-import im.paideia.common.TransactionEvent
+import im.paideia.common.events.TransactionEvent
 import im.paideia.DAOConfig
 import im.paideia.DAO
 import org.ergoplatform.appkit.ErgoId

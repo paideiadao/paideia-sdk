@@ -12,7 +12,7 @@ import im.paideia.DAO
 import im.paideia.governance.contracts.ProtoDAO
 import im.paideia.common.contracts.PaideiaContractSignature
 import org.ergoplatform.restapi.client.ErgoTransaction
-import im.paideia.common.TransactionEvent
+import im.paideia.common.events.TransactionEvent
 import im.paideia.governance.contracts.Mint
 import im.paideia.util.Env
 

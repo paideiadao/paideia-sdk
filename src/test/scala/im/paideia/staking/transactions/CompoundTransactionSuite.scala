@@ -23,7 +23,7 @@ import im.paideia.common.contracts.PaideiaContractSignature
 import im.paideia.common.contracts.Config
 import org.ergoplatform.restapi.client.ErgoTransaction
 import im.paideia.Paideia
-import im.paideia.common.TransactionEvent
+import im.paideia.common.events.TransactionEvent
 import im.paideia.common.contracts.Treasury
 import im.paideia.util.Env
 

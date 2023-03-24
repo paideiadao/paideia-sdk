@@ -12,9 +12,9 @@ import im.paideia.DAOConfigKey
 import org.ergoplatform.appkit.ErgoId
 import org.ergoplatform.appkit.ErgoValue
 import java.nio.charset.StandardCharsets
-import im.paideia.common.PaideiaEvent
-import im.paideia.common.PaideiaEventResponse
-import im.paideia.common.TransactionEvent
+import im.paideia.common.events.PaideiaEvent
+import im.paideia.common.events.PaideiaEventResponse
+import im.paideia.common.events.TransactionEvent
 import scala.collection.JavaConverters._
 import org.ergoplatform.restapi.client.ErgoTransactionOutput
 import im.paideia.Paideia

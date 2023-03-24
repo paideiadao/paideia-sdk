@@ -6,10 +6,10 @@ import im.paideia.common.contracts.PaideiaContract
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.governance.boxes.ProposalBasicBox
 import im.paideia.Paideia
-import im.paideia.common.PaideiaEventResponse
+import im.paideia.common.events.PaideiaEventResponse
 import im.paideia.governance.transactions.EvaluateProposalBasicTransaction
-import im.paideia.common.PaideiaEvent
-import im.paideia.common.BlockEvent
+import im.paideia.common.events.PaideiaEvent
+import im.paideia.common.events.BlockEvent
 import special.collection.Coll
 import org.ergoplatform.appkit.Address
 import im.paideia.util.Env

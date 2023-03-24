@@ -24,7 +24,7 @@ import sigmastate.eval.CostingBox
 import org.ergoplatform.appkit.impl.InputBoxImpl
 import org.ergoplatform.appkit.ErgoToken
 import org.ergoplatform.restapi.client.ErgoTransaction
-import im.paideia.common.TransactionEvent
+import im.paideia.common.events.TransactionEvent
 import im.paideia.governance.Proposal
 import java.nio.charset.StandardCharsets
 

@@ -24,7 +24,7 @@ import im.paideia.common.contracts.Config
 import im.paideia.staking.contracts.StakeProxy
 import org.ergoplatform.restapi.client.ErgoTransaction
 import im.paideia.Paideia
-import im.paideia.common.TransactionEvent
+import im.paideia.common.events.TransactionEvent
 
 class StakeTransactionSuite extends PaideiaTestSuite {
   test("Sign stake tx on empty state") {

@@ -18,7 +18,7 @@ import im.paideia.staking.TotalStakingState
 import im.paideia.staking.contracts.PlasmaStaking
 import im.paideia.governance.contracts.CreateVoteProxy
 import org.ergoplatform.appkit.Address
-import im.paideia.common.TransactionEvent
+import im.paideia.common.events.TransactionEvent
 import im.paideia.governance.contracts.Vote
 
 class CreateVoteTransactionSuite extends PaideiaTestSuite {

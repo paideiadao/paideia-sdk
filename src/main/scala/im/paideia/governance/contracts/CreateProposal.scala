@@ -5,9 +5,9 @@ import im.paideia.governance.boxes.CreateProposalBox
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import special.sigma.Box
 import org.ergoplatform.appkit.Address
-import im.paideia.common.PaideiaEventResponse
-import im.paideia.common.PaideiaEvent
-import im.paideia.common.TransactionEvent
+import im.paideia.common.events.PaideiaEventResponse
+import im.paideia.common.events.PaideiaEvent
+import im.paideia.common.events.TransactionEvent
 import scala.collection.JavaConverters._
 import org.ergoplatform.restapi.client.ErgoTransactionOutput
 import im.paideia.governance.transactions.CreateProposalTransaction
@@ -16,34 +16,61 @@ import im.paideia.util.Env
 import java.util.HashMap
 import org.ergoplatform.appkit.ErgoId
 
-class CreateProposal(contractSignature: PaideiaContractSignature) extends PaideiaContract(contractSignature) {
-    def box(ctx: BlockchainContextImpl, proposalBox: Box, actionBoxes: Array[Box], voteKey: String, userAddress: Address): CreateProposalBox = 
-        CreateProposalBox(ctx,proposalBox,actionBoxes,voteKey,userAddress,this)
+class CreateProposal(contractSignature: PaideiaContractSignature)
+  extends PaideiaContract(contractSignature) {
 
-    override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
-        val response: PaideiaEventResponse = event match {
-            case te: TransactionEvent => {
-                PaideiaEventResponse.merge(te.tx.getOutputs().asScala.map{(eto: ErgoTransactionOutput) => {
-                    if (eto.getErgoTree()==ergoTree.bytesHex) {
-                        PaideiaEventResponse(1,List(CreateProposalTransaction(te._ctx,new InputBoxImpl(eto),Address.create(Env.operatorAddress))))
-                    } else {
-                        PaideiaEventResponse(0)
-                    }
-                }}.toList)
+  def box(
+    ctx: BlockchainContextImpl,
+    proposalBox: Box,
+    actionBoxes: Array[Box],
+    voteKey: String,
+    userAddress: Address
+  ): CreateProposalBox =
+    CreateProposalBox(ctx, proposalBox, actionBoxes, voteKey, userAddress, this)
+
+  override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
+    val response: PaideiaEventResponse = event match {
+      case te: TransactionEvent => {
+        PaideiaEventResponse.merge(
+          te.tx
+            .getOutputs()
+            .asScala
+            .map { (eto: ErgoTransactionOutput) =>
+              {
+                if (eto.getErgoTree() == ergoTree.bytesHex) {
+                  PaideiaEventResponse(
+                    1,
+                    List(
+                      CreateProposalTransaction(
+                        te._ctx,
+                        new InputBoxImpl(eto),
+                        Address.create(Env.operatorAddress)
+                      )
+                    )
+                  )
+                } else {
+                  PaideiaEventResponse(0)
+                }
+              }
             }
-            case _ => PaideiaEventResponse(0)
-        }
-        val superResponse = super.handleEvent(event)
-        response
+            .toList
+        )
+      }
+      case _ => PaideiaEventResponse(0)
     }
+    val superResponse = super.handleEvent(event)
+    response
+  }
 
-    override lazy val constants: HashMap[String,Object] = {
-        val cons = new HashMap[String,Object]()
-        cons.put("_IM_PAIDEIA_DAO_KEY",ErgoId.create(contractSignature.daoKey).getBytes())
-        cons
-    }
+  override lazy val constants: HashMap[String, Object] = {
+    val cons = new HashMap[String, Object]()
+    cons.put("_IM_PAIDEIA_DAO_KEY", ErgoId.create(contractSignature.daoKey).getBytes())
+    cons
+  }
 }
 
 object CreateProposal extends PaideiaActor {
-    override def apply(contractSignature: PaideiaContractSignature): CreateProposal = getContractInstance(contractSignature, new CreateProposal(contractSignature))
+
+  override def apply(contractSignature: PaideiaContractSignature): CreateProposal =
+    getContractInstance(contractSignature, new CreateProposal(contractSignature))
 }

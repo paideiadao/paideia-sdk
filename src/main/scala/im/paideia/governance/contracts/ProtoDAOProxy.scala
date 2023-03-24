@@ -9,9 +9,9 @@ import org.ergoplatform.appkit.ErgoToken
 import im.paideia.util.Env
 import org.ergoplatform.restapi.client.ErgoTransactionOutput
 import im.paideia.governance.transactions.CreateProtoDAOTransaction
-import im.paideia.common.PaideiaEventResponse
-import im.paideia.common.TransactionEvent
-import im.paideia.common.PaideiaEvent
+import im.paideia.common.events.PaideiaEventResponse
+import im.paideia.common.events.TransactionEvent
+import im.paideia.common.events.PaideiaEvent
 import scala.collection.JavaConverters._
 import org.ergoplatform.appkit.impl.InputBoxImpl
 import org.ergoplatform.ErgoAddress
