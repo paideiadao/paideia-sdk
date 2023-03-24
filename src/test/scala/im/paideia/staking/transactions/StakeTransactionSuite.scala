@@ -27,95 +27,114 @@ import im.paideia.Paideia
 import im.paideia.common.TransactionEvent
 
 class StakeTransactionSuite extends PaideiaTestSuite {
-    test("Sign stake tx on empty state") {
-        val ergoClient = createMockedErgoClient(MockData(Nil,Nil))
-        ergoClient.execute(new java.util.function.Function[BlockchainContext,Unit] {
-            override def apply(_ctx: BlockchainContext): Unit = {
-                val ctx = _ctx.asInstanceOf[BlockchainContextImpl]
-                PaideiaTestSuite.init(ctx)
-                val dao = StakingTest.testDAO
-                val state = TotalStakingState(dao.key,0L)
+  test("Sign stake tx on empty state") {
+    val ergoClient = createMockedErgoClient(MockData(Nil, Nil))
+    ergoClient.execute(new java.util.function.Function[BlockchainContext, Unit] {
+      override def apply(_ctx: BlockchainContext): Unit = {
+        val ctx = _ctx.asInstanceOf[BlockchainContextImpl]
+        PaideiaTestSuite.init(ctx)
+        val dao   = StakingTest.testDAO
+        val state = TotalStakingState(dao.key, 0L)
 
-                val dummyAddress = Address.create("4MQyML64GnzMxZgm")
+        val dummyAddress = Address.create("4MQyML64GnzMxZgm")
 
-                val stakingContract = PlasmaStaking(PaideiaContractSignature(daoKey = dao.key))
-                dao.config.set(ConfKeys.im_paideia_contracts_staking,stakingContract.contractSignature)
+        val stakingContract = PlasmaStaking(PaideiaContractSignature(daoKey = dao.key))
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_staking, stakingContract.contractSignature)
 
-                val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
-                
-                val configBox = Config(configContract.contractSignature).box(ctx,dao).inputBox()
-                configContract.clearBoxes()
-                configContract.newBox(configBox,false)
+        val stakingState = stakingContract
+          .emptyBox(
+            ctx,
+            dao,
+            100000000L
+          )
 
-                
-                val stakingStateBox = PlasmaStaking(stakingContract.contractSignature).box(
-                    ctx,
-                    dao.key,
-                    100000000L
-                ).inputBox()
-                stakingContract.clearBoxes()
-                stakingContract.newBox(stakingStateBox,false)
+        val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
 
-                val stakeProxyContract = StakeProxy(PaideiaContractSignature(daoKey=dao.key))
-                val stakeProxyBox = stakeProxyContract.box(ctx,dummyAddress.toString(),1000L).ergoTransactionOutput()
-                val dummyTx = (new ErgoTransaction()).addOutputsItem(stakeProxyBox)
-                val eventResponse = Paideia.handleEvent(TransactionEvent(ctx,false,dummyTx))
-                assert(eventResponse.unsignedTransactions.size===1)
-                ctx.newProverBuilder().build().sign(eventResponse.unsignedTransactions(0).unsigned)
-            }
-        })
-    }
+        val configBox = Config(configContract.contractSignature).box(ctx, dao).inputBox()
+        configContract.clearBoxes()
+        configContract.newBox(configBox, false)
 
-    test("Fail stake tx on empty state with stake key address switched out") {
-        val thiefAddress = Address.create("9hyDXH72HoNTiG2pvxFQwxAhWBU8CrbvwtJDtnYoa4jfpaSk1d3")
-        val ergoClient = createMockedErgoClient(MockData(Nil,Nil))
-        ergoClient.execute(new java.util.function.Function[BlockchainContext,Unit] {
-            override def apply(_ctx: BlockchainContext): Unit = {
-                val ctx = _ctx.asInstanceOf[BlockchainContextImpl]
-                PaideiaTestSuite.init(ctx)
-                val dao = StakingTest.testDAO
-                val state = TotalStakingState(dao.key,0L)
+        val stakingStateBox = stakingState.inputBox()
+        stakingContract.clearBoxes()
+        stakingContract.newBox(stakingStateBox, false)
 
-                val dummyAddress = Address.create("4MQyML64GnzMxZgm")
+        val stakeProxyContract = StakeProxy(PaideiaContractSignature(daoKey = dao.key))
+        val stakeProxyBox = stakeProxyContract
+          .box(ctx, dummyAddress.toString(), 1000L)
+          .ergoTransactionOutput()
+        val dummyTx       = (new ErgoTransaction()).addOutputsItem(stakeProxyBox)
+        val eventResponse = Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
+        assert(eventResponse.unsignedTransactions.size === 1)
+        ctx
+          .newProverBuilder()
+          .build()
+          .sign(eventResponse.unsignedTransactions(0).unsigned)
+      }
+    })
+  }
 
-                val stakingContract = PlasmaStaking(PaideiaContractSignature(daoKey = dao.key))
-                dao.config.set(ConfKeys.im_paideia_contracts_staking,stakingContract.contractSignature)
+  test("Fail stake tx on empty state with stake key address switched out") {
+    val thiefAddress =
+      Address.create("9hyDXH72HoNTiG2pvxFQwxAhWBU8CrbvwtJDtnYoa4jfpaSk1d3")
+    val ergoClient = createMockedErgoClient(MockData(Nil, Nil))
+    ergoClient.execute(new java.util.function.Function[BlockchainContext, Unit] {
+      override def apply(_ctx: BlockchainContext): Unit = {
+        val ctx = _ctx.asInstanceOf[BlockchainContextImpl]
+        PaideiaTestSuite.init(ctx)
+        val dao   = StakingTest.testDAO
+        val state = TotalStakingState(dao.key, 0L)
 
-                val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
-                
-                val configBox = Config(configContract.contractSignature).box(ctx,dao).inputBox()
-                configContract.clearBoxes()
-                configContract.newBox(configBox,false)
+        val dummyAddress = Address.create("4MQyML64GnzMxZgm")
 
-                
-                val stakingStateBox = PlasmaStaking(stakingContract.contractSignature).box(
-                    ctx,
-                    dao.key,
-                    100000000L
-                ).inputBox()
-                stakingContract.clearBoxes()
-                stakingContract.newBox(stakingStateBox,false)
+        val stakingContract = PlasmaStaking(PaideiaContractSignature(daoKey = dao.key))
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_staking, stakingContract.contractSignature)
 
-                val stakeProxyContract = StakeProxy(PaideiaContractSignature(daoKey=dao.key))
-                val stakeProxyBox = stakeProxyContract.box(ctx,dummyAddress.toString(),1000L).ergoTransactionOutput()
-                val dummyTx = (new ErgoTransaction()).addOutputsItem(stakeProxyBox)
-                val eventResponse = Paideia.handleEvent(TransactionEvent(ctx,false,dummyTx))
-                assert(eventResponse.unsignedTransactions.size===1)
-                eventResponse.unsignedTransactions(0)
-                val correctOutput = eventResponse.unsignedTransactions(0).outputs(1)
-                val falseOutput = ctx.newTxBuilder().outBoxBuilder()
-                    .contract(thiefAddress.toErgoContract())
-                    .creationHeight(correctOutput.getCreationHeight())
-                    .registers(correctOutput.getRegisters().asScala: _*)
-                    .tokens(correctOutput.getTokens().asScala: _*)
-                    .value(correctOutput.getValue()).build()
-                eventResponse.unsignedTransactions(0).outputs = eventResponse.unsignedTransactions(0).outputs.patch(1,List(falseOutput),1)
-                val falseUnsignedTx = eventResponse.unsignedTransactions(0).unsigned()
-                val thrown = intercept[InterpreterException] {
-                    ctx.newProverBuilder().build().sign(falseUnsignedTx)
-                }
-                assert(thrown.getMessage === "Script reduced to false")
-            }
-        })
-    }
+        val stakingState = stakingContract
+          .emptyBox(
+            ctx,
+            dao,
+            100000000L
+          )
+
+        val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
+
+        val configBox = Config(configContract.contractSignature).box(ctx, dao).inputBox()
+        configContract.clearBoxes()
+        configContract.newBox(configBox, false)
+
+        val stakingStateBox = stakingState
+          .inputBox()
+        stakingContract.clearBoxes()
+        stakingContract.newBox(stakingStateBox, false)
+
+        val stakeProxyContract = StakeProxy(PaideiaContractSignature(daoKey = dao.key))
+        val stakeProxyBox = stakeProxyContract
+          .box(ctx, dummyAddress.toString(), 1000L)
+          .ergoTransactionOutput()
+        val dummyTx       = (new ErgoTransaction()).addOutputsItem(stakeProxyBox)
+        val eventResponse = Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
+        assert(eventResponse.unsignedTransactions.size === 1)
+        eventResponse.unsignedTransactions(0)
+        val correctOutput = eventResponse.unsignedTransactions(0).outputs(1)
+        val falseOutput = ctx
+          .newTxBuilder()
+          .outBoxBuilder()
+          .contract(thiefAddress.toErgoContract())
+          .creationHeight(correctOutput.getCreationHeight())
+          .registers(correctOutput.getRegisters().asScala: _*)
+          .tokens(correctOutput.getTokens().asScala: _*)
+          .value(correctOutput.getValue())
+          .build()
+        eventResponse.unsignedTransactions(0).outputs =
+          eventResponse.unsignedTransactions(0).outputs.patch(1, List(falseOutput), 1)
+        val falseUnsignedTx = eventResponse.unsignedTransactions(0).unsigned()
+        val thrown = intercept[InterpreterException] {
+          ctx.newProverBuilder().build().sign(falseUnsignedTx)
+        }
+        assert(thrown.getMessage === "Script reduced to false")
+      }
+    })
+  }
 }

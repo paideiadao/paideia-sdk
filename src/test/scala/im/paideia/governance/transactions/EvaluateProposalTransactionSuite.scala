@@ -70,8 +70,6 @@ class EvaluateProposalTransactionSuite extends PaideiaTestSuite {
         val state    = TotalStakingState(dao.key, 100000L, true)
         val stakeKey = Util.randomKey
 
-        state.stake(stakeKey, 1000L)
-
         val dummyAddress =
           Address.create("9h7L7sUHZk43VQC3PHtSp5ujAWcZtYmWATBH746wi75C5XHi68b")
 
@@ -80,12 +78,16 @@ class EvaluateProposalTransactionSuite extends PaideiaTestSuite {
 
         val stakingContract = PlasmaStaking(PaideiaContractSignature(daoKey = dao.key))
 
-        val stakingStateBox = stakingContract
-          .box(
+        val stakingState = stakingContract
+          .emptyBox(
             ctx,
-            dao.key,
+            dao,
             100000000L
           )
+
+        stakingState.stake(stakeKey, 1000L)
+
+        val stakingStateBox = stakingState
           .inputBox()
         stakingContract.clearBoxes()
         stakingContract.newBox(stakingStateBox, false)

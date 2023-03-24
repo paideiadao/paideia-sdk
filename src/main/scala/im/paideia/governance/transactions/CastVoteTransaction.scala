@@ -20,6 +20,7 @@ import im.paideia.staking.TotalStakingState
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 import special.sigma.AvlTree
 import scorex.crypto.authds.ADDigest
+import im.paideia.staking.boxes.StakeStateBox
 
 final case class CastVoteTransaction(
   _ctx: BlockchainContextImpl,
@@ -102,6 +103,8 @@ final case class CastVoteTransaction(
     )
   )(0)
 
+  val stakeStateInputBox = StakeStateBox.fromInputBox(ctx, stakeStateInput)
+
   val result = Paideia
     .getProposalContract(proposalInput)
     .castVote(
@@ -133,13 +136,13 @@ final case class CastVoteTransaction(
     )
   )
 
+  val getProof = TotalStakingState(dao.key).currentStakingState
+    .getStakes(List(voteBox.stakeKey), Some(stakeStateInputBox.stateDigest))
+
   val extraContext = List(
     ContextVar.of(
       3.toByte,
-      TotalStakingState(dao.key).currentStakingState
-        .getStakes(List(voteBox.stakeKey))
-        .proof
-        .ergoValue
+      getProof.proof.ergoValue
     ),
     ContextVar.of(4.toByte, ErgoValueBuilder.buildFor(0, 0L))
   )
@@ -148,7 +151,7 @@ final case class CastVoteTransaction(
   val paiDaos   = Paideia._daoMap
 
   val voteOutput = voteBox.useContract.box(
-    ctx,
+    _ctx,
     voteBox.voteKey,
     voteBox.stakeKey,
     voteBox.releaseTime.max(

@@ -41,14 +41,6 @@ case class CompoundTransaction(
 
   val treasuryAddress = treasuryContract.contract.toAddress()
 
-  if (stakeStateInput
-        .getRegisters()
-        .get(0)
-        .getValue
-        .asInstanceOf[AvlTree]
-        .digest != state.currentStakingState.plasmaMap.ergoAVLTree.digest)
-    throw new Exception("State not synced correctly")
-
   val stakeStateInputBox = StakeStateBox.fromInputBox(ctx, stakeStateInput)
 
   val configInput = Paideia.getBox(
@@ -104,7 +96,7 @@ case class CompoundTransaction(
     )
     .get
 
-  val contextVars = state
+  val contextVars = stakeStateInputBox
     .compound(Env.compoundBatchSize)
     .::(
       ContextVar.of(
@@ -119,18 +111,6 @@ case class CompoundTransaction(
         )(Some(configDigest))
       )
     )
-
-  val stakingContractSignature =
-    config[PaideiaContractSignature](ConfKeys.im_paideia_contracts_staking)
-      .withDaoKey(daoKey)
-  val stakingContract = PlasmaStaking(stakingContractSignature)
-
-  val stakeStateOutput = stakingContract.box(
-    ctx,
-    daoKey,
-    stakeStateInputBox.stakedTokenTotal,
-    stakeStateInputBox.extraTokens
-  )
 
   val operatorOutput = ctx
     .newTxBuilder()
@@ -160,5 +140,5 @@ case class CompoundTransaction(
   inputs = List[InputBox](stakeStateInput.withContextVars(contextVars: _*)) ++ coveringTreasuryBoxes
       .map(_.withContextVars(treasuryContextVars: _*))
   dataInputs = List[InputBox](configInput, paideiaConfigInput)
-  outputs    = List[OutBox](stakeStateOutput.outBox, operatorOutput)
+  outputs    = List[OutBox](stakeStateInputBox.outBox, operatorOutput)
 }

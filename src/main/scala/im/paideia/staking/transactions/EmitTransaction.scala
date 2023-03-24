@@ -27,6 +27,7 @@ import scorex.crypto.authds.ADDigest
 
 case class EmitTransaction(
   _ctx: BlockchainContextImpl,
+  stakeStateInput: InputBox,
   operatorAddress: ErgoAddress,
   daoKey: String
 ) extends PaideiaTransaction {
@@ -35,24 +36,6 @@ case class EmitTransaction(
   val config = Paideia.getConfig(daoKey)
 
   val state = TotalStakingState(daoKey)
-
-  val stakeStateInput = Paideia.getBox(
-    new FilterLeaf[String](
-      FilterType.FTEQ,
-      new ErgoId(config.getArray[Byte](ConfKeys.im_paideia_staking_state_tokenid))
-        .toString(),
-      CompareField.ASSET,
-      0
-    )
-  )(0)
-
-  if (stakeStateInput
-        .getRegisters()
-        .get(0)
-        .getValue
-        .asInstanceOf[AvlTree]
-        .digest != state.currentStakingState.plasmaMap.ergoAVLTree.digest)
-    throw new Exception("State not synced correctly")
 
   val stakeStateInputBox = StakeStateBox.fromInputBox(ctx, stakeStateInput)
 
@@ -109,19 +92,22 @@ case class EmitTransaction(
           Env.paideiaTokenId,
           paideiaConfig[Long](ConfKeys.im_paideia_fees_emit_operator_paideia) +
           (paideiaConfig[Long](ConfKeys.im_paideia_fees_emit_paideia) * stakeStateInputBox.state.currentStakingState
-            .size() + 1)
+            .size(Some(stakeStateInputBox.stateDigest)) + 1)
         )
       )
     )
     .get
 
-  val contextVars = state
+  val tokensInPool = stakeStateInput
+      .getTokens()
+      .get(1)
+      .getValue() - (stakeStateInputBox.state.currentStakingState
+      .totalStaked(Some(stakeStateInputBox.stateDigest)) + 1L)
+
+  val contextVars = stakeStateInputBox
     .emit(
       ctx.createPreHeader().build().getTimestamp(),
-      stakeStateInput
-        .getTokens()
-        .get(1)
-        .getValue() - state.currentStakingState.totalStaked
+      tokensInPool
     )
     .::(
       ContextVar.of(
@@ -136,18 +122,6 @@ case class EmitTransaction(
         )(Some(configDigest))
       )
     )
-
-  val stakingContractSignature =
-    config[PaideiaContractSignature](ConfKeys.im_paideia_contracts_staking)
-      .withDaoKey(daoKey)
-  val stakingContract = PlasmaStaking(stakingContractSignature)
-
-  val stakeStateOutput = stakingContract.box(
-    ctx,
-    daoKey,
-    stakeStateInputBox.stakedTokenTotal,
-    stakeStateInputBox.extraTokens
-  )
 
   val operatorOutput = ctx
     .newTxBuilder()
@@ -179,7 +153,7 @@ case class EmitTransaction(
       new ErgoToken(
         Env.paideiaTokenId,
         (paideiaConfig[Long](ConfKeys.im_paideia_fees_emit_paideia) * stakeStateInputBox.state.currentStakingState
-          .size() + 1L)
+          .size(Some(stakeStateInputBox.stateDigest)) + 1L)
       )
     )
     .build()
@@ -203,5 +177,5 @@ case class EmitTransaction(
       .map(_.withContextVars(treasuryContextVars: _*))
   dataInputs = List[InputBox](configInput, paideiaConfigInput)
   outputs =
-    List[OutBox](stakeStateOutput.outBox, operatorOutput, paideiaSplitProfitOutput)
+    List[OutBox](stakeStateInputBox.outBox, operatorOutput, paideiaSplitProfitOutput)
 }

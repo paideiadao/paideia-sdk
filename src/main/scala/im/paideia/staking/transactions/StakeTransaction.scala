@@ -49,14 +49,6 @@ case class StakeTransaction(
 
   val stakeStateInputBox = StakeStateBox.fromInputBox(ctx, stakeStateInput)
 
-  if (stakeStateInput
-        .getRegisters()
-        .get(0)
-        .getValue
-        .asInstanceOf[AvlTree]
-        .digest != state.currentStakingState.plasmaMap.ergoAVLTree.digest)
-    throw new Exception("State not synced correctly")
-
   val configInput = Paideia.getBox(
     new FilterLeaf[String](
       FilterType.FTEQ,
@@ -79,7 +71,7 @@ case class StakeTransaction(
     throw new Exception("Config not synced correctly")
   val stakeKey = stakeStateInput.getId().toString()
 
-  val contextVars = state
+  val contextVars = stakeStateInputBox
     .stake(stakeKey, amount)
     .::(
       ContextVar.of(
@@ -105,18 +97,6 @@ case class StakeTransaction(
     ),
     ContextVar.of(1.toByte, contextVars(2).getValue()),
     ContextVar.of(2.toByte, contextVars(3).getValue())
-  )
-
-  val stakingContractSignature = config[PaideiaContractSignature](
-    ConfKeys.im_paideia_contracts_staking
-  ).withDaoKey(daoKey)
-  val stakingContract = PlasmaStaking(stakingContractSignature)
-
-  val stakeStateOutput = stakingContract.box(
-    ctx,
-    daoKey,
-    stakeStateInputBox.stakedTokenTotal + amount,
-    stakeStateInputBox.extraTokens
   )
 
   val userOutput = ctx
@@ -153,6 +133,6 @@ case class StakeTransaction(
     stakeProxyInput.withContextVars(proxyContextVars: _*)
   )
   dataInputs    = List[InputBox](configInput)
-  outputs       = List[OutBox](stakeStateOutput.outBox, userOutput)
+  outputs       = List[OutBox](stakeStateInputBox.outBox, userOutput)
   changeAddress = _changeAddress
 }

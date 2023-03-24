@@ -29,16 +29,15 @@ import org.ergoplatform.appkit.ErgoValue
 class MempoolPlasmaMap[K, V](
   store: VersionedAVLStorage[Digest32],
   override val flags: AvlTreeFlags,
-  override val params: PlasmaParameters
+  override val params: PlasmaParameters,
+  mempoolMaps: HashMap[List[Byte], PlasmaMapWithMap[K, V]] =
+    new HashMap[List[Byte], PlasmaMapWithMap[K, V]](),
+  private var newlyConfirmedMap: Option[PlasmaMapWithMap[K, V]] = None,
+  opQueue: Queue[(Int, BatchOperation[K, V])]                   = Queue.empty[(Int, BatchOperation[K, V])]
 )(implicit val convertKey: ByteConversion[K], convertVal: ByteConversion[V])
   extends LocalPlasmaBase[K, V] {
 
-  private var newlyConfirmedMap: Option[PlasmaMap[K, V]] = None
-
-  private val mempoolMaps: HashMap[List[Byte], PlasmaMap[K, V]] =
-    new HashMap[List[Byte], PlasmaMap[K, V]]()
-
-  val localMap: LocalPlasmaMap[K, V] = new LocalPlasmaMap[K, V](store, flags, params)
+  val localMap = new LocalPlasmaMap[K, V](store, flags, params)
 
   override val prover: PersistentBatchAVLProver[Digest32, Blake2b256.type] =
     localMap.prover
@@ -46,11 +45,8 @@ class MempoolPlasmaMap[K, V](
   override def digest: ADDigest =
     newlyConfirmedMap.map(_.prover.digest).getOrElse(prover.digest)
 
-  private val opQueue: Queue[(Int, BatchOperation[K, V])] =
-    Queue.empty[(Int, BatchOperation[K, V])]
-
-  def initiate(): PlasmaMap[K, V] = {
-    newlyConfirmedMap = Some(localMap.toPlasmaMap)
+  def initiate(): PlasmaMapWithMap[K, V] = {
+    newlyConfirmedMap = Some(PlasmaMapWithMap(localMap.toPlasmaMap))
     newlyConfirmedMap.get
   }
 
@@ -65,14 +61,24 @@ class MempoolPlasmaMap[K, V](
 
   def insertWithDigest(
     keyVals: (K, V)*
-  )(digestOrHeight: Either[ADDigest, Int]): ProvenResultWithDigest[V] = {
+  )(
+    digestOrHeight: Either[ADDigest, Int],
+    inPlace: Boolean = false
+  ): ProvenResultWithDigest[V] = {
     val map = digestOrHeight match {
       case Right(i) => newlyConfirmedMap.getOrElse(initiate())
       case Left(onDigest) =>
-        if (onDigest.sameElements(digest))
-          newlyConfirmedMap.getOrElse(initiate()).copy()
-        else
-          mempoolMaps(onDigest.toList).copy()
+        val sourceMap =
+          if (onDigest.sameElements(digest))
+            newlyConfirmedMap.getOrElse(initiate())
+          else
+            mempoolMaps(onDigest.toList)
+        if (inPlace) {
+          mempoolMaps.remove(sourceMap.digest.toList)
+          sourceMap
+        } else
+          sourceMap.copy()
+
     }
     map.prover.generateProof()
     val response = keyVals
@@ -87,8 +93,11 @@ class MempoolPlasmaMap[K, V](
       )
     val proof = map.prover.generateProof()
     digestOrHeight match {
-      case Right(i)       => opQueue.enqueue((i, InsertBatch(keyVals)))
-      case Left(onDigest) => mempoolMaps(map.prover.digest.toList) = map
+      case Right(i) =>
+        opQueue.enqueue((i, InsertBatch(keyVals)))
+        map.cachedMap = None
+      case Left(onDigest) =>
+        mempoolMaps(map.prover.digest.toList) = map
     }
     ProvenResultWithDigest(response, Proof(proof), map.digest)
   }
@@ -100,9 +109,9 @@ class MempoolPlasmaMap[K, V](
       case Right(i) => newlyConfirmedMap.getOrElse(initiate())
       case Left(onDigest) =>
         if (onDigest.sameElements(digest))
-          newlyConfirmedMap.getOrElse(initiate()).copy()
+          PlasmaMapWithMap(newlyConfirmedMap.getOrElse(initiate()).copy())
         else
-          mempoolMaps(onDigest.toList).copy()
+          PlasmaMapWithMap(mempoolMaps(onDigest.toList).copy())
     }
     map.prover.generateProof()
     val response = newKeyVals
@@ -117,7 +126,9 @@ class MempoolPlasmaMap[K, V](
       )
     val proof = map.prover.generateProof()
     digestOrHeight match {
-      case Right(i)       => opQueue.enqueue((i, UpdateBatch(newKeyVals)))
+      case Right(i) =>
+        opQueue.enqueue((i, UpdateBatch(newKeyVals)))
+        map.cachedMap = None
       case Left(onDigest) => mempoolMaps(map.prover.digest.toList) = map
     }
     ProvenResultWithDigest(response, Proof(proof), map.digest)
@@ -129,10 +140,7 @@ class MempoolPlasmaMap[K, V](
     val map = digestOrHeight match {
       case Right(i) => newlyConfirmedMap.getOrElse(initiate())
       case Left(onDigest) =>
-        if (onDigest.sameElements(digest))
-          newlyConfirmedMap.getOrElse(initiate()).copy()
-        else
-          mempoolMaps(onDigest.toList).copy()
+        getMap(Some(onDigest)).get.copy()
     }
     map.prover.generateProof()
     val response = keys
@@ -145,8 +153,10 @@ class MempoolPlasmaMap[K, V](
       )
     val proof = map.prover.generateProof()
     digestOrHeight match {
-      case Right(i)       => opQueue.enqueue((i, DeleteBatch(keys)))
-      case Left(onDigest) => mempoolMaps(map.prover.digest.toList) = map
+      case Right(i) =>
+        opQueue.enqueue((i, DeleteBatch(keys)))
+        map.cachedMap = None
+      case Left(onDigest) => mempoolMaps(map.digest.toList) = map
     }
     ProvenResultWithDigest(response, Proof(proof), map.digest)
   }
@@ -154,14 +164,7 @@ class MempoolPlasmaMap[K, V](
   def lookUpWithDigest(
     keys: K*
   )(digestOpt: Option[ADDigest] = None): ProvenResult[V] = {
-    val map = digestOpt match {
-      case None => newlyConfirmedMap.getOrElse(initiate())
-      case Some(onDigest) =>
-        if (onDigest.sameElements(digest))
-          newlyConfirmedMap.getOrElse(initiate())
-        else
-          mempoolMaps(onDigest.toList)
-    }
+    val map = getMap(digestOpt).get
     val response = keys
       .map(k =>
         OpResult(
@@ -172,6 +175,17 @@ class MempoolPlasmaMap[K, V](
       )
     val proof = map.prover.generateProof()
     ProvenResult(response, Proof(proof))
+  }
+
+  def getMap(digestOpt: Option[ADDigest]): Option[PlasmaMapWithMap[K, V]] = {
+    digestOpt match {
+      case None => Some(newlyConfirmedMap.getOrElse(initiate()))
+      case Some(onDigest) =>
+        if (onDigest.sameElements(digest))
+          Some(newlyConfirmedMap.getOrElse(initiate()))
+        else
+          mempoolMaps.get(onDigest.toList)
+    }
   }
 
   def delete(keys: K*): io.getblok.getblok_plasma.collections.ProvenResult[V] =
@@ -189,6 +203,18 @@ class MempoolPlasmaMap[K, V](
 
   def update(newKeyVals: (K, V)*): io.getblok.getblok_plasma.collections.ProvenResult[V] =
     updateWithDigest(newKeyVals: _*)(Right(0)).toProvenResult
+
+  def copy(newStore: VersionedAVLStorage[Digest32]): MempoolPlasmaMap[K, V] = {
+    val newMempoolMaps = mempoolMaps.map(kv => (kv._1, kv._2.copy()))
+    new MempoolPlasmaMap[K, V](
+      newStore,
+      flags,
+      params,
+      newMempoolMaps,
+      newlyConfirmedMap.map(_.copy()),
+      opQueue.clone()
+    )
+  }
 }
 
 object MempoolPlasmaMap {

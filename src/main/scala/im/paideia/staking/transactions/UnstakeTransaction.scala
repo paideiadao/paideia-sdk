@@ -43,7 +43,6 @@ case class UnstakeTransaction(
   val newStakeRecord = StakeRecord.stakeRecordConversion.convertFromBytes(
     unstakeProxyInput.getRegisters().get(1).getValue().asInstanceOf[Coll[Byte]].toArray
   )
-  val currentStakeRecord = state.getStake(stakingKey)
 
   val whiteListedTokens = config
     .getArray[Object](ConfKeys.im_paideia_staking_profit_tokenids)
@@ -63,13 +62,8 @@ case class UnstakeTransaction(
 
   val stakeStateInputBox = StakeStateBox.fromInputBox(ctx, stakeStateInput)
 
-  if (stakeStateInput
-        .getRegisters()
-        .get(0)
-        .getValue
-        .asInstanceOf[AvlTree]
-        .digest != state.currentStakingState.plasmaMap.ergoAVLTree.digest)
-    throw new Exception("State not synced correctly")
+  val currentStakeRecord =
+    stakeStateInputBox.getStake(stakingKey)
 
   val configInput = Paideia.getBox(
     new FilterLeaf[String](
@@ -92,8 +86,20 @@ case class UnstakeTransaction(
   if (!configDigest.sameElements(config._config.digest))
     throw new Exception("Config not synced correctly")
 
-  val contextVars = state
-    .unstake(stakingKey, newStakeRecord)
+  val newExtraTokens = stakeStateInputBox.extraTokens
+    .map { (et: ErgoToken) =>
+      val stakeRecordIndex = whiteListedTokens.indexOf(et.getId())
+      new ErgoToken(
+        et.getId(),
+        et.getValue() - (currentStakeRecord
+          .rewards(1 + stakeRecordIndex) - newStakeRecord.rewards(1 + stakeRecordIndex))
+      )
+    }
+    .filter((et: ErgoToken) => et.getValue() > 0L)
+    .toList
+
+  val contextVars = stakeStateInputBox
+    .unstake(stakingKey, newStakeRecord, newExtraTokens)
     .::(
       ContextVar.of(
         0.toByte,
@@ -118,28 +124,6 @@ case class UnstakeTransaction(
     ),
     ContextVar.of(1.toByte, contextVars(3).getValue()),
     ContextVar.of(2.toByte, contextVars(4).getValue())
-  )
-
-  val stakingContractSignature = config[PaideiaContractSignature](
-    ConfKeys.im_paideia_contracts_staking
-  ).withDaoKey(daoKey)
-  val stakingContract = PlasmaStaking(stakingContractSignature)
-
-  val stakeStateOutput = stakingContract.box(
-    ctx,
-    daoKey,
-    stakeStateInputBox.stakedTokenTotal - (currentStakeRecord.stake - newStakeRecord.stake),
-    stakeStateInputBox.extraTokens
-      .map { (et: ErgoToken) =>
-        val stakeRecordIndex = whiteListedTokens.indexOf(et.getId())
-        new ErgoToken(
-          et.getId(),
-          et.getValue() - (currentStakeRecord
-            .rewards(1 + stakeRecordIndex) - newStakeRecord.rewards(1 + stakeRecordIndex))
-        )
-      }
-      .filter((et: ErgoToken) => et.getValue() > 0L)
-      .toList
   )
 
   val govTokenUnstake = if (currentStakeRecord.stake > newStakeRecord.stake) {
@@ -207,5 +191,5 @@ case class UnstakeTransaction(
     unstakeProxyInput.withContextVars(proxyContextVars: _*)
   )
   dataInputs = List[InputBox](configInput)
-  outputs    = List[OutBox](stakeStateOutput.outBox, userOutput)
+  outputs    = List[OutBox](stakeStateInputBox.outBox, userOutput)
 }

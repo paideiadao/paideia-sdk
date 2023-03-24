@@ -88,7 +88,7 @@ class CastVoteTransactionSuite extends PaideiaTestSuite {
         val stakeKey = Util.randomKey
         val voteKey  = Util.randomKey
 
-        state.stake(stakeKey, 100L)
+        val stakingContract = PlasmaStaking(PaideiaContractSignature(daoKey = dao.key))
 
         val dummyAddress =
           Address.create("9h7L7sUHZk43VQC3PHtSp5ujAWcZtYmWATBH746wi75C5XHi68b")
@@ -96,14 +96,16 @@ class CastVoteTransactionSuite extends PaideiaTestSuite {
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
         configContract.newBox(configContract.box(ctx, dao).inputBox(), false)
 
-        val stakingContract = PlasmaStaking(PaideiaContractSignature(daoKey = dao.key))
-
-        val stakingStateBox = stakingContract
-          .box(
+        val stakingState = stakingContract
+          .emptyBox(
             ctx,
-            dao.key,
+            dao,
             100000000L
           )
+
+        stakingState.stake(stakeKey, 100L)
+
+        val stakingStateBox = stakingState
           .inputBox()
         stakingContract.clearBoxes()
         stakingContract.newBox(stakingStateBox, false)

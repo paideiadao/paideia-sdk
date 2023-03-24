@@ -26,6 +26,7 @@ import org.ergoplatform.appkit.ContextVar
 import im.paideia.staking.TotalStakingState
 import scorex.crypto.authds.ADDigest
 import special.sigma.AvlTree
+import im.paideia.staking.boxes.StakeStateBox
 
 case class CreateVoteTransaction(
   _ctx: BlockchainContextImpl,
@@ -85,6 +86,8 @@ case class CreateVoteTransaction(
       0
     )
   )(0)
+
+  val stakeStateInputBox = StakeStateBox.fromInputBox(ctx, stakeStateInput)
 
   val daoOriginInputBox  = DAOOriginBox.fromInput(ctx, daoOriginInput)
   val createVoteProxyBox = CreateVoteProxyBox.fromInputBox(ctx, createVoteProxyInput)
@@ -157,7 +160,10 @@ case class CreateVoteTransaction(
     ContextVar.of(
       2.toByte,
       TotalStakingState(dao.key).currentStakingState
-        .getStakes(List(createVoteProxyBox.stakeKey))
+        .getStakes(
+          List(createVoteProxyBox.stakeKey),
+          Some(stakeStateInputBox.stateDigest)
+        )
         .proof
         .bytes
     )

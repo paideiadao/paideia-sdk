@@ -29,6 +29,7 @@ import sigmastate.eval.Colls
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 import scorex.crypto.authds.ADDigest
 import special.sigma.AvlTree
+import org.ergoplatform.appkit.ErgoToken
 
 case class CreateDAOTransaction(
   _ctx: BlockchainContextImpl,
@@ -113,15 +114,17 @@ case class CreateDAOTransaction(
   )
   val configContractSignature = configContract.contractSignature
 
-  val state = TotalStakingState(
-    dao.key,
-    _ctx.createPreHeader().build().getTimestamp() + dao.config[Long](
+  val emissionTime = _ctx.createPreHeader().build().getTimestamp() + dao.config[Long](
       ConfKeys.im_paideia_staking_cyclelength
     )
+
+  val state = TotalStakingState(
+    dao.key,
+    emissionTime
   )
 
   val stakeStateOutput = PlasmaStaking(PaideiaContractSignature(daoKey = dao.key))
-    .box(_ctx, dao.key, protoDAOInputBox.stakePool)
+    .emptyBox(_ctx, dao, protoDAOInputBox.stakePool)
 
   val treasuryContract          = Treasury(PaideiaContractSignature(daoKey = dao.key))
   val treasuryContractSignature = treasuryContract.contractSignature

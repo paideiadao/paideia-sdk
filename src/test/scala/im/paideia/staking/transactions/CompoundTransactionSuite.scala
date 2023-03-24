@@ -37,9 +37,22 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
         PaideiaTestSuite.init(ctx)
         val dao   = StakingTest.testDAO
         val state = TotalStakingState(dao.key, 0L)
-        state.stake(Util.randomKey, 100L)
+
+        val stakingContract = PlasmaStaking(PaideiaContractSignature(daoKey = dao.key))
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_staking, stakingContract.contractSignature)
+
+        val stakingState = stakingContract
+          .emptyBox(
+            ctx,
+            dao,
+            100000000L
+          )
+
+        stakingState.stake(Util.randomKey, 100L)
+
         Range(0, dao.config[Long](ConfKeys.im_paideia_staking_emission_delay).toInt)
-          .foreach(_ => state.emit(9999999999999999L, 9999999L))
+          .foreach(_ => stakingState.emit(9999999999999999L, 9999999L))
         val dummyAddress = Address.create("4MQyML64GnzMxZgm")
 
         val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
@@ -56,22 +69,13 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
           false
         )
 
-        val stakingContract = PlasmaStaking(PaideiaContractSignature(daoKey = dao.key))
-        dao.config
-          .set(ConfKeys.im_paideia_contracts_staking, stakingContract.contractSignature)
-
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
 
         val configBox = Config(configContract.contractSignature).box(ctx, dao).inputBox()
         configContract.clearBoxes()
         configContract.newBox(configBox, false)
 
-        val stakingStateBox = stakingContract
-          .box(
-            ctx,
-            dao.key,
-            100000000L
-          )
+        val stakingStateBox = stakingState
           .ergoTransactionOutput()
         stakingContract.clearBoxes()
 
@@ -94,14 +98,21 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
         PaideiaTestSuite.init(ctx)
         val dao   = StakingTest.testDAO
         val state = TotalStakingState(dao.key, 0L)
-        Range(0, 10000).foreach(_ => state.stake(Util.randomKey, 100L))
-        Range(0, dao.config[Long](ConfKeys.im_paideia_staking_emission_delay).toInt)
-          .foreach(_ => state.emit(9999999999999999L, 9999999L))
-        val dummyAddress = Address.create("4MQyML64GnzMxZgm")
 
         val stakingContract = PlasmaStaking(PaideiaContractSignature(daoKey = dao.key))
         dao.config
           .set(ConfKeys.im_paideia_contracts_staking, stakingContract.contractSignature)
+
+        val stakingState = stakingContract
+          .emptyBox(
+            ctx,
+            dao,
+            100000000L
+          )
+        Range(0, 10000).foreach(_ => stakingState.stake(Util.randomKey, 100L, true))
+        Range(0, dao.config[Long](ConfKeys.im_paideia_staking_emission_delay).toInt)
+          .foreach(_ => stakingState.emit(9999999999999999L, 9999999L))
+        val dummyAddress = Address.create("4MQyML64GnzMxZgm")
 
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
 
@@ -123,12 +134,7 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
         configContract.clearBoxes()
         configContract.newBox(configBox, false)
 
-        val stakingStateBox = stakingContract
-          .box(
-            ctx,
-            dao.key,
-            100000000L
-          )
+        val stakingStateBox = stakingState
           .ergoTransactionOutput()
         stakingContract.clearBoxes()
 

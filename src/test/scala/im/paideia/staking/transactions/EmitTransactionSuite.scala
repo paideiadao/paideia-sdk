@@ -44,6 +44,13 @@ class EmitTransactionSuite extends PaideiaTestSuite {
         dao.config
           .set(ConfKeys.im_paideia_contracts_staking, stakingContract.contractSignature)
 
+        val stakingState = stakingContract
+          .emptyBox(
+            ctx,
+            dao,
+            100000000L
+          )
+
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
 
         val configBox = Config(configContract.contractSignature).box(ctx, dao).inputBox()
@@ -64,18 +71,13 @@ class EmitTransactionSuite extends PaideiaTestSuite {
           false
         )
 
-        val stakingStateBox = stakingContract
-          .box(
-            ctx,
-            dao.key,
-            100000000L
-          )
+        val stakingStateBox = stakingState
           .inputBox()
         stakingContract.clearBoxes()
         stakingContract.newBox(stakingStateBox, false)
 
         val dummyBlock = (new FullBlock())
-          .header(new BlockHeader().timestamp(state.nextEmission + 1000L))
+          .header(new BlockHeader().timestamp(stakingState.nextEmission + 1000L))
           .blockTransactions(new BlockTransactions().transactions(new Transactions()))
         val eventResponse = Paideia.handleEvent(BlockEvent(ctx, dummyBlock))
         assert(eventResponse.unsignedTransactions.size === 1)
@@ -95,11 +97,19 @@ class EmitTransactionSuite extends PaideiaTestSuite {
         PaideiaTestSuite.init(ctx)
         val dao   = StakingTest.testDAO
         val state = TotalStakingState(dao.key, 0L)
-        state.stake(Util.randomKey, 100000L)
 
         val stakingContract = PlasmaStaking(PaideiaContractSignature(daoKey = dao.key))
         dao.config
           .set(ConfKeys.im_paideia_contracts_staking, stakingContract.contractSignature)
+
+        val stakingState = stakingContract
+          .emptyBox(
+            ctx,
+            dao,
+            100000000L
+          )
+
+        stakingState.stake(Util.randomKey, 100000L)
 
         val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
         treasuryContract.clearBoxes()
@@ -121,18 +131,13 @@ class EmitTransactionSuite extends PaideiaTestSuite {
         configContract.clearBoxes()
         configContract.newBox(configBox, false)
 
-        val stakingStateBox = stakingContract
-          .box(
-            ctx,
-            dao.key,
-            100000000L
-          )
+        val stakingStateBox = stakingState
           .inputBox()
         stakingContract.clearBoxes()
         stakingContract.newBox(stakingStateBox, false)
 
         val dummyBlock = (new FullBlock())
-          .header(new BlockHeader().timestamp(state.nextEmission + 1000L))
+          .header(new BlockHeader().timestamp(stakingState.nextEmission + 1000L))
           .blockTransactions(new BlockTransactions().transactions(new Transactions()))
         val eventResponse = Paideia.handleEvent(BlockEvent(ctx, dummyBlock))
         assert(eventResponse.unsignedTransactions.size === 1)
@@ -152,11 +157,20 @@ class EmitTransactionSuite extends PaideiaTestSuite {
         PaideiaTestSuite.init(ctx)
         val dao   = StakingTest.testDAO
         val state = TotalStakingState(dao.key, 0L)
-        state.stake(Util.randomKey, 100000L)
 
         val stakingContract = PlasmaStaking(PaideiaContractSignature(daoKey = dao.key))
         dao.config
           .set(ConfKeys.im_paideia_contracts_staking, stakingContract.contractSignature)
+
+        val stakingState = stakingContract
+          .emptyBox(
+            ctx,
+            dao,
+            100000000L
+          )
+
+        stakingState.stake(Util.randomKey, 100000L)
+
         val sigUsd = Util.randomKey
         dao.config.set(
           ConfKeys.im_paideia_staking_profit_tokenids,
@@ -177,7 +191,8 @@ class EmitTransactionSuite extends PaideiaTestSuite {
           false
         )
 
-        state.profitShare(List(0L, 1000L, 1000L))
+        stakingState
+          .profitShare(List(0L, 1000L, 1000L), List(new ErgoToken(sigUsd, 1000L)))
 
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
 
@@ -185,19 +200,13 @@ class EmitTransactionSuite extends PaideiaTestSuite {
         configContract.clearBoxes()
         configContract.newBox(configBox, false)
 
-        val stakingStateBox = stakingContract
-          .box(
-            ctx,
-            dao.key,
-            100000000L,
-            List(new ErgoToken(sigUsd, 1000L))
-          )
+        val stakingStateBox = stakingState
           .inputBox()
         stakingContract.clearBoxes()
         stakingContract.newBox(stakingStateBox, false)
 
         val dummyBlock = (new FullBlock())
-          .header(new BlockHeader().timestamp(state.nextEmission + 1000L))
+          .header(new BlockHeader().timestamp(stakingState.nextEmission + 1000L))
           .blockTransactions(new BlockTransactions().transactions(new Transactions()))
         val eventResponse = Paideia.handleEvent(BlockEvent(ctx, dummyBlock))
         assert(eventResponse.unsignedTransactions.size === 1)

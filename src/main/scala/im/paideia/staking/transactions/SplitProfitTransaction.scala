@@ -151,8 +151,8 @@ object SplitProfitTransaction {
 
       val state = TotalStakingState(dao.key)
 
-      val contextVars = state
-        .profitShare(profitToShare.toList)
+      val contextVars = stakeStateInputBox
+        .profitShare(profitToShare.toList, extraTokens.toList ++ newExtraTokens.toList)
         .::(
           ContextVar.of(
             0.toByte,
@@ -167,15 +167,6 @@ object SplitProfitTransaction {
           )
         )
 
-      val stakingContract = PlasmaStaking(PaideiaContractSignature(daoKey = dao.key))
-
-      val stakeStateOutput = stakingContract.box(
-        ctx,
-        dao.key,
-        stakeStateInputBox.stakedTokenTotal + profitToShare(0),
-        extraTokens.toList ++ newExtraTokens.toList
-      )
-
       val res = new SplitProfitTransaction()
       res.ctx           = ctx
       res.changeAddress = treasuryContract.contract.toAddress().getErgoAddress()
@@ -183,7 +174,7 @@ object SplitProfitTransaction {
       res.inputs = List[InputBox](stakeStateInput.withContextVars(contextVars: _*)) ++ splitProfitInputs
           .map(_.withContextVars(splitProfitContext))
       res.dataInputs = List[InputBox](configInput)
-      res.outputs    = List[OutBox](stakeStateOutput.outBox)
+      res.outputs    = List[OutBox](stakeStateInputBox.outBox)
       res
 
     } else {
