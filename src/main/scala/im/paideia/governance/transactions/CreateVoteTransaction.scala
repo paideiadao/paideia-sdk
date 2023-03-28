@@ -24,95 +24,164 @@ import scala.math.Ordering.Implicits
 import scala.collection.JavaConverters._
 import org.ergoplatform.appkit.ContextVar
 import im.paideia.staking.TotalStakingState
+import scorex.crypto.authds.ADDigest
+import special.sigma.AvlTree
+import im.paideia.staking.boxes.StakeStateBox
 
 case class CreateVoteTransaction(
-    _ctx: BlockchainContextImpl,
-    createVoteProxyInput: InputBox,
-    dao: DAO,
-    _changeAddress: ErgoAddress
-) extends PaideiaTransaction
-{
-    ctx = _ctx
-    changeAddress = _changeAddress
+  _ctx: BlockchainContextImpl,
+  createVoteProxyInput: InputBox,
+  dao: DAO,
+  _changeAddress: ErgoAddress
+) extends PaideiaTransaction {
+  ctx           = _ctx
+  changeAddress = _changeAddress
 
-    val daoOriginInputs = Paideia.getBox(new FilterNode(
-        FilterType.FTALL,
-        List(
-            new FilterLeaf(
-                FilterType.FTEQ,
-                Env.daoTokenId,
-                CompareField.ASSET,
-                0
-            ),
-            new FilterLeaf(
-                FilterType.FTEQ,
-                ErgoId.create(dao.key).getBytes().toIterable,
-                CompareField.REGISTER,
-                0
-            )
+  val daoOriginInputs = Paideia.getBox(
+    new FilterNode(
+      FilterType.FTALL,
+      List(
+        new FilterLeaf(
+          FilterType.FTEQ,
+          Env.daoTokenId,
+          CompareField.ASSET,
+          0
+        ),
+        new FilterLeaf(
+          FilterType.FTEQ,
+          ErgoId.create(dao.key).getBytes().toIterable,
+          CompareField.REGISTER,
+          0
         )
-    ))
+      )
+    )
+  )
 
-    val daoOriginInput = daoOriginInputs(0)
+  val daoOriginInput = daoOriginInputs(0)
 
-    val paideiaConfigInput = Paideia.getBox(new FilterLeaf[String](
-        FilterType.FTEQ,
-        Env.paideiaDaoKey,
-        CompareField.ASSET,
+  val paideiaConfigInput = Paideia.getBox(
+    new FilterLeaf[String](
+      FilterType.FTEQ,
+      Env.paideiaDaoKey,
+      CompareField.ASSET,
+      0
+    )
+  )(0)
+
+  val configInput = Paideia.getBox(
+    new FilterLeaf[String](
+      FilterType.FTEQ,
+      dao.key,
+      CompareField.ASSET,
+      0
+    )
+  )(0)
+
+  val stakeStateInput = Paideia.getBox(
+    new FilterLeaf[String](
+      FilterType.FTEQ,
+      new ErgoId(dao.config.getArray[Byte](ConfKeys.im_paideia_staking_state_tokenid))
+        .toString(),
+      CompareField.ASSET,
+      0
+    )
+  )(0)
+
+  val stakeStateInputBox = StakeStateBox.fromInputBox(ctx, stakeStateInput)
+
+  val daoOriginInputBox  = DAOOriginBox.fromInput(ctx, daoOriginInput)
+  val createVoteProxyBox = CreateVoteProxyBox.fromInputBox(ctx, createVoteProxyInput)
+
+  val voteKey = daoOriginInput.getId().toString()
+
+  val voteContract = Vote(PaideiaContractSignature(daoKey = dao.key))
+  val voteOutput   = voteContract.box(ctx, voteKey, createVoteProxyBox.stakeKey, 0L)
+
+  val daoOriginContract = DAOOrigin(PaideiaContractSignature(daoKey = Env.paideiaDaoKey))
+
+  val daoOriginOutput = daoOriginContract.box(
+    ctx,
+    dao,
+    daoOriginInputBox.propTokens,
+    daoOriginInputBox.voteTokens - 1,
+    daoOriginInputBox.actionTokens
+  )
+
+  val configDigest =
+    ADDigest @@ configInput
+      .getRegisters()
+      .get(0)
+      .getValue()
+      .asInstanceOf[AvlTree]
+      .digest
+      .toArray
+
+  val paideiaConfigDigest =
+    ADDigest @@ paideiaConfigInput
+      .getRegisters()
+      .get(0)
+      .getValue()
+      .asInstanceOf[AvlTree]
+      .digest
+      .toArray
+
+  val userOutput = ctx
+    .newTxBuilder()
+    .outBoxBuilder()
+    .mintToken(
+      new Eip4Token(
+        voteKey,
+        1L,
+        dao.config[String](ConfKeys.im_paideia_dao_name) ++ " Vote Key",
+        dao.config[String](ConfKeys.im_paideia_dao_name) ++ " Vote Key",
         0
-    ))(0)
+      )
+    )
+    .contract(createVoteProxyBox.userAddress.toErgoContract())
+    .build()
 
-    val configInput = Paideia.getBox(new FilterLeaf[String](
-        FilterType.FTEQ,
-        dao.key,
-        CompareField.ASSET,
-        0
-    ))(0)
-
-    val stakeStateInput = Paideia.getBox(new FilterLeaf[String](
-        FilterType.FTEQ,
-        new ErgoId(dao.config.getArray[Byte](ConfKeys.im_paideia_staking_state_tokenid)).toString(),
-        CompareField.ASSET,
-        0
-    ))(0)
-
-    val daoOriginInputBox = DAOOriginBox.fromInput(ctx,daoOriginInput)
-    val createVoteProxyBox = CreateVoteProxyBox.fromInputBox(ctx,createVoteProxyInput)
-
-    val voteKey = daoOriginInput.getId().toString()
-
-    val voteContract = Vote(PaideiaContractSignature(daoKey=dao.key))
-    val voteOutput = voteContract.box(ctx,voteKey,createVoteProxyBox.stakeKey,0L)
-
-    val daoOriginContract = DAOOrigin(PaideiaContractSignature(daoKey=Env.paideiaDaoKey))
-    val daoOriginOutput = daoOriginContract.box(ctx,dao,daoOriginInputBox.propTokens,daoOriginInputBox.voteTokens-1,daoOriginInputBox.actionTokens)
-
-    val userOutput = ctx.newTxBuilder().outBoxBuilder().mintToken(
-        new Eip4Token(
-            voteKey,
-            1L,
-            dao.config[String](ConfKeys.im_paideia_dao_name)++" Vote Key",
-            dao.config[String](ConfKeys.im_paideia_dao_name)++" Vote Key",
-            0
+  val daoOriginContext = List(
+    ContextVar.of(
+      0.toByte,
+      Paideia
+        .getConfig(Env.paideiaDaoKey)
+        .getProof(
+          ConfKeys.im_paideia_contracts_dao,
+          ConfKeys.im_paideia_fees_createproposal_paideia
+        )(Some(paideiaConfigDigest))
+    ),
+    ContextVar.of(
+      1.toByte,
+      dao.config.getProof(
+        ConfKeys.im_paideia_contracts_vote,
+        ConfKeys.im_paideia_staking_state_tokenid
+      )(Some(configDigest))
+    ),
+    ContextVar.of(
+      2.toByte,
+      TotalStakingState(dao.key).currentStakingState
+        .getStakes(
+          List(createVoteProxyBox.stakeKey),
+          Some(stakeStateInputBox.stateDigest)
         )
-    ).contract(createVoteProxyBox.userAddress.toErgoContract()).build()
+        .proof
+        .bytes
+    )
+  )
 
-    val daoOriginContext = List(
-        ContextVar.of(0.toByte,Paideia.getConfig(Env.paideiaDaoKey).getProof(
-            ConfKeys.im_paideia_contracts_dao,
-            ConfKeys.im_paideia_fees_createproposal_paideia)),
-        ContextVar.of(1.toByte,dao.config.getProof(
-            ConfKeys.im_paideia_contracts_vote,
-            ConfKeys.im_paideia_staking_state_tokenid)),
-        ContextVar.of(2.toByte,TotalStakingState(dao.key).currentStakingState.getStakes(List(createVoteProxyBox.stakeKey)).proof.bytes)
+  val createVoteProxyContext =
+    ContextVar.of(
+      0.toByte,
+      dao.config.getProof(ConfKeys.im_paideia_dao_name)(Some(configDigest))
     )
 
-    val createVoteProxyContext = ContextVar.of(0.toByte,dao.config.getProof(ConfKeys.im_paideia_dao_name))
+  inputs = List(
+    daoOriginInput.withContextVars(daoOriginContext: _*),
+    createVoteProxyInput.withContextVars(createVoteProxyContext)
+  )
+  dataInputs = List(paideiaConfigInput, configInput, stakeStateInput)
+  outputs    = List(daoOriginOutput.outBox, voteOutput.outBox, userOutput)
 
-    inputs = List(daoOriginInput.withContextVars(daoOriginContext:_*),createVoteProxyInput.withContextVars(createVoteProxyContext))
-    dataInputs = List(paideiaConfigInput,configInput,stakeStateInput)
-    outputs = List(daoOriginOutput.outBox,voteOutput.outBox,userOutput)
-
-    fee = 1000000L
+  fee = 1000000L
 
 }

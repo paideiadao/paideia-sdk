@@ -1,6 +1,6 @@
 package im.paideia.staking
 
-import io.getblok.getblok_plasma.{PlasmaParameters}
+import io.getblok.getblok_plasma.PlasmaParameters
 import io.getblok.getblok_plasma.collections.PlasmaMap
 import scala.collection.mutable.SortedSet
 import sigmastate.AvlTreeFlags
@@ -10,74 +10,148 @@ import io.getblok.getblok_plasma.collections.ProvenResult
 import scala.util.Failure
 import scala.util.Success
 import im.paideia.DAOConfig
+import io.getblok.getblok_plasma.collections.ProxyPlasmaMap
+import scorex.crypto.hash.Blake2b256
+import scorex.crypto.authds.avltree.batch.VersionedLDBAVLStorage
+import scorex.db.LDBVersionedStore
+import java.io.File
+import scorex.crypto.hash.Digest32
+import org.apache.commons.io.FileUtils
+import im.paideia.util.MempoolPlasmaMap
+import scorex.crypto.authds.ADDigest
+import im.paideia.util.ProvenResultWithDigest
 
 class StakingState(
-    plasmaParameters: PlasmaParameters,
-    val plasmaMap: PlasmaMap[ErgoId,StakeRecord],
-    var totalStaked: Long,
-    sortedKeys: SortedSet[String]
+  val emissionTime: Long,
+  val current: Boolean,
+  plasmaParameters: PlasmaParameters,
+  val plasmaMap: MempoolPlasmaMap[ErgoId, StakeRecord]
 ) {
 
-    def stake(stakingKey: String, stakeRecord: StakeRecord): ProvenResult[StakeRecord] = {
-        this.totalStaked += stakeRecord.stake
-        this.sortedKeys.add(stakingKey) match {
-            case true => this.plasmaMap.insert((ErgoId.create(stakingKey),stakeRecord))
-            case false => throw new RuntimeException
-        }
+  def totalStaked(digestOpt: Option[ADDigest] = None): Long = {
+    plasmaMap
+      .getMap(digestOpt)
+      .get
+      .toMap
+      .values
+      .foldLeft(0L)((z: Long, stakeRecord: StakeRecord) => stakeRecord.stake + z)
+  }
+
+  def sortedKeys(digestOpt: Option[ADDigest] = None): SortedSet[String] = {
+    SortedSet(plasmaMap.getMap(digestOpt).get.toMap.keys.map(_.toString()).toSeq: _*)
+  }
+
+  def stake(
+    stakingKey: String,
+    stakeRecord: StakeRecord,
+    digestOrHeight: Either[ADDigest, Int],
+    inPlace: Boolean = false
+  ): ProvenResultWithDigest[StakeRecord] = {
+    plasmaMap.insertWithDigest((ErgoId.create(stakingKey), stakeRecord))(
+      digestOrHeight,
+      inPlace
+    )
+  }
+
+  def unstake(
+    stakingKeys: List[String],
+    digestOrHeight: Either[ADDigest, Int]
+  ): ProvenResultWithDigest[StakeRecord] = {
+    plasmaMap.deleteWithDigest(
+      stakingKeys.map((stakingKey: String) => ErgoId.create(stakingKey)): _*
+    )(digestOrHeight)
+  }
+
+  def getStakes(
+    stakingKeys: List[String],
+    digestOpt: Option[ADDigest]
+  ): ProvenResult[StakeRecord] = {
+    plasmaMap.lookUpWithDigest(stakingKeys.map(key => ErgoId.create(key)): _*)(digestOpt)
+  }
+
+  def getStake(stakingKey: String, digestOpt: Option[ADDigest]): StakeRecord = {
+    getStakes(List[String](stakingKey), digestOpt).response(0).tryOp match {
+      case Failure(exception) => throw exception
+      case Success(value)     => value.get
     }
+  }
 
-    def unstake(stakingKeys: List[String]): ProvenResult[StakeRecord] = {
-        stakingKeys.foreach(stakingKey => { 
-            this.totalStaked -= this.getStake(stakingKey).stake
-            this.sortedKeys.remove(stakingKey)
-        })
-        this.plasmaMap.delete(stakingKeys.map((stakingKey: String) => ErgoId.create(stakingKey)): _*)
-    }
+  def changeStakes(
+    newStakes: List[(String, StakeRecord)],
+    digestOrHeight: Either[ADDigest, Int]
+  ): ProvenResultWithDigest[StakeRecord] = {
+    plasmaMap.updateWithDigest(
+      newStakes.map(kv => (ErgoId.create(kv._1), kv._2)): _*
+    )(digestOrHeight)
+  }
 
-    def getStakes(stakingKeys: List[String]): ProvenResult[StakeRecord] =
-        this.plasmaMap.lookUp(stakingKeys.map(key => ErgoId.create(key)): _*)
+  def getKeys(from: Int = 0, n: Int = 1, digestOpt: Option[ADDigest]): List[String] =
+    sortedKeys(digestOpt).toList.slice(from, from + n)
 
-    def getStake(stakingKey: String): StakeRecord =
-        this.getStakes(List[String](stakingKey)).response(0).tryOp match {
-            case Failure(exception) => throw exception
-            case Success(value) => value.get
-        }
-    
-    def changeStakes(newStakes: List[(String,StakeRecord)]): ProvenResult[StakeRecord] = {
-        val currentStakes = this.getStakes(newStakes.map(kv => kv._1))
-        this.totalStaked = this.totalStaked -
-            currentStakes.response.foldLeft(0L)((x,y) => x+y.tryOp.get.get.stake) +
-            newStakes.foldLeft(0L)((x,kv) => x+kv._2.stake)
-        this.plasmaMap.update(newStakes.map(kv => (ErgoId.create(kv._1),kv._2)): _*)
-    }
+  def size(digestOpt: Option[ADDigest]): Int = sortedKeys(digestOpt).size
 
-    def getKeys(from: Int = 0, n: Int = 1): List[String] =
-        this.sortedKeys.toList.slice(from,from+n)
+  override def toString: String = {
+    "State:\n" +
+    "Number of stakers: " + size(None).toString + "\n" +
+    "Total staked: " + totalStaked() + "\n"
+  }
 
-    def size(): Int = this.sortedKeys.size
+  def clone(
+    daoKey: String,
+    newEmissionTime: Long
+  ): StakingState = {
+    val folder = new File(
+      "./stakingStates/" ++ daoKey ++ "/" ++ (if (current) "current"
+                                              else emissionTime.toString)
+    )
+    val newFolder = new File(
+      "./stakingStates/" ++ daoKey ++ "/" ++ newEmissionTime.toString
+    )
+    newFolder.mkdirs()
+    FileUtils.copyDirectory(folder, newFolder)
+    val ldbStore = new LDBVersionedStore(newFolder, 10)
+    val avlStorage = new VersionedLDBAVLStorage[Digest32](
+      ldbStore,
+      PlasmaParameters.default.toNodeParams
+    )(Blake2b256)
+    new StakingState(
+      newEmissionTime,
+      false,
+      plasmaParameters = plasmaParameters,
+      plasmaMap        = plasmaMap.copy(avlStorage)
+    )
 
-    override def toString: String = {
-        "State:\n" +
-        "Number of stakers: " + this.size.toString + "\n" +
-        "Total staked: " + this.totalStaked + "\n"
-    }
-
-    override def clone: StakingState = 
-        new StakingState(
-            this.plasmaParameters,
-            this.plasmaMap.copy(),
-            this.totalStaked,
-            this.sortedKeys.clone()
-        )
-}   
+  }
+}
 
 object StakingState {
-    def apply(plasmaParameters: PlasmaParameters = PlasmaParameters.default, totalStaked: Long = 0): StakingState =
-        new StakingState(
-            plasmaParameters = plasmaParameters, 
-            plasmaMap = new PlasmaMap[ErgoId,StakeRecord](
-                flags = AvlTreeFlags.AllOperationsAllowed,
-                params = plasmaParameters),
-            totalStaked = totalStaked,
-            sortedKeys = SortedSet[String]())
+
+  def apply(
+    daoKey: String,
+    emissionTime: Long,
+    current: Boolean,
+    plasmaParameters: PlasmaParameters = PlasmaParameters.default,
+    totalStaked: Long                  = 0
+  ): StakingState = {
+    val folder = new File(
+      "./stakingStates/" ++ daoKey ++ "/" ++ (if (current) "current"
+                                              else emissionTime.toString)
+    )
+    folder.mkdirs()
+    val ldbStore = new LDBVersionedStore(folder, 10)
+    val avlStorage = new VersionedLDBAVLStorage[Digest32](
+      ldbStore,
+      PlasmaParameters.default.toNodeParams
+    )(Blake2b256)
+    new StakingState(
+      emissionTime,
+      current,
+      plasmaParameters = plasmaParameters,
+      plasmaMap = new MempoolPlasmaMap[ErgoId, StakeRecord](
+        avlStorage,
+        flags  = AvlTreeFlags.AllOperationsAllowed,
+        params = plasmaParameters
+      )
+    )
+  }
 }

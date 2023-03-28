@@ -41,6 +41,7 @@
         mintOut.tokens(0)._1 == SELF.id,
         mintOut.tokens(0)._2 == 1L,
         mintOut.R4[Coll[Byte]].get == configValues(0).slice(5,configValues(0).size)++_DAO_KEY,
+        //Description is the same as token name
         mintOut.R5[Coll[Byte]].get == mintOut.R4[Coll[Byte]].get,
         mintOut.R6[Coll[Byte]].get == Coll(48.toByte)
     ))

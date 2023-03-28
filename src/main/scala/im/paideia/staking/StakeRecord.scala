@@ -4,13 +4,18 @@ import com.google.common.primitives.Longs
 import io.getblok.getblok_plasma.ByteConversion
 
 case class StakeRecord (
-    stake: Long,
-    rewards: List[Long]
+    var stake: Long,
+    var rewards: List[Long]
 ) {
     def toBytes: Array[Byte] = {
         val rewardsBytes = rewards.map((l: Long) => Longs.toByteArray(l))
         val res = Longs.toByteArray(stake) ++ (for (list <- rewardsBytes; x <- list) yield x)
         res
+    }
+
+    def clear = {
+        stake = 0L
+        rewards = rewards.map((l: Long) => 0L)
     }
 }
 

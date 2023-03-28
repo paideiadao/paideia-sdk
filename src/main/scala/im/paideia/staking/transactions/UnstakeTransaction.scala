@@ -22,66 +22,174 @@ import org.ergoplatform.appkit.ErgoId
 import org.ergoplatform.appkit.ContextVar
 import org.ergoplatform.appkit.Address
 import special.collection.Coll
+import scala.collection.JavaConverters._
+import scorex.crypto.authds.ADDigest
 
 case class UnstakeTransaction(
-    _ctx: BlockchainContextImpl, 
-    unstakeProxyInput: InputBox, 
-    _changeAddress: ErgoAddress,
-    daoKey: String) extends PaideiaTransaction {
+  _ctx: BlockchainContextImpl,
+  unstakeProxyInput: InputBox,
+  _changeAddress: ErgoAddress,
+  daoKey: String
+) extends PaideiaTransaction {
 
-    ctx = _ctx
+  ctx = _ctx
 
-    val stakingKey = unstakeProxyInput.getTokens().get(0).getId().toString()
-    
-    val config = Paideia.getConfig(daoKey)
+  val stakingKey = unstakeProxyInput.getTokens().get(0).getId().toString()
 
-    val state = TotalStakingState(daoKey)
+  val config = Paideia.getConfig(daoKey)
 
-    val removeAmount = unstakeProxyInput.getRegisters().get(1).getValue().asInstanceOf[Long].min(state.getStake(stakingKey).stake)
+  val state = TotalStakingState(daoKey)
 
-    val stakeStateInput = Paideia.getBox(new FilterLeaf[String](
-        FilterType.FTEQ,
-        new ErgoId(config.getArray[Byte](ConfKeys.im_paideia_staking_state_tokenid)).toString(),
-        CompareField.ASSET,
-        0
-    ))(0)
+  val newStakeRecord = StakeRecord.stakeRecordConversion.convertFromBytes(
+    unstakeProxyInput.getRegisters().get(1).getValue().asInstanceOf[Coll[Byte]].toArray
+  )
 
-    if (stakeStateInput.getRegisters().get(0).getValue.asInstanceOf[AvlTree].digest != state.currentStakingState.plasmaMap.ergoAVLTree.digest) throw new Exception("State not synced correctly")
+  val whiteListedTokens = config
+    .getArray[Object](ConfKeys.im_paideia_staking_profit_tokenids)
+    .map((arrB: Object) =>
+      new ErgoId(arrB.asInstanceOf[Array[Object]].map(_.asInstanceOf[Byte]))
+    )
 
-    val configInput = Paideia.getBox(new FilterLeaf[String](
-        FilterType.FTEQ,
-        daoKey,
-        CompareField.ASSET,
-        0
-    ))(0)
+  val stakeStateInput = Paideia.getBox(
+    new FilterLeaf[String](
+      FilterType.FTEQ,
+      new ErgoId(config.getArray[Byte](ConfKeys.im_paideia_staking_state_tokenid))
+        .toString(),
+      CompareField.ASSET,
+      0
+    )
+  )(0)
 
-    if (configInput.getRegisters().get(0).getValue.asInstanceOf[AvlTree].digest != config._config.ergoAVLTree.digest) throw new Exception("Config not synced correctly")
-       
-    val contextVars = state.unstake(stakingKey,removeAmount).::(ContextVar.of(0.toByte,config.getProof(
-        ConfKeys.im_paideia_staking_emission_amount,
-        ConfKeys.im_paideia_staking_emission_delay,
-        ConfKeys.im_paideia_staking_cyclelength,
-        ConfKeys.im_paideia_staking_profit_tokenids,
-        ConfKeys.im_paideia_staking_profit_thresholds,
-        ConfKeys.im_paideia_contracts_staking
-    )))
+  val stakeStateInputBox = StakeStateBox.fromInputBox(ctx, stakeStateInput)
 
-    val stakingContract = PlasmaStaking(config[PaideiaContractSignature](ConfKeys.im_paideia_contracts_staking))
+  val currentStakeRecord =
+    stakeStateInputBox.getStake(stakingKey)
 
-    val stakeStateOutput = stakingContract.box(ctx,config,state,stakeStateInput.getTokens().get(1).getValue()-removeAmount)
+  val configInput = Paideia.getBox(
+    new FilterLeaf[String](
+      FilterType.FTEQ,
+      daoKey,
+      CompareField.ASSET,
+      0
+    )
+  )(0)
 
-    val tokens = if (contextVars(1).getValue.getValue != StakingContextVars.UNSTAKE)
-                    List[ErgoToken](new ErgoToken(stakingKey,1L),new ErgoToken(config.getArray[Byte](ConfKeys.im_paideia_dao_tokenid),removeAmount))
-                else
-                    List[ErgoToken](new ErgoToken(config.getArray[Byte](ConfKeys.im_paideia_dao_tokenid),removeAmount))
+  val configDigest =
+    ADDigest @@ configInput
+      .getRegisters()
+      .get(0)
+      .getValue()
+      .asInstanceOf[AvlTree]
+      .digest
+      .toArray
 
-    val userOutput = ctx.newTxBuilder().outBoxBuilder().tokens(
-        tokens: _*
-    ).contract(Address.fromPropositionBytes(_ctx.getNetworkType(),unstakeProxyInput.getRegisters().get(0).getValue().asInstanceOf[Coll[Byte]].toArray).toErgoContract).build()
+  if (!configDigest.sameElements(config._config.digest))
+    throw new Exception("Config not synced correctly")
 
-    changeAddress = _changeAddress
-    fee = 1000000L
-    inputs = List[InputBox](stakeStateInput.withContextVars(contextVars: _*),unstakeProxyInput)
-    dataInputs = List[InputBox](configInput)
-    outputs = List[OutBox](stakeStateOutput.outBox,userOutput)
+  val newExtraTokens = stakeStateInputBox.extraTokens
+    .map { (et: ErgoToken) =>
+      val stakeRecordIndex = whiteListedTokens.indexOf(et.getId())
+      new ErgoToken(
+        et.getId(),
+        et.getValue() - (currentStakeRecord
+          .rewards(1 + stakeRecordIndex) - newStakeRecord.rewards(1 + stakeRecordIndex))
+      )
+    }
+    .filter((et: ErgoToken) => et.getValue() > 0L)
+    .toList
+
+  val contextVars = stakeStateInputBox
+    .unstake(stakingKey, newStakeRecord, newExtraTokens)
+    .::(
+      ContextVar.of(
+        0.toByte,
+        config.getProof(
+          ConfKeys.im_paideia_staking_emission_amount,
+          ConfKeys.im_paideia_staking_emission_delay,
+          ConfKeys.im_paideia_staking_cyclelength,
+          ConfKeys.im_paideia_staking_profit_tokenids,
+          ConfKeys.im_paideia_staking_profit_thresholds,
+          ConfKeys.im_paideia_contracts_staking
+        )(Some(configDigest))
+      )
+    )
+
+  val proxyContextVars = List(
+    ContextVar.of(
+      0.toByte,
+      config.getProof(
+        ConfKeys.im_paideia_staking_state_tokenid,
+        ConfKeys.im_paideia_staking_profit_tokenids
+      )(Some(configDigest))
+    ),
+    ContextVar.of(1.toByte, contextVars(3).getValue()),
+    ContextVar.of(2.toByte, contextVars(4).getValue())
+  )
+
+  val govTokenUnstake = if (currentStakeRecord.stake > newStakeRecord.stake) {
+    List(
+      new ErgoToken(
+        config.getArray[Byte](ConfKeys.im_paideia_dao_tokenid),
+        currentStakeRecord.stake - newStakeRecord.stake
+      )
+    )
+  } else {
+    List[ErgoToken]()
+  }
+
+  val profitTokenUnstake = currentStakeRecord.rewards.indices
+    .slice(0, currentStakeRecord.rewards.size - 1)
+    .map((i: Int) =>
+      if (currentStakeRecord.rewards(i + 1) - newStakeRecord.rewards(i + 1) > 0) {
+        Some(
+          new ErgoToken(
+            whiteListedTokens(i),
+            currentStakeRecord.rewards(i + 1) - newStakeRecord.rewards(i + 1)
+          )
+        )
+      } else {
+        None
+      }
+    )
+    .flatten
+    .toList
+
+  val stakeKeyReturned =
+    if (contextVars(1).getValue.getValue != StakingContextVars.UNSTAKE)
+      List[ErgoToken](new ErgoToken(stakingKey, 1L))
+    else
+      List[ErgoToken]()
+
+  val tokens = stakeKeyReturned ++ govTokenUnstake ++ profitTokenUnstake
+
+  val userOutput = ctx
+    .newTxBuilder()
+    .outBoxBuilder()
+    .value(1000000L + currentStakeRecord.rewards(0) - newStakeRecord.rewards(0))
+    .tokens(
+      tokens: _*
+    )
+    .contract(
+      Address
+        .fromPropositionBytes(
+          _ctx.getNetworkType(),
+          unstakeProxyInput
+            .getRegisters()
+            .get(0)
+            .getValue()
+            .asInstanceOf[Coll[Byte]]
+            .toArray
+        )
+        .toErgoContract
+    )
+    .build()
+
+  changeAddress = _changeAddress
+  fee           = 1000000L
+  inputs = List[InputBox](
+    stakeStateInput.withContextVars(contextVars: _*),
+    unstakeProxyInput.withContextVars(proxyContextVars: _*)
+  )
+  dataInputs = List[InputBox](configInput)
+  outputs    = List[OutBox](stakeStateInputBox.outBox, userOutput)
 }
