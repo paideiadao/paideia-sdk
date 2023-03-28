@@ -33,7 +33,7 @@ class TotalStakingState(
     snapshots
       .get(
         snapshots.keys.toSeq
-          .sortBy(l => l)
+          .sortBy(l => -l)
           .find(ss =>
             snapshots.get(ss).get.plasmaMap.getMap(Some(snapshotDigest)).isDefined
           )

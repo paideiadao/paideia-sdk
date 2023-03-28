@@ -225,9 +225,12 @@ case class StakeStateBox(
       .contextVars
   }
 
+  def newNextEmission: Long =
+    nextEmission + dao.config[Long](ConfKeys.im_paideia_staking_cyclelength)
+
   def emit(currentTime: Long, tokensInPool: Long): List[ContextVar] = {
     if (currentTime < nextEmission) throw new Exception("Not time for new emission yet")
-    nextEmission += dao.config[Long](ConfKeys.im_paideia_staking_cyclelength)
+    nextEmission = newNextEmission
     profit(0) += Math.min(
       dao.config[Long](ConfKeys.im_paideia_staking_emission_amount),
       tokensInPool - profit(0)
