@@ -2,3 +2,6 @@ target
 .bloop
 .metals
 .vscode
+daoconfigs
+proposals
+stakingStates

@@ -69,12 +69,7 @@ case class ProtoDAOProxyBox(
             ) 
         else 
             List[ErgoToken]()}++
-        {if (stakePoolSize > 0L) 
-            List(
-                new ErgoToken(daoGovernanceTokenId,stakePoolSize)
-            ) 
-        else 
-            List[ErgoToken]()}
+        List(new ErgoToken(daoGovernanceTokenId,stakePoolSize+1L)) 
     }
 }
 
@@ -100,7 +95,7 @@ object ProtoDAOProxyBox {
             ProtoDAOProxy.contractInstances(Blake2b256(inp.getErgoTree.bytes).array.toList).asInstanceOf[ProtoDAOProxy],
             daoName,
             daoTokenId.toString(),
-            inp.getTokens().toArray.foldLeft[Long](0L){(z: Long, token) => z + (if (token.asInstanceOf[ErgoToken].getId()==daoTokenId) token.asInstanceOf[ErgoToken].getValue() else 0L)},
+            inp.getTokens().toArray.foldLeft[Long](0L){(z: Long, token) => z + (if (token.asInstanceOf[ErgoToken].getId()==daoTokenId) token.asInstanceOf[ErgoToken].getValue()-1L else 0L)},
             GovernanceType(daoGovernanceType.toInt),
             quorum,
             threshold,

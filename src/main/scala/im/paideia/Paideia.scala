@@ -7,61 +7,70 @@ import org.ergoplatform.appkit.NetworkType
 import im.paideia.common.contracts.Config
 import im.paideia.common.contracts.PaideiaActor
 import im.paideia.util.Env
-import im.paideia.common.PaideiaEvent
-import im.paideia.common.PaideiaEventResponse
+import im.paideia.common.events.PaideiaEvent
+import im.paideia.common.events.PaideiaEventResponse
 import scala.reflect.runtime.{universe => ru}
 import im.paideia.common.filtering.FilterNode
 import org.ergoplatform.appkit.InputBox
 import im.paideia.governance.contracts.ProposalContract
 import scorex.crypto.hash.Blake2b256
+import java.io.File
+import org.apache.commons.io.FileUtils
 
 object Paideia {
-    var _daoMap : HashMap[String,DAO] = HashMap[String,DAO]()
+  var _daoMap: HashMap[String, DAO] = HashMap[String, DAO]()
 
-    var _actorList : HashMap[String,PaideiaActor] = HashMap[String,PaideiaActor]()
+  var _actorList: HashMap[String, PaideiaActor] = HashMap[String, PaideiaActor]()
 
-    def clear = {
-        _actorList.values.foreach(_.clear)
-        _daoMap = HashMap[String,DAO]()
-        _actorList = HashMap[String,PaideiaActor]()
+  def clear = {
+    _actorList.values.foreach(_.clear)
+    _daoMap    = HashMap[String, DAO]()
+    _actorList = HashMap[String, PaideiaActor]()
+    FileUtils.deleteDirectory(new File("./daoconfigs"))
+    FileUtils.deleteDirectory(new File("./proposals"))
+    FileUtils.deleteDirectory(new File("./stakingStates"))
+  }
+
+  def addDAO(dao: DAO): Unit = _daoMap.put(dao.key, dao)
+
+  def getDAO(key: String): DAO = _daoMap(key)
+
+  def initialize: Unit = {
+    val paideiaConfig = DAOConfig(Env.paideiaDaoKey)
+
+    addDAO(DAO(Env.paideiaDaoKey, paideiaConfig))
+  }
+
+  def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
+    PaideiaEventResponse.merge(_actorList.values.map {
+      _.handleEvent(event)
+    }.toList)
+  }
+
+  def getActor[T <: PaideiaActor](className: String): PaideiaActor =
+    _actorList(className).asInstanceOf[T]
+
+  def instantiateActor(contractSignature: PaideiaContractSignature) = {
+    if (!_actorList.contains(contractSignature.className)) {
+      val m    = ru.runtimeMirror(getClass.getClassLoader)
+      val inst = m.reflectModule(m.staticModule(contractSignature.className)).instance
+      inst match {
+        case pa: PaideiaActor => _actorList.put(contractSignature.className, pa)
+      }
     }
+  }
 
-    def addDAO(dao: DAO): Unit = _daoMap.put(dao.key,dao)
+  def getBox(boxFilter: FilterNode): List[InputBox] = {
+    _actorList.values.toList.flatMap(_.getBox(boxFilter))
+  }
 
-    def getDAO(key: String): DAO = _daoMap(key)
+  def getConfig(daoKey: String): DAOConfig = _daoMap(daoKey).config
 
-    def initialize: Unit = {
-        val paideiaConfig = DAOConfig()
-
-        addDAO(DAO(Env.paideiaDaoKey,paideiaConfig))
-    }
-
-    def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
-        PaideiaEventResponse.merge(_actorList.values.map{
-            _.handleEvent(event)
-        }.toList)
-    }
-
-    def getActor[T <: PaideiaActor](className: String): PaideiaActor = _actorList(className).asInstanceOf[T]
-
-    def instantiateActor(contractSignature: PaideiaContractSignature) = {
-        if (!_actorList.contains(contractSignature.className)) {
-            val m = ru.runtimeMirror(getClass.getClassLoader)
-            val inst = m.reflectModule(m.staticModule(contractSignature.className)).instance
-            inst match {
-                case pa: PaideiaActor => _actorList.put(contractSignature.className,pa)
-            } 
-        }
-    }
-
-    def getBox(boxFilter: FilterNode): List[InputBox] = {
-        _actorList.values.toList.flatMap(_.getBox(boxFilter))
-    }
-
-    def getConfig(daoKey: String): DAOConfig = _daoMap(daoKey).config
-
-    def getProposalContract(box: InputBox): ProposalContract = {
-        val contractHash = Blake2b256(box.getErgoTree().bytes).array.toList
-        _actorList.values.find(_.getProposalContract(contractHash).isSuccess).get.getProposalContract(contractHash).get
-    }
+  def getProposalContract(contractHash: List[Byte]): ProposalContract = {
+    _actorList.values
+      .find(_.getProposalContract(contractHash).isSuccess)
+      .get
+      .getProposalContract(contractHash)
+      .get
+  }
 }

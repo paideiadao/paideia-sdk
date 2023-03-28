@@ -7,9 +7,9 @@ import im.paideia.DAOConfig
 import org.ergoplatform.appkit.ErgoToken
 import im.paideia.util.Env
 import org.ergoplatform.restapi.client.ErgoTransactionOutput
-import im.paideia.common.PaideiaEventResponse
-import im.paideia.common.TransactionEvent
-import im.paideia.common.PaideiaEvent
+import im.paideia.common.events.PaideiaEventResponse
+import im.paideia.common.events.TransactionEvent
+import im.paideia.common.events.PaideiaEvent
 import scala.collection.JavaConverters._
 import org.ergoplatform.appkit.impl.InputBoxImpl
 import org.ergoplatform.ErgoAddress
@@ -22,38 +22,80 @@ import java.nio.charset.StandardCharsets
 import im.paideia.staking.boxes.AddStakeProxyBox
 import im.paideia.Paideia
 import im.paideia.staking.transactions.AddStakeTransaction
+import im.paideia.util.ConfKeys
 
-class AddStakeProxy(contractSignature: PaideiaContractSignature) extends PaideiaContract(contractSignature) {
-    def box(ctx: BlockchainContextImpl, 
-        stakeKey: String, addAmount: Long, userAddress: String): AddStakeProxyBox = {
-        AddStakeProxyBox(ctx,this,Paideia.getConfig(contractSignature.daoKey),stakeKey,userAddress,addAmount)
-    }
+class AddStakeProxy(contractSignature: PaideiaContractSignature)
+  extends PaideiaContract(contractSignature) {
 
-    override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
-        val response: PaideiaEventResponse = event match {
-            case te: TransactionEvent => {
-                PaideiaEventResponse.merge(te.tx.getOutputs().asScala.map{(eto: ErgoTransactionOutput) => {
-                    val etotree = eto.getErgoTree()
-                    val ergotree = ergoTree.bytesHex
-                    if (eto.getErgoTree()==ergoTree.bytesHex) {
-                        PaideiaEventResponse(1,List(AddStakeTransaction(
-                            te.ctx,
-                            new InputBoxImpl(eto),
-                            Address.create(Env.operatorAddress).getErgoAddress,
-                            contractSignature.daoKey)))
-                    } else {
-                        PaideiaEventResponse(0)
-                    }
-                }}.toList)
+  def box(
+    ctx: BlockchainContextImpl,
+    stakeKey: String,
+    addAmount: Long,
+    userAddress: String
+  ): AddStakeProxyBox = {
+    AddStakeProxyBox(
+      ctx,
+      this,
+      Paideia.getConfig(contractSignature.daoKey),
+      stakeKey,
+      userAddress,
+      addAmount
+    )
+  }
+
+  override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
+    val response: PaideiaEventResponse = event match {
+      case te: TransactionEvent => {
+        PaideiaEventResponse.merge(
+          te.tx
+            .getOutputs()
+            .asScala
+            .map { (eto: ErgoTransactionOutput) =>
+              {
+                val etotree  = eto.getErgoTree()
+                val ergotree = ergoTree.bytesHex
+                if (eto.getErgoTree() == ergoTree.bytesHex) {
+                  PaideiaEventResponse(
+                    1,
+                    List(
+                      AddStakeTransaction(
+                        te.ctx,
+                        new InputBoxImpl(eto),
+                        Address.create(Env.operatorAddress).getErgoAddress,
+                        contractSignature.daoKey
+                      )
+                    )
+                  )
+                } else {
+                  PaideiaEventResponse(0)
+                }
+              }
             }
-            case _ => PaideiaEventResponse(0)
-        }
-        val superResponse = super.handleEvent(event)
-        response
+            .toList
+        )
+      }
+      case _ => PaideiaEventResponse(0)
     }
+    val superResponse = super.handleEvent(event)
+    response
+  }
+
+  override lazy val constants: HashMap[String, Object] = {
+    val cons = new HashMap[String, Object]()
+    cons.put("_IM_PAIDEIA_DAO_KEY", ErgoId.create(contractSignature.daoKey).getBytes())
+    cons.put(
+      "_IM_PAIDEIA_STAKING_STATE_TOKENID",
+      ConfKeys.im_paideia_staking_state_tokenid.ergoValue.getValue()
+    )
+    cons
+  }
 }
 
 object AddStakeProxy extends PaideiaActor {
-    override def apply(contractSignature: PaideiaContractSignature): AddStakeProxy = 
-        getContractInstance[AddStakeProxy](contractSignature,new AddStakeProxy(contractSignature))
+
+  override def apply(contractSignature: PaideiaContractSignature): AddStakeProxy =
+    getContractInstance[AddStakeProxy](
+      contractSignature,
+      new AddStakeProxy(contractSignature)
+    )
 }
