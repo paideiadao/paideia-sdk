@@ -60,6 +60,11 @@ object Paideia {
     }
   }
 
+  def instantiateContractInstance(contractSignature: PaideiaContractSignature) = {
+    instantiateActor(contractSignature)
+    _actorList(contractSignature.className)(contractSignature)
+  }
+
   def getBox(boxFilter: FilterNode): List[InputBox] = {
     _actorList.values.toList.flatMap(_.getBox(boxFilter))
   }
