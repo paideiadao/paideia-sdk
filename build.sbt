@@ -46,7 +46,7 @@ organization := "im.paideia"
 // You can define other libraries as dependencies in your build like this:
 
 libraryDependencies ++= Seq(
-    "org.scala-lang.modules" %% "scala-parser-combinators" % "2.1.1",
+    //"org.scala-lang.modules" %% "scala-parser-combinators" % "2.1.1",
     "io.github.getblok-io" % "getblok_plasma_2.12" % "1.0.1",
     "com.typesafe" % "config" % "1.4.0",
     "org.scalatest" %% "scalatest-funsuite" % "3.2.13" % Test,
