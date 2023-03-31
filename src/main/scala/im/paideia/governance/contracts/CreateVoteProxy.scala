@@ -20,6 +20,7 @@ import org.ergoplatform.appkit.ErgoId
 import im.paideia.util.ConfKeys
 import org.ergoplatform.appkit.ErgoValue
 import java.nio.charset.StandardCharsets
+import im.paideia.common.events.CreateTransactionsEvent
 
 class CreateVoteProxy(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -34,31 +35,22 @@ class CreateVoteProxy(contractSignature: PaideiaContractSignature)
 
   override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
     val response: PaideiaEventResponse = event match {
-      case te: TransactionEvent => {
+      case cte: CreateTransactionsEvent => {
         PaideiaEventResponse.merge(
-          te.tx
-            .getOutputs()
-            .asScala
-            .map { (eto: ErgoTransactionOutput) =>
-              {
-                if (eto.getErgoTree() == ergoTree.bytesHex) {
-                  PaideiaEventResponse(
-                    1,
-                    List(
-                      CreateVoteTransaction(
-                        te._ctx,
-                        new InputBoxImpl(eto),
-                        Paideia.getDAO(contractSignature.daoKey),
-                        Address.create(Env.operatorAddress).getErgoAddress
-                      )
-                    )
+          getUtxoSet.toList
+            .map { b =>
+              PaideiaEventResponse(
+                1,
+                List(
+                  CreateVoteTransaction(
+                    cte.ctx,
+                    boxes(b),
+                    Paideia.getDAO(contractSignature.daoKey),
+                    Address.create(Env.operatorAddress).getErgoAddress
                   )
-                } else {
-                  PaideiaEventResponse(0)
-                }
-              }
+                )
+              )
             }
-            .toList
         )
       }
       case _ => PaideiaEventResponse(0)

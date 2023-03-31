@@ -24,6 +24,7 @@ import im.paideia.common.contracts.Config
 import special.sigma.AvlTree
 import scorex.crypto.authds.ADDigest
 import im.paideia.common.transactions.PaideiaTransaction
+import im.paideia.common.events.CreateTransactionsEvent
 
 class ActionUpdateConfig(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -52,11 +53,11 @@ class ActionUpdateConfig(contractSignature: PaideiaContractSignature)
 
   override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
     val response: PaideiaEventResponse = event match {
-      case be: BlockEvent => {
+      case cte: CreateTransactionsEvent => {
         PaideiaEventResponse.merge(
           boxes.values
             .map((b: InputBox) => {
-              if (be.block.getHeader().getTimestamp() > b
+              if (cte.currentTime > b
                     .getRegisters()
                     .get(0)
                     .getValue()
@@ -65,7 +66,7 @@ class ActionUpdateConfig(contractSignature: PaideiaContractSignature)
                   1,
                   List(
                     UpdateConfigTransaction(
-                      be.ctx,
+                      cte.ctx,
                       Paideia.getDAO(contractSignature.daoKey),
                       b
                     )

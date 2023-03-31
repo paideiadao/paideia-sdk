@@ -29,6 +29,7 @@ import im.paideia.util.Util
 import org.ergoplatform.appkit.ErgoId
 import im.paideia.common.contracts.Treasury
 import im.paideia.util.Env
+import im.paideia.common.events.CreateTransactionsEvent
 
 class EmitTransactionSuite extends PaideiaTestSuite {
   test("Sign emit tx on empty state") {
@@ -76,10 +77,9 @@ class EmitTransactionSuite extends PaideiaTestSuite {
         stakingContract.clearBoxes()
         stakingContract.newBox(stakingStateBox, false)
 
-        val dummyBlock = (new FullBlock())
-          .header(new BlockHeader().timestamp(stakingState.nextEmission + 1000L))
-          .blockTransactions(new BlockTransactions().transactions(new Transactions()))
-        val eventResponse = Paideia.handleEvent(BlockEvent(ctx, dummyBlock))
+        val eventResponse = Paideia.handleEvent(
+          CreateTransactionsEvent(ctx, stakingState.nextEmission + 1000L, 0L)
+        )
         assert(eventResponse.unsignedTransactions.size === 1)
         ctx
           .newProverBuilder()
@@ -136,10 +136,9 @@ class EmitTransactionSuite extends PaideiaTestSuite {
         stakingContract.clearBoxes()
         stakingContract.newBox(stakingStateBox, false)
 
-        val dummyBlock = (new FullBlock())
-          .header(new BlockHeader().timestamp(stakingState.nextEmission + 1000L))
-          .blockTransactions(new BlockTransactions().transactions(new Transactions()))
-        val eventResponse = Paideia.handleEvent(BlockEvent(ctx, dummyBlock))
+        val eventResponse = Paideia.handleEvent(
+          CreateTransactionsEvent(ctx, stakingState.nextEmission + 1000L, 0L)
+        )
         assert(eventResponse.unsignedTransactions.size === 1)
         ctx
           .newProverBuilder()
@@ -205,10 +204,9 @@ class EmitTransactionSuite extends PaideiaTestSuite {
         stakingContract.clearBoxes()
         stakingContract.newBox(stakingStateBox, false)
 
-        val dummyBlock = (new FullBlock())
-          .header(new BlockHeader().timestamp(stakingState.nextEmission + 1000L))
-          .blockTransactions(new BlockTransactions().transactions(new Transactions()))
-        val eventResponse = Paideia.handleEvent(BlockEvent(ctx, dummyBlock))
+        val eventResponse = Paideia.handleEvent(
+          CreateTransactionsEvent(ctx, stakingState.nextEmission + 1000L, 0L)
+        )
         assert(eventResponse.unsignedTransactions.size === 1)
         ctx
           .newProverBuilder()

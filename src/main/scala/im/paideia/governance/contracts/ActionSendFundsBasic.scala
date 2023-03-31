@@ -16,6 +16,7 @@ import im.paideia.governance.transactions.SendFundsBasicTransaction
 import java.util.HashMap
 import org.ergoplatform.appkit.ErgoId
 import im.paideia.util.ConfKeys
+import im.paideia.common.events.CreateTransactionsEvent
 
 class ActionSendFundsBasic(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -44,11 +45,11 @@ class ActionSendFundsBasic(contractSignature: PaideiaContractSignature)
 
   override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
     val response: PaideiaEventResponse = event match {
-      case be: BlockEvent => {
+      case cte: CreateTransactionsEvent => {
         PaideiaEventResponse.merge(
           boxes.values
             .map((b: InputBox) => {
-              if (be.block.getHeader().getTimestamp() > b
+              if (cte.currentTime > b
                     .getRegisters()
                     .get(0)
                     .getValue()
@@ -57,7 +58,7 @@ class ActionSendFundsBasic(contractSignature: PaideiaContractSignature)
                   1,
                   List(
                     SendFundsBasicTransaction(
-                      be.ctx,
+                      cte.ctx,
                       Paideia.getDAO(contractSignature.daoKey),
                       b
                     )

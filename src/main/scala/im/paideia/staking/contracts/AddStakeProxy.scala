@@ -23,6 +23,7 @@ import im.paideia.staking.boxes.AddStakeProxyBox
 import im.paideia.Paideia
 import im.paideia.staking.transactions.AddStakeTransaction
 import im.paideia.util.ConfKeys
+import im.paideia.common.events.CreateTransactionsEvent
 
 class AddStakeProxy(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -45,33 +46,22 @@ class AddStakeProxy(contractSignature: PaideiaContractSignature)
 
   override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
     val response: PaideiaEventResponse = event match {
-      case te: TransactionEvent => {
+      case cte: CreateTransactionsEvent => {
         PaideiaEventResponse.merge(
-          te.tx
-            .getOutputs()
-            .asScala
-            .map { (eto: ErgoTransactionOutput) =>
-              {
-                val etotree  = eto.getErgoTree()
-                val ergotree = ergoTree.bytesHex
-                if (eto.getErgoTree() == ergoTree.bytesHex) {
-                  PaideiaEventResponse(
-                    1,
-                    List(
-                      AddStakeTransaction(
-                        te.ctx,
-                        new InputBoxImpl(eto),
-                        Address.create(Env.operatorAddress).getErgoAddress,
-                        contractSignature.daoKey
-                      )
-                    )
-                  )
-                } else {
-                  PaideiaEventResponse(0)
-                }
-              }
-            }
-            .toList
+          getUtxoSet.toList.map { b =>
+            PaideiaEventResponse(
+              1,
+              List(
+                AddStakeTransaction(
+                  cte.ctx,
+                  boxes(b),
+                  Address.create(Env.operatorAddress).getErgoAddress,
+                  contractSignature.daoKey
+                )
+              )
+            )
+
+          }.toList
         )
       }
       case _ => PaideiaEventResponse(0)

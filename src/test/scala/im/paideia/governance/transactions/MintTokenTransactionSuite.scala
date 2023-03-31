@@ -14,6 +14,7 @@ import im.paideia.DAOConfig
 import im.paideia.DAO
 import org.ergoplatform.appkit.ErgoId
 import im.paideia.util.ConfKeys
+import im.paideia.common.events.CreateTransactionsEvent
 
 class MintTokenTransactionSuite extends PaideiaTestSuite {
   test("Mint first") {
@@ -33,8 +34,9 @@ class MintTokenTransactionSuite extends PaideiaTestSuite {
         val protoDAOBox = protoDAOContract
           .box(ctx, Paideia.getDAO(daoKey), 0L, value = 3000000L)
           .ergoTransactionOutput()
-        val dummyTx       = (new ErgoTransaction()).addOutputsItem(protoDAOBox)
-        val eventResponse = Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
+        val dummyTx = (new ErgoTransaction()).addOutputsItem(protoDAOBox)
+        Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
+        val eventResponse = Paideia.handleEvent(CreateTransactionsEvent(ctx, 0L, 0L))
         assert(eventResponse.unsignedTransactions.size === 1)
         ctx
           .newProverBuilder()
@@ -65,8 +67,9 @@ class MintTokenTransactionSuite extends PaideiaTestSuite {
         val protoDAOBox = protoDAOContract
           .box(ctx, Paideia.getDAO(daoKey), 0L, value = 3000000L)
           .ergoTransactionOutput()
-        val dummyTx       = (new ErgoTransaction()).addOutputsItem(protoDAOBox)
-        val eventResponse = Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
+        val dummyTx = (new ErgoTransaction()).addOutputsItem(protoDAOBox)
+        Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
+        val eventResponse = Paideia.handleEvent(CreateTransactionsEvent(ctx, 0L, 0L))
         assert(eventResponse.unsignedTransactions.size === 1)
         ctx
           .newProverBuilder()

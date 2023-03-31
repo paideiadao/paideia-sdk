@@ -26,6 +26,7 @@ import im.paideia.common.contracts.Config
 import im.paideia.staking.contracts.PlasmaStaking
 import im.paideia.staking.contracts.AddStakeProxy
 import im.paideia.staking.StakingTest
+import im.paideia.common.events.CreateTransactionsEvent
 
 class AddStakeTransactionSuite extends PaideiaTestSuite {
   test("Sign add stake tx") {
@@ -70,8 +71,9 @@ class AddStakeTransactionSuite extends PaideiaTestSuite {
         val addStakeProxyBox = addStakeProxyContract
           .box(ctx, testKey, 3000000L, dummyAddress.toString())
           .ergoTransactionOutput()
-        val dummyTx       = (new ErgoTransaction()).addOutputsItem(addStakeProxyBox)
-        val eventResponse = Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
+        val dummyTx = (new ErgoTransaction()).addOutputsItem(addStakeProxyBox)
+        Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
+        val eventResponse = Paideia.handleEvent(CreateTransactionsEvent(ctx, 0L, 0L))
         assert(eventResponse.unsignedTransactions.size === 1)
         ctx
           .newProverBuilder()

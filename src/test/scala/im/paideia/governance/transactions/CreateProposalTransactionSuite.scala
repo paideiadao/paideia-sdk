@@ -27,6 +27,7 @@ import org.ergoplatform.restapi.client.ErgoTransaction
 import im.paideia.common.events.TransactionEvent
 import im.paideia.governance.Proposal
 import java.nio.charset.StandardCharsets
+import im.paideia.common.events.CreateTransactionsEvent
 
 class CreateProposalTransactionSuite extends PaideiaTestSuite {
   test("Create proposal") {
@@ -163,7 +164,8 @@ class CreateProposalTransactionSuite extends PaideiaTestSuite {
 
         val dummyTx = (new ErgoTransaction())
           .addOutputsItem(createProposalBox.ergoTransactionOutput())
-        val eventResponse = Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
+        Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
+        val eventResponse = Paideia.handleEvent(CreateTransactionsEvent(ctx, 0L, 0L))
         assert(eventResponse.unsignedTransactions.size === 1)
         ctx
           .newProverBuilder()
