@@ -14,5 +14,6 @@ final case class TransactionEvent(
   ctx: BlockchainContextImpl,
   mempool: Boolean,
   tx: ErgoTransaction,
-  height: Int = 0
+  height: Int       = 0,
+  rollback: Boolean = false
 ) extends PaideiaEvent(ctx)
