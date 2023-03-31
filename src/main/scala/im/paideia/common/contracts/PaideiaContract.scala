@@ -132,11 +132,19 @@ class PaideiaContract(_contractSignature: PaideiaContractSignature) {
     * @param mempool a boolean flag indicating if the box is also removed from mempool or not.
     * @return true if the box was successfully removed otherwise false.
     */
-  def spendBox(boxId: String, mempool: Boolean): Boolean = {
-    if (mempool) {
-      mspent.add(boxId)
+  def spendBox(boxId: String, mempool: Boolean, rollback: Boolean): Boolean = {
+    if (rollback) {
+      if (mempool) {
+        mspent.remove(boxId)
+      } else {
+        utxos.add(boxId)
+      }
     } else {
-      utxos.remove(boxId) || mspent.remove(boxId)
+      if (mempool) {
+        mspent.add(boxId)
+      } else {
+        utxos.remove(boxId) || mspent.remove(boxId)
+      }
     }
   }
 
@@ -152,13 +160,21 @@ class PaideiaContract(_contractSignature: PaideiaContractSignature) {
     * @param mempool a boolean flag indicating if the box should be added to mempool or not.
     * @return true if the box is added to either utxos or mutxos set. Otherwise false.
     */
-  def newBox(box: InputBox, mempool: Boolean): Boolean = {
-    if (mempool) {
-      boxes.put(box.getId().toString(), box)
-      mutxos.add(box.getId().toString())
+  def newBox(box: InputBox, mempool: Boolean, rollBack: Boolean): Boolean = {
+    if (rollback) {
+      if (mempool) {
+        mutxos.remove(box.getId().toString())
+      } else {
+        utxos.remove(box.getId().toString()) || mutxos.remove(box.getId().toString())
+      }
     } else {
-      boxes.put(box.getId().toString(), box)
-      utxos.add(box.getId().toString()) || mutxos.remove(box.getId().toString())
+      if (mempool) {
+        boxes.put(box.getId().toString(), box)
+        mutxos.add(box.getId().toString())
+      } else {
+        boxes.put(box.getId().toString(), box)
+        utxos.add(box.getId().toString()) || mutxos.remove(box.getId().toString())
+      }
     }
   }
 
@@ -180,12 +196,12 @@ class PaideiaContract(_contractSignature: PaideiaContractSignature) {
       case te: TransactionEvent => {
         val handledInputs = te.tx.getInputs().asScala.map {
           (input: ErgoTransactionInput) =>
-            spendBox(input.getBoxId(), te.mempool)
+            spendBox(input.getBoxId(), te.mempool, te.rollback)
         }
         val handledOutputs = te.tx.getOutputs().asScala.map {
           (output: ErgoTransactionOutput) =>
             if (output.getErgoTree == ergoTree.bytesHex)
-              newBox(new InputBoxImpl(output), te.mempool)
+              newBox(new InputBoxImpl(output), te.mempool, te.rollback)
             else false
         }
         if (handledInputs.exists(identity) || handledOutputs.exists(identity))
