@@ -151,6 +151,7 @@ class PlasmaStaking(contractSignature: PaideiaContractSignature)
                   val stakingState =
                     StakeStateBox.fromInputBox(te.ctx, boxes(eti.getBoxId()))
                   val context = eti
+                    .getSpendingProof()
                     .getExtension()
                     .asScala
                     .map((kv: (String, String)) =>
