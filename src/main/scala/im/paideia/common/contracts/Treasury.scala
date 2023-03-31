@@ -96,24 +96,26 @@ class Treasury(contractSignature: PaideiaContractSignature)
     var nanoErgFound = 0L
     var tokensFound  = new HashMap[String, Long]()
     var result       = List[InputBox]()
-    boxes.foreach((box: (String, InputBox)) => {
-      if (!assetsFound || result.length < 20) {
-        result = result.::(box._2)
-        nanoErgFound += box._2.getValue()
-        box._2
-          .getTokens()
-          .forEach((token: ErgoToken) =>
-            tokensFound.put(
-              token.getId().toString(),
-              token.getValue() + tokensFound.getOrDefault(token.getId().toString(), 0L)
+    getUtxoSet
+      .map(b => (b, boxes(b)))
+      .foreach((box: (String, InputBox)) => {
+        if (!assetsFound || result.length < 20) {
+          result = result.::(box._2)
+          nanoErgFound += box._2.getValue()
+          box._2
+            .getTokens()
+            .forEach((token: ErgoToken) =>
+              tokensFound.put(
+                token.getId().toString(),
+                token.getValue() + tokensFound.getOrDefault(token.getId().toString(), 0L)
+              )
             )
-          )
-        assetsFound = nanoErgFound >= nanoErgNeeded && tokensNeeded.forall(
-            (token: ErgoToken) =>
-              token.getValue <= tokensFound.getOrDefault(token.getId().toString(), 0L)
-          )
-      } else Unit
-    })
+          assetsFound = nanoErgFound >= nanoErgNeeded && tokensNeeded.forall(
+              (token: ErgoToken) =>
+                token.getValue <= tokensFound.getOrDefault(token.getId().toString(), 0L)
+            )
+        } else Unit
+      })
     if (result.length > 0) {
       Some(result.toArray)
     } else {

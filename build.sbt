@@ -53,7 +53,7 @@ libraryDependencies ++= Seq(
     "com.squareup.okhttp3" % "mockwebserver" % "3.12.0" % Test
 )
 
-//dependencyOverrides += "org.ergoplatform" %% "ergo-appkit" % "5.0.0"
+dependencyOverrides += "org.ergoplatform" %% "ergo-appkit" % "5.0.0"
 
 resolvers ++= Seq(
   "Sonatype Releases" at "https://oss.sonatype.org/content/repositories/releases/",
