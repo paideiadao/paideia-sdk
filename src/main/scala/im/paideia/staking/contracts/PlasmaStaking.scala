@@ -91,171 +91,167 @@ class PlasmaStaking(contractSignature: PaideiaContractSignature)
 
   override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
     val response: PaideiaEventResponse =
-      try {
-        event match {
-          case cte: CreateTransactionsEvent =>
-            PaideiaEventResponse.merge(getUtxoSet.toList.map { b =>
-              {
-                (if (TotalStakingState(
-                       contractSignature.daoKey
-                     ).snapshots.size >= Paideia
-                       .getConfig(contractSignature.daoKey)[Long](
-                         ConfKeys.im_paideia_staking_emission_delay
-                       )) {
-                   val stakeStateInput = boxes(b)
-                   val stakeBox        = StakeStateBox.fromInputBox(cte.ctx, stakeStateInput)
-                   if (stakeBox.state
-                         .firstMatchingSnapshot(stakeBox.snapshots(0).digest)
-                         .size(Some(stakeBox.snapshots(0).digest)) > 0) {
-                     PaideiaEventResponse(
-                       1,
-                       List(
-                         CompoundTransaction(
-                           cte.ctx,
-                           stakeStateInput,
-                           Address.create(Env.operatorAddress).getErgoAddress,
-                           contractSignature.daoKey
-                         )
+      event match {
+        case cte: CreateTransactionsEvent =>
+          PaideiaEventResponse.merge(getUtxoSet.toList.map { b =>
+            {
+              (if (TotalStakingState(
+                     contractSignature.daoKey
+                   ).snapshots.size >= Paideia
+                     .getConfig(contractSignature.daoKey)[Long](
+                       ConfKeys.im_paideia_staking_emission_delay
+                     )) {
+                 val stakeStateInput = boxes(b)
+                 val stakeBox        = StakeStateBox.fromInputBox(cte.ctx, stakeStateInput)
+                 if (stakeBox.state
+                       .firstMatchingSnapshot(stakeBox.snapshots(0).digest)
+                       .size(Some(stakeBox.snapshots(0).digest)) > 0) {
+                   PaideiaEventResponse(
+                     1,
+                     List(
+                       CompoundTransaction(
+                         cte.ctx,
+                         stakeStateInput,
+                         Address.create(Env.operatorAddress).getErgoAddress,
+                         contractSignature.daoKey
                        )
                      )
-                   } else {
-                     PaideiaEventResponse(0)
-                   }
+                   )
                  } else {
                    PaideiaEventResponse(0)
-                 }) + (if (cte.currentTime > StakeStateBox
-                             .fromInputBox(cte.ctx, boxes(b))
-                             .nextEmission) {
-                         PaideiaEventResponse(
-                           1,
-                           List(
-                             EmitTransaction(
-                               cte.ctx,
-                               boxes(b),
-                               Address.create(Env.operatorAddress).getErgoAddress,
-                               contractSignature.daoKey
-                             )
+                 }
+               } else {
+                 PaideiaEventResponse(0)
+               }) + (if (cte.currentTime > StakeStateBox
+                           .fromInputBox(cte.ctx, boxes(b))
+                           .nextEmission) {
+                       PaideiaEventResponse(
+                         1,
+                         List(
+                           EmitTransaction(
+                             cte.ctx,
+                             boxes(b),
+                             Address.create(Env.operatorAddress).getErgoAddress,
+                             contractSignature.daoKey
                            )
                          )
-                       } else {
-                         PaideiaEventResponse(0)
-                       })
-              }
-            })
-          case te: TransactionEvent =>
-            PaideiaEventResponse.merge(
-              te.tx
-                .getInputs()
-                .asScala
-                .map(eti =>
-                  if (getUtxoSet.contains(eti.getBoxId())) {
-                    val stakingState =
-                      StakeStateBox.fromInputBox(te.ctx, boxes(eti.getBoxId()))
-                    val context = eti
-                      .getExtension()
-                      .asScala
-                      .map((kv: (String, String)) =>
-                        (kv._1.toByte, ErgoValue.fromHex(kv._2))
+                       )
+                     } else {
+                       PaideiaEventResponse(0)
+                     })
+            }
+          })
+        case te: TransactionEvent =>
+          PaideiaEventResponse.merge(
+            te.tx
+              .getInputs()
+              .asScala
+              .map(eti =>
+                if (getUtxoSet.contains(eti.getBoxId())) {
+                  val stakingState =
+                    StakeStateBox.fromInputBox(te.ctx, boxes(eti.getBoxId()))
+                  val context = eti
+                    .getExtension()
+                    .asScala
+                    .map((kv: (String, String)) =>
+                      (kv._1.toByte, ErgoValue.fromHex(kv._2))
+                    )
+                    .toMap[Byte, ErgoValue[_]]
+                  val digestOrHeight =
+                    if (te.mempool)
+                      Left(
+                        stakingState.stateDigest
                       )
-                      .toMap[Byte, ErgoValue[_]]
-                    val digestOrHeight =
-                      if (te.mempool)
-                        Left(
-                          stakingState.stateDigest
-                        )
-                      else
-                        Right(te.height)
-                    context(1.toByte) match {
-                      case StakingContextVars.STAKE =>
-                        val operations =
-                          context(2.toByte)
-                            .getValue()
-                            .asInstanceOf[Coll[(Coll[Byte], Coll[Byte])]]
-                            .toArray
-                            .map((kv: (Coll[Byte], Coll[Byte])) =>
-                              (
-                                ByteConversion.convertsId.convertFromBytes(kv._1.toArray),
-                                StakeRecord.stakeRecordConversion
-                                  .convertFromBytes(kv._2.toArray)
-                              )
+                    else
+                      Right(te.height)
+                  context(1.toByte) match {
+                    case StakingContextVars.STAKE =>
+                      val operations =
+                        context(2.toByte)
+                          .getValue()
+                          .asInstanceOf[Coll[(Coll[Byte], Coll[Byte])]]
+                          .toArray
+                          .map((kv: (Coll[Byte], Coll[Byte])) =>
+                            (
+                              ByteConversion.convertsId.convertFromBytes(kv._1.toArray),
+                              StakeRecord.stakeRecordConversion
+                                .convertFromBytes(kv._2.toArray)
                             )
-                        stakingState.state.currentStakingState.plasmaMap
-                          .insertWithDigest(operations: _*)(digestOrHeight)
-                      case StakingContextVars.CHANGE_STAKE =>
-                        val operations =
-                          context(2.toByte)
-                            .getValue()
-                            .asInstanceOf[Coll[(Coll[Byte], Coll[Byte])]]
-                            .toArray
-                            .map((kv: (Coll[Byte], Coll[Byte])) =>
-                              (
-                                ByteConversion.convertsId.convertFromBytes(kv._1.toArray),
-                                StakeRecord.stakeRecordConversion
-                                  .convertFromBytes(kv._2.toArray)
-                              )
-                            )
-                        stakingState.state.currentStakingState.plasmaMap
-                          .updateWithDigest(operations: _*)(digestOrHeight)
-                      case StakingContextVars.UNSTAKE =>
-                        val operations =
-                          context(2.toByte)
-                            .getValue()
-                            .asInstanceOf[Coll[(Coll[Byte], Coll[Byte])]]
-                            .toArray
-                            .map((kv: (Coll[Byte], Coll[Byte])) =>
-                              ByteConversion.convertsId.convertFromBytes(kv._1.toArray)
-                            )
-                        stakingState.state.currentStakingState.plasmaMap
-                          .deleteWithDigest(operations: _*)(digestOrHeight)
-                      case StakingContextVars.SNAPSHOT =>
-                        if (!stakingState.state.snapshots
-                              .contains(stakingState.newNextEmission))
-                          stakingState.state.snapshots(stakingState.newNextEmission) =
-                            stakingState.state.currentStakingState
-                              .clone(
-                                contractSignature.daoKey,
-                                stakingState.newNextEmission
-                              )
-                      case StakingContextVars.COMPOUND =>
-                        val operations =
-                          context(2.toByte)
-                            .getValue()
-                            .asInstanceOf[Coll[(Coll[Byte], Coll[Byte])]]
-                            .toArray
-                            .map((kv: (Coll[Byte], Coll[Byte])) =>
-                              (
-                                ByteConversion.convertsId.convertFromBytes(kv._1.toArray),
-                                StakeRecord.stakeRecordConversion
-                                  .convertFromBytes(kv._2.toArray)
-                              )
-                            )
-                        val removeOps = operations.map(_._1)
-                        stakingState.state.currentStakingState.plasmaMap
-                          .updateWithDigest(operations: _*)(digestOrHeight)
-                        stakingState.state
-                          .firstMatchingSnapshot(stakingState.snapshots(0).digest)
-                          .plasmaMap
-                          .deleteWithDigest(removeOps: _*)(
-                            if (te.mempool)
-                              Left(
-                                stakingState.snapshots(0).digest
-                              )
-                            else
-                              Right(te.height)
                           )
-                      case StakingContextVars.PROFIT_SHARE =>
-                      case _                               => ???
-                    }
-                    PaideiaEventResponse(2)
-                  } else {
-                    PaideiaEventResponse(0)
+                      stakingState.state.currentStakingState.plasmaMap
+                        .insertWithDigest(operations: _*)(digestOrHeight)
+                    case StakingContextVars.CHANGE_STAKE =>
+                      val operations =
+                        context(2.toByte)
+                          .getValue()
+                          .asInstanceOf[Coll[(Coll[Byte], Coll[Byte])]]
+                          .toArray
+                          .map((kv: (Coll[Byte], Coll[Byte])) =>
+                            (
+                              ByteConversion.convertsId.convertFromBytes(kv._1.toArray),
+                              StakeRecord.stakeRecordConversion
+                                .convertFromBytes(kv._2.toArray)
+                            )
+                          )
+                      stakingState.state.currentStakingState.plasmaMap
+                        .updateWithDigest(operations: _*)(digestOrHeight)
+                    case StakingContextVars.UNSTAKE =>
+                      val operations =
+                        context(2.toByte)
+                          .getValue()
+                          .asInstanceOf[Coll[(Coll[Byte], Coll[Byte])]]
+                          .toArray
+                          .map((kv: (Coll[Byte], Coll[Byte])) =>
+                            ByteConversion.convertsId.convertFromBytes(kv._1.toArray)
+                          )
+                      stakingState.state.currentStakingState.plasmaMap
+                        .deleteWithDigest(operations: _*)(digestOrHeight)
+                    case StakingContextVars.SNAPSHOT =>
+                      if (!stakingState.state.snapshots
+                            .contains(stakingState.newNextEmission))
+                        stakingState.state.snapshots(stakingState.newNextEmission) =
+                          stakingState.state.currentStakingState
+                            .clone(
+                              contractSignature.daoKey,
+                              stakingState.newNextEmission
+                            )
+                    case StakingContextVars.COMPOUND =>
+                      val operations =
+                        context(2.toByte)
+                          .getValue()
+                          .asInstanceOf[Coll[(Coll[Byte], Coll[Byte])]]
+                          .toArray
+                          .map((kv: (Coll[Byte], Coll[Byte])) =>
+                            (
+                              ByteConversion.convertsId.convertFromBytes(kv._1.toArray),
+                              StakeRecord.stakeRecordConversion
+                                .convertFromBytes(kv._2.toArray)
+                            )
+                          )
+                      val removeOps = operations.map(_._1)
+                      stakingState.state.currentStakingState.plasmaMap
+                        .updateWithDigest(operations: _*)(digestOrHeight)
+                      stakingState.state
+                        .firstMatchingSnapshot(stakingState.snapshots(0).digest)
+                        .plasmaMap
+                        .deleteWithDigest(removeOps: _*)(
+                          if (te.mempool)
+                            Left(
+                              stakingState.snapshots(0).digest
+                            )
+                          else
+                            Right(te.height)
+                        )
+                    case StakingContextVars.PROFIT_SHARE =>
+                    case _                               => ???
                   }
-                )
-            )
-          case _ => PaideiaEventResponse(0)
-        }
-      } catch {
-        case e: Exception => PaideiaEventResponse(0)
+                  PaideiaEventResponse(2)
+                } else {
+                  PaideiaEventResponse(0)
+                }
+              )
+          )
+        case _ => PaideiaEventResponse(0)
       }
     val superResponse = super.handleEvent(event)
     response

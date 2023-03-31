@@ -11,7 +11,8 @@ import org.ergoplatform.appkit.UnsignedTransaction
   */
 final case class PaideiaEventResponse(
   status: Int,
-  unsignedTransactions: List[PaideiaTransaction] = List[PaideiaTransaction]()
+  unsignedTransactions: List[PaideiaTransaction] = List[PaideiaTransaction](),
+  exceptions: List[Throwable]                    = List[Throwable]()
 ) {
 
   /**
@@ -23,7 +24,8 @@ final case class PaideiaEventResponse(
   def +(that: PaideiaEventResponse): PaideiaEventResponse = {
     PaideiaEventResponse(
       this.status.max(that.status),
-      this.unsignedTransactions ++ that.unsignedTransactions
+      this.unsignedTransactions ++ that.unsignedTransactions,
+      this.exceptions ++ that.exceptions
     )
   }
 }
