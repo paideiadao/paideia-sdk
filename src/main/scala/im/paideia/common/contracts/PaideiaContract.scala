@@ -132,7 +132,7 @@ class PaideiaContract(_contractSignature: PaideiaContractSignature) {
     * @param mempool a boolean flag indicating if the box is also removed from mempool or not.
     * @return true if the box was successfully removed otherwise false.
     */
-  def spendBox(boxId: String, mempool: Boolean, rollback: Boolean): Boolean = {
+  def spendBox(boxId: String, mempool: Boolean, rollback: Boolean = false): Boolean = {
     if (rollback) {
       if (mempool) {
         mspent.remove(boxId)
@@ -160,7 +160,7 @@ class PaideiaContract(_contractSignature: PaideiaContractSignature) {
     * @param mempool a boolean flag indicating if the box should be added to mempool or not.
     * @return true if the box is added to either utxos or mutxos set. Otherwise false.
     */
-  def newBox(box: InputBox, mempool: Boolean, rollBack: Boolean): Boolean = {
+  def newBox(box: InputBox, mempool: Boolean, rollback: Boolean = false): Boolean = {
     if (rollback) {
       if (mempool) {
         mutxos.remove(box.getId().toString())
