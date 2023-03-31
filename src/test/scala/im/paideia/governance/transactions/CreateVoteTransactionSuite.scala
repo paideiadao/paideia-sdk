@@ -20,6 +20,7 @@ import im.paideia.governance.contracts.CreateVoteProxy
 import org.ergoplatform.appkit.Address
 import im.paideia.common.events.TransactionEvent
 import im.paideia.governance.contracts.Vote
+import im.paideia.common.events.CreateTransactionsEvent
 
 class CreateVoteTransactionSuite extends PaideiaTestSuite {
   test("Create Vote") {
@@ -107,8 +108,9 @@ class CreateVoteTransactionSuite extends PaideiaTestSuite {
 
         val paiRef = Paideia._actorList
 
-        val dummyTx       = (new ErgoTransaction()).addOutputsItem(createVoteBox)
-        val eventResponse = Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
+        val dummyTx = (new ErgoTransaction()).addOutputsItem(createVoteBox)
+        Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
+        val eventResponse = Paideia.handleEvent(CreateTransactionsEvent(ctx, 0L, 0L))
         assert(eventResponse.unsignedTransactions.size === 1)
         ctx
           .newProverBuilder()

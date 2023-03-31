@@ -11,6 +11,7 @@ import org.ergoplatform.appkit.NetworkType
 import scala.collection.mutable.HashMap
 import scala.util.Success
 import scala.util.Try
+import scala.util.Failure
 
 /**
   * Trait representing a Paideia Actor.
@@ -59,7 +60,16 @@ trait PaideiaActor {
     * @return An instance of PaideiaEventResponse that has been merged after being handled by registered contracts.
     */
   def handleEvent(event: PaideiaEvent): PaideiaEventResponse =
-    PaideiaEventResponse.merge(contractInstances.values.map(_.handleEvent(event)).toList)
+    PaideiaEventResponse.merge(
+      contractInstances.values
+        .map(pc => Try { pc.handleEvent(event) })
+        .map(_ match {
+          case Success(resp) => resp
+          case Failure(exception) =>
+            PaideiaEventResponse(-6, exceptions = List(exception))
+        })
+        .toList
+    )
 
   /**
     * Generates a list of InputBoxes filtered by the given FilterNode.

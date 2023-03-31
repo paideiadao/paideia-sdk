@@ -31,6 +31,7 @@ import org.ergoplatform.appkit.ErgoId
 import im.paideia.common.contracts.Treasury
 import im.paideia.DAOConfigValueSerializer
 import im.paideia.DAOConfigValueDeserializer
+import im.paideia.common.events.CreateTransactionsEvent
 
 class ProfitShareTransactionSuite extends PaideiaTestSuite {
   test("Profit share erg tx on empty state") {
@@ -76,14 +77,13 @@ class ProfitShareTransactionSuite extends PaideiaTestSuite {
         stakingContract.clearBoxes()
         stakingContract.newBox(stakingStateBox, false)
 
-        val dummyBlock = (new FullBlock())
-          .header(
-            new BlockHeader()
-              .timestamp(stakingState.nextEmission - 1000L)
-              .height(ctx.getHeight() + 30)
+        val eventResponse = Paideia.handleEvent(
+          CreateTransactionsEvent(
+            ctx,
+            stakingState.nextEmission - 1000L,
+            ctx.getHeight() + 30
           )
-          .blockTransactions(new BlockTransactions().transactions(new Transactions()))
-        val eventResponse = Paideia.handleEvent(BlockEvent(ctx, dummyBlock))
+        )
         assert(eventResponse.unsignedTransactions.size === 1)
         ctx
           .newProverBuilder()
@@ -146,14 +146,13 @@ class ProfitShareTransactionSuite extends PaideiaTestSuite {
         stakingContract.clearBoxes()
         stakingContract.newBox(stakingStateBox, false)
 
-        val dummyBlock = (new FullBlock())
-          .header(
-            new BlockHeader()
-              .timestamp(stakingState.nextEmission - 1000L)
-              .height(ctx.getHeight() + 30)
+        val eventResponse = Paideia.handleEvent(
+          CreateTransactionsEvent(
+            ctx,
+            stakingState.nextEmission - 1000L,
+            ctx.getHeight() + 30
           )
-          .blockTransactions(new BlockTransactions().transactions(new Transactions()))
-        val eventResponse = Paideia.handleEvent(BlockEvent(ctx, dummyBlock))
+        )
         assert(eventResponse.unsignedTransactions.size === 1)
         ctx
           .newProverBuilder()
@@ -219,7 +218,13 @@ class ProfitShareTransactionSuite extends PaideiaTestSuite {
               .height(ctx.getHeight() + 30)
           )
           .blockTransactions(new BlockTransactions().transactions(new Transactions()))
-        val eventResponse = Paideia.handleEvent(BlockEvent(ctx, dummyBlock))
+        val eventResponse = Paideia.handleEvent(
+          CreateTransactionsEvent(
+            ctx,
+            stakingState.nextEmission - 1000L,
+            ctx.getHeight() + 30
+          )
+        )
         assert(eventResponse.unsignedTransactions.size === 1)
         ctx
           .newProverBuilder()

@@ -11,7 +11,8 @@ import org.ergoplatform.appkit.UnsignedTransaction
   */
 final case class PaideiaEventResponse(
   status: Int,
-  unsignedTransactions: List[PaideiaTransaction] = List[PaideiaTransaction]()
+  unsignedTransactions: List[PaideiaTransaction] = List[PaideiaTransaction](),
+  exceptions: List[Throwable]                    = List[Throwable]()
 ) {
 
   /**
@@ -23,7 +24,8 @@ final case class PaideiaEventResponse(
   def +(that: PaideiaEventResponse): PaideiaEventResponse = {
     PaideiaEventResponse(
       this.status.max(that.status),
-      this.unsignedTransactions ++ that.unsignedTransactions
+      this.unsignedTransactions ++ that.unsignedTransactions,
+      this.exceptions ++ that.exceptions
     )
   }
 }
@@ -44,7 +46,7 @@ object PaideiaEventResponse {
     * @param responses A list of PaideiaEventResponses to be merged.
     * @return A new PaideiaEventResponse with all transactions combined and the highest status code.
     */
-  def merge(responses: List[PaideiaEventResponse]): PaideiaEventResponse = {
+  def merge(responses: Seq[PaideiaEventResponse]): PaideiaEventResponse = {
     responses.foldLeft(PaideiaEventResponse(0))(_ + _)
   }
 }

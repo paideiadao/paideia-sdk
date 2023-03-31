@@ -24,6 +24,7 @@ import im.paideia.util.ConfKeys
 import org.ergoplatform.restapi.client.ErgoTransaction
 import im.paideia.Paideia
 import im.paideia.common.events.TransactionEvent
+import im.paideia.common.events.CreateTransactionsEvent
 
 class UnstakeTransactionSuite extends PaideiaTestSuite {
   test("Sign partial unstake tx") {
@@ -72,8 +73,9 @@ class UnstakeTransactionSuite extends PaideiaTestSuite {
         val unstakeProxyBox = unstakeProxyContract
           .box(ctx, testKey, currentStake, dummyAddress.toString())
           .ergoTransactionOutput()
-        val dummyTx       = (new ErgoTransaction()).addOutputsItem(unstakeProxyBox)
-        val eventResponse = Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
+        val dummyTx = (new ErgoTransaction()).addOutputsItem(unstakeProxyBox)
+        Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
+        val eventResponse = Paideia.handleEvent(CreateTransactionsEvent(ctx, 0L, 0L))
         assert(eventResponse.unsignedTransactions.size === 1)
         ctx
           .newProverBuilder()
@@ -126,8 +128,9 @@ class UnstakeTransactionSuite extends PaideiaTestSuite {
         val unstakeProxyBox = unstakeProxyContract
           .box(ctx, testKey, currentStake, dummyAddress.toString())
           .ergoTransactionOutput()
-        val dummyTx       = (new ErgoTransaction()).addOutputsItem(unstakeProxyBox)
-        val eventResponse = Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
+        val dummyTx = (new ErgoTransaction()).addOutputsItem(unstakeProxyBox)
+        Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
+        val eventResponse = Paideia.handleEvent(CreateTransactionsEvent(ctx, 0L, 0L))
         assert(eventResponse.unsignedTransactions.size === 1)
         ctx
           .newProverBuilder()

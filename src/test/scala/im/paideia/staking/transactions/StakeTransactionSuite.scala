@@ -25,6 +25,7 @@ import im.paideia.staking.contracts.StakeProxy
 import org.ergoplatform.restapi.client.ErgoTransaction
 import im.paideia.Paideia
 import im.paideia.common.events.TransactionEvent
+import im.paideia.common.events.CreateTransactionsEvent
 
 class StakeTransactionSuite extends PaideiaTestSuite {
   test("Sign stake tx on empty state") {
@@ -63,8 +64,9 @@ class StakeTransactionSuite extends PaideiaTestSuite {
         val stakeProxyBox = stakeProxyContract
           .box(ctx, dummyAddress.toString(), 1000L)
           .ergoTransactionOutput()
-        val dummyTx       = (new ErgoTransaction()).addOutputsItem(stakeProxyBox)
-        val eventResponse = Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
+        val dummyTx = (new ErgoTransaction()).addOutputsItem(stakeProxyBox)
+        Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
+        val eventResponse = Paideia.handleEvent(CreateTransactionsEvent(ctx, 0L, 0L))
         assert(eventResponse.unsignedTransactions.size === 1)
         ctx
           .newProverBuilder()
@@ -113,8 +115,9 @@ class StakeTransactionSuite extends PaideiaTestSuite {
         val stakeProxyBox = stakeProxyContract
           .box(ctx, dummyAddress.toString(), 1000L)
           .ergoTransactionOutput()
-        val dummyTx       = (new ErgoTransaction()).addOutputsItem(stakeProxyBox)
-        val eventResponse = Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
+        val dummyTx = (new ErgoTransaction()).addOutputsItem(stakeProxyBox)
+        Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
+        val eventResponse = Paideia.handleEvent(CreateTransactionsEvent(ctx, 0L, 0L))
         assert(eventResponse.unsignedTransactions.size === 1)
         eventResponse.unsignedTransactions(0)
         val correctOutput = eventResponse.unsignedTransactions(0).outputs(1)

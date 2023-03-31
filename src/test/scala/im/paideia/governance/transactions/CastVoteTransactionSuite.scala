@@ -21,6 +21,7 @@ import im.paideia.governance.VoteRecord
 import org.ergoplatform.restapi.client.ErgoTransaction
 import im.paideia.common.events.TransactionEvent
 import im.paideia.governance.contracts.ProposalBasic
+import im.paideia.common.events.CreateTransactionsEvent
 
 class CastVoteTransactionSuite extends PaideiaTestSuite {
   test("Cast Vote") {
@@ -119,8 +120,9 @@ class CastVoteTransactionSuite extends PaideiaTestSuite {
           .box(ctx, voteKey, 0, VoteRecord(Array(100L, 0L)), dummyAddress)
           .ergoTransactionOutput()
 
-        val dummyTx       = (new ErgoTransaction()).addOutputsItem(castVoteBox)
-        val eventResponse = Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
+        val dummyTx = (new ErgoTransaction()).addOutputsItem(castVoteBox)
+        Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
+        val eventResponse = Paideia.handleEvent(CreateTransactionsEvent(ctx, 0L, 0L))
         assert(eventResponse.unsignedTransactions.size === 1)
         ctx
           .newProverBuilder()

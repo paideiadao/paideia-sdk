@@ -32,7 +32,7 @@ case class StakeTransaction(
 ) extends PaideiaTransaction {
 
   ctx = _ctx
-  val amount = stakeProxyInput.getTokens().get(0).getValue()
+  val amount = stakeProxyInput.getRegisters().get(1).getValue().asInstanceOf[Long]
   val config = Paideia.getConfig(daoKey)
 
   val state = TotalStakingState(daoKey)

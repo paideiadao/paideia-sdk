@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets
 import java.util.HashMap
 import org.ergoplatform.appkit.ErgoId
 import sigmastate.eval.Colls
+import im.paideia.common.events.CreateTransactionsEvent
 
 class StakeProxy(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -41,35 +42,25 @@ class StakeProxy(contractSignature: PaideiaContractSignature)
 
   override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
     val response: PaideiaEventResponse = event match {
-      case te: TransactionEvent => {
+      case cte: CreateTransactionsEvent =>
         PaideiaEventResponse.merge(
-          te.tx
-            .getOutputs()
-            .asScala
-            .map { (eto: ErgoTransactionOutput) =>
+          getUtxoSet.toList
+            .map { b =>
               {
-                val etotree  = eto.getErgoTree()
-                val ergotree = ergoTree.bytesHex
-                if (eto.getErgoTree() == ergoTree.bytesHex) {
-                  PaideiaEventResponse(
-                    1,
-                    List(
-                      StakeTransaction(
-                        te.ctx,
-                        new InputBoxImpl(eto),
-                        Address.create(Env.operatorAddress).getErgoAddress,
-                        contractSignature.daoKey
-                      )
+                PaideiaEventResponse(
+                  1,
+                  List(
+                    StakeTransaction(
+                      cte.ctx,
+                      boxes(b),
+                      Address.create(Env.operatorAddress).getErgoAddress,
+                      contractSignature.daoKey
                     )
                   )
-                } else {
-                  PaideiaEventResponse(0)
-                }
+                )
               }
             }
-            .toList
         )
-      }
       case _ => PaideiaEventResponse(0)
     }
     val superResponse = super.handleEvent(event)

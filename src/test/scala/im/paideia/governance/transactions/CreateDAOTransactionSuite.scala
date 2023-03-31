@@ -15,6 +15,7 @@ import org.ergoplatform.restapi.client.ErgoTransaction
 import im.paideia.common.events.TransactionEvent
 import im.paideia.governance.contracts.Mint
 import im.paideia.util.Env
+import im.paideia.common.events.CreateTransactionsEvent
 
 class CreateDAOTransactionSuite extends PaideiaTestSuite {
   test("Create DAO") {
@@ -112,8 +113,9 @@ class CreateDAOTransactionSuite extends PaideiaTestSuite {
         val protoDAOBox = protoDAOContract
           .box(ctx, Paideia.getDAO(daoKey), 1L, value = 5000000L)
           .ergoTransactionOutput()
-        val dummyTx       = (new ErgoTransaction()).addOutputsItem(protoDAOBox)
-        val eventResponse = Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
+        val dummyTx = (new ErgoTransaction()).addOutputsItem(protoDAOBox)
+        Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
+        val eventResponse = Paideia.handleEvent(CreateTransactionsEvent(ctx, 0L, 0L))
         assert(eventResponse.unsignedTransactions.size === 1)
         ctx
           .newProverBuilder()

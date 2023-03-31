@@ -14,28 +14,40 @@ import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 import im.paideia.util.Env
 
 case class StakeProxyBox(
-    _ctx: BlockchainContextImpl,
-    useContract: StakeProxy,
-    daoConfig: DAOConfig, 
-    userAddress: String, 
-    stakeAmount: Long) extends PaideiaBox {
+  _ctx: BlockchainContextImpl,
+  useContract: StakeProxy,
+  daoConfig: DAOConfig,
+  userAddress: String,
+  stakeAmount: Long
+) extends PaideiaBox {
 
-    ctx = _ctx
-    value = 3000000L
-    contract = useContract.contract
+  ctx      = _ctx
+  value    = 3000000L
+  contract = useContract.contract
 
-    override def registers: List[ErgoValue[_]] = {
-        List(
-            ErgoValueBuilder.buildFor(
-                Colls.fromArray(Address.create(userAddress).toPropositionBytes())
-            )
+  override def registers: List[ErgoValue[_]] = {
+    List(
+      ErgoValueBuilder.buildFor(
+        Colls.fromArray(Address.create(userAddress).toPropositionBytes())
+      ),
+      ErgoValueBuilder.buildFor(stakeAmount)
+    )
+  }
+
+  override def tokens: List[ErgoToken] = {
+    val daoTokenId     = new ErgoId(daoConfig.getArray[Byte](ConfKeys.im_paideia_dao_tokenid))
+    val paideiaTokenId = ErgoId.create(Env.paideiaTokenId)
+    if (!daoTokenId.equals(paideiaTokenId))
+      List(
+        new ErgoToken(daoTokenId, stakeAmount),
+        new ErgoToken(Env.paideiaTokenId, Env.defaultBotFee)
+      )
+    else
+      List(
+        new ErgoToken(
+          daoTokenId,
+          stakeAmount + Env.defaultBotFee
         )
-    }
-
-    override def tokens: List[ErgoToken] = {
-        List(
-            new ErgoToken(daoConfig.getArray[Byte](ConfKeys.im_paideia_dao_tokenid),stakeAmount),
-            new ErgoToken(Env.paideiaTokenId, Env.defaultBotFee)
-        )
-    }
+      )
+  }
 }
