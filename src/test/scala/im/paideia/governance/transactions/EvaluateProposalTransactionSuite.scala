@@ -22,6 +22,7 @@ import im.paideia.common.events.BlockEvent
 import org.ergoplatform.restapi.client.Transactions
 import im.paideia.governance.Proposal
 import com.typesafe.config.ConfigList
+import im.paideia.common.events.CreateTransactionsEvent
 
 class EvaluateProposalTransactionSuite extends PaideiaTestSuite {
   test("Evaluate basic proposal, quorum met") {
@@ -94,10 +95,9 @@ class EvaluateProposalTransactionSuite extends PaideiaTestSuite {
         val proposalBox = proposalContract.box(ctx, 0, Array(1000L, 0L), 1000L, 1000L, -1)
         proposalContract.newBox(proposalBox.inputBox(), false)
 
-        val dummyBlock = (new FullBlock())
-          .header(new BlockHeader().timestamp(proposalBox.endTime + 1000L))
-          .blockTransactions(new BlockTransactions().transactions(new Transactions()))
-        val eventResponse = Paideia.handleEvent(BlockEvent(ctx, dummyBlock))
+        val eventResponse = Paideia.handleEvent(
+          CreateTransactionsEvent(ctx, proposalBox.endTime + 1000L, 0L)
+        )
         assert(eventResponse.unsignedTransactions.size === 1)
         ctx
           .newProverBuilder()

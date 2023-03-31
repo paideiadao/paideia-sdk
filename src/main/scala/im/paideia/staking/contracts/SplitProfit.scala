@@ -14,6 +14,7 @@ import im.paideia.Paideia
 import java.util.HashMap
 import org.ergoplatform.appkit.ErgoId
 import im.paideia.util.ConfKeys
+import im.paideia.common.events.CreateTransactionsEvent
 
 class SplitProfit(contractSig: PaideiaContractSignature)
   extends PaideiaContract(contractSig) {
@@ -30,17 +31,15 @@ class SplitProfit(contractSig: PaideiaContractSignature)
 
   override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
     val response: PaideiaEventResponse = event match {
-      case be: BlockEvent => {
-        if ((be.block
-              .getHeader()
-              .getHeight() > lastProfitSplit + 30) || boxes.size > 50) {
-          lastProfitSplit = be.block.getHeader().getHeight()
+      case cte: CreateTransactionsEvent => {
+        if ((cte.height > lastProfitSplit + 30) || boxes.size > 50) {
+          lastProfitSplit = cte.height.toInt
           if (boxes.size > 0) {
             PaideiaEventResponse(
               1,
               List(
                 SplitProfitTransaction(
-                  be.ctx,
+                  cte.ctx,
                   boxes.values.take(50).toList,
                   Paideia.getDAO(contractSignature.daoKey)
                 )

@@ -21,6 +21,7 @@ import im.paideia.util.ConfKeys
 import scorex.crypto.hash.Blake2b256
 import special.sigma.AvlTree
 import scorex.crypto.authds.ADDigest
+import im.paideia.common.events.CreateTransactionsEvent
 
 class CastVote(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -53,33 +54,24 @@ class CastVote(contractSignature: PaideiaContractSignature)
   }
 
   override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
+    val boxSet = getUtxoSet
     val response: PaideiaEventResponse = event match {
-      case te: TransactionEvent => {
-        val boxSet = if (te.mempool) getUtxoSet else utxos
+      case cte: CreateTransactionsEvent =>
+        PaideiaEventResponse.merge(boxSet.toList.map { b =>
+          PaideiaEventResponse(
+            1,
+            List(
+              CastVoteTransaction(
+                cte.ctx,
+                boxes(b),
+                Paideia.getDAO(contractSignature.daoKey),
+                Address.create(Env.operatorAddress)
+              )
+            )
+          )
+        })
+      case te: TransactionEvent =>
         PaideiaEventResponse.merge(
-          te.tx
-            .getOutputs()
-            .asScala
-            .map { (eto: ErgoTransactionOutput) =>
-              {
-                if (eto.getErgoTree() == ergoTree.bytesHex) {
-                  PaideiaEventResponse(
-                    1,
-                    List(
-                      CastVoteTransaction(
-                        te._ctx,
-                        new InputBoxImpl(eto),
-                        Paideia.getDAO(contractSignature.daoKey),
-                        Address.create(Env.operatorAddress)
-                      )
-                    )
-                  )
-                } else {
-                  PaideiaEventResponse(0)
-                }
-              }
-            }
-            .toList ++
           te.tx
             .getInputs()
             .asScala
@@ -118,7 +110,6 @@ class CastVote(contractSignature: PaideiaContractSignature)
               }
             )
         )
-      }
       case _ => PaideiaEventResponse(0)
     }
     val superResponse = super.handleEvent(event)

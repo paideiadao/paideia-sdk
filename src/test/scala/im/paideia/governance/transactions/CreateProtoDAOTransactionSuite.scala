@@ -12,6 +12,7 @@ import im.paideia.common.events.TransactionEvent
 import org.ergoplatform.restapi.client.ErgoTransaction
 import im.paideia.util.Util
 import im.paideia.governance.GovernanceType
+import im.paideia.common.events.CreateTransactionsEvent
 
 class CreateProtoDAOTransactionSuite extends PaideiaTestSuite {
   test("Create proto DAO") {
@@ -38,8 +39,9 @@ class CreateProtoDAOTransactionSuite extends PaideiaTestSuite {
             stakingProfitSharePct = 50
           )
           .ergoTransactionOutput()
-        val dummyTx       = (new ErgoTransaction()).addOutputsItem(protoDAOProxyBox)
-        val eventResponse = Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
+        val dummyTx = (new ErgoTransaction()).addOutputsItem(protoDAOProxyBox)
+        Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
+        val eventResponse = Paideia.handleEvent(CreateTransactionsEvent(ctx, 0L, 0L))
         assert(eventResponse.unsignedTransactions.size === 1)
         ctx
           .newProverBuilder()

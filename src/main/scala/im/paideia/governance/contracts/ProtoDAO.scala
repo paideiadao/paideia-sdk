@@ -27,6 +27,7 @@ import im.paideia.governance.transactions.CreateDAOTransaction
 import im.paideia.DAO
 import special.collection.Coll
 import scorex.crypto.authds.ADDigest
+import im.paideia.common.events.CreateTransactionsEvent
 
 class ProtoDAO(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -43,68 +44,62 @@ class ProtoDAO(contractSignature: PaideiaContractSignature)
 
   override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
     val response: PaideiaEventResponse = event match {
-      case te: TransactionEvent => {
+      case cte: CreateTransactionsEvent => {
         PaideiaEventResponse.merge(
-          te.tx
-            .getOutputs()
-            .asScala
-            .map { (eto: ErgoTransactionOutput) =>
-              {
-                if (eto.getErgoTree() == ergoTree.bytesHex) {
-                  val iBox = new InputBoxImpl(eto)
-                  val dao = Paideia.getDAO(
-                    new ErgoId(
-                      iBox
-                        .getRegisters()
-                        .get(1)
-                        .getValue()
-                        .asInstanceOf[Coll[Byte]]
-                        .toArray
-                    ).toString()
-                  )
-                  val config = dao.config
-                  if (config._config.ergoAVLTree().digest == iBox
-                        .getRegisters()
-                        .get(0)
-                        .getValue()
-                        .asInstanceOf[AvlTree]
-                        .digest) {
-                    val nextTokenToMint = ProtoDAO.tokensToMint.find((s: DAOConfigKey) =>
-                      config._config.lookUp(s).response(0).tryOp.get == None
-                    )
-                    nextTokenToMint match {
-                      case Some(value) =>
-                        PaideiaEventResponse(
-                          2,
-                          List(
-                            MintTransaction(
-                              te._ctx,
-                              iBox,
-                              dao,
-                              value,
-                              Address.create(Env.operatorAddress).getErgoAddress()
-                            )
-                          )
-                        )
-                      case None => {
-                        val newTx = CreateDAOTransaction(
-                          te._ctx,
+          getUtxoSet.toList.map { b =>
+            {
+
+              val iBox = boxes(b)
+              val dao = Paideia.getDAO(
+                new ErgoId(
+                  iBox
+                    .getRegisters()
+                    .get(1)
+                    .getValue()
+                    .asInstanceOf[Coll[Byte]]
+                    .toArray
+                ).toString()
+              )
+              val config = dao.config
+              if (config._config.ergoAVLTree().digest == iBox
+                    .getRegisters()
+                    .get(0)
+                    .getValue()
+                    .asInstanceOf[AvlTree]
+                    .digest) {
+                val nextTokenToMint = ProtoDAO.tokensToMint.find((s: DAOConfigKey) =>
+                  config._config.lookUp(s).response(0).tryOp.get == None
+                )
+                nextTokenToMint match {
+                  case Some(value) =>
+                    PaideiaEventResponse(
+                      2,
+                      List(
+                        MintTransaction(
+                          cte.ctx,
                           iBox,
                           dao,
+                          value,
                           Address.create(Env.operatorAddress).getErgoAddress()
                         )
-                        PaideiaEventResponse(2, List(newTx))
-                      }
-                    }
-                  } else {
-                    PaideiaEventResponse(0)
+                      )
+                    )
+                  case None => {
+                    val newTx = CreateDAOTransaction(
+                      cte.ctx,
+                      iBox,
+                      dao,
+                      Address.create(Env.operatorAddress).getErgoAddress()
+                    )
+                    PaideiaEventResponse(2, List(newTx))
                   }
-                } else {
-                  PaideiaEventResponse(0)
                 }
+              } else {
+                PaideiaEventResponse(0)
               }
+
             }
-            .toList
+          }.toList
         )
       }
       case _ => PaideiaEventResponse(0)

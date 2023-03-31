@@ -21,6 +21,7 @@ import im.paideia.common.boxes.PaideiaBox
 import org.ergoplatform.appkit.ContextVar
 import im.paideia.governance.VoteRecord
 import scorex.crypto.authds.ADDigest
+import im.paideia.common.events.CreateTransactionsEvent
 
 class ProposalBasic(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature)
@@ -53,12 +54,14 @@ class ProposalBasic(contractSignature: PaideiaContractSignature)
 
   override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
     val response: PaideiaEventResponse = event match {
-      case be: BlockEvent => {
+      case cte: CreateTransactionsEvent => {
         PaideiaEventResponse.merge(
-          boxes.values
+          getUtxoSet
+            .map(boxes(_))
+            .toList
             .map((b: InputBox) => {
               if ((b.getRegisters().get(0).getValue().asInstanceOf[Coll[Int]](1) < 0)
-                  && (be.block.getHeader().getTimestamp() > b
+                  && (cte.currentTime > b
                     .getRegisters()
                     .get(1)
                     .getValue()
@@ -67,7 +70,7 @@ class ProposalBasic(contractSignature: PaideiaContractSignature)
                   1,
                   List(
                     EvaluateProposalBasicTransaction(
-                      be.ctx,
+                      cte.ctx,
                       Paideia.getDAO(contractSignature.daoKey),
                       b,
                       Address.create(Env.operatorAddress).getErgoAddress

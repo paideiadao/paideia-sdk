@@ -24,6 +24,7 @@ import im.paideia.Paideia
 import im.paideia.staking.transactions.UnstakeTransaction
 import im.paideia.staking.StakeRecord
 import im.paideia.util.ConfKeys
+import im.paideia.common.events.CreateTransactionsEvent
 
 class UnstakeProxy(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -46,35 +47,25 @@ class UnstakeProxy(contractSignature: PaideiaContractSignature)
 
   override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
     val response: PaideiaEventResponse = event match {
-      case te: TransactionEvent => {
+      case cte: CreateTransactionsEvent =>
         PaideiaEventResponse.merge(
-          te.tx
-            .getOutputs()
-            .asScala
-            .map { (eto: ErgoTransactionOutput) =>
+          getUtxoSet.toList
+            .map { b =>
               {
-                val etotree  = eto.getErgoTree()
-                val ergotree = ergoTree.bytesHex
-                if (eto.getErgoTree() == ergoTree.bytesHex) {
-                  PaideiaEventResponse(
-                    1,
-                    List(
-                      UnstakeTransaction(
-                        te.ctx,
-                        new InputBoxImpl(eto),
-                        Address.create(Env.operatorAddress).getErgoAddress,
-                        contractSignature.daoKey
-                      )
+                PaideiaEventResponse(
+                  1,
+                  List(
+                    UnstakeTransaction(
+                      cte.ctx,
+                      boxes(b),
+                      Address.create(Env.operatorAddress).getErgoAddress,
+                      contractSignature.daoKey
                     )
                   )
-                } else {
-                  PaideiaEventResponse(0)
-                }
+                )
               }
             }
-            .toList
         )
-      }
       case _ => PaideiaEventResponse(0)
     }
     val superResponse = super.handleEvent(event)

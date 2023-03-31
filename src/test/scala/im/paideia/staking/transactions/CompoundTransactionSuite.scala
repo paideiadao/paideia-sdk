@@ -26,6 +26,7 @@ import im.paideia.Paideia
 import im.paideia.common.events.TransactionEvent
 import im.paideia.common.contracts.Treasury
 import im.paideia.util.Env
+import im.paideia.common.events.CreateTransactionsEvent
 
 class CompoundTransactionSuite extends PaideiaTestSuite {
 
@@ -79,8 +80,9 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
           .ergoTransactionOutput()
         stakingContract.clearBoxes()
 
-        val dummyTx       = (new ErgoTransaction()).addOutputsItem(stakingStateBox)
-        val eventResponse = Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
+        val dummyTx = (new ErgoTransaction()).addOutputsItem(stakingStateBox)
+        Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
+        val eventResponse = Paideia.handleEvent(CreateTransactionsEvent(ctx, 0L, 0L))
         assert(eventResponse.unsignedTransactions.size === 1)
         ctx
           .newProverBuilder()
@@ -138,8 +140,9 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
           .ergoTransactionOutput()
         stakingContract.clearBoxes()
 
-        val dummyTx       = (new ErgoTransaction()).addOutputsItem(stakingStateBox)
-        val eventResponse = Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
+        val dummyTx = (new ErgoTransaction()).addOutputsItem(stakingStateBox)
+        Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
+        val eventResponse = Paideia.handleEvent(CreateTransactionsEvent(ctx, 0L, 0L))
         assert(eventResponse.unsignedTransactions.size === 1)
         ctx
           .newProverBuilder()

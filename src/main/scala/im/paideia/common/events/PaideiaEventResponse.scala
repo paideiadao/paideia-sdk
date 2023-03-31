@@ -44,7 +44,7 @@ object PaideiaEventResponse {
     * @param responses A list of PaideiaEventResponses to be merged.
     * @return A new PaideiaEventResponse with all transactions combined and the highest status code.
     */
-  def merge(responses: List[PaideiaEventResponse]): PaideiaEventResponse = {
+  def merge(responses: Seq[PaideiaEventResponse]): PaideiaEventResponse = {
     responses.foldLeft(PaideiaEventResponse(0))(_ + _)
   }
 }

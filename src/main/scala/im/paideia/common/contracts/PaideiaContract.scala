@@ -206,6 +206,7 @@ class PaideiaContract(_contractSignature: PaideiaContractSignature) {
             .toList
         )
       }
+      case _ => PaideiaEventResponse(0)
     }
   }
 

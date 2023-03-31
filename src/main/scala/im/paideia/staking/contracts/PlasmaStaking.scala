@@ -33,6 +33,7 @@ import special.sigma.AvlTree
 import special.collection.Coll
 import io.getblok.getblok_plasma.ByteConversion
 import im.paideia.staking.StakeRecord
+import im.paideia.common.events.CreateTransactionsEvent
 
 class PlasmaStaking(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -92,51 +93,62 @@ class PlasmaStaking(contractSignature: PaideiaContractSignature)
     val response: PaideiaEventResponse =
       try {
         event match {
-          case te: TransactionEvent => {
-            val boxSet = if (te.mempool) getUtxoSet else utxos
+          case cte: CreateTransactionsEvent =>
+            PaideiaEventResponse.merge(getUtxoSet.toList.map { b =>
+              {
+                (if (TotalStakingState(
+                       contractSignature.daoKey
+                     ).snapshots.size >= Paideia
+                       .getConfig(contractSignature.daoKey)[Long](
+                         ConfKeys.im_paideia_staking_emission_delay
+                       )) {
+                   val stakeStateInput = boxes(b)
+                   val stakeBox        = StakeStateBox.fromInputBox(cte.ctx, stakeStateInput)
+                   if (stakeBox.state
+                         .firstMatchingSnapshot(stakeBox.snapshots(0).digest)
+                         .size(Some(stakeBox.snapshots(0).digest)) > 0) {
+                     PaideiaEventResponse(
+                       1,
+                       List(
+                         CompoundTransaction(
+                           cte.ctx,
+                           stakeStateInput,
+                           Address.create(Env.operatorAddress).getErgoAddress,
+                           contractSignature.daoKey
+                         )
+                       )
+                     )
+                   } else {
+                     PaideiaEventResponse(0)
+                   }
+                 } else {
+                   PaideiaEventResponse(0)
+                 }) + (if (cte.currentTime > StakeStateBox
+                             .fromInputBox(cte.ctx, boxes(b))
+                             .nextEmission) {
+                         PaideiaEventResponse(
+                           1,
+                           List(
+                             EmitTransaction(
+                               cte.ctx,
+                               boxes(b),
+                               Address.create(Env.operatorAddress).getErgoAddress,
+                               contractSignature.daoKey
+                             )
+                           )
+                         )
+                       } else {
+                         PaideiaEventResponse(0)
+                       })
+              }
+            })
+          case te: TransactionEvent =>
             PaideiaEventResponse.merge(
               te.tx
-                .getOutputs()
-                .asScala
-                .map { (eto: ErgoTransactionOutput) =>
-                  {
-                    val etotree  = eto.getErgoTree()
-                    val ergotree = ergoTree.bytesHex
-                    if (eto.getErgoTree() == ergoTree.bytesHex && TotalStakingState(
-                          contractSignature.daoKey
-                        ).snapshots.size >= Paideia
-                          .getConfig(contractSignature.daoKey)[Long](
-                            ConfKeys.im_paideia_staking_emission_delay
-                          )) {
-                      val stakeStateInput = new InputBoxImpl(eto)
-                      val stakeBox        = StakeStateBox.fromInputBox(te.ctx, stakeStateInput)
-                      if (stakeBox.state
-                            .firstMatchingSnapshot(stakeBox.snapshots(0).digest)
-                            .size(Some(stakeBox.snapshots(0).digest)) > 0) {
-                        PaideiaEventResponse(
-                          1,
-                          List(
-                            CompoundTransaction(
-                              te.ctx,
-                              stakeStateInput,
-                              Address.create(Env.operatorAddress).getErgoAddress,
-                              contractSignature.daoKey
-                            )
-                          )
-                        )
-                      } else {
-                        PaideiaEventResponse(0)
-                      }
-                    } else {
-                      PaideiaEventResponse(0)
-                    }
-                  }
-                }
-                .toList ++ te.tx
                 .getInputs()
                 .asScala
                 .map(eti =>
-                  if (boxSet.contains(eti.getBoxId())) {
+                  if (getUtxoSet.contains(eti.getBoxId())) {
                     val stakingState =
                       StakeStateBox.fromInputBox(te.ctx, boxes(eti.getBoxId()))
                     val context = eti
@@ -240,27 +252,6 @@ class PlasmaStaking(contractSignature: PaideiaContractSignature)
                   }
                 )
             )
-          }
-          case be: BlockEvent => {
-            val stakeBox = boxes(getUtxoSet.toList(0))
-            if (be.block.getHeader().getTimestamp() > StakeStateBox
-                  .fromInputBox(be._ctx, stakeBox)
-                  .nextEmission) {
-              PaideiaEventResponse(
-                1,
-                List(
-                  EmitTransaction(
-                    be._ctx,
-                    stakeBox,
-                    Address.create(Env.operatorAddress).getErgoAddress,
-                    contractSignature.daoKey
-                  )
-                )
-              )
-            } else {
-              PaideiaEventResponse(0)
-            }
-          }
           case _ => PaideiaEventResponse(0)
         }
       } catch {

@@ -15,6 +15,7 @@ import org.ergoplatform.appkit.impl.InputBoxImpl
 import im.paideia.util.Env
 import java.util.HashMap
 import org.ergoplatform.appkit.ErgoId
+import im.paideia.common.events.CreateTransactionsEvent
 
 class CreateProposal(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -30,30 +31,21 @@ class CreateProposal(contractSignature: PaideiaContractSignature)
 
   override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
     val response: PaideiaEventResponse = event match {
-      case te: TransactionEvent => {
+      case cte: CreateTransactionsEvent => {
         PaideiaEventResponse.merge(
-          te.tx
-            .getOutputs()
-            .asScala
-            .map { (eto: ErgoTransactionOutput) =>
-              {
-                if (eto.getErgoTree() == ergoTree.bytesHex) {
-                  PaideiaEventResponse(
-                    1,
-                    List(
-                      CreateProposalTransaction(
-                        te._ctx,
-                        new InputBoxImpl(eto),
-                        Address.create(Env.operatorAddress)
-                      )
-                    )
-                  )
-                } else {
-                  PaideiaEventResponse(0)
-                }
-              }
-            }
-            .toList
+          getUtxoSet.toList.map { b =>
+            PaideiaEventResponse(
+              1,
+              List(
+                CreateProposalTransaction(
+                  cte.ctx,
+                  boxes(b),
+                  Address.create(Env.operatorAddress)
+                )
+              )
+            )
+
+          }.toList
         )
       }
       case _ => PaideiaEventResponse(0)

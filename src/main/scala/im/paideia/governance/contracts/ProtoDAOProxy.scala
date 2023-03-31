@@ -26,6 +26,7 @@ import im.paideia.governance.GovernanceType
 import io.getblok.getblok_plasma.collections.PlasmaMap
 import sigmastate.AvlTreeFlags
 import io.getblok.getblok_plasma.PlasmaParameters
+import im.paideia.common.events.CreateTransactionsEvent
 
 class ProtoDAOProxy(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -63,30 +64,21 @@ class ProtoDAOProxy(contractSignature: PaideiaContractSignature)
 
   override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
     val response: PaideiaEventResponse = event match {
-      case te: TransactionEvent => {
+      case cte: CreateTransactionsEvent => {
         PaideiaEventResponse.merge(
-          te.tx
-            .getOutputs()
-            .asScala
-            .map { (eto: ErgoTransactionOutput) =>
-              {
-                if (eto.getErgoTree() == ergoTree.bytesHex) {
-                  PaideiaEventResponse(
-                    1,
-                    List(
-                      CreateProtoDAOTransaction(
-                        te.ctx,
-                        new InputBoxImpl(eto),
-                        Address.create(Env.operatorAddress).getErgoAddress
-                      )
-                    )
-                  )
-                } else {
-                  PaideiaEventResponse(0)
-                }
-              }
-            }
-            .toList
+          getUtxoSet.toList.map { b =>
+            PaideiaEventResponse(
+              1,
+              List(
+                CreateProtoDAOTransaction(
+                  cte.ctx,
+                  boxes(b),
+                  Address.create(Env.operatorAddress).getErgoAddress
+                )
+              )
+            )
+
+          }.toList
         )
       }
       case _ => PaideiaEventResponse(0)

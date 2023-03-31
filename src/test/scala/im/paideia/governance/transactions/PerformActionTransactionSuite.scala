@@ -28,6 +28,7 @@ import im.paideia.governance.contracts.ActionUpdateConfig
 import im.paideia.DAOConfigKey
 import im.paideia.DAOConfigValueSerializer
 import im.paideia.util.Env
+import im.paideia.common.events.CreateTransactionsEvent
 
 class PerformActionTransactionSuite extends PaideiaTestSuite {
   test("Send funds") {
@@ -145,10 +146,9 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
         configContract.newBox(configContract.box(ctx, dao).inputBox(), false)
 
-        val dummyBlock = (new FullBlock())
-          .header(new BlockHeader().timestamp(proposalBox.endTime + 1000L))
-          .blockTransactions(new BlockTransactions().transactions(new Transactions()))
-        val eventResponse = Paideia.handleEvent(BlockEvent(ctx, dummyBlock))
+        val eventResponse = Paideia.handleEvent(
+          CreateTransactionsEvent(ctx, proposalBox.endTime + 1000L, 0L)
+        )
         assert(eventResponse.unsignedTransactions.size === 1)
         ctx
           .newProverBuilder()
@@ -237,10 +237,9 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
           .set(ConfKeys.im_paideia_contracts_config, configContract.contractSignature)
         configContract.newBox(configContract.box(ctx, dao).inputBox(), false)
 
-        val dummyBlock = (new FullBlock())
-          .header(new BlockHeader().timestamp(proposalBox.endTime + 1000L))
-          .blockTransactions(new BlockTransactions().transactions(new Transactions()))
-        val eventResponse = Paideia.handleEvent(BlockEvent(ctx, dummyBlock))
+        val eventResponse = Paideia.handleEvent(
+          CreateTransactionsEvent(ctx, proposalBox.endTime + 1000L, 0L)
+        )
         assert(eventResponse.unsignedTransactions.size === 1)
         ctx
           .newProverBuilder()
@@ -329,10 +328,9 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
           .set(ConfKeys.im_paideia_contracts_config, configContract.contractSignature)
         configContract.newBox(configContract.box(ctx, dao).inputBox(), false)
 
-        val dummyBlock = (new FullBlock())
-          .header(new BlockHeader().timestamp(proposalBox.endTime + 1000L))
-          .blockTransactions(new BlockTransactions().transactions(new Transactions()))
-        val eventResponse = Paideia.handleEvent(BlockEvent(ctx, dummyBlock))
+        val eventResponse = Paideia.handleEvent(
+          CreateTransactionsEvent(ctx, proposalBox.endTime + 1000L, 0L)
+        )
         assert(eventResponse.unsignedTransactions.size === 1)
         ctx
           .newProverBuilder()
@@ -414,10 +412,9 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
           .set(ConfKeys.im_paideia_contracts_config, configContract.contractSignature)
         configContract.newBox(configContract.box(ctx, dao).inputBox(), false)
 
-        val dummyBlock = (new FullBlock())
-          .header(new BlockHeader().timestamp(proposalBox.endTime + 1000L))
-          .blockTransactions(new BlockTransactions().transactions(new Transactions()))
-        val eventResponse = Paideia.handleEvent(BlockEvent(ctx, dummyBlock))
+        val eventResponse = Paideia.handleEvent(
+          CreateTransactionsEvent(ctx, proposalBox.endTime + 1000L, 0L)
+        )
         assert(eventResponse.unsignedTransactions.size === 1)
         ctx
           .newProverBuilder()
