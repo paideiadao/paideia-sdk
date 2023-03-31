@@ -81,39 +81,41 @@ class ActionUpdateConfig(contractSignature: PaideiaContractSignature)
       }
       case te: TransactionEvent =>
         val boxSet = if (te.mempool) getUtxoSet else utxos
-        if (boxSet.contains(te.tx.getInputs().get(1).getBoxId())) {
-          val actionBox = ActionUpdateConfigBox.fromInputBox(
-            te.ctx,
-            boxes(te.tx.getInputs().get(1).getBoxId())
-          )
-          val configInput = Config(
-            PaideiaContractSignature(daoKey = contractSignature.daoKey)
-          ).boxes(te.tx.getInputs().get(0).getBoxId())
-          Paideia
-            .getConfig(contractSignature.daoKey)
-            .handleUpdateEvent(
-              UpdateConfigEvent(
-                te.ctx,
-                contractSignature.daoKey,
-                if (te.mempool)
-                  Left(
-                    ADDigest @@ configInput
-                      .getRegisters()
-                      .get(0)
-                      .getValue()
-                      .asInstanceOf[AvlTree]
-                      .digest
-                      .toArray
-                  )
-                else
-                  Right(te.height),
-                actionBox.remove.toArray,
-                actionBox.update.toArray,
-                actionBox.insert.toArray
-              )
+        if (te.tx.getInputs().size() > 1)
+          if (boxSet.contains(te.tx.getInputs().get(1).getBoxId())) {
+            val actionBox = ActionUpdateConfigBox.fromInputBox(
+              te.ctx,
+              boxes(te.tx.getInputs().get(1).getBoxId())
             )
-          PaideiaEventResponse(2, List[PaideiaTransaction]())
-        } else PaideiaEventResponse(0)
+            val configInput = Config(
+              PaideiaContractSignature(daoKey = contractSignature.daoKey)
+            ).boxes(te.tx.getInputs().get(0).getBoxId())
+            Paideia
+              .getConfig(contractSignature.daoKey)
+              .handleUpdateEvent(
+                UpdateConfigEvent(
+                  te.ctx,
+                  contractSignature.daoKey,
+                  if (te.mempool)
+                    Left(
+                      ADDigest @@ configInput
+                        .getRegisters()
+                        .get(0)
+                        .getValue()
+                        .asInstanceOf[AvlTree]
+                        .digest
+                        .toArray
+                    )
+                  else
+                    Right(te.height),
+                  actionBox.remove.toArray,
+                  actionBox.update.toArray,
+                  actionBox.insert.toArray
+                )
+              )
+            PaideiaEventResponse(2, List[PaideiaTransaction]())
+          } else PaideiaEventResponse(0)
+        else PaideiaEventResponse(0)
       case _ => PaideiaEventResponse(0)
     }
     val superResponse = super.handleEvent(event)
