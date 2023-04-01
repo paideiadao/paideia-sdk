@@ -127,7 +127,7 @@ case class StakeTransaction(
     )
     .build()
 
-  fee = 1000000L
+  fee = 1500000L
   inputs = List[InputBox](
     stakeStateInput.withContextVars(contextVars: _*),
     stakeProxyInput.withContextVars(proxyContextVars: _*)

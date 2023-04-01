@@ -127,7 +127,7 @@ case class EmitTransaction(
     .newTxBuilder()
     .outBoxBuilder()
     .contract(new ErgoTreeContract(operatorAddress.script, ctx.getNetworkType()))
-    .value(1000000L)
+    .value(500000L)
     .tokens(
       new ErgoToken(
         Env.paideiaTokenId,
@@ -171,7 +171,7 @@ case class EmitTransaction(
   )
 
   changeAddress = treasuryAddress.getErgoAddress()
-  fee           = 1000000L
+  fee           = 1500000L
   inputs =
     List[InputBox](stakeStateInput.withContextVars(contextVars: _*)) ++ coveringTreasuryBoxes
       .map(_.withContextVars(treasuryContextVars: _*))
