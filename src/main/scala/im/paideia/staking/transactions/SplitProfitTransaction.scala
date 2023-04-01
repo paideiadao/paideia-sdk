@@ -41,7 +41,7 @@ object SplitProfitTransaction {
 
     val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
 
-    val totalErg = splitProfitInputs.foldLeft(0L)((z, spi) => z + spi.getValue()) - 2000000L
+    val totalErg = splitProfitInputs.foldLeft(0L)((z, spi) => z + spi.getValue()) - 2500000L
 
     val configInput = Paideia.getBox(
       new FilterLeaf[String](
@@ -170,7 +170,7 @@ object SplitProfitTransaction {
       val res = new SplitProfitTransaction()
       res.ctx           = ctx
       res.changeAddress = treasuryContract.contract.toAddress().getErgoAddress()
-      res.fee           = 1000000
+      res.fee           = 1500000
       res.inputs = List[InputBox](stakeStateInput.withContextVars(contextVars: _*)) ++ splitProfitInputs
           .map(_.withContextVars(splitProfitContext))
       res.dataInputs = List[InputBox](configInput)

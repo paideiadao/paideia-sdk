@@ -185,7 +185,7 @@ case class UnstakeTransaction(
     .build()
 
   changeAddress = _changeAddress
-  fee           = 1000000L
+  fee           = 1500000L
   inputs = List[InputBox](
     stakeStateInput.withContextVars(contextVars: _*),
     unstakeProxyInput.withContextVars(proxyContextVars: _*)
