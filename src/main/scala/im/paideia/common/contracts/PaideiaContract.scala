@@ -233,7 +233,11 @@ class PaideiaContract(_contractSignature: PaideiaContractSignature) {
     * @return List of input boxes that meet the filter criteria.
     */
   def getBox(boxFilter: FilterNode): List[InputBox] = {
-    getUtxoSet.map(boxes(_)).filter(boxFilter.matchBox(_)).toList
+    getUtxoSet
+      .map(boxes(_))
+      .filter(boxFilter.matchBox(_))
+      .toList
+      .sortBy(-1 * _.getCreationHeight())
   }
 
 }
