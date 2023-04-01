@@ -170,7 +170,7 @@ object SplitProfitTransaction {
       val res = new SplitProfitTransaction()
       res.ctx           = ctx
       res.changeAddress = treasuryContract.contract.toAddress().getErgoAddress()
-      res.fee           = 1000000
+      res.fee           = 1500000
       res.inputs = List[InputBox](stakeStateInput.withContextVars(contextVars: _*)) ++ splitProfitInputs
           .map(_.withContextVars(splitProfitContext))
       res.dataInputs = List[InputBox](configInput)
