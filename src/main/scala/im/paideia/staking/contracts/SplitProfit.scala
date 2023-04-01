@@ -38,7 +38,7 @@ class SplitProfit(contractSig: PaideiaContractSignature)
           if (getUtxoSet.size > 0 && getUtxoSet
                 .map(boxes(_))
                 .take(50)
-                .foldLeft(0L)((z: Long, b: InputBox) => z + b.getValue()) > 3000000L) {
+                .foldLeft(0L)((z: Long, b: InputBox) => z + b.getValue()) >= 3000000L) {
             PaideiaEventResponse(
               1,
               List(

@@ -23,7 +23,7 @@ case class AddStakeProxyBox(
 ) extends PaideiaBox {
 
   ctx      = _ctx
-  value    = 3000000L
+  value    = 3500000L
   contract = useContract.contract
 
   override def registers: List[ErgoValue[_]] = {
