@@ -44,7 +44,10 @@ class SplitProfit(contractSig: PaideiaContractSignature)
               List(
                 SplitProfitTransaction(
                   cte.ctx,
-                  boxes.values.take(50).toList,
+                  getUtxoSet
+                    .map(boxes(_))
+                    .take(50)
+                    .toList,
                   Paideia.getDAO(contractSignature.daoKey)
                 )
               )
