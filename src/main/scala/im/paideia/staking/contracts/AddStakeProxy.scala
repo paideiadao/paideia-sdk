@@ -49,19 +49,20 @@ class AddStakeProxy(contractSignature: PaideiaContractSignature)
       case cte: CreateTransactionsEvent => {
         PaideiaEventResponse.merge(
           getUtxoSet.toList.map { b =>
-            PaideiaEventResponse(
-              1,
-              List(
-                AddStakeTransaction(
-                  cte.ctx,
-                  boxes(b),
-                  Address.create(Env.operatorAddress).getErgoAddress,
-                  contractSignature.daoKey
+            {
+              PaideiaEventResponse(
+                1,
+                List(
+                  AddStakeTransaction(
+                    cte.ctx,
+                    boxes(b),
+                    Address.create(Env.operatorAddress).getErgoAddress,
+                    contractSignature.daoKey
+                  )
                 )
               )
-            )
-
-          }.toList
+            }
+          }
         )
       }
       case _ => PaideiaEventResponse(0)
