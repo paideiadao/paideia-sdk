@@ -41,7 +41,7 @@ final case class CreateProposalBox(
   // Assigning values for some of the properties
   ctx      = _ctx
   contract = useContract.contract
-  value = 2000000L + proposalBox.value + actionBoxes.foldLeft(0L) { (z: Long, b: Box) =>
+  value = 3000000L + proposalBox.value + actionBoxes.foldLeft(0L) { (z: Long, b: Box) =>
       z + b.value
     }
 
@@ -54,9 +54,11 @@ final case class CreateProposalBox(
     new ErgoToken(voteKey, 1L),
     new ErgoToken(
       Env.paideiaTokenId,
-      Paideia.getConfig(Env.paideiaDaoKey)(
-        ConfKeys.im_paideia_fees_createproposal_paideia
-      )
+      Paideia
+        .getConfig(Env.paideiaDaoKey)(
+          ConfKeys.im_paideia_fees_createproposal_paideia
+        )
+        .asInstanceOf[Long] + Env.defaultBotFee
     )
   )
 
