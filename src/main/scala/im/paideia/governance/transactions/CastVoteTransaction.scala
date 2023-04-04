@@ -163,6 +163,7 @@ final case class CastVoteTransaction(
   val userOutput = _ctx
     .newTxBuilder()
     .outBoxBuilder()
+    .value(1000000L)
     .tokens(
       new ErgoToken(castVoteBox.voteKey, 1L)
     )

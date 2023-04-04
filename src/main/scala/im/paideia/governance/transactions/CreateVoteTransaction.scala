@@ -128,6 +128,7 @@ case class CreateVoteTransaction(
   val userOutput = ctx
     .newTxBuilder()
     .outBoxBuilder()
+    .value(1000000L)
     .mintToken(
       new Eip4Token(
         voteKey,

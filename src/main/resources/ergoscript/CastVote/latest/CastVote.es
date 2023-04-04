@@ -6,7 +6,7 @@
     val userOutput = OUTPUTS(2)
 
     val voteKeyReturned = allOf(Coll(
-        userOutput.tokens == SELF.tokens,
+        userOutput.tokens(0) == SELF.tokens(0),
         userOutput.propositionBytes == SELF.R6[Coll[Byte]].get
     ))
 
