@@ -101,11 +101,6 @@ case class AddStakeTransaction(
     ContextVar.of(2.toByte, contextVars(3).getValue())
   )
 
-  val stakingContractSignature = config[PaideiaContractSignature](
-    ConfKeys.im_paideia_contracts_staking
-  ).withDaoKey(daoKey)
-  val stakingContract = PlasmaStaking(stakingContractSignature)
-
   val userOutput = _ctx
     .newTxBuilder()
     .outBoxBuilder()

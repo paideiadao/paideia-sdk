@@ -46,7 +46,7 @@ class AddStakeProxy(contractSignature: PaideiaContractSignature)
 
   override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
     val response: PaideiaEventResponse = event match {
-      case cte: CreateTransactionsEvent => {
+      case cte: CreateTransactionsEvent =>
         PaideiaEventResponse.merge(
           getUtxoSet.toList.map { b =>
             {
@@ -64,7 +64,6 @@ class AddStakeProxy(contractSignature: PaideiaContractSignature)
             }
           }
         )
-      }
       case _ => PaideiaEventResponse(0)
     }
     val superResponse = super.handleEvent(event)
