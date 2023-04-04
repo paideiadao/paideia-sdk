@@ -12,6 +12,7 @@ import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 import scorex.crypto.hash.Blake2b256
 import sigmastate.eval.Colls
 import special.collection.Coll
+import im.paideia.util.Env
 
 /**
   * A box used for casting a vote by a user, extending PaideiaBox class.
@@ -33,7 +34,7 @@ final case class CastVoteBox(
 ) extends PaideiaBox {
   ctx      = _ctx
   contract = useContract.contract
-  value    = 10000000L
+  value    = 3000000L
 
   /**
     * Returns the list of tokens associated with the box, which includes a single ErgoToken identified by
@@ -43,7 +44,8 @@ final case class CastVoteBox(
     */
   override def tokens: List[ErgoToken] = {
     List(
-      new ErgoToken(voteKey, 1L)
+      new ErgoToken(voteKey, 1L),
+      new ErgoToken(Env.paideiaTokenId, Env.defaultBotFee)
     )
   }
 

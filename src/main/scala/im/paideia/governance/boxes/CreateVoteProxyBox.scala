@@ -16,32 +16,44 @@ import org.ergoplatform.appkit.impl.ErgoTreeContract
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 import sigmastate.eval.Colls
 
-case class CreateVoteProxyBox(_ctx: BlockchainContextImpl, stakeKey: String, userAddress: Address, useContract: CreateVoteProxy) extends PaideiaBox
-{
-    ctx = _ctx
-    contract = useContract.contract
-    value = 2000000L
+case class CreateVoteProxyBox(
+  _ctx: BlockchainContextImpl,
+  stakeKey: String,
+  userAddress: Address,
+  useContract: CreateVoteProxy
+) extends PaideiaBox {
+  ctx      = _ctx
+  contract = useContract.contract
+  value    = 4000000L
 
-    override def registers: List[ErgoValue[_]] = {
-        List(
-            ErgoValueBuilder.buildFor(Colls.fromArray(userAddress.toPropositionBytes()))
-        )
-    }
+  override def registers: List[ErgoValue[_]] = {
+    List(
+      ErgoValueBuilder.buildFor(Colls.fromArray(userAddress.toPropositionBytes()))
+    )
+  }
 
-    override def tokens: List[ErgoToken] = {
-        List(
-            new ErgoToken(ErgoId.create(stakeKey),1L)
-        )
-    }
+  override def tokens: List[ErgoToken] = {
+    List(
+      new ErgoToken(ErgoId.create(stakeKey), 1L),
+      new ErgoToken(ErgoId.create(Env.paideiaTokenId), Env.defaultBotFee)
+    )
+  }
 }
 
 object CreateVoteProxyBox {
-    def fromInputBox(ctx: BlockchainContextImpl, inp: InputBox): CreateVoteProxyBox = {
-        val contract = CreateVoteProxy.contractInstances(Blake2b256(inp.getErgoTree.bytes).array.toList).asInstanceOf[CreateVoteProxy]
-        CreateVoteProxyBox(
-            ctx,
-            inp.getTokens().get(0).getId().toString(),
-            Address.fromPropositionBytes(Env.networkType,inp.getRegisters().get(0).getValue().asInstanceOf[Coll[Byte]].toArray),
-            contract)
-    }
+
+  def fromInputBox(ctx: BlockchainContextImpl, inp: InputBox): CreateVoteProxyBox = {
+    val contract = CreateVoteProxy
+      .contractInstances(Blake2b256(inp.getErgoTree.bytes).array.toList)
+      .asInstanceOf[CreateVoteProxy]
+    CreateVoteProxyBox(
+      ctx,
+      inp.getTokens().get(0).getId().toString(),
+      Address.fromPropositionBytes(
+        Env.networkType,
+        inp.getRegisters().get(0).getValue().asInstanceOf[Coll[Byte]].toArray
+      ),
+      contract
+    )
+  }
 }
