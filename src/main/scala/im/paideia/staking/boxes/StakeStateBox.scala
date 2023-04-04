@@ -146,6 +146,7 @@ case class StakeStateBox(
     val currentStake = state.currentStakingState.getStake(stakingKey, Some(stateDigest))
     stakedTokenTotal -= currentStake.stake - newStakeRecord.stake
     extraTokens = newExtraTokens
+    value -= currentStake.rewards(0) - newStakeRecord.rewards(0)
     if (newStakeRecord.stake <= 0L) {
       val proof =
         state.currentStakingState.getStakes(List[String](stakingKey), Some(stateDigest))

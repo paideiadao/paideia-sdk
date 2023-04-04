@@ -44,22 +44,21 @@ class StakeProxy(contractSignature: PaideiaContractSignature)
     val response: PaideiaEventResponse = event match {
       case cte: CreateTransactionsEvent =>
         PaideiaEventResponse.merge(
-          getUtxoSet.toList
-            .map { b =>
-              {
-                PaideiaEventResponse(
-                  1,
-                  List(
-                    StakeTransaction(
-                      cte.ctx,
-                      boxes(b),
-                      Address.create(Env.operatorAddress).getErgoAddress,
-                      contractSignature.daoKey
-                    )
+          getUtxoSet.toList.map { b =>
+            {
+              PaideiaEventResponse(
+                1,
+                List(
+                  StakeTransaction(
+                    cte.ctx,
+                    boxes(b),
+                    Address.create(Env.operatorAddress).getErgoAddress,
+                    contractSignature.daoKey
                   )
                 )
-              }
+              )
             }
+          }
         )
       case _ => PaideiaEventResponse(0)
     }
