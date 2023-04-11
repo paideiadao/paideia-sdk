@@ -17,11 +17,10 @@ import im.paideia.staking.transactions._
 import im.paideia.common.PaideiaTestSuite
 import sigmastate.lang.exceptions.InterpreterException
 import im.paideia.util.Util
-import im.paideia.staking.contracts.PlasmaStaking
 import im.paideia.common.contracts.PaideiaContractSignature
 import im.paideia.util.ConfKeys
 import im.paideia.common.contracts.Config
-import im.paideia.staking.contracts.StakeProxy
+import im.paideia.staking.contracts._
 import org.ergoplatform.restapi.client.ErgoTransaction
 import im.paideia.Paideia
 import im.paideia.common.events.TransactionEvent
@@ -39,9 +38,12 @@ class StakeTransactionSuite extends PaideiaTestSuite {
 
         val dummyAddress = Address.create("4MQyML64GnzMxZgm")
 
-        val stakingContract = PlasmaStaking(PaideiaContractSignature(daoKey = dao.key))
+        val stakingContract = StakeState(PaideiaContractSignature(daoKey = dao.key))
         dao.config
-          .set(ConfKeys.im_paideia_contracts_staking, stakingContract.contractSignature)
+          .set(
+            ConfKeys.im_paideia_contracts_staking_state,
+            stakingContract.contractSignature
+          )
 
         val stakingState = stakingContract
           .emptyBox(
@@ -49,6 +51,9 @@ class StakeTransactionSuite extends PaideiaTestSuite {
             dao,
             100000000L
           )
+
+        val stakeContract = Stake(PaideiaContractSignature(daoKey = dao.key))
+        stakeContract.newBox(stakeContract.box(ctx).inputBox(), false)
 
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
 
@@ -67,6 +72,7 @@ class StakeTransactionSuite extends PaideiaTestSuite {
         val dummyTx = (new ErgoTransaction()).addOutputsItem(stakeProxyBox)
         Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
         val eventResponse = Paideia.handleEvent(CreateTransactionsEvent(ctx, 0L, 0L))
+        eventResponse.exceptions.map(e => throw e)
         assert(eventResponse.unsignedTransactions.size === 1)
         ctx
           .newProverBuilder()
@@ -89,9 +95,12 @@ class StakeTransactionSuite extends PaideiaTestSuite {
 
         val dummyAddress = Address.create("4MQyML64GnzMxZgm")
 
-        val stakingContract = PlasmaStaking(PaideiaContractSignature(daoKey = dao.key))
+        val stakingContract = StakeState(PaideiaContractSignature(daoKey = dao.key))
         dao.config
-          .set(ConfKeys.im_paideia_contracts_staking, stakingContract.contractSignature)
+          .set(
+            ConfKeys.im_paideia_contracts_staking_state,
+            stakingContract.contractSignature
+          )
 
         val stakingState = stakingContract
           .emptyBox(
@@ -111,6 +120,9 @@ class StakeTransactionSuite extends PaideiaTestSuite {
         stakingContract.clearBoxes()
         stakingContract.newBox(stakingStateBox, false)
 
+        val stakeContract = Stake(PaideiaContractSignature(daoKey = dao.key))
+        stakeContract.newBox(stakeContract.box(ctx).inputBox(), false)
+
         val stakeProxyContract = StakeProxy(PaideiaContractSignature(daoKey = dao.key))
         val stakeProxyBox = stakeProxyContract
           .box(ctx, dummyAddress.toString(), 1000L)
@@ -120,7 +132,7 @@ class StakeTransactionSuite extends PaideiaTestSuite {
         val eventResponse = Paideia.handleEvent(CreateTransactionsEvent(ctx, 0L, 0L))
         assert(eventResponse.unsignedTransactions.size === 1)
         eventResponse.unsignedTransactions(0)
-        val correctOutput = eventResponse.unsignedTransactions(0).outputs(1)
+        val correctOutput = eventResponse.unsignedTransactions(0).outputs(2)
         val falseOutput = ctx
           .newTxBuilder()
           .outBoxBuilder()
@@ -131,7 +143,7 @@ class StakeTransactionSuite extends PaideiaTestSuite {
           .value(correctOutput.getValue())
           .build()
         eventResponse.unsignedTransactions(0).outputs =
-          eventResponse.unsignedTransactions(0).outputs.patch(1, List(falseOutput), 1)
+          eventResponse.unsignedTransactions(0).outputs.patch(2, List(falseOutput), 1)
         val falseUnsignedTx = eventResponse.unsignedTransactions(0).unsigned()
         val thrown = intercept[InterpreterException] {
           ctx.newProverBuilder().build().sign(falseUnsignedTx)

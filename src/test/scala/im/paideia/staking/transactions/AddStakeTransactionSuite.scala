@@ -23,10 +23,11 @@ import im.paideia.common.events.TransactionEvent
 import org.ergoplatform.restapi.client.ErgoTransaction
 import im.paideia.common.contracts.PaideiaContractSignature
 import im.paideia.common.contracts.Config
-import im.paideia.staking.contracts.PlasmaStaking
+import im.paideia.staking.contracts.StakeState
 import im.paideia.staking.contracts.AddStakeProxy
 import im.paideia.staking.StakingTest
 import im.paideia.common.events.CreateTransactionsEvent
+import im.paideia.staking.contracts.ChangeStake
 
 class AddStakeTransactionSuite extends PaideiaTestSuite {
   test("Sign add stake tx") {
@@ -42,9 +43,15 @@ class AddStakeTransactionSuite extends PaideiaTestSuite {
 
         val dummyAddress = Address.create("4MQyML64GnzMxZgm")
 
-        val stakingContract = PlasmaStaking(PaideiaContractSignature(daoKey = dao.key))
+        val stakingContract = StakeState(PaideiaContractSignature(daoKey = dao.key))
         dao.config
-          .set(ConfKeys.im_paideia_contracts_staking, stakingContract.contractSignature)
+          .set(
+            ConfKeys.im_paideia_contracts_staking_state,
+            stakingContract.contractSignature
+          )
+
+        val changeStakeContract = ChangeStake(PaideiaContractSignature(daoKey = dao.key))
+        changeStakeContract.newBox(changeStakeContract.box(ctx).inputBox(), false)
 
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
 
@@ -74,6 +81,7 @@ class AddStakeTransactionSuite extends PaideiaTestSuite {
         val dummyTx = (new ErgoTransaction()).addOutputsItem(addStakeProxyBox)
         Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
         val eventResponse = Paideia.handleEvent(CreateTransactionsEvent(ctx, 0L, 0L))
+        eventResponse.exceptions.map(e => throw e)
         assert(eventResponse.unsignedTransactions.size === 1)
         ctx
           .newProverBuilder()

@@ -45,7 +45,27 @@ object ConfKeys {
   val im_paideia_contracts_dao      = DAOConfigKey("im.paideia.contracts.dao")
   val im_paideia_contracts_config   = DAOConfigKey("im.paideia.contracts.config")
   val im_paideia_contracts_treasury = DAOConfigKey("im.paideia.contracts.treasury")
-  val im_paideia_contracts_staking  = DAOConfigKey("im.paideia.contracts.staking")
+  val im_paideia_contracts_staking_state = DAOConfigKey(
+    "im.paideia.contracts.staking.state"
+  )
+  val im_paideia_contracts_staking_stake = DAOConfigKey(
+    "im.paideia.contracts.staking.stake"
+  )
+  val im_paideia_contracts_staking_changestake = DAOConfigKey(
+    "im.paideia.contracts.staking.changestake"
+  )
+  val im_paideia_contracts_staking_unstake = DAOConfigKey(
+    "im.paideia.contracts.staking.unstake"
+  )
+  val im_paideia_contracts_staking_snapshot = DAOConfigKey(
+    "im.paideia.contracts.staking.snapshot"
+  )
+  val im_paideia_contracts_staking_compound = DAOConfigKey(
+    "im.paideia.contracts.staking.compound"
+  )
+  val im_paideia_contracts_staking_profitshare = DAOConfigKey(
+    "im.paideia.contracts.staking.profitshare"
+  )
 
   val im_paideia_contracts_split_profit = DAOConfigKey(
     "im.paideia.contracts.split.profit"

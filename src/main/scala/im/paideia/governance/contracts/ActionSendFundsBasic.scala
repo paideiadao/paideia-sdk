@@ -49,11 +49,13 @@ class ActionSendFundsBasic(contractSignature: PaideiaContractSignature)
         PaideiaEventResponse.merge(
           boxes.values
             .map((b: InputBox) => {
-              if (cte.currentTime > b
-                    .getRegisters()
-                    .get(0)
-                    .getValue()
-                    .asInstanceOf[Coll[Long]](3)) {
+              if (
+                cte.currentTime > b
+                  .getRegisters()
+                  .get(0)
+                  .getValue()
+                  .asInstanceOf[Coll[Long]](3)
+              ) {
                 PaideiaEventResponse(
                   1,
                   List(

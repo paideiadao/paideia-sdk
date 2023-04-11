@@ -16,7 +16,7 @@ import org.ergoplatform.appkit.Address
 import im.paideia.governance.contracts.DAOOrigin
 import im.paideia.util.Env
 import im.paideia.common.contracts.Config
-import im.paideia.staking.contracts.PlasmaStaking
+import im.paideia.staking.contracts.StakeState
 import im.paideia.governance.contracts.CreateProposal
 import im.paideia.governance.contracts.ProposalBasic
 import im.paideia.governance.contracts.ActionSendFundsBasic
@@ -91,7 +91,7 @@ class CreateProposalTransactionSuite extends PaideiaTestSuite {
 
         dao.proposals(0) = Proposal(daoKey, 0)
 
-        val stakingContract = PlasmaStaking(PaideiaContractSignature(daoKey = dao.key))
+        val stakingContract = StakeState(PaideiaContractSignature(daoKey = dao.key))
 
         val stakingState = stakingContract
           .emptyBox(

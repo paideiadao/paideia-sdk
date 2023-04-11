@@ -11,22 +11,26 @@ import org.ergoplatform.appkit.InputBox
 import im.paideia.util.Env
 import org.ergoplatform.appkit.ErgoId
 
-/**
-  * Treasury class represents the main contract for the Paideia Treasury which manages and holds assets and tokens
-  * of the Paideia DAO treasury on Ergo Blockchain.
+/** Treasury class represents the main contract for the Paideia Treasury which manages and
+  * holds assets and tokens of the Paideia DAO treasury on Ergo Blockchain.
   *
-  * @constructor creates a new instance of the Treasury class with given Paideia Contract Signature
-  * @param contractSignature - the signature of the Paideia Contract entity
+  * @constructor
+  *   creates a new instance of the Treasury class with given Paideia Contract Signature
+  * @param contractSignature
+  *   \- the signature of the Paideia Contract entity
   */
 class Treasury(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
 
-  /**
-    * Creates an instance of the TreasuryBox object.
-    *  @param ctx - The context of the blockchain
-    *  @param daoConfig - The current configuration of DAO
-    *  @param value - Long type value of nanoERG.
-    *  @param tokens - Tokens that are used within the TreasuryBox.
+  /** Creates an instance of the TreasuryBox object.
+    * @param ctx
+    *   \- The context of the blockchain
+    * @param daoConfig
+    *   \- The current configuration of DAO
+    * @param value
+    *   \- Long type value of nanoERG.
+    * @param tokens
+    *   \- Tokens that are used within the TreasuryBox.
     */
   def box(
     ctx: BlockchainContextImpl,
@@ -42,8 +46,8 @@ class Treasury(contractSignature: PaideiaContractSignature)
     res
   }
 
-  /**
-    * Constants for the Treasury contract are defined here. It can only contain objects that were there during the compilation time (e.g literals).
+  /** Constants for the Treasury contract are defined here. It can only contain objects
+    * that were there during the compilation time (e.g literals).
     *
     * Currently it contains `_IM_PAIDEIA_DAO_ACTION_TOKENID` constant.
     */
@@ -80,13 +84,15 @@ class Treasury(contractSignature: PaideiaContractSignature)
     cons
   }
 
-  /**
-    * It searches through all the boxes in the blockchain and matches the conditions to find required number of
-    * boxes to fetch nanoERG and the provided array of ErgoTokens.
+  /** It searches through all the boxes in the blockchain and matches the conditions to
+    * find required number of boxes to fetch nanoERG and the provided array of ErgoTokens.
     *
-    * @return Option[Array[InputBox]] if the required boxes found or else None.
-    * @param nanoErgNeeded - Amount of nanoERG needed.
-    * @param tokensNeeded - Array of ErgoTokens needed in the result.
+    * @return
+    *   Option[Array[InputBox]] if the required boxes found or else None.
+    * @param nanoErgNeeded
+    *   \- Amount of nanoERG needed.
+    * @param tokensNeeded
+    *   \- Array of ErgoTokens needed in the result.
     */
   def findBoxes(
     nanoErgNeeded: Long,
@@ -110,9 +116,9 @@ class Treasury(contractSignature: PaideiaContractSignature)
                 token.getValue() + tokensFound.getOrDefault(token.getId().toString(), 0L)
               )
             )
-          assetsFound = nanoErgFound >= nanoErgNeeded && tokensNeeded.forall(
-              (token: ErgoToken) =>
-                token.getValue <= tokensFound.getOrDefault(token.getId().toString(), 0L)
+          assetsFound =
+            nanoErgFound >= nanoErgNeeded && tokensNeeded.forall((token: ErgoToken) =>
+              token.getValue <= tokensFound.getOrDefault(token.getId().toString(), 0L)
             )
         } else Unit
       })
@@ -124,15 +130,15 @@ class Treasury(contractSignature: PaideiaContractSignature)
   }
 }
 
-/**
-  * Companion Treasury object which extends Paideia Actor.
+/** Companion Treasury object which extends Paideia Actor.
   */
 object Treasury extends PaideiaActor {
 
-  /**
-    * The apply method creates and returns the Treasury contract's instance.
-    * @param contractSignature - the signature of the Paideia Contract entity
-    * @return Treasury class object
+  /** The apply method creates and returns the Treasury contract's instance.
+    * @param contractSignature
+    *   \- the signature of the Paideia Contract entity
+    * @return
+    *   Treasury class object
     */
   override def apply(contractSignature: PaideiaContractSignature): Treasury =
     getContractInstance[Treasury](contractSignature, new Treasury(contractSignature))

@@ -9,7 +9,6 @@ import im.paideia.common.filtering._
 import im.paideia.common.transactions._
 import im.paideia.staking._
 import im.paideia.staking.boxes._
-import im.paideia.staking.contracts.PlasmaStaking
 import im.paideia.staking.contracts.SplitProfit
 import im.paideia.util.ConfKeys
 import im.paideia.util.Env
@@ -24,6 +23,7 @@ import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import org.ergoplatform.appkit.impl.ErgoTreeContract
 import special.sigma.AvlTree
 import scorex.crypto.authds.ADDigest
+import im.paideia.staking.contracts.StakeSnapshot
 
 case class EmitTransaction(
   _ctx: BlockchainContextImpl,
@@ -91,35 +91,47 @@ case class EmitTransaction(
         new ErgoToken(
           Env.paideiaTokenId,
           paideiaConfig[Long](ConfKeys.im_paideia_fees_emit_operator_paideia) +
-          (paideiaConfig[Long](ConfKeys.im_paideia_fees_emit_paideia) * stakeStateInputBox.state.currentStakingState
-            .size(Some(stakeStateInputBox.stateDigest)) + 1)
+            (paideiaConfig[Long](
+              ConfKeys.im_paideia_fees_emit_paideia
+            ) * stakeStateInputBox.state.currentStakingState
+              .size(Some(stakeStateInputBox.stateDigest)) + 1)
         )
       )
     )
     .get
 
   val tokensInPool = stakeStateInput
-      .getTokens()
-      .get(1)
-      .getValue() - (stakeStateInputBox.state.currentStakingState
-      .totalStaked(Some(stakeStateInputBox.stateDigest)) + 1L)
+    .getTokens()
+    .get(1)
+    .getValue() - (stakeStateInputBox.state.currentStakingState
+    .totalStaked(Some(stakeStateInputBox.stateDigest)) + 1L)
 
-  val contextVars = stakeStateInputBox
+  val stakingContextVars = stakeStateInputBox
     .emit(
       ctx.createPreHeader().build().getTimestamp(),
       tokensInPool
     )
+
+  val contextVars = stakingContextVars.stakingStateContextVars
     .::(
       ContextVar.of(
         0.toByte,
-        config.getProof(
-          ConfKeys.im_paideia_staking_emission_amount,
-          ConfKeys.im_paideia_staking_emission_delay,
-          ConfKeys.im_paideia_staking_cyclelength,
-          ConfKeys.im_paideia_staking_profit_tokenids,
-          ConfKeys.im_paideia_staking_profit_thresholds,
-          ConfKeys.im_paideia_contracts_staking
-        )(Some(configDigest))
+        stakeStateInputBox.useContract.getConfigContext(Some(configDigest))
+      )
+    )
+
+  val snapshotContract = StakeSnapshot(
+    config[PaideiaContractSignature](ConfKeys.im_paideia_contracts_staking_compound)
+      .withDaoKey(daoKey)
+  )
+  val snapshotInput =
+    snapshotContract.boxes(snapshotContract.getUtxoSet.toArray.apply(0))
+
+  val snapshotContextVars = stakingContextVars.companionContextVars
+    .::(
+      ContextVar.of(
+        0.toByte,
+        snapshotContract.getConfigContext(Some(configDigest))
       )
     )
 
@@ -152,7 +164,9 @@ case class EmitTransaction(
     .tokens(
       new ErgoToken(
         Env.paideiaTokenId,
-        (paideiaConfig[Long](ConfKeys.im_paideia_fees_emit_paideia) * stakeStateInputBox.state.currentStakingState
+        (paideiaConfig[Long](
+          ConfKeys.im_paideia_fees_emit_paideia
+        ) * stakeStateInputBox.state.currentStakingState
           .size(Some(stakeStateInputBox.stateDigest)) + 1L)
       )
     )
@@ -172,10 +186,16 @@ case class EmitTransaction(
 
   changeAddress = treasuryAddress.getErgoAddress()
   fee           = 1500000L
-  inputs =
-    List[InputBox](stakeStateInput.withContextVars(contextVars: _*)) ++ coveringTreasuryBoxes
-      .map(_.withContextVars(treasuryContextVars: _*))
+  inputs = List[InputBox](
+    stakeStateInput.withContextVars(contextVars: _*),
+    snapshotInput.withContextVars(snapshotContextVars: _*)
+  ) ++ coveringTreasuryBoxes
+    .map(_.withContextVars(treasuryContextVars: _*))
   dataInputs = List[InputBox](configInput, paideiaConfigInput)
-  outputs =
-    List[OutBox](stakeStateInputBox.outBox, operatorOutput, paideiaSplitProfitOutput)
+  outputs = List[OutBox](
+    stakeStateInputBox.outBox,
+    snapshotContract.box(ctx).outBox,
+    operatorOutput,
+    paideiaSplitProfitOutput
+  )
 }

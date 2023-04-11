@@ -12,7 +12,7 @@
     val plasmaStakingInput = INPUTS(0)
     val correctPlasmaStakingInput = INPUTS(0).tokens(0)._1 == configValues(0).get.slice(6,38)
     val plasmaStakingOutput = OUTPUTS(0)
-    val userOutput = OUTPUTS(1)
+    val userOutput = OUTPUTS(2)
 
     val stakeState = plasmaStakingInput.R4[AvlTree].get
 

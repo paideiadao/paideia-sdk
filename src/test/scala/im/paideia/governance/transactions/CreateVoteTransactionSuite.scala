@@ -15,7 +15,7 @@ import im.paideia.util.ConfKeys
 import org.ergoplatform.appkit.ErgoId
 import org.ergoplatform.restapi.client.ErgoTransaction
 import im.paideia.staking.TotalStakingState
-import im.paideia.staking.contracts.PlasmaStaking
+import im.paideia.staking.contracts.StakeState
 import im.paideia.governance.contracts.CreateVoteProxy
 import org.ergoplatform.appkit.Address
 import im.paideia.common.events.TransactionEvent
@@ -85,7 +85,7 @@ class CreateVoteTransactionSuite extends PaideiaTestSuite {
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
         configContract.newBox(configContract.box(ctx, dao).inputBox(), false)
 
-        val stakingContract = PlasmaStaking(PaideiaContractSignature(daoKey = dao.key))
+        val stakingContract = StakeState(PaideiaContractSignature(daoKey = dao.key))
 
         val stakingState = stakingContract
           .emptyBox(

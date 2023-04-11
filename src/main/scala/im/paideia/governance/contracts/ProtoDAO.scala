@@ -61,12 +61,14 @@ class ProtoDAO(contractSignature: PaideiaContractSignature)
                 ).toString()
               )
               val config = dao.config
-              if (config._config.ergoAVLTree().digest == iBox
-                    .getRegisters()
-                    .get(0)
-                    .getValue()
-                    .asInstanceOf[AvlTree]
-                    .digest) {
+              if (
+                config._config.ergoAVLTree().digest == iBox
+                  .getRegisters()
+                  .get(0)
+                  .getValue()
+                  .asInstanceOf[AvlTree]
+                  .digest
+              ) {
                 val nextTokenToMint = ProtoDAO.tokensToMint.find((s: DAOConfigKey) =>
                   config._config.lookUp(s).response(0).tryOp.get == None
                 )

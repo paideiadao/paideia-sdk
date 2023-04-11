@@ -1,7 +1,6 @@
 package im.paideia.common.filtering
 
-/**
-  * Enumeration for different types of filters used in filtering InputBoxes.
+/** Enumeration for different types of filters used in filtering InputBoxes.
   */
 object FilterType extends Enumeration {
   type FilterType = Value

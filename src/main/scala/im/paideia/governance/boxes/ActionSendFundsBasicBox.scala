@@ -17,17 +17,25 @@ import special.sigma.Box
 
 import scala.collection.mutable.HashMap
 
-/**
-  * A box that represents an action of sending funds to another address.
-  * @param _ctx The context of blockchain related values.
-  * @param dao the DAO information for this box.
-  * @param proposalId Unique identifier for the proposal.
-  * @param optionId The option ID linked with the specified proposal.
-  * @param repeats Number of times the funds will be transferred.
-  * @param activationTime Unix timestamp when funds transfer gets activated.
-  * @param repeatDelay Time in milliseconds between each consecutive pair of transactions.
-  * @param outputs Array of destination boxes where funds will be transferred.
-  * @param useContract It is used in constructing the contract for the box.
+/** A box that represents an action of sending funds to another address.
+  * @param _ctx
+  *   The context of blockchain related values.
+  * @param dao
+  *   the DAO information for this box.
+  * @param proposalId
+  *   Unique identifier for the proposal.
+  * @param optionId
+  *   The option ID linked with the specified proposal.
+  * @param repeats
+  *   Number of times the funds will be transferred.
+  * @param activationTime
+  *   Unix timestamp when funds transfer gets activated.
+  * @param repeatDelay
+  *   Time in milliseconds between each consecutive pair of transactions.
+  * @param outputs
+  *   Array of destination boxes where funds will be transferred.
+  * @param useContract
+  *   It is used in constructing the contract for the box.
   */
 final case class ActionSendFundsBasicBox(
   _ctx: BlockchainContextImpl,
@@ -44,20 +52,19 @@ final case class ActionSendFundsBasicBox(
   value    = 1000000L
   contract = useContract.contract
 
-  /**
-    * A list of Ergo tokens within the transaction.
-    * @return a list of ErgoTokens
+  /** A list of Ergo tokens within the transaction.
+    * @return
+    *   a list of ErgoTokens
     */
   override def tokens: List[ErgoToken] = List(
     new ErgoToken(dao.config.getArray[Byte](ConfKeys.im_paideia_dao_action_tokenid), 1L)
   )
 
-  /**
-    * List of contents of the register of FullEncoder type.
-    * Here, This method defines content of first register by concatenating four registers -
-    * proposalId, optionId, repeats, activationTime, repeatDelay.
-    * Second register returns array of output boxes
-    * @return list of registers containing all values
+  /** List of contents of the register of FullEncoder type. Here, This method defines
+    * content of first register by concatenating four registers - proposalId, optionId,
+    * repeats, activationTime, repeatDelay. Second register returns array of output boxes
+    * @return
+    *   list of registers containing all values
     */
   override def registers: List[ErgoValue[_]] = List(
     ErgoValueBuilder.buildFor(
@@ -68,9 +75,9 @@ final case class ActionSendFundsBasicBox(
     ErgoValueBuilder.buildFor(Colls.fromArray(outputs))
   )
 
-  /**
-    * Determines funds required for making the necessary transactions.
-    * @return Tuple consisting of nano-ergs and non-ergo tokens required.
+  /** Determines funds required for making the necessary transactions.
+    * @return
+    *   Tuple consisting of nano-ergs and non-ergo tokens required.
     */
   def fundsNeeded: (Long, Array[ErgoToken]) = {
     val nanoErgsNeeded = outputs.foldLeft(0L) { (z: Long, b: Box) =>
@@ -96,11 +103,13 @@ final case class ActionSendFundsBasicBox(
 
 object ActionSendFundsBasicBox {
 
-  /**
-    * Parse from existing input box to ActionSendFundsBasicBox instance
-    * @param ctx The context of blockchain related values.
-    * @param inp An existing box
-    * @return ActionSendFundsBasicBox instance
+  /** Parse from existing input box to ActionSendFundsBasicBox instance
+    * @param ctx
+    *   The context of blockchain related values.
+    * @param inp
+    *   An existing box
+    * @return
+    *   ActionSendFundsBasicBox instance
     */
   def fromInputBox(ctx: BlockchainContextImpl, inp: InputBox): ActionSendFundsBasicBox = {
     val contract = ActionSendFundsBasic

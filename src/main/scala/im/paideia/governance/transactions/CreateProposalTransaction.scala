@@ -133,17 +133,19 @@ final case class CreateProposalTransaction(
     ContextVar.of(
       1.toByte,
       dao.config.getProof(
-        List(ConfKeys.im_paideia_contracts_proposal(proposalOutput.getErgoTree().bytes)) ++
-        actionOutputs.map((ao: OutBox) =>
-          ConfKeys.im_paideia_contracts_action(ao.getErgoTree().bytes)
-        ): _*
+        List(
+          ConfKeys.im_paideia_contracts_proposal(proposalOutput.getErgoTree().bytes)
+        ) ++
+          actionOutputs.map((ao: OutBox) =>
+            ConfKeys.im_paideia_contracts_action(ao.getErgoTree().bytes)
+          ): _*
       )(Some(configDigest))
     )
   )
 
-  inputs     = List(daoOriginInput.withContextVars(daoOriginContext: _*), createProposalInput)
+  inputs = List(daoOriginInput.withContextVars(daoOriginContext: _*), createProposalInput)
   dataInputs = List(paideiaConfigInput, configInput)
   outputs = List(daoOriginOutput.outBox, proposalOutput) ++ actionOutputs ++ List(
-      userOutput
-    )
+    userOutput
+  )
 }

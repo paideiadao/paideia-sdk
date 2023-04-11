@@ -19,9 +19,9 @@ import im.paideia.governance.contracts.ProtoDAO
 import im.paideia.governance.contracts.Mint
 import im.paideia.util.ConfKeys
 import im.paideia.governance.contracts.DAOOrigin
-import im.paideia.staking.contracts.PlasmaStaking
 import im.paideia.util.Util
 import im.paideia.staking.contracts.SplitProfit
+import im.paideia.staking.contracts.StakeState
 
 class PaideiaTestSuite extends AnyFunSuite with HttpClientTesting {}
 
@@ -30,7 +30,7 @@ object PaideiaTestSuite {
 
   def init(ctx: BlockchainContextImpl) = {
     Paideia.clear
-    PlasmaStaking.contractInstances.clear()
+    StakeState.contractInstances.clear()
     if (!initializedPaideia) {
       val paideiaConfig = DAOConfig(Env.paideiaDaoKey)
       paideiaConfig.set(ConfKeys.im_paideia_fees_createdao_erg, 1000000000L)
@@ -57,7 +57,7 @@ object PaideiaTestSuite {
       val protoDAOContract = ProtoDAO(
         PaideiaContractSignature(daoKey = Env.paideiaDaoKey)
       )
-      val mintContract = Mint(PaideiaContractSignature(daoKey      = Env.paideiaDaoKey))
+      val mintContract = Mint(PaideiaContractSignature(daoKey = Env.paideiaDaoKey))
       val daoContract  = DAOOrigin(PaideiaContractSignature(daoKey = Env.paideiaDaoKey))
       val splitProfitContract = SplitProfit(
         PaideiaContractSignature(daoKey = Env.paideiaDaoKey)
@@ -113,7 +113,7 @@ object PaideiaTestSuite {
         paideiaOriginContract.box(ctx, paideiaConfig, 1000000L).inputBox(),
         false
       )
-      //initializedPaideia = true
+      // initializedPaideia = true
     }
   }
 }

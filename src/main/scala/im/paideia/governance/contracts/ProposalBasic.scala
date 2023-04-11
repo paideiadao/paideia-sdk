@@ -60,12 +60,14 @@ class ProposalBasic(contractSignature: PaideiaContractSignature)
             .map(boxes(_))
             .toList
             .map((b: InputBox) => {
-              if ((b.getRegisters().get(0).getValue().asInstanceOf[Coll[Int]](1) < 0)
-                  && (cte.currentTime > b
-                    .getRegisters()
-                    .get(1)
-                    .getValue()
-                    .asInstanceOf[Coll[Long]](0))) {
+              if (
+                (b.getRegisters().get(0).getValue().asInstanceOf[Coll[Int]](1) < 0)
+                && (cte.currentTime > b
+                  .getRegisters()
+                  .get(1)
+                  .getValue()
+                  .asInstanceOf[Coll[Long]](0))
+              ) {
                 PaideiaEventResponse(
                   1,
                   List(
@@ -121,10 +123,10 @@ class ProposalBasic(contractSignature: PaideiaContractSignature)
     voteKey: String,
     digestOrHeight: Either[ADDigest, Int]
   ): (List[ContextVar], PaideiaBox) = {
-    val inp         = ProposalBasicBox.fromInputBox(ctx, inputBox)
-    val proposal    = Paideia.getDAO(contractSignature.daoKey).proposals(inp.proposalIndex)
-    val voteId      = ErgoId.create(voteKey)
-    val lookUp      = proposal.votes.lookUpWithDigest(voteId)(digestOrHeight.left.toOption)
+    val inp      = ProposalBasicBox.fromInputBox(ctx, inputBox)
+    val proposal = Paideia.getDAO(contractSignature.daoKey).proposals(inp.proposalIndex)
+    val voteId   = ErgoId.create(voteKey)
+    val lookUp   = proposal.votes.lookUpWithDigest(voteId)(digestOrHeight.left.toOption)
     val lookUpProof = ContextVar.of(1.toByte, lookUp.proof.ergoValue)
     val currentVote = lookUp.response(0).tryOp.get
     currentVote match {

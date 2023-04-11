@@ -10,27 +10,35 @@ import org.ergoplatform.settings.ErgoAlgos
 import scala.collection.mutable.HashMap
 
 class DAOConfigKey(_hashedKey: Array[Byte], _originalKey: Option[String] = None) {
-    val originalKey: Option[String] = _originalKey match {
-        case None => DAOConfigKey.knownKeys.getOrElse(_hashedKey, None)
-        case Some(value) => 
-            DAOConfigKey.knownKeys.put(_hashedKey, _originalKey)
-            _originalKey
-    }
-    val hashedKey: Array[Byte] = _hashedKey
+  val originalKey: Option[String] = _originalKey match {
+    case None => DAOConfigKey.knownKeys.getOrElse(_hashedKey, None)
+    case Some(value) =>
+      DAOConfigKey.knownKeys.put(_hashedKey, _originalKey)
+      _originalKey
+  }
+  val hashedKey: Array[Byte] = _hashedKey
 
-    def originalKeyBytes: Array[Byte] = originalKey.get.getBytes(StandardCharsets.UTF_8)
-    def ergoValue: ErgoValue[Coll[java.lang.Byte]] = ErgoValue.of(hashedKey)
+  def originalKeyBytes: Array[Byte] = originalKey.get.getBytes(StandardCharsets.UTF_8)
+  def ergoValue: ErgoValue[Coll[java.lang.Byte]] = ErgoValue.of(hashedKey)
 }
 
 object DAOConfigKey {
-    def apply(s: String): DAOConfigKey = new DAOConfigKey(Blake2b256(s.getBytes(StandardCharsets.UTF_8)).array,Some(s))
-    def apply(s: String, d: Array[Byte]): DAOConfigKey = new DAOConfigKey(Blake2b256(s.getBytes(StandardCharsets.UTF_8)++d).array,Some(s++ErgoAlgos.encode(d)))
+  def apply(s: String): DAOConfigKey =
+    new DAOConfigKey(Blake2b256(s.getBytes(StandardCharsets.UTF_8)).array, Some(s))
+  def apply(s: String, d: Array[Byte]): DAOConfigKey = new DAOConfigKey(
+    Blake2b256(s.getBytes(StandardCharsets.UTF_8) ++ d).array,
+    Some(s ++ ErgoAlgos.encode(d))
+  )
 
-    val knownKeys: HashMap[Array[Byte], Option[String]] = new HashMap[Array[Byte], Option[String]]()
+  val knownKeys: HashMap[Array[Byte], Option[String]] =
+    new HashMap[Array[Byte], Option[String]]()
 
-    implicit val convertsDAOConfigKey: ByteConversion[DAOConfigKey] = new ByteConversion[DAOConfigKey] {
-        override def convertToBytes(t: DAOConfigKey): Array[Byte] = t.hashedKey
+  implicit val convertsDAOConfigKey: ByteConversion[DAOConfigKey] =
+    new ByteConversion[DAOConfigKey] {
+      override def convertToBytes(t: DAOConfigKey): Array[Byte] = t.hashedKey
 
-        override def convertFromBytes(bytes: Array[Byte]): DAOConfigKey = new DAOConfigKey(bytes)
+      override def convertFromBytes(bytes: Array[Byte]): DAOConfigKey = new DAOConfigKey(
+        bytes
+      )
     }
 }

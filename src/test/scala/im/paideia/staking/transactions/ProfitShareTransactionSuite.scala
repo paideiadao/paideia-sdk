@@ -16,7 +16,7 @@ import im.paideia.DAOConfig
 import im.paideia.staking.transactions._
 import im.paideia.common.PaideiaTestSuite
 import im.paideia.common.contracts.PaideiaContractSignature
-import im.paideia.staking.contracts.PlasmaStaking
+import im.paideia.staking.contracts.StakeState
 import im.paideia.util.ConfKeys
 import im.paideia.common.contracts.Config
 import im.paideia.staking.contracts.SplitProfit
@@ -32,6 +32,7 @@ import im.paideia.common.contracts.Treasury
 import im.paideia.DAOConfigValueSerializer
 import im.paideia.DAOConfigValueDeserializer
 import im.paideia.common.events.CreateTransactionsEvent
+import im.paideia.staking.contracts.StakeProfitShare
 
 class ProfitShareTransactionSuite extends PaideiaTestSuite {
   test("Profit share erg tx on empty state") {
@@ -43,9 +44,12 @@ class ProfitShareTransactionSuite extends PaideiaTestSuite {
         val dao   = StakingTest.testDAO
         val state = TotalStakingState(dao.key, 0L, true)
 
-        val stakingContract = PlasmaStaking(PaideiaContractSignature(daoKey = dao.key))
+        val stakingContract = StakeState(PaideiaContractSignature(daoKey = dao.key))
         dao.config
-          .set(ConfKeys.im_paideia_contracts_staking, stakingContract.contractSignature)
+          .set(
+            ConfKeys.im_paideia_contracts_staking_state,
+            stakingContract.contractSignature
+          )
 
         val stakingState = stakingContract
           .emptyBox(
@@ -63,6 +67,10 @@ class ProfitShareTransactionSuite extends PaideiaTestSuite {
         dao.config
           .set(ConfKeys.im_paideia_contracts_treasury, treasuryContract.contractSignature)
 
+        val profitShareContract =
+          StakeProfitShare(PaideiaContractSignature(daoKey = dao.key))
+        profitShareContract.newBox(profitShareContract.box(ctx).inputBox(), false)
+
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
 
         val configBox = Config(configContract.contractSignature).box(ctx, dao).inputBox()
@@ -70,7 +78,7 @@ class ProfitShareTransactionSuite extends PaideiaTestSuite {
         configContract.newBox(configBox, false)
 
         val splitProfitContract = SplitProfit(PaideiaContractSignature(daoKey = dao.key))
-        val splitProfitBox      = splitProfitContract.box(ctx, 100000000L, List[ErgoToken]())
+        val splitProfitBox = splitProfitContract.box(ctx, 100000000L, List[ErgoToken]())
         splitProfitContract.newBox(splitProfitBox.inputBox(), false)
 
         val stakingStateBox = stakingState.inputBox()
@@ -102,9 +110,12 @@ class ProfitShareTransactionSuite extends PaideiaTestSuite {
         val dao   = StakingTest.testDAO
         val state = TotalStakingState(dao.key, 0L, true)
 
-        val stakingContract = PlasmaStaking(PaideiaContractSignature(daoKey = dao.key))
+        val stakingContract = StakeState(PaideiaContractSignature(daoKey = dao.key))
         dao.config
-          .set(ConfKeys.im_paideia_contracts_staking, stakingContract.contractSignature)
+          .set(
+            ConfKeys.im_paideia_contracts_staking_state,
+            stakingContract.contractSignature
+          )
 
         val stakingState = stakingContract
           .emptyBox(
@@ -121,6 +132,10 @@ class ProfitShareTransactionSuite extends PaideiaTestSuite {
           ConfKeys.im_paideia_staking_profit_tokenids,
           Array(ErgoId.create(sigUsd).getBytes())
         )
+
+        val profitShareContract =
+          StakeProfitShare(PaideiaContractSignature(daoKey = dao.key))
+        profitShareContract.newBox(profitShareContract.box(ctx).inputBox(), false)
 
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
 
@@ -171,9 +186,12 @@ class ProfitShareTransactionSuite extends PaideiaTestSuite {
         val dao   = StakingTest.testDAO
         val state = TotalStakingState(dao.key, 0L, true)
 
-        val stakingContract = PlasmaStaking(PaideiaContractSignature(daoKey = dao.key))
+        val stakingContract = StakeState(PaideiaContractSignature(daoKey = dao.key))
         dao.config
-          .set(ConfKeys.im_paideia_contracts_staking, stakingContract.contractSignature)
+          .set(
+            ConfKeys.im_paideia_contracts_staking_state,
+            stakingContract.contractSignature
+          )
 
         val stakingState = stakingContract
           .emptyBox(
@@ -194,6 +212,10 @@ class ProfitShareTransactionSuite extends PaideiaTestSuite {
           ConfKeys.im_paideia_staking_profit_tokenids,
           Array(ErgoId.create(sigUsd).getBytes())
         )
+
+        val profitShareContract =
+          StakeProfitShare(PaideiaContractSignature(daoKey = dao.key))
+        profitShareContract.newBox(profitShareContract.box(ctx).inputBox(), false)
 
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
 

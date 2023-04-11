@@ -33,7 +33,7 @@ class MempoolPlasmaMap[K, V](
   mempoolMaps: HashMap[List[Byte], PlasmaMapWithMap[K, V]] =
     new HashMap[List[Byte], PlasmaMapWithMap[K, V]](),
   private var newlyConfirmedMap: Option[PlasmaMapWithMap[K, V]] = None,
-  opQueue: Queue[(Int, BatchOperation[K, V])]                   = Queue.empty[(Int, BatchOperation[K, V])]
+  opQueue: Queue[(Int, BatchOperation[K, V])] = Queue.empty[(Int, BatchOperation[K, V])]
 )(implicit val convertKey: ByteConversion[K], convertVal: ByteConversion[V])
   extends LocalPlasmaBase[K, V] {
 
@@ -223,8 +223,8 @@ object MempoolPlasmaMap {
     store: VersionedAVLStorage[Digest32],
     flags: AvlTreeFlags,
     params: PlasmaParameters
-  )(
-    implicit convertKey: ByteConversion[K],
+  )(implicit
+    convertKey: ByteConversion[K],
     convertVal: ByteConversion[V]
   ): MempoolPlasmaMap[K, V] = {
     new MempoolPlasmaMap[K, V](store, flags, params)
