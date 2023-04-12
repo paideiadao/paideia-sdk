@@ -48,8 +48,12 @@
         val correctNewSnapshot = allOf(Coll(
             newSnapshotsStaked(newSnapshotsStaked.size-1) == totalStaked,
             newSnapshotsTrees(newSnapshotsTrees.size-1).digest == stakeState.digest,
-            newSnapshotsProfit(newSnapshotsProfit.size-1).slice(1,profit.size).indices.forall{(i: Int) => newSnapshotsProfit(newSnapshotsProfit.size-1)(i+1) == profit(i+1)},
-            newSnapshotsProfit(newSnapshotsProfit.size-1)(0) == profit(0) + min(emissionAmount,stakingStateInput.tokens(1)._2-totalStaked-profit(0))
+            newSnapshotsProfit(newSnapshotsProfit.size-1)(0) == min(emissionAmount,stakingStateInput.tokens(1)._2-totalStaked-profit(0))
+        ))
+
+        val correctProfitAddedToSnapshot = allOf(Coll(
+            newSnapshotsProfit(0).slice(1,profit.size).indices.forall{(i: Int) => newSnapshotsProfit(0)(i+1) == profit(i+1)},
+            newSnapshotsProfit(0)(0) == snapshotsProfit(1)(0) + profit(0)
         ))
         
         //When a staker gets rewarded for the staking period his entry gets removed from the snapshot. An empty snapshot is proof of having handled all staker rewards for that period.

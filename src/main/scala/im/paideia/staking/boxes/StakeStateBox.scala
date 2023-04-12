@@ -230,7 +230,8 @@ case class StakeStateBox(
   def emit(currentTime: Long, tokensInPool: Long): StakingContextVars = {
     if (currentTime < nextEmission) throw new Exception("Not time for new emission yet")
     nextEmission = newNextEmission
-    profit(0) += Math.min(
+    val snapshotProfit = profit.map { p => 0L }
+    snapshotProfit(0) = Math.min(
       dao.config[Long](ConfKeys.im_paideia_staking_emission_amount),
       tokensInPool - profit(0)
     )
@@ -238,9 +239,10 @@ case class StakeStateBox(
       StakingSnapshot(
         state.currentStakingState.totalStaked(Some(stateDigest)),
         stateDigest,
-        profit.toList
+        snapshotProfit.toList
       )
     )
+    snapshots(0)                  = snapshots(0).addProfit(profit)
     state.snapshots(nextEmission) = state.currentStakingState.clone(dao.key, nextEmission)
     profit = Array.fill(
       dao.config.getArray[Object](ConfKeys.im_paideia_staking_profit_tokenids).size + 2
