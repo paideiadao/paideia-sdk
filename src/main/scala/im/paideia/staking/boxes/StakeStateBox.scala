@@ -14,7 +14,7 @@ import scala.collection.mutable.Buffer
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import org.ergoplatform.appkit.impl.ErgoTreeContract
 import org.ergoplatform.appkit.ContextVar
-import im.paideia.staking.contracts.PlasmaStaking
+import im.paideia.staking.contracts.StakeState
 import org.ergoplatform.appkit.ErgoToken
 import im.paideia.DAOConfig
 import org.ergoplatform.appkit.ErgoId
@@ -34,7 +34,7 @@ import im.paideia.DAO
 
 case class StakeStateBox(
   _ctx: BlockchainContextImpl,
-  useContract: PlasmaStaking,
+  useContract: StakeState,
   state: TotalStakingState,
   _value: Long,
   var extraTokens: List[ErgoToken],
@@ -43,7 +43,7 @@ case class StakeStateBox(
   var nextEmission: Long,
   var profit: Array[Long],
   var stateDigest: ADDigest,
-  var snapshots: Array[StakeSnapshot]
+  var snapshots: Array[StakingSnapshot]
 ) extends PaideiaBox {
 
   ctx      = _ctx
@@ -102,7 +102,7 @@ case class StakeStateBox(
     stakingKey: String,
     amount: Long,
     inPlace: Boolean = false
-  ): List[ContextVar] = {
+  ): StakingContextVars = {
     val stakeRecord = StakeRecord(
       amount,
       List.fill(
@@ -121,13 +121,12 @@ case class StakeStateBox(
         stakeRecord,
         result.toProvenResult
       )
-      .contextVars
   }
 
   def addStake(
     stakingKey: String,
     amount: Long
-  ): List[ContextVar] = {
+  ): StakingContextVars = {
     val currentStake = state.currentStakingState.getStake(stakingKey, Some(stateDigest))
     val operations = List(
       (stakingKey, StakeRecord(currentStake.stake + amount, currentStake.rewards))
@@ -135,14 +134,14 @@ case class StakeStateBox(
     val result = state.currentStakingState.changeStakes(operations, Left(stateDigest))
     stateDigest = result.digest
     stakedTokenTotal += amount
-    StakingContextVars.changeStake(operations, result.toProvenResult).contextVars
+    StakingContextVars.changeStake(operations, result.toProvenResult)
   }
 
   def unstake(
     stakingKey: String,
     newStakeRecord: StakeRecord,
     newExtraTokens: List[ErgoToken]
-  ): List[ContextVar] = {
+  ): StakingContextVars = {
     val currentStake = state.currentStakingState.getStake(stakingKey, Some(stateDigest))
     stakedTokenTotal -= currentStake.stake - newStakeRecord.stake
     extraTokens = newExtraTokens
@@ -155,12 +154,11 @@ case class StakeStateBox(
       stateDigest = removeProof.digest
       StakingContextVars
         .unstake(stakingKey, proof, removeProof.toProvenResult)
-        .contextVars
     } else {
       val operations = List((stakingKey, newStakeRecord))
-      val result     = state.currentStakingState.changeStakes(operations, Left(stateDigest))
+      val result = state.currentStakingState.changeStakes(operations, Left(stateDigest))
       stateDigest = result.digest
-      StakingContextVars.changeStake(operations, result.toProvenResult).contextVars
+      StakingContextVars.changeStake(operations, result.toProvenResult)
     }
   }
 
@@ -177,7 +175,7 @@ case class StakeStateBox(
 
   def compound(
     batchSize: Int
-  ): List[ContextVar] = {
+  ): StakingContextVars = {
     if (snapshots.size < dao.config[Long](ConfKeys.im_paideia_staking_emission_delay))
       throw new Exception("Not enough snapshots gathered yet")
     val snapshot = state.firstMatchingSnapshot(snapshots(0).digest)
@@ -187,7 +185,8 @@ case class StakeStateBox(
       state.currentStakingState.getStakes(keys, Some(stateDigest))
     val snapshotProvenResult = snapshot.getStakes(keys, Some(snapshots(0).digest))
     val currentStakes = keys.zip(
-      currentStakesProvenResult.response.map((p: OpResult[StakeRecord]) => p.tryOp.get.get
+      currentStakesProvenResult.response.map((p: OpResult[StakeRecord]) =>
+        p.tryOp.get.get
       )
     )
     val updatedStakes = currentStakes.map((kv: (String, StakeRecord)) => {
@@ -215,7 +214,7 @@ case class StakeStateBox(
     stateDigest = result.digest
     val removeProof = snapshot.unstake(keys, Left(snapshots(0).digest))
     snapshots(0) =
-      StakeSnapshot(snapshots(0).totalStaked, removeProof.digest, snapshots(0).profit)
+      StakingSnapshot(snapshots(0).totalStaked, removeProof.digest, snapshots(0).profit)
     StakingContextVars
       .compound(
         updatedStakes,
@@ -223,38 +222,38 @@ case class StakeStateBox(
         snapshotProvenResult,
         removeProof.toProvenResult
       )
-      .contextVars
   }
 
   def newNextEmission: Long =
     nextEmission + dao.config[Long](ConfKeys.im_paideia_staking_cyclelength)
 
-  def emit(currentTime: Long, tokensInPool: Long): List[ContextVar] = {
+  def emit(currentTime: Long, tokensInPool: Long): StakingContextVars = {
     if (currentTime < nextEmission) throw new Exception("Not time for new emission yet")
     nextEmission = newNextEmission
-    profit(0) += Math.min(
+    val snapshotProfit = profit.map { p => 0L }
+    snapshotProfit(0) = Math.min(
       dao.config[Long](ConfKeys.im_paideia_staking_emission_amount),
       tokensInPool - profit(0)
     )
-    snapshots =
-      snapshots.slice(1, snapshots.size) ++ Array(
-        StakeSnapshot(
-          state.currentStakingState.totalStaked(Some(stateDigest)),
-          stateDigest,
-          profit.toList
-        )
+    snapshots = snapshots.slice(1, snapshots.size) ++ Array(
+      StakingSnapshot(
+        state.currentStakingState.totalStaked(Some(stateDigest)),
+        stateDigest,
+        snapshotProfit.toList
       )
+    )
+    snapshots(0)                  = snapshots(0).addProfit(profit)
     state.snapshots(nextEmission) = state.currentStakingState.clone(dao.key, nextEmission)
     profit = Array.fill(
       dao.config.getArray[Object](ConfKeys.im_paideia_staking_profit_tokenids).size + 2
     )(0L)
-    StakingContextVars.emit.contextVars
+    StakingContextVars.emit
   }
 
   def profitShare(
     profitToShare: List[Long],
     newExtraTokens: List[ErgoToken]
-  ): List[ContextVar] = {
+  ): StakingContextVars = {
     profit = profitToShare.indices
       .map((i: Int) =>
         if (i >= profit.size) profitToShare(i)
@@ -264,16 +263,16 @@ case class StakeStateBox(
     stakedTokenTotal += profitToShare(0)
     value += profitToShare(1)
     extraTokens = newExtraTokens
-    StakingContextVars.profitShare.contextVars
+    StakingContextVars.profitShare
   }
 }
 
 object StakeStateBox {
 
   def fromInputBox(ctx: BlockchainContextImpl, inp: InputBox): StakeStateBox = {
-    val contract = PlasmaStaking
+    val contract = StakeState
       .contractInstances(Blake2b256(inp.getErgoTree.bytes).array.toList)
-      .asInstanceOf[PlasmaStaking]
+      .asInstanceOf[StakeState]
     val dao        = Paideia.getDAO(contract.contractSignature.daoKey)
     val state      = TotalStakingState(dao.key)
     val longValues = inp.getRegisters().get(1).getValue().asInstanceOf[Coll[Long]].toArray
@@ -300,7 +299,7 @@ object StakeStateBox {
         .zip(snapshotTrees)
         .zip(snapshotProfit)
         .map((vals: ((Long, AvlTree), Coll[Long])) =>
-          StakeSnapshot(
+          StakingSnapshot(
             vals._1._1,
             ADDigest @@ vals._1._2.digest.toArray,
             vals._2.toArray.toList

@@ -14,7 +14,7 @@ import im.paideia.Paideia
 import im.paideia.staking.TotalStakingState
 import org.ergoplatform.appkit.Address
 import im.paideia.common.contracts.Config
-import im.paideia.staking.contracts.PlasmaStaking
+import im.paideia.staking.contracts.StakeState
 import org.ergoplatform.restapi.client.FullBlock
 import org.ergoplatform.restapi.client.BlockHeader
 import org.ergoplatform.restapi.client.BlockTransactions
@@ -77,7 +77,7 @@ class EvaluateProposalTransactionSuite extends PaideiaTestSuite {
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
         configContract.newBox(configContract.box(ctx, dao).inputBox(), false)
 
-        val stakingContract = PlasmaStaking(PaideiaContractSignature(daoKey = dao.key))
+        val stakingContract = StakeState(PaideiaContractSignature(daoKey = dao.key))
 
         val stakingState = stakingContract
           .emptyBox(

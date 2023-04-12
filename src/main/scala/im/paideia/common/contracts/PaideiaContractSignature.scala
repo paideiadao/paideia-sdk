@@ -2,14 +2,19 @@ package im.paideia.common.contracts
 
 import org.ergoplatform.appkit.NetworkType
 
-/**
-  * Holds the signature for a PaideiaContract class.
+/** Holds the signature for a PaideiaContract class.
   *
-  * @param className The full name of the contract class, including its package.
-  * @param version The version of the contract. Defaults to "latest".
-  * @param networkType The network on which this contract is deployed. Defaults to [[NetworkType.MAINNET]].
-  * @param contractHash The unique hash of the contract bytecode.
-  * @param daoKey A string containing the key used by a DAO that is associated with this contract. Can be an empty string.
+  * @param className
+  *   The full name of the contract class, including its package.
+  * @param version
+  *   The version of the contract. Defaults to "latest".
+  * @param networkType
+  *   The network on which this contract is deployed. Defaults to [[NetworkType.MAINNET]].
+  * @param contractHash
+  *   The unique hash of the contract bytecode.
+  * @param daoKey
+  *   A string containing the key used by a DAO that is associated with this contract. Can
+  *   be an empty string.
   */
 case class PaideiaContractSignature(
   className: String        = "",

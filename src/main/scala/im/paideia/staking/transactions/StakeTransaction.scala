@@ -14,7 +14,7 @@ import org.ergoplatform.appkit.Address
 import special.collection.Coll
 import im.paideia.staking._
 import im.paideia.staking.boxes._
-import im.paideia.staking.contracts.PlasmaStaking
+import im.paideia.staking.contracts.Stake
 import im.paideia.DAO
 import im.paideia.common.contracts.PaideiaContractSignature
 import im.paideia.Paideia
@@ -71,19 +71,29 @@ case class StakeTransaction(
     throw new Exception("Config not synced correctly")
   val stakeKey = stakeStateInput.getId().toString()
 
-  val contextVars = stakeStateInputBox
+  val stakingContextVars = stakeStateInputBox
     .stake(stakeKey, amount)
+
+  val contextVars = stakingContextVars.stakingStateContextVars
     .::(
       ContextVar.of(
         0.toByte,
-        config.getProof(
-          ConfKeys.im_paideia_staking_emission_amount,
-          ConfKeys.im_paideia_staking_emission_delay,
-          ConfKeys.im_paideia_staking_cyclelength,
-          ConfKeys.im_paideia_staking_profit_tokenids,
-          ConfKeys.im_paideia_staking_profit_thresholds,
-          ConfKeys.im_paideia_contracts_staking
-        )(Some(configDigest))
+        stakeStateInputBox.useContract.getConfigContext(Some(configDigest))
+      )
+    )
+
+  val stakeContract = Stake(
+    config[PaideiaContractSignature](ConfKeys.im_paideia_contracts_staking_stake)
+      .withDaoKey(daoKey)
+  )
+  val stakeInput =
+    stakeContract.boxes(stakeContract.getUtxoSet.toArray.apply(0))
+
+  val stakeContextVars = stakingContextVars.companionContextVars
+    .::(
+      ContextVar.of(
+        0.toByte,
+        stakeContract.getConfigContext(Some(configDigest))
       )
     )
 
@@ -95,8 +105,8 @@ case class StakeTransaction(
         ConfKeys.im_paideia_dao_name
       )(Some(configDigest))
     ),
-    ContextVar.of(1.toByte, contextVars(2).getValue()),
-    ContextVar.of(2.toByte, contextVars(3).getValue())
+    ContextVar.of(1.toByte, stakingContextVars.companionContextVars(0).getValue()),
+    ContextVar.of(2.toByte, stakingContextVars.companionContextVars(1).getValue())
   )
 
   val userOutput = ctx
@@ -130,9 +140,11 @@ case class StakeTransaction(
   fee = 1500000L
   inputs = List[InputBox](
     stakeStateInput.withContextVars(contextVars: _*),
+    stakeInput.withContextVars(stakeContextVars: _*),
     stakeProxyInput.withContextVars(proxyContextVars: _*)
   )
-  dataInputs    = List[InputBox](configInput)
-  outputs       = List[OutBox](stakeStateInputBox.outBox, userOutput)
+  dataInputs = List[InputBox](configInput)
+  outputs =
+    List[OutBox](stakeStateInputBox.outBox, stakeContract.box(ctx).outBox, userOutput)
   changeAddress = _changeAddress
 }

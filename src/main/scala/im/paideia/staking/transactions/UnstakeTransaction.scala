@@ -12,7 +12,6 @@ import org.ergoplatform.appkit.ErgoToken
 import im.paideia.DAOConfig
 import im.paideia.staking._
 import im.paideia.staking.boxes._
-import im.paideia.staking.contracts.PlasmaStaking
 import im.paideia.DAO
 import im.paideia.util.ConfKeys
 import im.paideia.common.contracts.PaideiaContractSignature
@@ -24,6 +23,10 @@ import org.ergoplatform.appkit.Address
 import special.collection.Coll
 import scala.collection.JavaConverters._
 import scorex.crypto.authds.ADDigest
+import im.paideia.staking.contracts.Unstake
+import im.paideia.staking.contracts.ChangeStake
+import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
+import sigmastate.eval.Colls
 
 case class UnstakeTransaction(
   _ctx: BlockchainContextImpl,
@@ -98,19 +101,52 @@ case class UnstakeTransaction(
     .filter((et: ErgoToken) => et.getValue() > 0L)
     .toList
 
-  val contextVars = stakeStateInputBox
+  val stakingContextVars = stakeStateInputBox
     .unstake(stakingKey, newStakeRecord, newExtraTokens)
+
+  val contextVars = stakingContextVars.stakingStateContextVars
     .::(
       ContextVar.of(
         0.toByte,
-        config.getProof(
-          ConfKeys.im_paideia_staking_emission_amount,
-          ConfKeys.im_paideia_staking_emission_delay,
-          ConfKeys.im_paideia_staking_cyclelength,
-          ConfKeys.im_paideia_staking_profit_tokenids,
-          ConfKeys.im_paideia_staking_profit_thresholds,
-          ConfKeys.im_paideia_contracts_staking
-        )(Some(configDigest))
+        stakeStateInputBox.useContract.getConfigContext(Some(configDigest))
+      )
+    )
+
+  val companionContract =
+    if (contextVars(1).getValue.getValue.equals(StakingContextVars.UNSTAKE.getValue()))
+      Unstake(
+        config[PaideiaContractSignature](ConfKeys.im_paideia_contracts_staking_unstake)
+          .withDaoKey(daoKey)
+      )
+    else
+      ChangeStake(
+        config[PaideiaContractSignature](
+          ConfKeys.im_paideia_contracts_staking_changestake
+        ).withDaoKey(daoKey)
+      )
+  val companionOutput =
+    if (contextVars(1).getValue.getValue.equals(StakingContextVars.UNSTAKE.getValue()))
+      Unstake(
+        config[PaideiaContractSignature](ConfKeys.im_paideia_contracts_staking_unstake)
+          .withDaoKey(daoKey)
+      ).box(ctx).outBox
+    else
+      ChangeStake(
+        config[PaideiaContractSignature](
+          ConfKeys.im_paideia_contracts_staking_changestake
+        ).withDaoKey(daoKey)
+      )
+        .box(ctx)
+        .outBox
+
+  val unstakeInput =
+    companionContract.boxes(companionContract.getUtxoSet.toArray.apply(0))
+
+  val unstakeContextVars = stakingContextVars.companionContextVars
+    .::(
+      ContextVar.of(
+        0.toByte,
+        companionContract.getConfigContext(Some(configDigest))
       )
     )
 
@@ -122,8 +158,13 @@ case class UnstakeTransaction(
         ConfKeys.im_paideia_staking_profit_tokenids
       )(Some(configDigest))
     ),
-    ContextVar.of(1.toByte, contextVars(3).getValue()),
-    ContextVar.of(2.toByte, contextVars(4).getValue())
+    ContextVar.of(1.toByte, stakingContextVars.companionContextVars(1).getValue()),
+    ContextVar.of(
+      2.toByte,
+      (if (stakingContextVars.companionContextVars.size > 2)
+         stakingContextVars.companionContextVars(2).getValue()
+       else ErgoValueBuilder.buildFor(Colls.fromArray(Array[Byte]())))
+    )
   )
 
   val govTokenUnstake = if (currentStakeRecord.stake > newStakeRecord.stake) {
@@ -188,8 +229,9 @@ case class UnstakeTransaction(
   fee           = 1500000L
   inputs = List[InputBox](
     stakeStateInput.withContextVars(contextVars: _*),
+    unstakeInput.withContextVars(unstakeContextVars: _*),
     unstakeProxyInput.withContextVars(proxyContextVars: _*)
   )
   dataInputs = List[InputBox](configInput)
-  outputs    = List[OutBox](stakeStateInputBox.outBox, userOutput)
+  outputs    = List[OutBox](stakeStateInputBox.outBox, companionOutput, userOutput)
 }

@@ -7,7 +7,7 @@
 
     val configValues = config.R4[AvlTree].get.getMany(Coll(
         _IM_PAIDEIA_CONTRACTS_TREASURY,
-        _IM_PAIDEIA_CONTRACTS_STAKING,
+        _IM_PAIDEIA_CONTRACTS_STAKING_STATE,
         _IM_PAIDEIA_PROFIT_SHARING_PCT,
         _IM_PAIDEIA_DAO_GOVERNANCE_TOKENID,
         _IM_PAIDEIA_STAKING_PROFIT_TOKENIDS
@@ -52,7 +52,7 @@
         }}
 
         allOf(Coll(
-            OUTPUTS.size == 3,
+            OUTPUTS.size == 4,
             blake2b256(stakingOutput.propositionBytes) == configValues(1).get.slice(1,33),
             minerOutput.value <= 5000000L,
             minerOutput.tokens.size == 0,

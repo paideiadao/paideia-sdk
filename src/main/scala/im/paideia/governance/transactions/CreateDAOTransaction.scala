@@ -20,7 +20,7 @@ import org.ergoplatform.appkit.OutBox
 import im.paideia.util.ConfKeys
 import org.ergoplatform.appkit.ErgoId
 import javax.naming.Context
-import im.paideia.staking.contracts.PlasmaStaking
+import im.paideia.staking.contracts.StakeState
 import im.paideia.staking.TotalStakingState
 import im.paideia.governance.boxes.ProtoDAOBox
 import im.paideia.common.contracts.Treasury
@@ -115,15 +115,15 @@ case class CreateDAOTransaction(
   val configContractSignature = configContract.contractSignature
 
   val emissionTime = _ctx.createPreHeader().build().getTimestamp() + dao.config[Long](
-      ConfKeys.im_paideia_staking_cyclelength
-    )
+    ConfKeys.im_paideia_staking_cyclelength
+  )
 
   val state = TotalStakingState(
     dao.key,
     emissionTime
   )
 
-  val stakeStateOutput = PlasmaStaking(PaideiaContractSignature(daoKey = dao.key))
+  val stakeStateOutput = StakeState(PaideiaContractSignature(daoKey = dao.key))
     .emptyBox(_ctx, dao, protoDAOInputBox.stakePool)
 
   val treasuryContract          = Treasury(PaideiaContractSignature(daoKey = dao.key))

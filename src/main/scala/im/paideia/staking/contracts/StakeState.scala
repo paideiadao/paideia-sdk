@@ -26,7 +26,7 @@ import scala.collection.JavaConverters._
 import im.paideia.Paideia
 import org.ergoplatform.appkit.impl.InputBoxImpl
 import scorex.crypto.authds.ADDigest
-import im.paideia.staking.StakeSnapshot
+import im.paideia.staking.StakingSnapshot
 import org.ergoplatform.appkit.ErgoValue
 import im.paideia.staking.StakingContextVars
 import special.sigma.AvlTree
@@ -34,8 +34,9 @@ import special.collection.Coll
 import io.getblok.getblok_plasma.ByteConversion
 import im.paideia.staking.StakeRecord
 import im.paideia.common.events.CreateTransactionsEvent
+import java.lang
 
-class PlasmaStaking(contractSignature: PaideiaContractSignature)
+class StakeState(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
 
   def box(
@@ -46,7 +47,7 @@ class PlasmaStaking(contractSignature: PaideiaContractSignature)
     nextEmission: Long,
     profit: Array[Long],
     extraTokens: List[ErgoToken] = List[ErgoToken](),
-    snapshots: Array[StakeSnapshot]
+    snapshots: Array[StakingSnapshot]
   ): StakeStateBox = {
     val dao   = Paideia.getDAO(daoKey)
     val state = TotalStakingState(daoKey)
@@ -83,7 +84,7 @@ class PlasmaStaking(contractSignature: PaideiaContractSignature)
       List[ErgoToken](),
       Range(0, emissionDelay.toInt)
         .map(i =>
-          StakeSnapshot(0L, state.currentStakingState.plasmaMap.digest, emptyProfit)
+          StakingSnapshot(0L, state.currentStakingState.plasmaMap.digest, emptyProfit)
         )
         .toArray
     )
@@ -95,17 +96,21 @@ class PlasmaStaking(contractSignature: PaideiaContractSignature)
         case cte: CreateTransactionsEvent =>
           PaideiaEventResponse.merge(getUtxoSet.toList.map { b =>
             {
-              (if (TotalStakingState(
-                     contractSignature.daoKey
-                   ).snapshots.size >= Paideia
-                     .getConfig(contractSignature.daoKey)[Long](
-                       ConfKeys.im_paideia_staking_emission_delay
-                     )) {
+              (if (
+                 TotalStakingState(
+                   contractSignature.daoKey
+                 ).snapshots.size >= Paideia
+                   .getConfig(contractSignature.daoKey)[Long](
+                     ConfKeys.im_paideia_staking_emission_delay
+                   )
+               ) {
                  val stakeStateInput = boxes(b)
-                 val stakeBox        = StakeStateBox.fromInputBox(cte.ctx, stakeStateInput)
-                 if (stakeBox.state
-                       .firstMatchingSnapshot(stakeBox.snapshots(0).digest)
-                       .size(Some(stakeBox.snapshots(0).digest)) > 0) {
+                 val stakeBox = StakeStateBox.fromInputBox(cte.ctx, stakeStateInput)
+                 if (
+                   stakeBox.state
+                     .firstMatchingSnapshot(stakeBox.snapshots(0).digest)
+                     .size(Some(stakeBox.snapshots(0).digest)) > 0
+                 ) {
                    PaideiaEventResponse(
                      1,
                      List(
@@ -122,9 +127,11 @@ class PlasmaStaking(contractSignature: PaideiaContractSignature)
                  }
                } else {
                  PaideiaEventResponse(0)
-               }) + (if (cte.currentTime > StakeStateBox
-                           .fromInputBox(cte.ctx, boxes(b))
-                           .nextEmission) {
+               }) + (if (
+                       cte.currentTime > StakeStateBox
+                         .fromInputBox(cte.ctx, boxes(b))
+                         .nextEmission
+                     ) {
                        PaideiaEventResponse(
                          1,
                          List(
@@ -208,8 +215,10 @@ class PlasmaStaking(contractSignature: PaideiaContractSignature)
                       stakingState.state.currentStakingState.plasmaMap
                         .deleteWithDigest(operations: _*)(digestOrHeight)
                     case StakingContextVars.SNAPSHOT =>
-                      if (!stakingState.state.snapshots
-                            .contains(stakingState.newNextEmission))
+                      if (
+                        !stakingState.state.snapshots
+                          .contains(stakingState.newNextEmission)
+                      )
                         stakingState.state.snapshots(stakingState.newNextEmission) =
                           stakingState.state.currentStakingState
                             .clone(
@@ -258,42 +267,60 @@ class PlasmaStaking(contractSignature: PaideiaContractSignature)
     response
   }
 
+  override def getConfigContext(configDigest: Option[ADDigest]) = {
+    Paideia
+      .getConfig(contractSignature.daoKey)
+      .getProof(
+        ConfKeys.im_paideia_contracts_staking_state,
+        ConfKeys.im_paideia_contracts_staking_stake,
+        ConfKeys.im_paideia_contracts_staking_changestake,
+        ConfKeys.im_paideia_contracts_staking_unstake,
+        ConfKeys.im_paideia_contracts_staking_snapshot,
+        ConfKeys.im_paideia_contracts_staking_compound,
+        ConfKeys.im_paideia_contracts_staking_profitshare
+      )(configDigest)
+  }
+
   override lazy val constants: HashMap[String, Object] = {
     val cons = new HashMap[String, Object]()
     cons.put("_IM_PAIDEIA_DAO_KEY", ErgoId.create(contractSignature.daoKey).getBytes())
     cons.put(
-      "_IM_PAIDEIA_STAKING_EMISSION_AMOUNT",
-      ConfKeys.im_paideia_staking_emission_amount.ergoValue.getValue()
+      "_IM_PAIDEIA_CONTRACTS_STAKING_STATE",
+      ConfKeys.im_paideia_contracts_staking_state.ergoValue.getValue()
     )
     cons.put(
-      "_IM_PAIDEIA_STAKING_EMISSION_DELAY",
-      ConfKeys.im_paideia_staking_emission_delay.ergoValue.getValue()
+      "_IM_PAIDEIA_CONTRACTS_STAKING_STAKE",
+      ConfKeys.im_paideia_contracts_staking_stake.ergoValue.getValue()
     )
     cons.put(
-      "_IM_PAIDEIA_STAKING_CYCLELENGTH",
-      ConfKeys.im_paideia_staking_cyclelength.ergoValue.getValue()
+      "_IM_PAIDEIA_CONTRACTS_STAKING_CHANGESTAKE",
+      ConfKeys.im_paideia_contracts_staking_changestake.ergoValue.getValue()
     )
     cons.put(
-      "_IM_PAIDEIA_STAKING_PROFIT_TOKENIDS",
-      ConfKeys.im_paideia_staking_profit_tokenids.ergoValue.getValue()
+      "_IM_PAIDEIA_CONTRACTS_STAKING_UNSTAKE",
+      ConfKeys.im_paideia_contracts_staking_unstake.ergoValue.getValue()
     )
     cons.put(
-      "_IM_PAIDEIA_STAKING_PROFIT_THRESHOLDS",
-      ConfKeys.im_paideia_staking_profit_thresholds.ergoValue.getValue()
+      "_IM_PAIDEIA_CONTRACTS_STAKING_SNAPSHOT",
+      ConfKeys.im_paideia_contracts_staking_snapshot.ergoValue.getValue()
     )
     cons.put(
-      "_IM_PAIDEIA_CONTRACTS_STAKING",
-      ConfKeys.im_paideia_contracts_staking.ergoValue.getValue()
+      "_IM_PAIDEIA_CONTRACTS_STAKING_COMPOUND",
+      ConfKeys.im_paideia_contracts_staking_compound.ergoValue.getValue()
+    )
+    cons.put(
+      "_IM_PAIDEIA_CONTRACTS_STAKING_PROFITSHARE",
+      ConfKeys.im_paideia_contracts_staking_profitshare.ergoValue.getValue()
     )
     cons
   }
 }
 
-object PlasmaStaking extends PaideiaActor {
+object StakeState extends PaideiaActor {
 
-  override def apply(contractSignature: PaideiaContractSignature): PlasmaStaking =
-    getContractInstance[PlasmaStaking](
+  override def apply(contractSignature: PaideiaContractSignature): StakeState =
+    getContractInstance[StakeState](
       contractSignature,
-      new PlasmaStaking(contractSignature)
+      new StakeState(contractSignature)
     )
 }

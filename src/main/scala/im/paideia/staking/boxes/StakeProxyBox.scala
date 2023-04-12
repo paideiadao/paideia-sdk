@@ -35,7 +35,7 @@ case class StakeProxyBox(
   }
 
   override def tokens: List[ErgoToken] = {
-    val daoTokenId     = new ErgoId(daoConfig.getArray[Byte](ConfKeys.im_paideia_dao_tokenid))
+    val daoTokenId = new ErgoId(daoConfig.getArray[Byte](ConfKeys.im_paideia_dao_tokenid))
     val paideiaTokenId = ErgoId.create(Env.paideiaTokenId)
     if (!daoTokenId.equals(paideiaTokenId))
       List(

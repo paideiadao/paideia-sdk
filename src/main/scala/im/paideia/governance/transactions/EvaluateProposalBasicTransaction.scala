@@ -22,16 +22,20 @@ import im.paideia.staking.contracts.SplitProfit
 import scorex.crypto.authds.ADDigest
 import special.sigma.AvlTree
 
-/**
-  * This class represents an implementation of a `PaideiaTransaction`
-  * used to evaluate the proposal basic transaction.
+/** This class represents an implementation of a `PaideiaTransaction` used to evaluate the
+  * proposal basic transaction.
   *
-  * @constructor Creates a new instance with a given `ctx` representing the blockchain context,
-  *              `dao` DAO, `proposalInput` input box, and `_changeAddress`.
-  * @param _ctx           Represents the blockchain context
-  * @param dao            DAO
-  * @param proposalInput  Input box
-  * @param _changeAddress Change address
+  * @constructor
+  *   Creates a new instance with a given `ctx` representing the blockchain context, `dao`
+  *   DAO, `proposalInput` input box, and `_changeAddress`.
+  * @param _ctx
+  *   Represents the blockchain context
+  * @param dao
+  *   DAO
+  * @param proposalInput
+  *   Input box
+  * @param _changeAddress
+  *   Change address
   */
 final case class EvaluateProposalBasicTransaction(
   _ctx: BlockchainContextImpl,
@@ -82,10 +86,10 @@ final case class EvaluateProposalBasicTransaction(
   val winningVoteAmount = proposalInputBox.voteCount.max
   val winningVoteIndex  = proposalInputBox.voteCount.indexOf(winningVoteAmount)
 
-  /**
-    * Computes the output for the proposal basic transaction.
+  /** Computes the output for the proposal basic transaction.
     *
-    * @return The resulting proposal basic output.
+    * @return
+    *   The resulting proposal basic output.
     */
   val proposalBasicOut = ProposalBasic(PaideiaContractSignature(daoKey = dao.key)).box(
     _ctx,
@@ -155,9 +159,8 @@ final case class EvaluateProposalBasicTransaction(
       .of(4.toByte, ErgoValueBuilder.buildFor((winningVoteIndex, winningVoteAmount)))
   )
 
-  /**
-    * Sets `inputs`, `dataInputs`, and `outputs` fields of the `EvaluateProposalBasicTransaction`
-    * based on the given inputs.
+  /** Sets `inputs`, `dataInputs`, and `outputs` fields of the
+    * `EvaluateProposalBasicTransaction` based on the given inputs.
     */
   inputs     = List(proposalInput.withContextVars(context: _*))
   dataInputs = List(configInput, stakeStateInput, paideiaConfigInput)

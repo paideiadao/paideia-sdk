@@ -43,19 +43,19 @@ case class DAOConfig(
   }
 
   def apply[T](key: DAOConfigKey, digestOpt: Option[ADDigest] = None): T = {
-    val check        = _config.lookUpWithDigest(key)(digestOpt).response.head.tryOp.get.get
+    val check = _config.lookUpWithDigest(key)(digestOpt).response.head.tryOp.get.get
     val deserialized = DAOConfigValueDeserializer.deserialize(check)
     deserialized.asInstanceOf[T]
   }
 
-  def getArray[T](key: DAOConfigKey, digestOpt: Option[ADDigest] = None)(
-    implicit tag: ClassTag[T]
+  def getArray[T](key: DAOConfigKey, digestOpt: Option[ADDigest] = None)(implicit
+    tag: ClassTag[T]
   ): Array[T] = {
     apply[Array[Object]](key, digestOpt).map(_.asInstanceOf[T]).toArray
   }
 
-  def set[T](key: DAOConfigKey, value: T, height: Int = 0)(
-    implicit enc: DAOConfigValueSerializer[T]
+  def set[T](key: DAOConfigKey, value: T, height: Int = 0)(implicit
+    enc: DAOConfigValueSerializer[T]
   ) = {
     if (keys.contains(key.originalKey.getOrElse(""))) {
       _config.updateWithDigest((key, enc.serialize(value, true).toArray))(Right(height))

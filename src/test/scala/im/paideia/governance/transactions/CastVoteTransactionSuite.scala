@@ -14,7 +14,7 @@ import im.paideia.Paideia
 import im.paideia.staking.TotalStakingState
 import org.ergoplatform.appkit.Address
 import im.paideia.common.contracts.Config
-import im.paideia.staking.contracts.PlasmaStaking
+import im.paideia.staking.contracts.StakeState
 import im.paideia.governance.contracts.CastVote
 import im.paideia.governance.Proposal
 import im.paideia.governance.VoteRecord
@@ -89,7 +89,7 @@ class CastVoteTransactionSuite extends PaideiaTestSuite {
         val stakeKey = Util.randomKey
         val voteKey  = Util.randomKey
 
-        val stakingContract = PlasmaStaking(PaideiaContractSignature(daoKey = dao.key))
+        val stakingContract = StakeState(PaideiaContractSignature(daoKey = dao.key))
 
         val dummyAddress =
           Address.create("9h7L7sUHZk43VQC3PHtSp5ujAWcZtYmWATBH746wi75C5XHi68b")

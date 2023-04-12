@@ -9,6 +9,7 @@ import im.paideia.Paideia
 import im.paideia.common.contracts.Treasury
 import im.paideia.common.contracts.PaideiaContract
 import im.paideia.common.contracts.PaideiaContractSignature
+import im.paideia.staking.contracts._
 
 object StakingTest {
 
@@ -37,6 +38,44 @@ object StakingTest {
     val dao = new DAO(daoKey, config)
     Paideia.addDAO(dao)
     TotalStakingState(daoKey, 0L)
+
+    val changeStakeContract = ChangeStake(PaideiaContractSignature(daoKey = daoKey))
+    dao.config
+      .set(
+        ConfKeys.im_paideia_contracts_staking_changestake,
+        changeStakeContract.contractSignature
+      )
+    val stakeContract = Stake(PaideiaContractSignature(daoKey = daoKey))
+    dao.config
+      .set(
+        ConfKeys.im_paideia_contracts_staking_stake,
+        stakeContract.contractSignature
+      )
+    val unstakeContract = Unstake(PaideiaContractSignature(daoKey = daoKey))
+    dao.config
+      .set(
+        ConfKeys.im_paideia_contracts_staking_unstake,
+        unstakeContract.contractSignature
+      )
+    val compoundContract = StakeCompound(PaideiaContractSignature(daoKey = daoKey))
+    dao.config
+      .set(
+        ConfKeys.im_paideia_contracts_staking_compound,
+        compoundContract.contractSignature
+      )
+    val snapshotContract = StakeSnapshot(PaideiaContractSignature(daoKey = daoKey))
+    dao.config
+      .set(
+        ConfKeys.im_paideia_contracts_staking_snapshot,
+        snapshotContract.contractSignature
+      )
+    val profitShareContract = StakeProfitShare(PaideiaContractSignature(daoKey = daoKey))
+    dao.config
+      .set(
+        ConfKeys.im_paideia_contracts_staking_profitshare,
+        profitShareContract.contractSignature
+      )
+
     dao
   }
 }

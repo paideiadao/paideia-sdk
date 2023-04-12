@@ -15,7 +15,7 @@ import org.ergoplatform.appkit.ErgoToken
 import scala.collection.JavaConverters._
 import im.paideia.staking._
 import im.paideia.staking.boxes._
-import im.paideia.staking.contracts.PlasmaStaking
+import im.paideia.staking.contracts.StakeProfitShare
 import im.paideia.DAO
 import im.paideia.Paideia
 import im.paideia.common.filtering.FilterLeaf
@@ -41,7 +41,8 @@ object SplitProfitTransaction {
 
     val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
 
-    val totalErg = splitProfitInputs.foldLeft(0L)((z, spi) => z + spi.getValue()) - 2500000L
+    val totalErg =
+      splitProfitInputs.foldLeft(0L)((z, spi) => z + spi.getValue()) - 2500000L
 
     val configInput = Paideia.getBox(
       new FilterLeaf[String](
@@ -65,7 +66,7 @@ object SplitProfitTransaction {
       0.toByte,
       dao.config.getProof(
         ConfKeys.im_paideia_contracts_treasury,
-        ConfKeys.im_paideia_contracts_staking,
+        ConfKeys.im_paideia_contracts_staking_state,
         ConfKeys.im_paideia_staking_profit_share_pct,
         ConfKeys.im_paideia_dao_tokenid,
         ConfKeys.im_paideia_staking_profit_tokenids
@@ -99,27 +100,27 @@ object SplitProfitTransaction {
       )
 
       profitToShare(0) = (splitProfitInputs.foldLeft(0L)((z, spi) =>
+        z + spi
+          .getTokens()
+          .asScala
+          .foldLeft(0L)((x, et) =>
+            if (et.getId() == govToken)
+              x + et.getValue()
+            else
+              x
+          )
+      ) * profitSharePct) / 100
+      profitToShare(1) = (totalErg * profitSharePct) / 100
+      whiteListedTokens.indices.foreach(i =>
+        profitToShare(i + 2) = (splitProfitInputs.foldLeft(0L)((z, spi) =>
           z + spi
             .getTokens()
             .asScala
             .foldLeft(0L)((x, et) =>
-              if (et.getId() == govToken)
-                x + et.getValue()
-              else
-                x
+              if (et.getId() == whiteListedTokens(i)) x + et.getValue()
+              else x
             )
         ) * profitSharePct) / 100
-      profitToShare(1) = (totalErg * profitSharePct) / 100
-      whiteListedTokens.indices.foreach(i =>
-        profitToShare(i + 2) = (splitProfitInputs.foldLeft(0L)((z, spi) =>
-            z + spi
-              .getTokens()
-              .asScala
-              .foldLeft(0L)((x, et) =>
-                if (et.getId() == whiteListedTokens(i)) x + et.getValue()
-                else x
-              )
-          ) * profitSharePct) / 100
       )
 
       val extraTokens = stakeStateInput
@@ -151,19 +152,32 @@ object SplitProfitTransaction {
 
       val state = TotalStakingState(dao.key)
 
-      val contextVars = stakeStateInputBox
+      val stakingContextVars = stakeStateInputBox
         .profitShare(profitToShare.toList, extraTokens.toList ++ newExtraTokens.toList)
+
+      val contextVars = stakingContextVars.stakingStateContextVars
         .::(
           ContextVar.of(
             0.toByte,
-            dao.config.getProof(
-              ConfKeys.im_paideia_staking_emission_amount,
-              ConfKeys.im_paideia_staking_emission_delay,
-              ConfKeys.im_paideia_staking_cyclelength,
-              ConfKeys.im_paideia_staking_profit_tokenids,
-              ConfKeys.im_paideia_staking_profit_thresholds,
-              ConfKeys.im_paideia_contracts_staking
-            )(Some(configDigest))
+            stakeStateInputBox.useContract.getConfigContext(Some(configDigest))
+          )
+        )
+
+      val profitShareContract = StakeProfitShare(
+        dao
+          .config[PaideiaContractSignature](
+            ConfKeys.im_paideia_contracts_staking_profitshare
+          )
+          .withDaoKey(dao.key)
+      )
+      val profitShareInput =
+        profitShareContract.boxes(profitShareContract.getUtxoSet.toArray.apply(0))
+
+      val profitShareContextVars = stakingContextVars.companionContextVars
+        .::(
+          ContextVar.of(
+            0.toByte,
+            profitShareContract.getConfigContext(Some(configDigest))
           )
         )
 
@@ -171,10 +185,14 @@ object SplitProfitTransaction {
       res.ctx           = ctx
       res.changeAddress = treasuryContract.contract.toAddress().getErgoAddress()
       res.fee           = 1500000
-      res.inputs = List[InputBox](stakeStateInput.withContextVars(contextVars: _*)) ++ splitProfitInputs
-          .map(_.withContextVars(splitProfitContext))
+      res.inputs = List[InputBox](
+        stakeStateInput.withContextVars(contextVars: _*),
+        profitShareInput.withContextVars(profitShareContextVars: _*)
+      ) ++ splitProfitInputs
+        .map(_.withContextVars(splitProfitContext))
       res.dataInputs = List[InputBox](configInput)
-      res.outputs    = List[OutBox](stakeStateInputBox.outBox)
+      res.outputs =
+        List[OutBox](stakeStateInputBox.outBox, profitShareContract.box(ctx).outBox)
       res
 
     } else {
