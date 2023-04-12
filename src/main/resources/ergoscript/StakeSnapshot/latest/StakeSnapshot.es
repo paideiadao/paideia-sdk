@@ -48,7 +48,7 @@
         val correctNewSnapshot = allOf(Coll(
             newSnapshotsStaked(newSnapshotsStaked.size-1) == totalStaked,
             newSnapshotsTrees(newSnapshotsTrees.size-1).digest == stakeState.digest,
-            newSnapshotsProfit(newSnapshotsProfit.size-1)(0) == min(emissionAmount,stakingStateInput.tokens(1)._2-totalStaked-profit(0))
+            newSnapshotsProfit(newSnapshotsProfit.size-1)(0) == min(emissionAmount,stakingStateInput.tokens(1)._2-totalStaked-profit(0)-1)
         ))
 
         val correctProfitAddedToSnapshot = allOf(Coll(
