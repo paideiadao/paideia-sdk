@@ -197,12 +197,16 @@ case class StakeStateBox(
           (
             kv._1,
             StakeRecord(
-              kv._2.stake + (snapshotStake * snapshots(0)
-                .profit(0) / snapshots(0).totalStaked),
+              kv._2.stake + (BigInt(snapshotStake) * BigInt(
+                snapshots(0)
+                  .profit(0)
+              ) / snapshots(0).totalStaked).toLong,
               kv._2.rewards.indices
                 .map((i: Int) =>
-                  kv._2.rewards(i) + (snapshotStake * snapshots(0)
-                    .profit(i + 1) / snapshots(0).totalStaked)
+                  kv._2.rewards(i) + (BigInt(snapshotStake) * BigInt(
+                    snapshots(0)
+                      .profit(i + 1)
+                  ) / snapshots(0).totalStaked).toLong
                 )
                 .toList
             )
