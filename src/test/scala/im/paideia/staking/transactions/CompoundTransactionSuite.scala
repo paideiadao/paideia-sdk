@@ -54,10 +54,10 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
             100000000L
           )
 
-        stakingState.stake(Util.randomKey, 100L)
+        stakingState.stake(Util.randomKey, 1000000000000L)
 
         Range(0, dao.config[Long](ConfKeys.im_paideia_staking_emission_delay).toInt)
-          .foreach(_ => stakingState.emit(9999999999999999L, 9999999L))
+          .foreach(_ => stakingState.emit(9999999999999999L, 99999999999L))
         val dummyAddress = Address.create("4MQyML64GnzMxZgm")
 
         val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))

@@ -31,7 +31,7 @@ object StakingTest {
       ConfKeys.im_paideia_dao_action_tokenid,
       ErgoId.create(Util.randomKey).getBytes()
     )
-    config.set(ConfKeys.im_paideia_staking_emission_amount, 100000L)
+    config.set(ConfKeys.im_paideia_staking_emission_amount, 1000000000L)
     config.set(ConfKeys.im_paideia_staking_cyclelength, 1000000L)
     config.set(ConfKeys.im_paideia_staking_profit_thresholds, Array(0L, 0L))
 

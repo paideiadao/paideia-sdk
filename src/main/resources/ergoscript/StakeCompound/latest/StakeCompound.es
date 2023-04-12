@@ -63,23 +63,23 @@
         val rewards = keyIndices.map{
             (index: Int) => {
             if (currentStakes(index)(0)>=0L) {
-                val r = snapshotProfit.map{(p: Long) => (snapshotStakes(index)(0) * p / snapshotStaked)}
-                val newStake: Coll[Long] = currentStakes(index).zip(r).map{(ll: (Long,Long)) => ll._1+ll._2}
-                (r,newStake == newStakes(index))
+                val r = snapshotProfit.map{(p: Long) => (snapshotStakes(index)(0).toBigInt * p.toBigInt / snapshotStaked)}
+                val newStake: Coll[BigInt] = currentStakes(index).zip(r).map{(ll: (Long,BigInt)) => ll._1+ll._2}
+                (r,newStake == newStakes(index).map{(s: Long) => s.toBigInt})
             } else {
-                (snapshotProfit.map{(l: Long) => 0L},true)
+                (snapshotProfit.map{(l: Long) => 0.toBigInt},true)
             }
             }
         }
 
         val validCompounds = allOf(rewards.map{
-            (reward: (Coll[Long],Boolean)) =>
+            (reward: (Coll[BigInt],Boolean)) =>
             reward._2
         })
 
-        val totalRewards = rewards.fold(0L, {(z: Long, reward: (Coll[Long],Boolean)) => z + reward._1(0)})
+        val totalRewards = rewards.fold(0.toBigInt, {(z: BigInt, reward: (Coll[BigInt],Boolean)) => z + reward._1(0)})
 
-        val correctTotalStaked = totalStaked + totalRewards == stakingStateOutput.R5[Coll[Long]].get(2)
+        val correctTotalStaked = totalStaked.toBigInt + totalRewards == stakingStateOutput.R5[Coll[Long]].get(2).toBigInt
 
         val correctSnapshot = snapshotsTree(0).remove(keys, removeProof).get.digest == stakingStateOutput.R7[Coll[AvlTree]].get(0).digest
         

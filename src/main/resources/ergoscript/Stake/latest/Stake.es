@@ -46,7 +46,7 @@
         val zeroReward = stakeRecord.slice(1,stakeRecord.size).forall{(l: Long) => l==0L}
 
         val correctKeyMinted = stakingStateInput.id == mintedKey._1 && stakingStateInput.id == stakeOperations(0)._1 
-        val correctAmountMinted = mintedKey._2 == 1
+        val correctAmountMinted = OUTPUTS.flatMap{(b: Box) => b.tokens}.fold(0L, {(z: Long, t: (Coll[Byte], Long)) => z + (if (t._1 == mintedKey._1) t._2 else 0L)}) == 1L
 
         val tokensStaked = stakeAmount == (stakingStateOutput.tokens(1)._2 - stakingStateInput.tokens(1)._2) && stakeAmount == stakingStateOutput.R5[Coll[Long]].get(2) - totalStaked
 
