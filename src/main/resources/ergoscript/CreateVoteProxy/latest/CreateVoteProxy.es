@@ -22,8 +22,11 @@
         userOutput.R6[Coll[Byte]].get == Coll(48.toByte)
     ))
 
+    val oneKeyMinted = OUTPUTS.flatMap{(b: Box) => b.tokens}.fold(0L, {(z: Long, t: (Coll[Byte], Long)) => z + (if (t._1 == daoOriginInput.id) t._2 else 0L)}) == 1L
+
     sigmaProp(allOf(Coll(
         correctConfig,
+        oneKeyMinted,
         validUserOutput
     )))
 }
