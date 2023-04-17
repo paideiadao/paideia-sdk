@@ -21,11 +21,11 @@
 
     val keyInOutput = userOutput.tokens(0)._1 == stakeOperations(0)._1
 
-    val newStakeAmount = byteArrayToLong(stakeOperations(0)._2.slice(0,8))
+    val newStakeAmount = byteArrayToLong(stakeOperations(0)._2.slice(16,24))
 
     val currentStakeState = stakeState.get(stakeOperations(0)._1, proof).get
 
-    val currentStakeAmount = byteArrayToLong(currentStakeState.slice(0,8))
+    val currentStakeAmount = byteArrayToLong(currentStakeState.slice(16,24))
 
     val tokensStaked = newStakeAmount - currentStakeAmount == SELF.tokens(1)._2
 

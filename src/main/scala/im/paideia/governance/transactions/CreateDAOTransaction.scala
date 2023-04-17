@@ -105,7 +105,6 @@ case class CreateDAOTransaction(
     _ctx,
     dao,
     Long.MaxValue,
-    Long.MaxValue,
     Long.MaxValue
   )
 

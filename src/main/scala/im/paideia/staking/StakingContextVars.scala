@@ -157,7 +157,8 @@ object StakingContextVars {
               ByteConversion.convertsId.convertToBytes(ErgoId.create(stakingKey))
             ),
             ErgoValue.of(
-              StakeRecord.stakeRecordConversion.convertToBytes(StakeRecord(0L, List(0L)))
+              StakeRecord.stakeRecordConversion
+                .convertToBytes(StakeRecord(0L, 0L, 0L, List(0L)))
             )
           )
           .getValue

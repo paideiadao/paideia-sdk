@@ -22,18 +22,13 @@ class DAOOrigin(contractSignature: PaideiaContractSignature)
     ctx: BlockchainContextImpl,
     dao: DAO,
     propTokens: Long,
-    voteTokens: Long,
     actionTokens: Long
   ): DAOOriginBox = {
-    DAOOriginBox(ctx, dao, propTokens, voteTokens, actionTokens, this)
+    DAOOriginBox(ctx, dao, propTokens, actionTokens, this)
   }
 
   override lazy val constants: HashMap[String, Object] = {
     val cons = new HashMap[String, Object]()
-    cons.put(
-      "_IM_PAIDEIA_CONTRACTS_VOTE",
-      ConfKeys.im_paideia_contracts_vote.ergoValue.getValue()
-    )
     cons.put(
       "_IM_PAIDEIA_CONTRACTS_DAO",
       ConfKeys.im_paideia_contracts_dao.ergoValue.getValue()

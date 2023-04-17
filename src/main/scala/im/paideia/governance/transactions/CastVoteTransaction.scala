@@ -12,8 +12,6 @@ import im.paideia.Paideia
 import im.paideia.util.ConfKeys
 import org.ergoplatform.appkit.ErgoToken
 import im.paideia.common.contracts.PaideiaContractSignature
-import im.paideia.governance.boxes.VoteBox
-import im.paideia.governance.contracts.Vote
 import special.collection.Coll
 import org.ergoplatform.appkit.ContextVar
 import im.paideia.staking.TotalStakingState
@@ -34,29 +32,6 @@ final case class CastVoteTransaction(
   changeAddress = _changeAddress.getErgoAddress()
 
   val castVoteBox = CastVoteBox.fromInputBox(ctx, castVoteInput)
-
-  val voteInput = Paideia.getBox(
-    new FilterNode(
-      FilterType.FTALL,
-      List(
-        new FilterLeaf(
-          FilterType.FTEQ,
-          new ErgoId(dao.config.getArray[Byte](ConfKeys.im_paideia_dao_vote_tokenid))
-            .toString(),
-          CompareField.ASSET,
-          0
-        ),
-        new FilterLeaf(
-          FilterType.FTEQ,
-          ErgoId.create(castVoteBox.voteKey).getBytes().toIterable,
-          CompareField.REGISTER,
-          1
-        )
-      )
-    )
-  )(0)
-
-  val voteBox: VoteBox = VoteBox.fromInputBox(ctx, voteInput)
 
   val proposalInput = Paideia
     .getBox(
@@ -112,7 +87,7 @@ final case class CastVoteTransaction(
       ctx,
       proposalInput,
       castVoteBox.vote,
-      castVoteBox.voteKey,
+      castVoteBox.stakeKey,
       Left(proposalDigest)
     )
 
@@ -138,7 +113,7 @@ final case class CastVoteTransaction(
   )
 
   val getProof = TotalStakingState(dao.key).currentStakingState
-    .getStakes(List(voteBox.stakeKey), Some(stakeStateInputBox.stateDigest))
+    .getStakes(List(castVoteBox.stakeKey), Some(stakeStateInputBox.stateDigest))
 
   val extraContext = List(
     ContextVar.of(
@@ -148,33 +123,21 @@ final case class CastVoteTransaction(
     ContextVar.of(4.toByte, ErgoValueBuilder.buildFor(0, 0L))
   )
 
-  val paiActors = Paideia._actorList
-  val paiDaos   = Paideia._daoMap
-
-  val voteOutput = voteBox.useContract.box(
-    _ctx,
-    voteBox.voteKey,
-    voteBox.stakeKey,
-    voteBox.releaseTime.max(
-      proposalInput.getRegisters().get(1).getValue().asInstanceOf[Coll[Long]](0)
-    )
-  )
-
   val userOutput = _ctx
     .newTxBuilder()
     .outBoxBuilder()
     .value(1000000L)
     .tokens(
-      new ErgoToken(castVoteBox.voteKey, 1L)
+      new ErgoToken(castVoteBox.stakeKey, 1L)
     )
     .contract(castVoteBox.userAddress.toErgoContract)
     .build()
 
   inputs = List(
+    stakeStateInput,
     proposalInput.withContextVars(configContext ++ result._1 ++ extraContext: _*),
-    voteInput,
     castVoteInput
   )
-  dataInputs = List(configInput, stakeStateInput)
-  outputs    = List(result._2.outBox, voteOutput.outBox, userOutput)
+  dataInputs = List(configInput)
+  outputs    = List(result._2.outBox, userOutput)
 }

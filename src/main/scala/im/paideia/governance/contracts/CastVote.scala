@@ -28,12 +28,12 @@ class CastVote(contractSignature: PaideiaContractSignature)
 
   def box(
     ctx: BlockchainContextImpl,
-    voteKey: String,
+    stakeKey: String,
     proposalIndex: Int,
     vote: VoteRecord,
     userAddress: Address
   ): CastVoteBox = {
-    CastVoteBox(ctx, voteKey, proposalIndex, vote, userAddress, this)
+    CastVoteBox(ctx, stakeKey, proposalIndex, vote, userAddress, this)
   }
 
   override lazy val constants: HashMap[String, Object] = {
@@ -91,7 +91,7 @@ class CastVote(contractSignature: PaideiaContractSignature)
                   te.ctx,
                   proposalBox,
                   castVoteBox.vote,
-                  castVoteBox.voteKey,
+                  castVoteBox.stakeKey,
                   if (te.mempool)
                     Left(
                       ADDigest @@ proposalBox

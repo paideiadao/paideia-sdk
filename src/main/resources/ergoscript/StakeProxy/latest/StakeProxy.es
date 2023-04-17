@@ -2,6 +2,7 @@
     val configTokenId = _IM_PAIDEIA_DAO_KEY 
     val config = CONTEXT.dataInputs(0)
     val correctConfigTokenId = config.tokens(0)._1 == configTokenId
+    val stakeInfoOffset = 16
 
     val configProof = getVar[Coll[Byte]](0).get
 
@@ -25,7 +26,7 @@
 
     val mintedKey = userOutput.tokens(0)
 
-    val stakeRecord = longIndices.map{(i: Int) => byteArrayToLong(stakeOperations(0)._2.slice(i,i+8))}
+    val stakeRecord = longIndices.map{(i: Int) => byteArrayToLong(stakeOperations(0)._2.slice(i+stakeInfoOffset,i+8+stakeInfoOffset))}
     val stakeAmount = stakeRecord(0)
     val zeroReward = stakeRecord.slice(1,stakeRecord.size).forall{(l: Long) => l==0L}
 

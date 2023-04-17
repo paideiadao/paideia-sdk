@@ -1,6 +1,7 @@
 {
     val configTokenId = _IM_PAIDEIA_DAO_KEY 
     val config = CONTEXT.dataInputs(0)
+    val stakeInfoOffset = 16
 
     val correctConfigTokenId = config.tokens(0)._1 == configTokenId
 
@@ -39,8 +40,8 @@
         val keyInOutput = userOutput.tokens.getOrElse(0,OUTPUTS(0).tokens(0))._1 == stakeOperations(0)._1
 
         val currentStakeState = stakeState.get(stakeOperations(0)._1, proof).get
-        val currentProfits = longIndices.map{(i: Int) => byteArrayToLong(currentStakeState.slice(i,i+8))}
-        val newProfits = longIndices.map{(i: Int) => byteArrayToLong(stakeOperations(0)._2.slice(i,i+8))}
+        val currentProfits = longIndices.map{(i: Int) => byteArrayToLong(currentStakeState.slice(i+stakeInfoOffset,i+8+stakeInfoOffset))}
+        val newProfits = longIndices.map{(i: Int) => byteArrayToLong(stakeOperations(0)._2.slice(i+stakeInfoOffset,i+8+stakeInfoOffset))}
         val combinedProfit = currentProfits.zip(newProfits)
 
         val currentStakeAmount = currentProfits(0)

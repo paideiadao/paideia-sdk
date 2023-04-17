@@ -2,6 +2,7 @@
     val configTokenId = _IM_PAIDEIA_DAO_KEY 
     val config = CONTEXT.dataInputs(0)
     val correctConfigTokenId = config.tokens(0)._1 == configTokenId
+    val stakeInfoOffset = 16
 
     val configProof = getVar[Coll[Byte]](0).get
 
@@ -41,19 +42,19 @@
 
         val keys = compoundOperations.map{(kv: (Coll[Byte], Coll[Byte])) => kv._1}
 
-        val filteredCompoundOperations = compoundOperations.filter{(kv: (Coll[Byte], Coll[Byte])) => byteArrayToLong(kv._2.slice(0,8)) > 0}
+        val filteredCompoundOperations = compoundOperations.filter{(kv: (Coll[Byte], Coll[Byte])) => byteArrayToLong(kv._2.slice(0+stakeInfoOffset,8+stakeInfoOffset)) > 0}
 
         val currentStakes: Coll[Coll[Long]] = stakeState.getMany(keys,proof).map{
             (b: Option[Coll[Byte]]) =>
             if (b.isDefined) {
-            longIndices.map{(i: Int) => byteArrayToLong(b.get.slice(i,i+8))}
+            longIndices.map{(i: Int) => byteArrayToLong(b.get.slice(i+stakeInfoOffset,i+8+stakeInfoOffset))}
             } else {
             notFound
             }
         }
 
-        val snapshotStakes = snapshotsTree(0).getMany(keys,snapshotProof).map{(b: Option[Coll[Byte]]) => longIndices.map{(i: Int) => byteArrayToLong(b.get.slice(i,i+8))}}
-        val newStakes: Coll[Coll[Long]] = compoundOperations.map{(kv: (Coll[Byte], Coll[Byte])) => longIndices.map{(i: Int) => byteArrayToLong(kv._2.slice(i,i+8))}}
+        val snapshotStakes = snapshotsTree(0).getMany(keys,snapshotProof).map{(b: Option[Coll[Byte]]) => longIndices.map{(i: Int) => byteArrayToLong(b.get.slice(i+stakeInfoOffset,i+8+stakeInfoOffset))}}
+        val newStakes: Coll[Coll[Long]] = compoundOperations.map{(kv: (Coll[Byte], Coll[Byte])) => longIndices.map{(i: Int) => byteArrayToLong(kv._2.slice(i+stakeInfoOffset,i+8+stakeInfoOffset))}}
         val snapshotStaked = snapshotsStaked(0)
 
         val snapshotProfit = snapshotsProfit(0)

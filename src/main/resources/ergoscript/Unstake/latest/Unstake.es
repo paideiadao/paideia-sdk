@@ -4,6 +4,8 @@
 
     val correctConfigTokenId = config.tokens(0)._1 == configTokenId
 
+    val stakeInfoOffset = 16
+
     val configProof = getVar[Coll[Byte]](0).get
 
     val configValues = config.R4[AvlTree].get.getMany(Coll(
@@ -41,7 +43,7 @@
         val keyInInput = userInput.tokens(0)._1 == keys(0)
 
         val currentStakeState = stakeState.get(keys(0), proof).get
-        val currentProfits = longIndices.map{(i: Int) => byteArrayToLong(currentStakeState.slice(i,i+8))}
+        val currentProfits = longIndices.map{(i: Int) => byteArrayToLong(currentStakeState.slice(i+stakeInfoOffset,i+8+stakeInfoOffset))}
 
         val currentStakeAmount = currentProfits(0)
 

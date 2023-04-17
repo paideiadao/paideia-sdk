@@ -31,7 +31,7 @@ import im.paideia.util.Env
   */
 final case class CastVoteBox(
   _ctx: BlockchainContextImpl,
-  voteKey: String,
+  stakeKey: String,
   proposalIndex: Int,
   vote: VoteRecord,
   userAddress: Address,
@@ -49,7 +49,7 @@ final case class CastVoteBox(
     */
   override def tokens: List[ErgoToken] = {
     List(
-      new ErgoToken(voteKey, 1L),
+      new ErgoToken(stakeKey, 1L),
       new ErgoToken(Env.paideiaTokenId, Env.defaultBotFee)
     )
   }

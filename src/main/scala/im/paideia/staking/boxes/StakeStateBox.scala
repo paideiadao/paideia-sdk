@@ -104,6 +104,8 @@ case class StakeStateBox(
     inPlace: Boolean = false
   ): StakingContextVars = {
     val stakeRecord = StakeRecord(
+      0L,
+      0L,
       amount,
       List.fill(
         dao.config
@@ -129,7 +131,15 @@ case class StakeStateBox(
   ): StakingContextVars = {
     val currentStake = state.currentStakingState.getStake(stakingKey, Some(stateDigest))
     val operations = List(
-      (stakingKey, StakeRecord(currentStake.stake + amount, currentStake.rewards))
+      (
+        stakingKey,
+        StakeRecord(
+          currentStake.lockedUntil,
+          currentStake.voted,
+          currentStake.stake + amount,
+          currentStake.rewards
+        )
+      )
     )
     val result = state.currentStakingState.changeStakes(operations, Left(stateDigest))
     stateDigest = result.digest
@@ -197,6 +207,8 @@ case class StakeStateBox(
           (
             kv._1,
             StakeRecord(
+              kv._2.lockedUntil,
+              kv._2.voted,
               kv._2.stake + (BigInt(snapshotStake) * BigInt(
                 snapshots(0)
                   .profit(0)
