@@ -148,8 +148,6 @@
     val currentStakeAmount: Long = currentProfits(0)
     val newStakeAmount: Long     = newProfits(0)
 
-         
- 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
     // Simple conditions                                                     //
