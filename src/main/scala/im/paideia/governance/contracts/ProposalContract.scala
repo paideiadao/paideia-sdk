@@ -16,4 +16,10 @@ abstract trait ProposalContract {
     voteKey: String,
     digestOrHeight: Either[ADDigest, Int]
   ): (List[ContextVar], PaideiaBox)
+
+  def getVote(
+    voteKey: String,
+    proposalIndex: Int,
+    digestOrHeight: Either[ADDigest, Int]
+  ): Option[VoteRecord]
 }

@@ -2,7 +2,7 @@
     val configTokenId = _IM_PAIDEIA_DAO_KEY 
     val config = CONTEXT.dataInputs(0)
     val correctConfigTokenId = config.tokens(0)._1 == configTokenId
-    val stakeInfoOffset = 16
+    val stakeInfoOffset = 8
 
     val configProof = getVar[Coll[Byte]](0).get
 
@@ -20,15 +20,15 @@
         val stakingStateInput = INPUTS(0)
         val correctStakingState = stakingStateInput.tokens(0)._1 == stakingStateTokenId.slice(6,38)
 
-        val stakeState = stakingStateInput.R4[AvlTree].get
+        val stakeState = stakingStateInput.R4[Coll[AvlTree]].get(0)
 
-        val totalStaked = stakingStateInput.R5[Coll[Long]].get(2)
+        val totalStaked = stakingStateInput.R5[Coll[Long]].get(1)
         val whiteListedTokenIds = profitTokenIds.slice(0,(profitTokenIds.size-6)/37).indices.map{(i: Int) =>
             profitTokenIds.slice(6+(37*i)+5,6+(37*(i+1)))
         }
-        val profit = stakingStateInput.R5[Coll[Long]].get.slice(3,stakingStateInput.R5[Coll[Long]].get.size).append(whiteListedTokenIds.slice(stakingStateInput.R5[Coll[Long]].get.size-2,whiteListedTokenIds.size).map{(tokId: Coll[Byte]) => 0L})
+        val profit = stakingStateInput.R5[Coll[Long]].get.slice(5,stakingStateInput.R5[Coll[Long]].get.size).append(whiteListedTokenIds.slice(stakingStateInput.R5[Coll[Long]].get.size-4,whiteListedTokenIds.size).map{(tokId: Coll[Byte]) => 0L})
         val snapshotsStaked = stakingStateInput.R6[Coll[Long]].get
-        val snapshotsTree = stakingStateInput.R7[Coll[AvlTree]].get
+        val snapshotsTree = stakingStateInput.R7[Coll[(AvlTree, AvlTree)]].get
         val snapshotsProfit = stakingStateInput.R8[Coll[Coll[Long]]].get
         val longIndices = profit.indices.map{(i: Int) => i*8}
 
@@ -47,13 +47,13 @@
         val currentStakes: Coll[Coll[Long]] = stakeState.getMany(keys,proof).map{
             (b: Option[Coll[Byte]]) =>
             if (b.isDefined) {
-            longIndices.map{(i: Int) => byteArrayToLong(b.get.slice(i+stakeInfoOffset,i+8+stakeInfoOffset))}
+                longIndices.map{(i: Int) => byteArrayToLong(b.get.slice(i+stakeInfoOffset,i+8+stakeInfoOffset))}
             } else {
-            notFound
+                notFound
             }
         }
 
-        val snapshotStakes = snapshotsTree(0).getMany(keys,snapshotProof).map{(b: Option[Coll[Byte]]) => longIndices.map{(i: Int) => byteArrayToLong(b.get.slice(i+stakeInfoOffset,i+8+stakeInfoOffset))}}
+        val snapshotStakes = snapshotsTree(0)._1.getMany(keys,snapshotProof).map{(b: Option[Coll[Byte]]) => longIndices.map{(i: Int) => byteArrayToLong(b.get.slice(i+stakeInfoOffset,i+8+stakeInfoOffset))}}
         val newStakes: Coll[Coll[Long]] = compoundOperations.map{(kv: (Coll[Byte], Coll[Byte])) => longIndices.map{(i: Int) => byteArrayToLong(kv._2.slice(i+stakeInfoOffset,i+8+stakeInfoOffset))}}
         val snapshotStaked = snapshotsStaked(0)
 
@@ -80,11 +80,11 @@
 
         val totalRewards = rewards.fold(0.toBigInt, {(z: BigInt, reward: (Coll[BigInt],Boolean)) => z + reward._1(0)})
 
-        val correctTotalStaked = totalStaked.toBigInt + totalRewards == stakingStateOutput.R5[Coll[Long]].get(2).toBigInt
+        val correctTotalStaked = totalStaked.toBigInt + totalRewards == stakingStateOutput.R5[Coll[Long]].get(1).toBigInt
 
-        val correctSnapshot = snapshotsTree(0).remove(keys, removeProof).get.digest == stakingStateOutput.R7[Coll[AvlTree]].get(0).digest
+        val correctSnapshot = snapshotsTree(0)._1.remove(keys, removeProof).get.digest == stakingStateOutput.R7[Coll[(AvlTree,AvlTree)]].get(0)._1.digest
         
-        val correctNewState = stakeState.update(filteredCompoundOperations, proof).get.digest == stakingStateOutput.R4[AvlTree].get.digest
+        val correctNewState = stakeState.update(filteredCompoundOperations, proof).get.digest == stakingStateOutput.R4[Coll[AvlTree]].get(0).digest
         
         allOf(Coll(
             correctStakingState,

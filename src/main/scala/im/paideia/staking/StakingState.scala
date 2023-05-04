@@ -24,12 +24,12 @@ import im.paideia.util.ProvenResultWithDigest
 class StakingState(
   val emissionTime: Long,
   val current: Boolean,
-  plasmaParameters: PlasmaParameters,
-  val plasmaMap: MempoolPlasmaMap[ErgoId, StakeRecord]
+  val stakeRecords: MempoolPlasmaMap[ErgoId, StakeRecord],
+  val participationRecords: MempoolPlasmaMap[ErgoId, ParticipationRecord]
 ) {
 
   def totalStaked(digestOpt: Option[ADDigest] = None): Long = {
-    plasmaMap
+    stakeRecords
       .getMap(digestOpt)
       .get
       .toMap
@@ -37,8 +37,16 @@ class StakingState(
       .foldLeft(0L)((z: Long, stakeRecord: StakeRecord) => stakeRecord.stake + z)
   }
 
+  def stakers(digestOpt: Option[ADDigest] = None): Long = {
+    stakeRecords
+      .getMap(digestOpt)
+      .get
+      .toMap
+      .size
+  }
+
   def sortedKeys(digestOpt: Option[ADDigest] = None): SortedSet[String] = {
-    SortedSet(plasmaMap.getMap(digestOpt).get.toMap.keys.map(_.toString()).toSeq: _*)
+    SortedSet(stakeRecords.getMap(digestOpt).get.toMap.keys.map(_.toString()).toSeq: _*)
   }
 
   def stake(
@@ -47,7 +55,7 @@ class StakingState(
     digestOrHeight: Either[ADDigest, Int],
     inPlace: Boolean = false
   ): ProvenResultWithDigest[StakeRecord] = {
-    plasmaMap.insertWithDigest((ErgoId.create(stakingKey), stakeRecord))(
+    stakeRecords.insertWithDigest((ErgoId.create(stakingKey), stakeRecord))(
       digestOrHeight,
       inPlace
     )
@@ -57,7 +65,7 @@ class StakingState(
     stakingKeys: List[String],
     digestOrHeight: Either[ADDigest, Int]
   ): ProvenResultWithDigest[StakeRecord] = {
-    plasmaMap.deleteWithDigest(
+    stakeRecords.deleteWithDigest(
       stakingKeys.map((stakingKey: String) => ErgoId.create(stakingKey)): _*
     )(digestOrHeight)
   }
@@ -66,7 +74,8 @@ class StakingState(
     stakingKeys: List[String],
     digestOpt: Option[ADDigest]
   ): ProvenResult[StakeRecord] = {
-    plasmaMap.lookUpWithDigest(stakingKeys.map(key => ErgoId.create(key)): _*)(digestOpt)
+    stakeRecords
+      .lookUpWithDigest(stakingKeys.map(key => ErgoId.create(key)): _*)(digestOpt)
   }
 
   def getStake(stakingKey: String, digestOpt: Option[ADDigest]): StakeRecord = {
@@ -76,12 +85,29 @@ class StakingState(
     }
   }
 
+  def getParticipations(
+    stakingKeys: List[String],
+    digestOpt: Option[ADDigest]
+  ): ProvenResult[ParticipationRecord] = {
+    participationRecords
+      .lookUpWithDigest(stakingKeys.map(key => ErgoId.create(key)): _*)(digestOpt)
+  }
+
   def changeStakes(
     newStakes: List[(String, StakeRecord)],
     digestOrHeight: Either[ADDigest, Int]
   ): ProvenResultWithDigest[StakeRecord] = {
-    plasmaMap.updateWithDigest(
+    stakeRecords.updateWithDigest(
       newStakes.map(kv => (ErgoId.create(kv._1), kv._2)): _*
+    )(digestOrHeight)
+  }
+
+  def changeParticipations(
+    newParticipation: List[(String, ParticipationRecord)],
+    digestOrHeight: Either[ADDigest, Int]
+  ): ProvenResultWithDigest[ParticipationRecord] = {
+    participationRecords.updateWithDigest(
+      newParticipation.map(kv => (ErgoId.create(kv._1), kv._2)): _*
     )(digestOrHeight)
   }
 
@@ -100,25 +126,28 @@ class StakingState(
     daoKey: String,
     newEmissionTime: Long
   ): StakingState = {
-    val folder = new File(
-      "./stakingStates/" ++ daoKey ++ "/" ++ (if (current) "current"
-                                              else emissionTime.toString)
-    )
-    val newFolder = new File(
-      "./stakingStates/" ++ daoKey ++ "/" ++ newEmissionTime.toString
-    )
-    newFolder.mkdirs()
-    FileUtils.copyDirectory(folder, newFolder)
-    val ldbStore = new LDBVersionedStore(newFolder, 10)
-    val avlStorage = new VersionedLDBAVLStorage[Digest32](
-      ldbStore,
-      PlasmaParameters.default.toNodeParams
-    )(Blake2b256)
+    val newStorages = List("stake", "participation").map(f => {
+      val folder = new File(
+        "./stakingStates/" ++ daoKey ++ "/" ++ f ++ "/" ++ (if (current) "current"
+                                                            else emissionTime.toString)
+      )
+      val newFolder = new File(
+        "./stakingStates/" ++ daoKey ++ "/" ++ f ++ "/" ++ newEmissionTime.toString
+      )
+      newFolder.mkdirs()
+      FileUtils.copyDirectory(folder, newFolder)
+      val ldbStore = new LDBVersionedStore(newFolder, 10)
+      new VersionedLDBAVLStorage[Digest32](
+        ldbStore,
+        PlasmaParameters.default.toNodeParams
+      )(Blake2b256)
+    })
+
     new StakingState(
       newEmissionTime,
       false,
-      plasmaParameters = plasmaParameters,
-      plasmaMap        = plasmaMap.copy(avlStorage)
+      stakeRecords.copy(newStorages(0)),
+      participationRecords.copy(newStorages(1))
     )
 
   }
@@ -130,27 +159,32 @@ object StakingState {
     daoKey: String,
     emissionTime: Long,
     current: Boolean,
-    plasmaParameters: PlasmaParameters = PlasmaParameters.default,
-    totalStaked: Long                  = 0
+    totalStaked: Long = 0
   ): StakingState = {
-    val folder = new File(
-      "./stakingStates/" ++ daoKey ++ "/" ++ (if (current) "current"
-                                              else emissionTime.toString)
-    )
-    folder.mkdirs()
-    val ldbStore = new LDBVersionedStore(folder, 10)
-    val avlStorage = new VersionedLDBAVLStorage[Digest32](
-      ldbStore,
-      PlasmaParameters.default.toNodeParams
-    )(Blake2b256)
+    val newStorages = List("stake", "participation").map(f => {
+      val folder = new File(
+        "./stakingStates/" ++ daoKey ++ "/" ++ f ++ "/" ++ (if (current) "current"
+                                                            else emissionTime.toString)
+      )
+      folder.mkdirs()
+      val ldbStore = new LDBVersionedStore(folder, 10)
+      new VersionedLDBAVLStorage[Digest32](
+        ldbStore,
+        PlasmaParameters.default.toNodeParams
+      )(Blake2b256)
+    })
     new StakingState(
       emissionTime,
       current,
-      plasmaParameters = plasmaParameters,
-      plasmaMap = new MempoolPlasmaMap[ErgoId, StakeRecord](
-        avlStorage,
+      new MempoolPlasmaMap[ErgoId, StakeRecord](
+        newStorages(0),
         flags  = AvlTreeFlags.AllOperationsAllowed,
-        params = plasmaParameters
+        params = PlasmaParameters.default
+      ),
+      new MempoolPlasmaMap[ErgoId, ParticipationRecord](
+        newStorages(1),
+        flags  = AvlTreeFlags.AllOperationsAllowed,
+        params = PlasmaParameters.default
       )
     )
   }

@@ -15,13 +15,13 @@
     val plasmaStakingOutput = OUTPUTS(0)
     val userOutput = OUTPUTS(2)
 
-    val stakeInfoOffset = 16
+    val stakeInfoOffset = 8
 
-    val stakeState = plasmaStakingInput.R4[AvlTree].get
+    val stakeState = plasmaStakingInput.R4[Coll[AvlTree]].get(0)
 
     val newStakeRecord = SELF.R5[Coll[Byte]].get
-    val newStake = byteArrayToLong(newStakeRecord.slice(16,24))
-    val longIndices = newStakeRecord.slice(0,newStakeRecord.size/8-2).indices
+    val newStake = byteArrayToLong(newStakeRecord.slice(stakeInfoOffset,stakeInfoOffset+8))
+    val longIndices = newStakeRecord.slice(0,newStakeRecord.size/8-(stakeInfoOffset/8)).indices
 
     val whiteListedTokenIds = configValues(1).get.slice(0,(configValues(1).get.size-6)/37).indices.map{(i: Int) =>
         configValues(1).get.slice(6+(37*i)+5,6+(37*(i+1)))
@@ -61,7 +61,7 @@
 
         val keyInOutput = userOutput.tokens(0)._1 == stakeOperations(0)._1
 
-        val correctNewState = stakeState.update(stakeOperations, proof).get.digest == plasmaStakingOutput.R4[AvlTree].get.digest
+        val correctNewState = stakeState.update(stakeOperations, proof).get.digest == plasmaStakingOutput.R4[Coll[AvlTree]].get(0).digest
    
         allOf(Coll(
             keyInOutput,
@@ -73,7 +73,7 @@
 
         val keyInInput = SELF.tokens(0)._1 == keys(0)
 
-        val correctNewState = stakeState.remove(keys, removeProof).get.digest == plasmaStakingOutput.R4[AvlTree].get.digest
+        val correctNewState = stakeState.remove(keys, removeProof).get.digest == plasmaStakingOutput.R4[Coll[AvlTree]].get(0).digest
         
         allOf(Coll(
             keyInInput,

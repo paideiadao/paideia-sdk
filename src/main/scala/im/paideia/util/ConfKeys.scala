@@ -60,6 +60,9 @@ object ConfKeys {
   val im_paideia_contracts_staking_snapshot = DAOConfigKey(
     "im.paideia.contracts.staking.snapshot"
   )
+  val im_paideia_contracts_staking_vote = DAOConfigKey(
+    "im.paideia.contracts.staking.vote"
+  )
   val im_paideia_contracts_staking_compound = DAOConfigKey(
     "im.paideia.contracts.staking.compound"
   )

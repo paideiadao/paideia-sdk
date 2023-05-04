@@ -1,9 +1,7 @@
 {
-    val proposalInput = INPUTS(0)
+    val proposalInput = INPUTS(2)
 
-    val voteInput = INPUTS(1)
-
-    val userOutput = OUTPUTS(2)
+    val userOutput = OUTPUTS(3)
 
     val voteKeyReturned = allOf(Coll(
         userOutput.tokens(0) == SELF.tokens(0),
@@ -12,11 +10,8 @@
 
     val validProposal = proposalInput.tokens(0)._1 == _IM_PAIDEIA_DAO_PROPOSAL_TOKENID
 
-    val validVote = voteInput.tokens(0)._1 == _IM_PAIDEIA_DAO_VOTE_TOKENID
-
     sigmaProp(allOf(Coll(
         voteKeyReturned,
-        validProposal,
-        validVote
+        validProposal
     )))
 }

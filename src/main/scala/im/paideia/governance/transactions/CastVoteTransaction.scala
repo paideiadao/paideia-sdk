@@ -20,6 +20,7 @@ import special.sigma.AvlTree
 import scorex.crypto.authds.ADDigest
 import im.paideia.staking.boxes.StakeStateBox
 import scorex.crypto.hash.Blake2b256
+import im.paideia.staking.contracts.StakeVote
 
 final case class CastVoteTransaction(
   _ctx: BlockchainContextImpl,
@@ -81,8 +82,16 @@ final case class CastVoteTransaction(
 
   val stakeStateInputBox = StakeStateBox.fromInputBox(ctx, stakeStateInput)
 
-  val result = Paideia
+  val proposalContract = Paideia
     .getProposalContract(Blake2b256(proposalInput.getErgoTree().bytes).array.toList)
+
+  val currentVote = proposalContract.getVote(
+    castVoteBox.stakeKey,
+    castVoteBox.proposalIndex,
+    Left(proposalDigest)
+  )
+
+  val result = proposalContract
     .castVote(
       ctx,
       proposalInput,
@@ -112,8 +121,38 @@ final case class CastVoteTransaction(
     )
   )
 
+  val stakeVoteContract = StakeVote(
+    dao
+      .config[PaideiaContractSignature](ConfKeys.im_paideia_contracts_staking_vote)
+      .withDaoKey(dao.key)
+  )
+  val stakeVoteInput =
+    stakeVoteContract.boxes(stakeVoteContract.getUtxoSet.toArray.apply(0))
+
   val getProof = TotalStakingState(dao.key).currentStakingState
     .getStakes(List(castVoteBox.stakeKey), Some(stakeStateInputBox.stateDigest))
+
+  val stakingContextVars = stakeStateInputBox.vote(
+    castVoteBox.stakeKey,
+    proposalInput.getRegisters().get(1).getValue().asInstanceOf[Coll[Long]](0),
+    currentVote,
+    castVoteBox.vote
+  )
+
+  val stakeStateContextVars = stakingContextVars.stakingStateContextVars.::(
+    ContextVar.of(
+      0.toByte,
+      stakeStateInputBox.useContract.getConfigContext(Some(configDigest))
+    )
+  )
+
+  val stakeVoteContextVars = stakingContextVars.companionContextVars
+    .::(
+      ContextVar.of(
+        0.toByte,
+        stakeVoteContract.getConfigContext(Some(configDigest))
+      )
+    )
 
   val extraContext = List(
     ContextVar.of(
@@ -134,10 +173,16 @@ final case class CastVoteTransaction(
     .build()
 
   inputs = List(
-    stakeStateInput,
+    stakeStateInput.withContextVars(stakeStateContextVars: _*),
+    stakeVoteInput.withContextVars(stakeVoteContextVars: _*),
     proposalInput.withContextVars(configContext ++ result._1 ++ extraContext: _*),
     castVoteInput
   )
   dataInputs = List(configInput)
-  outputs    = List(result._2.outBox, userOutput)
+  outputs = List(
+    stakeStateInputBox.outBox,
+    stakeVoteContract.box(ctx).outBox,
+    result._2.outBox,
+    userOutput
+  )
 }

@@ -136,10 +136,6 @@ class ProtoDAO(contractSignature: PaideiaContractSignature)
     cons.put("_PAIDEIA_DAO_KEY", ErgoId.create(Env.paideiaDaoKey).getBytes())
     cons.put("_IM_PAIDEIA_DAO_NAME", ConfKeys.im_paideia_dao_name.ergoValue.getValue())
     cons.put(
-      "_IM_PAIDEIA_DAO_VOTE_TOKENID",
-      ConfKeys.im_paideia_dao_vote_tokenid.ergoValue.getValue()
-    )
-    cons.put(
       "_IM_PAIDEIA_DAO_PROPOSAL_TOKENID",
       ConfKeys.im_paideia_dao_proposal_tokenid.ergoValue.getValue()
     )
@@ -182,6 +178,25 @@ class ProtoDAO(contractSignature: PaideiaContractSignature)
     )
     cons
   }
+
+  override def getConfigContext(configDigest: Option[ADDigest]) = Paideia
+    .getConfig(contractSignature.daoKey)
+    .getProof(
+      ConfKeys.im_paideia_contracts_dao,
+      ConfKeys.im_paideia_default_config,
+      ConfKeys.im_paideia_default_config_signature,
+      ConfKeys.im_paideia_default_treasury,
+      ConfKeys.im_paideia_default_treasury_signature
+    )(configDigest)
+
+  def getDAOConfigContext(daoConfig: DAOConfig, configDigest: Option[ADDigest]) =
+    daoConfig
+      .getProof(
+        ConfKeys.im_paideia_dao_proposal_tokenid,
+        ConfKeys.im_paideia_dao_action_tokenid,
+        ConfKeys.im_paideia_dao_key,
+        ConfKeys.im_paideia_staking_state_tokenid
+      )(configDigest)
 }
 
 object ProtoDAO extends PaideiaActor {
@@ -190,7 +205,6 @@ object ProtoDAO extends PaideiaActor {
     getContractInstance[ProtoDAO](contractSignature, new ProtoDAO(contractSignature))
 
   val tokensToMint = List(
-    ConfKeys.im_paideia_dao_vote_tokenid,
     ConfKeys.im_paideia_dao_proposal_tokenid,
     ConfKeys.im_paideia_dao_action_tokenid,
     ConfKeys.im_paideia_staking_state_tokenid

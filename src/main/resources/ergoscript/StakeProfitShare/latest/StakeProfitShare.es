@@ -24,11 +24,11 @@
         val whiteListedTokenIds = profitTokenIds.slice(0,(profitTokenIds.size-6)/37).indices.map{(i: Int) =>
             profitTokenIds.slice(6+(37*i)+5,6+(37*(i+1)))
         }
-        val profit = stakingStateInput.R5[Coll[Long]].get.slice(3,stakingStateInput.R5[Coll[Long]].get.size).append(whiteListedTokenIds.slice(stakingStateInput.R5[Coll[Long]].get.size-2,whiteListedTokenIds.size).map{(tokId: Coll[Byte]) => 0L})
+        val profit = stakingStateInput.R5[Coll[Long]].get.slice(5,stakingStateInput.R5[Coll[Long]].get.size).append(whiteListedTokenIds.slice(stakingStateInput.R5[Coll[Long]].get.size-4,whiteListedTokenIds.size).map{(tokId: Coll[Byte]) => 0L})
 
         val stakingStateOutput = OUTPUTS(0)
 
-        val outputProfit = stakingStateOutput.R5[Coll[Long]].get.slice(3,stakingStateOutput.R5[Coll[Long]].get.size)
+        val outputProfit = stakingStateOutput.R5[Coll[Long]].get.slice(5,stakingStateOutput.R5[Coll[Long]].get.size)
 
         val ergProfit = stakingStateOutput.value - stakingStateInput.value
         val govProfit = stakingStateOutput.tokens(1)._2 - stakingStateInput.tokens(1)._2

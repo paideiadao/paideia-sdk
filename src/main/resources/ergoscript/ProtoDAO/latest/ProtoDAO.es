@@ -35,9 +35,7 @@
         val mintOut = OUTPUTS(1)
         val daoName = configValues(0).get.slice(5,configValues(0).get.size)
 
-        val mintInfo = if (mintAction == _IM_PAIDEIA_DAO_VOTE_TOKENID) {
-            (daoName++_VOTE,maxLong)
-        } else {
+        val mintInfo = 
             if (mintAction == _IM_PAIDEIA_DAO_PROPOSAL_TOKENID) {
                 (daoName++_PROPOSAL,maxLong)
             } else {
@@ -51,7 +49,7 @@
                     }
                 }
             }
-        }
+        
 
         val validMint = allOf(Coll(
             blake2b256(mintOut.propositionBytes) == paideiaConfigValues(1).get.slice(1,33),
@@ -87,7 +85,6 @@
             
             val configValues = config.getMany(Coll(
                 _IM_PAIDEIA_DAO_PROPOSAL_TOKENID,
-                _IM_PAIDEIA_DAO_VOTE_TOKENID,
                 _IM_PAIDEIA_DAO_ACTION_TOKENID,
                 _IM_PAIDEIA_DAO_KEY
             ),configProof)
@@ -103,10 +100,8 @@
                 daoOutput.tokens(1)._2 == maxLong,
                 daoOutput.tokens(2)._1 == configValues(1).get.slice(6,38),
                 daoOutput.tokens(2)._2 == maxLong,
-                daoOutput.tokens(3)._1 == configValues(2).get.slice(6,38),
-                daoOutput.tokens(3)._2 == maxLong,
-                daoOutput.tokens.size == 4,
-                daoOutput.R4[Coll[Byte]].get == configValues(3).get.slice(6,38)
+                daoOutput.tokens.size == 3,
+                daoOutput.R4[Coll[Byte]].get == configValues(2).get.slice(6,38)
             ))
 
             val insertProof = getVar[Coll[Byte]](3).get
@@ -124,14 +119,14 @@
             val correctConfigOutput = allOf(Coll(
                 blake2b256(configOutput.propositionBytes) == configContractSignature.slice(1,33),
                 configOutput.value >= 1000000L,
-                configOutput.tokens(0)._1 == configValues(3).get.slice(6,38),
+                configOutput.tokens(0)._1 == configValues(2).get.slice(6,38),
                 configOutput.tokens(0)._2 == 1L,
                 configOutput.tokens.size == 1,
                 configOutput.R4[AvlTree].get.digest == finalConfig.get.digest
             ))
 
-            val correctConfigContract = blake2b256(substConstants(paideiaConfigValues(1).get.slice(6,paideiaConfigValues(1).get.size),Coll(7),Coll(configValues(2).get.slice(6,38))))
-            val correctTreasuryContract = blake2b256(substConstants(paideiaConfigValues(3).get.slice(6,paideiaConfigValues(3).get.size),Coll(2),Coll(configValues(2).get.slice(6,38))))
+            val correctConfigContract = blake2b256(substConstants(paideiaConfigValues(1).get.slice(6,paideiaConfigValues(1).get.size),Coll(7),Coll(configValues(1).get.slice(6,38))))
+            val correctTreasuryContract = blake2b256(substConstants(paideiaConfigValues(3).get.slice(6,paideiaConfigValues(3).get.size),Coll(2),Coll(configValues(1).get.slice(6,38))))
 
             val correctContracts = allOf(Coll(
                 paideiaConfigValues(2).get.patch(1,correctConfigContract,32) == configContractSignature,

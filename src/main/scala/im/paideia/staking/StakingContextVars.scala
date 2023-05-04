@@ -20,6 +20,7 @@ object StakingContextVars {
   val SNAPSHOT     = ErgoValue.of(3.toByte)
   val COMPOUND     = ErgoValue.of(4.toByte)
   val PROFIT_SHARE = ErgoValue.of(5.toByte)
+  val VOTE         = ErgoValue.of(6.toByte)
 
   val dummyKey: String =
     "ce552663312afc2379a91f803c93e2b10b424f176fbc930055c10def2fd88a5d"
@@ -27,9 +28,9 @@ object StakingContextVars {
   def stake(
     stakingKey: String,
     stakeRecord: StakeRecord,
-    result: ProvenResult[StakeRecord]
+    stakeResult: ProvenResult[StakeRecord]
   ): StakingContextVars = {
-    val operations = ErgoValue.of(
+    val stakeOperations = ErgoValue.of(
       Array[(Coll[java.lang.Byte], Coll[java.lang.Byte])](
         ErgoValue
           .pairOf(
@@ -50,8 +51,8 @@ object StakingContextVars {
         new ContextVar(1.toByte, STAKE)
       ),
       List(
-        new ContextVar(1.toByte, operations),
-        new ContextVar(2.toByte, result.proof.ergoValue)
+        new ContextVar(1.toByte, stakeOperations),
+        new ContextVar(2.toByte, stakeResult.proof.ergoValue)
       )
     )
   }
@@ -144,11 +145,68 @@ object StakingContextVars {
     )
   }
 
+  def vote(
+    updatedStakes: List[(String, StakeRecord)],
+    updatedParticipation: List[(String, ParticipationRecord)],
+    stakeProof: ProvenResult[StakeRecord],
+    participationProof: ProvenResult[ParticipationRecord]
+  ): StakingContextVars = {
+    val stakeOperations = ErgoValue.of(
+      updatedStakes
+        .map((kv: (String, StakeRecord)) =>
+          ErgoValue
+            .pairOf(
+              ErgoValue
+                .of(ByteConversion.convertsId.convertToBytes(ErgoId.create(kv._1))),
+              ErgoValue.of(StakeRecord.stakeRecordConversion.convertToBytes(kv._2))
+            )
+            .getValue
+        )
+        .toArray,
+      ErgoType.pairType(
+        ErgoType.collType(ErgoType.byteType()),
+        ErgoType.collType(ErgoType.byteType())
+      )
+    )
+    val participationOperations = ErgoValue.of(
+      updatedParticipation
+        .map((kv: (String, ParticipationRecord)) =>
+          ErgoValue
+            .pairOf(
+              ErgoValue
+                .of(ByteConversion.convertsId.convertToBytes(ErgoId.create(kv._1))),
+              ErgoValue.of(
+                ParticipationRecord.participationRecordConversion.convertToBytes(kv._2)
+              )
+            )
+            .getValue
+        )
+        .toArray,
+      ErgoType.pairType(
+        ErgoType.collType(ErgoType.byteType()),
+        ErgoType.collType(ErgoType.byteType())
+      )
+    )
+    StakingContextVars(
+      List(
+        new ContextVar(1.toByte, VOTE)
+      ),
+      List(
+        new ContextVar(1.toByte, stakeOperations),
+        new ContextVar(2.toByte, stakeProof.proof.ergoValue),
+        new ContextVar(3.toByte, participationOperations),
+        new ContextVar(4.toByte, participationProof.proof.ergoValue)
+      )
+    )
+  }
+
   def unstake(
     stakingKey: String,
     proof: ProvenResult[StakeRecord],
     removeProof: ProvenResult[StakeRecord]
   ): StakingContextVars = {
+    val stakeRec = proof.response(0).get
+    stakeRec.clear
     val operations = ErgoValue.of(
       Array[(Coll[java.lang.Byte], Coll[java.lang.Byte])](
         ErgoValue
@@ -158,7 +216,7 @@ object StakingContextVars {
             ),
             ErgoValue.of(
               StakeRecord.stakeRecordConversion
-                .convertToBytes(StakeRecord(0L, 0L, 0L, List(0L)))
+                .convertToBytes(stakeRec)
             )
           )
           .getValue

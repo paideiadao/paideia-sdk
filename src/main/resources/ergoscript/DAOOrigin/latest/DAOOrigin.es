@@ -44,10 +44,9 @@
                 daoOutput.value >= daoInput.value,
                 daoOutput.tokens(0) == daoInput.tokens(0),
                 daoOutput.tokens(1)._1 == daoInput.tokens(1)._1,
-                daoOutput.tokens(2) == daoInput.tokens(2),
-                daoOutput.tokens(3)._1 == daoInput.tokens(3)._1,
-                daoOutput.tokens(3)._2 == daoInput.tokens(3)._2 - actionBoxes.size,
-                daoOutput.tokens.size == 4
+                daoOutput.tokens(2)._1 == daoInput.tokens(2)._1,
+                daoOutput.tokens(2)._2 == daoInput.tokens(2)._2 - actionBoxes.size,
+                daoOutput.tokens.size == 3
             ))
 
             val proposalOutput = OUTPUTS(1)
@@ -69,7 +68,7 @@
                 (i: Int) =>
                 allOf(Coll(
                     actionOutputs(i).value >= actionBoxes(i).value,
-                    actionOutputs(i).tokens(0)._1 == daoInput.tokens(3)._1,
+                    actionOutputs(i).tokens(0)._1 == daoInput.tokens(2)._1,
                     actionOutputs(i).tokens(0)._2 == 1L,
                     actionOutputs(i).R4[Coll[Long]].get(0) == proposalId,
                     actionOutputs(i).R4[Coll[Long]].get(1) >= 0L,

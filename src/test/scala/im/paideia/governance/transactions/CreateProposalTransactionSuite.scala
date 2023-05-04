@@ -130,7 +130,6 @@ class CreateProposalTransactionSuite extends PaideiaTestSuite {
           ctx.createPreHeader().build().getTimestamp() - 3600000,
           Array(
             CostingBox(
-              false,
               ctx
                 .newTxBuilder()
                 .outBoxBuilder()

@@ -4,7 +4,7 @@
 
     val correctConfigTokenId = config.tokens(0)._1 == configTokenId
 
-    val stakeInfoOffset = 16
+    val stakeInfoOffset = 8
 
     val configProof = getVar[Coll[Byte]](0).get
 
@@ -24,12 +24,12 @@
 
         val correctStakingState = stakingStateInput.tokens(0)._1 == stakingStateTokenId.slice(6,38)
 
-        val stakeState = stakingStateInput.R4[AvlTree].get
-        val totalStaked = stakingStateInput.R5[Coll[Long]].get(2)
+        val stakeState = stakingStateInput.R4[Coll[AvlTree]].get(0)
+        val totalStaked = stakingStateInput.R5[Coll[Long]].get(1)
         val whiteListedTokenIds = profitTokenIds.slice(0,(profitTokenIds.size-6)/37).indices.map{(i: Int) =>
             profitTokenIds.slice(6+(37*i)+5,6+(37*(i+1)))
         }
-        val profit = stakingStateInput.R5[Coll[Long]].get.slice(3,stakingStateInput.R5[Coll[Long]].get.size).append(whiteListedTokenIds.slice(stakingStateInput.R5[Coll[Long]].get.size-2,whiteListedTokenIds.size).map{(tokId: Coll[Byte]) => 0L})
+        val profit = stakingStateInput.R5[Coll[Long]].get.slice(5,stakingStateInput.R5[Coll[Long]].get.size).append(whiteListedTokenIds.slice(stakingStateInput.R5[Coll[Long]].get.size-4,whiteListedTokenIds.size).map{(tokId: Coll[Byte]) => 0L})
         val longIndices = profit.indices.map{(i: Int) => i*8}
 
         val stakingStateOutput = OUTPUTS(0)
@@ -47,7 +47,7 @@
 
         val currentStakeAmount = currentProfits(0)
 
-        val tokensUnstaked = currentStakeAmount == (stakingStateInput.tokens(1)._2 - stakingStateOutput.tokens(1)._2) && currentStakeAmount == totalStaked - stakingStateOutput.R5[Coll[Long]].get(2)
+        val tokensUnstaked = currentStakeAmount == (stakingStateInput.tokens(1)._2 - stakingStateOutput.tokens(1)._2) && currentStakeAmount == totalStaked - stakingStateOutput.R5[Coll[Long]].get(1)
         val correctErgProfit = currentProfits(1) == stakingStateInput.value - stakingStateOutput.value
 
         val correctTokenProfit = stakingStateInput.tokens.slice(2,stakingStateInput.tokens.size).forall{
@@ -59,7 +59,7 @@
 
         val singleStakeOp = keys.size == 1
 
-        val correctNewState = stakeState.remove(keys, removeProof).get.digest == stakingStateOutput.R4[AvlTree].get.digest
+        val correctNewState = stakeState.remove(keys, removeProof).get.digest == stakingStateOutput.R4[Coll[AvlTree]].get(0).digest
         
         allOf(Coll(
             correctStakingState,

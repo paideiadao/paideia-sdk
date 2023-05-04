@@ -1,7 +1,7 @@
 {
     val configTokenId = _IM_PAIDEIA_DAO_KEY
     val config = CONTEXT.dataInputs(0)
-    val stakeInfoOffset = 16
+    val stakeInfoOffset = 8
 
     val correctConfigTokenId = config.tokens(0)._1 == configTokenId
 
@@ -24,15 +24,15 @@
         val whiteListedTokenIds = profitTokenIds.slice(0,(profitTokenIds.size-6)/37).indices.map{(i: Int) =>
             profitTokenIds.slice(6+(37*i)+5,6+(37*(i+1)))
         }
-        val profit = stakingStateInput.R5[Coll[Long]].get.slice(3,stakingStateInput.R5[Coll[Long]].get.size).append(whiteListedTokenIds.slice(stakingStateInput.R5[Coll[Long]].get.size-2,whiteListedTokenIds.size).map{(tokId: Coll[Byte]) => 0L})
+        val profit = stakingStateInput.R5[Coll[Long]].get.slice(5,stakingStateInput.R5[Coll[Long]].get.size).append(whiteListedTokenIds.slice(stakingStateInput.R5[Coll[Long]].get.size-4,whiteListedTokenIds.size).map{(tokId: Coll[Byte]) => 0L})
 
         val longIndices = profit.indices.map{(i: Int) => i*8}
 
         val correctStakingState = stakingStateInput.tokens(0)._1 == configValues(1).get.slice(6,38)
 
-        val stakeState = stakingStateInput.R4[AvlTree].get
+        val stakeState = stakingStateInput.R4[Coll[AvlTree]].get(0)
 
-        val totalStaked = stakingStateInput.R5[Coll[Long]].get(2)
+        val totalStaked = stakingStateInput.R5[Coll[Long]].get(1)
         
         val stakingStateOutput = OUTPUTS(0)
         
@@ -49,11 +49,11 @@
         val correctKeyMinted = stakingStateInput.id == mintedKey._1 && stakingStateInput.id == stakeOperations(0)._1 
         val correctAmountMinted = OUTPUTS.flatMap{(b: Box) => b.tokens}.fold(0L, {(z: Long, t: (Coll[Byte], Long)) => z + (if (t._1 == mintedKey._1) t._2 else 0L)}) == 1L
 
-        val tokensStaked = stakeAmount == (stakingStateOutput.tokens(1)._2 - stakingStateInput.tokens(1)._2) && stakeAmount == stakingStateOutput.R5[Coll[Long]].get(2) - totalStaked
+        val tokensStaked = stakeAmount == (stakingStateOutput.tokens(1)._2 - stakingStateInput.tokens(1)._2) && stakeAmount == stakingStateOutput.R5[Coll[Long]].get(1) - totalStaked
 
         val singleStakeOp = stakeOperations.size == 1
 
-        val correctNewState = stakeState.insert(stakeOperations, proof).get.digest == stakingStateOutput.R4[AvlTree].get.digest
+        val correctNewState = stakeState.insert(stakeOperations, proof).get.digest == stakingStateOutput.R4[Coll[AvlTree]].get(0).digest
         
         allOf(Coll(
             correctStakingState,

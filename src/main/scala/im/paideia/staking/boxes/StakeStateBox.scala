@@ -31,6 +31,8 @@ import scorex.crypto.authds.ADDigest
 import special.sigma.AvlTree
 import io.getblok.getblok_plasma.collections.OpResult
 import im.paideia.DAO
+import im.paideia.governance.VoteRecord
+import sigmastate.AvlTreeData
 
 case class StakeStateBox(
   _ctx: BlockchainContextImpl,
@@ -43,7 +45,10 @@ case class StakeStateBox(
   var nextEmission: Long,
   var profit: Array[Long],
   var stateDigest: ADDigest,
-  var snapshots: Array[StakingSnapshot]
+  var participationDigest: ADDigest,
+  var snapshots: Array[StakingSnapshot],
+  var voted: Long,
+  var votedTotal: Long
 ) extends PaideiaBox {
 
   ctx      = _ctx
@@ -51,13 +56,24 @@ case class StakeStateBox(
   contract = useContract.contract
 
   override def registers = List[ErgoValue[?]](
-    state.currentStakingState.plasmaMap.ergoValue(Some(stateDigest)),
+    ErgoValueBuilder.buildFor(
+      Colls.fromArray(
+        Array(
+          state.currentStakingState.stakeRecords.ergoValue(Some(stateDigest)).getValue,
+          state.currentStakingState.participationRecords
+            .ergoValue(Some(participationDigest))
+            .getValue
+        )
+      )
+    ),
     ErgoValueBuilder.buildFor(
       Colls.fromArray(
         Array(
           nextEmission,
-          state.currentStakingState.size(Some(stateDigest)).toLong,
-          state.currentStakingState.totalStaked(Some(stateDigest))
+          state.currentStakingState.totalStaked(Some(stateDigest)),
+          state.currentStakingState.stakers(Some(stateDigest)),
+          voted,
+          votedTotal
         ).++(profit)
       )
     ),
@@ -67,15 +83,15 @@ case class StakeStateBox(
       )
     ),
     ErgoValueBuilder.buildFor(
-      Colls.fromArray(
+      Colls.fromArray[(AvlTree, AvlTree)](
         snapshots
-          .map(kv =>
-            state
-              .firstMatchingSnapshot(kv.digest)
-              .plasmaMap
-              .ergoValue(Some(kv.digest))
-              .getValue()
-          )
+          .map(kv => {
+            val snap = state.firstMatchingSnapshot(kv.stakeDigest)
+            (
+              snap.stakeRecords.ergoValue(Some(kv.stakeDigest)).getValue,
+              snap.participationRecords.ergoValue(Some(kv.participationDigest)).getValue
+            )
+          })
       )
     ),
     ErgoValueBuilder.buildFor(
@@ -104,24 +120,24 @@ case class StakeStateBox(
     inPlace: Boolean = false
   ): StakingContextVars = {
     val stakeRecord = StakeRecord(
-      0L,
-      0L,
       amount,
+      0L,
       List.fill(
         dao.config
-          .getArray[Array[Byte]](ConfKeys.im_paideia_staking_profit_tokenids)
+          .getArray[Object](ConfKeys.im_paideia_staking_profit_tokenids)
           .size + 1
       )(0L)
     )
+
     stakedTokenTotal += amount
-    val result = state.currentStakingState
+    val stakeResult = state.currentStakingState
       .stake(stakingKey, stakeRecord, Left(stateDigest), inPlace)
-    stateDigest = result.digest
+    stateDigest = stakeResult.digest
     StakingContextVars
       .stake(
         stakingKey,
         stakeRecord,
-        result.toProvenResult
+        stakeResult.toProvenResult
       )
   }
 
@@ -134,9 +150,8 @@ case class StakeStateBox(
       (
         stakingKey,
         StakeRecord(
-          currentStake.lockedUntil,
-          currentStake.voted,
           currentStake.stake + amount,
+          currentStake.lockedUntil,
           currentStake.rewards
         )
       )
@@ -153,17 +168,18 @@ case class StakeStateBox(
     newExtraTokens: List[ErgoToken]
   ): StakingContextVars = {
     val currentStake = state.currentStakingState.getStake(stakingKey, Some(stateDigest))
+
     stakedTokenTotal -= currentStake.stake - newStakeRecord.stake
     extraTokens = newExtraTokens
     value -= currentStake.rewards(0) - newStakeRecord.rewards(0)
     if (newStakeRecord.stake <= 0L) {
-      val proof =
+      val stakeProof =
         state.currentStakingState.getStakes(List[String](stakingKey), Some(stateDigest))
-      val removeProof =
+      val removeStakeProof =
         state.currentStakingState.unstake(List[String](stakingKey), Left(stateDigest))
-      stateDigest = removeProof.digest
+      stateDigest = removeStakeProof.digest
       StakingContextVars
-        .unstake(stakingKey, proof, removeProof.toProvenResult)
+        .unstake(stakingKey, stakeProof, removeStakeProof.toProvenResult)
     } else {
       val operations = List((stakingKey, newStakeRecord))
       val result = state.currentStakingState.changeStakes(operations, Left(stateDigest))
@@ -179,7 +195,9 @@ case class StakeStateBox(
     history match {
       case -1 => state.currentStakingState.getStake(stakingKey, Some(stateDigest))
       case _ =>
-        state.snapshots(history).getStake(stakingKey, Some(snapshots(history).digest))
+        state
+          .snapshots(history)
+          .getStake(stakingKey, Some(snapshots(history).stakeDigest))
     }
   }
 
@@ -188,31 +206,33 @@ case class StakeStateBox(
   ): StakingContextVars = {
     if (snapshots.size < dao.config[Long](ConfKeys.im_paideia_staking_emission_delay))
       throw new Exception("Not enough snapshots gathered yet")
-    val snapshot = state.firstMatchingSnapshot(snapshots(0).digest)
-    val keys     = snapshot.getKeys(0, batchSize, Some(snapshots(0).digest))
+    val snapshot = state.firstMatchingSnapshot(snapshots(0).stakeDigest)
+    val keys     = snapshot.getKeys(0, batchSize, Some(snapshots(0).stakeDigest))
     if (keys.size <= 0) throw new Exception("No keys found to compound")
     val currentStakesProvenResult =
       state.currentStakingState.getStakes(keys, Some(stateDigest))
-    val snapshotProvenResult = snapshot.getStakes(keys, Some(snapshots(0).digest))
+    val snapshotProvenResult = snapshot.getStakes(keys, Some(snapshots(0).stakeDigest))
     val currentStakes = keys.zip(
       currentStakesProvenResult.response.map((p: OpResult[StakeRecord]) =>
         p.tryOp.get.get
       )
     )
-    val updatedStakes = currentStakes.map((kv: (String, StakeRecord)) => {
+
+    val updatedStakesAndProfits = currentStakes.map((kv: (String, StakeRecord)) => {
       kv._2.stake match {
         case -1 => kv
         case _ => {
-          val snapshotStake = snapshot.getStake(kv._1, Some(snapshots(0).digest)).stake
+          val snapshotStake =
+            snapshot.getStake(kv._1, Some(snapshots(0).stakeDigest)).stake
+
           (
             kv._1,
             StakeRecord(
-              kv._2.lockedUntil,
-              kv._2.voted,
               kv._2.stake + (BigInt(snapshotStake) * BigInt(
                 snapshots(0)
                   .profit(0)
               ) / snapshots(0).totalStaked).toLong,
+              kv._2.lockedUntil,
               kv._2.rewards.indices
                 .map((i: Int) =>
                   kv._2.rewards(i) + (BigInt(snapshotStake) * BigInt(
@@ -223,17 +243,24 @@ case class StakeStateBox(
                 .toList
             )
           )
+
         }
       }
     })
-    val result = state.currentStakingState.changeStakes(updatedStakes, Left(stateDigest))
+
+    val result =
+      state.currentStakingState.changeStakes(updatedStakesAndProfits, Left(stateDigest))
     stateDigest = result.digest
-    val removeProof = snapshot.unstake(keys, Left(snapshots(0).digest))
-    snapshots(0) =
-      StakingSnapshot(snapshots(0).totalStaked, removeProof.digest, snapshots(0).profit)
+    val removeProof = snapshot.unstake(keys, Left(snapshots(0).stakeDigest))
+    snapshots(0) = StakingSnapshot(
+      snapshots(0).totalStaked,
+      removeProof.digest,
+      snapshots(0).participationDigest,
+      snapshots(0).profit
+    )
     StakingContextVars
       .compound(
-        updatedStakes,
+        updatedStakesAndProfits,
         currentStakesProvenResult,
         snapshotProvenResult,
         removeProof.toProvenResult
@@ -255,6 +282,7 @@ case class StakeStateBox(
       StakingSnapshot(
         state.currentStakingState.totalStaked(Some(stateDigest)),
         stateDigest,
+        participationDigest,
         snapshotProfit.toList
       )
     )
@@ -281,6 +309,53 @@ case class StakeStateBox(
     extraTokens = newExtraTokens
     StakingContextVars.profitShare
   }
+
+  def vote(
+    stakeKey: String,
+    proposalExpiration: Long,
+    previousVote: Option[VoteRecord],
+    newVote: VoteRecord
+  ): StakingContextVars = {
+    val voteChange = newVote.voteCount - previousVote
+      .getOrElse(VoteRecord(Array(0L)))
+      .voteCount
+    votedTotal += voteChange
+    voted = voted + (if (previousVote.isDefined) 0 else 1)
+    val getStakeProof =
+      state.currentStakingState.getStakes(List(stakeKey), Some(stateDigest))
+    val currentStake = getStakeProof.response.head.get
+    val getParticipationProof = state.currentStakingState.getParticipations(
+      List(stakeKey),
+      Some(participationDigest)
+    )
+    val currentParticipationOpt = getParticipationProof.response.head.tryOp.get
+    val currentParticipation =
+      if (currentParticipationOpt.isDefined) currentParticipationOpt.get
+      else ParticipationRecord(0L, 0L)
+    currentStake.lockedUntil =
+      if (proposalExpiration > currentStake.lockedUntil) proposalExpiration
+      else currentStake.lockedUntil
+    currentParticipation.voted += (if (previousVote.isDefined) 0 else 1)
+    currentParticipation.votedTotal += voteChange
+    val updateStakeProof =
+      state.currentStakingState.changeStakes(
+        List((stakeKey, currentStake)),
+        Left(stateDigest)
+      )
+    val updateParticipationProof =
+      state.currentStakingState.changeParticipations(
+        List((stakeKey, currentParticipation)),
+        Left(participationDigest)
+      )
+    stateDigest         = updateStakeProof.digest
+    participationDigest = updateParticipationProof.digest
+    StakingContextVars.vote(
+      List((stakeKey, currentStake)),
+      List((stakeKey, currentParticipation)),
+      updateStakeProof.toProvenResult,
+      updateParticipationProof.toProvenResult
+    )
+  }
 }
 
 object StakeStateBox {
@@ -292,11 +367,16 @@ object StakeStateBox {
     val dao        = Paideia.getDAO(contract.contractSignature.daoKey)
     val state      = TotalStakingState(dao.key)
     val longValues = inp.getRegisters().get(1).getValue().asInstanceOf[Coll[Long]].toArray
-    val stateTree  = inp.getRegisters().get(0).getValue().asInstanceOf[AvlTree]
+    val stateTrees = inp
+      .getRegisters()
+      .get(0)
+      .getValue()
+      .asInstanceOf[Coll[AvlTree]]
+      .map(_.digest.toArray)
     val snapshotStakedTotals =
       inp.getRegisters().get(2).getValue().asInstanceOf[Coll[Long]].toArray
     val snapshotTrees =
-      inp.getRegisters().get(3).getValue().asInstanceOf[Coll[AvlTree]].toArray
+      inp.getRegisters().get(3).getValue().asInstanceOf[Coll[(AvlTree, AvlTree)]].toArray
     val snapshotProfit =
       inp.getRegisters().get(4).getValue().asInstanceOf[Coll[Coll[Long]]].toArray
 
@@ -309,18 +389,22 @@ object StakeStateBox {
       dao,
       inp.getTokens().get(1).getValue() - 1L,
       longValues(0),
-      longValues.slice(3, longValues.size),
-      ADDigest @@ stateTree.digest.toArray,
+      longValues.slice(5, longValues.size),
+      ADDigest @@ stateTrees(0),
+      ADDigest @@ stateTrees(1),
       snapshotStakedTotals
         .zip(snapshotTrees)
         .zip(snapshotProfit)
-        .map((vals: ((Long, AvlTree), Coll[Long])) =>
+        .map((vals: ((Long, (AvlTree, AvlTree)), Coll[Long])) =>
           StakingSnapshot(
             vals._1._1,
-            ADDigest @@ vals._1._2.digest.toArray,
+            ADDigest @@ vals._1._2._1.digest.toArray,
+            ADDigest @@ vals._1._2._2.digest.toArray,
             vals._2.toArray.toList
           )
-        )
+        ),
+      longValues(3),
+      longValues(4)
     )
   }
 }
