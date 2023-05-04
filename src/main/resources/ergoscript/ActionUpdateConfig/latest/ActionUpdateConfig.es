@@ -25,7 +25,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val config        = INPUTS(0)
+    val config             = INPUTS(0)
     val actionUpdateConfig = SELF
 
     ///////////////////////////////////////////////////////////////////////////
@@ -50,7 +50,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val originalConfig = configInput.R4[AvlTree].get
+    val originalConfig = config.R4[AvlTree].get
 
     val proposalR4           = proposal.R4[Coll[Int]].get
     val proposalIndex        = proposalR4(0)
@@ -121,12 +121,12 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val correctConfig = configInput.tokens(0)._1 == imPaideiaDaoKey
+    val correctConfig = config.tokens(0)._1 == imPaideiaDaoKey
 
     val correctProposal = allOf(Coll(
-        proposalInput.tokens(0)._1       == imPaideiaDaoProposalTokenId,
-        proposalInputIndex.toLong        == actionUpdateConfigProposalIndex,
-        proposalInputPassedOption.toLong == actionUpdateConfigOptionIndex
+        proposal.tokens(0)._1       == imPaideiaDaoProposalTokenId,
+        proposalIndex.toLong        == actionUpdateConfigProposalIndex,
+        proposalPassedOption.toLong == actionUpdateConfigOptionIndex
     ))
 
     val activationTimePassed = CONTEXT.preHeader.timestamp >= actionUpdateConfigActivationTime
@@ -145,8 +145,8 @@
 
     val correctConfigOutput = allOf(Coll(
         blake2b256(configOutput.propositionBytes) == configContractHash,
-        configOutput.tokens                       == configInput.tokens,
-        configOutput.value                        >= configInput.value,
+        configOutput.tokens                       == config.tokens,
+        configOutput.value                        >= config.value,
         outputConfig.digest                       == configAfterInsert.digest
     ))
 
