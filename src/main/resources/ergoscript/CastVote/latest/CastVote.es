@@ -1,14 +1,91 @@
 {
-    val proposalInput = INPUTS(2)
 
-    val userOutput = OUTPUTS(3)
+    /**
+     *
+     *  CastVote
+     *
+     *  This contract ensures the is added correctly to the proposal tally and
+     *  the stake key is returned to the user.
+     *
+     */
 
-    val voteKeyReturned = allOf(Coll(
-        userOutput.tokens(0) == SELF.tokens(0),
-        userOutput.propositionBytes == SELF.R6[Coll[Byte]].get
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Constants                                                             //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    val imPaideiaDaoProposalTokenId: Coll[Byte] = 
+        _IM_PAIDEIA_DAO_PROPOSAL_TOKENID
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Inputs                                                                //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    val castVote: Box = SELF
+    val proposal: Box = INPUTS(2)
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Data Inputs                                                           //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Outputs                                                               //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    val userO: Box = OUTPUTS(3)
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Registers                                                             //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    val userPropositionBytes: Coll[Byte] = castVote.R6[Coll[Byte]].get
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Context variables                                                     //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // DAO Config value extraction                                           //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Intermediate calculations                                             //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Simple conditions                                                     //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    val validProposal: Boolean = 
+        proposal.tokens(0)._1 == imPaideiaDaoProposalTokenId
+
+    val voteKeyReturned: Boolean = allOf(Coll(
+        userO.tokens(0) == castVote.tokens(0),
+        userO.propositionBytes == userPropositionBytes
     ))
 
-    val validProposal = proposalInput.tokens(0)._1 == _IM_PAIDEIA_DAO_PROPOSAL_TOKENID
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Final contract result                                                 //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
 
     sigmaProp(allOf(Coll(
         voteKeyReturned,
