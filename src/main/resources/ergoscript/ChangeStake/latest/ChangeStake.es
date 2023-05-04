@@ -1,6 +1,7 @@
 {
     val configTokenId = _IM_PAIDEIA_DAO_KEY 
     val config = CONTEXT.dataInputs(0)
+    val stakeInfoOffset = 8
 
     val correctConfigTokenId = config.tokens(0)._1 == configTokenId
 
@@ -24,13 +25,13 @@
 
         val stakingStateInput = INPUTS(0)
         val correctStakingState = stakingStateInput.tokens(0)._1 == stakingStakeTokenId.slice(6,38)
-        val stakeState = stakingStateInput.R4[AvlTree].get
-        val totalStaked = stakingStateInput.R5[Coll[Long]].get(2)
-        val profit = stakingStateInput.R5[Coll[Long]].get.slice(3,stakingStateInput.R5[Coll[Long]].get.size).append(whiteListedTokenIds.slice(stakingStateInput.R5[Coll[Long]].get.size-2,whiteListedTokenIds.size).map{(tokId: Coll[Byte]) => 0L})
+        val stakeState = stakingStateInput.R4[Coll[AvlTree]].get(0)
+        val totalStaked = stakingStateInput.R5[Coll[Long]].get(1)
+        val profit = stakingStateInput.R5[Coll[Long]].get.slice(5,stakingStateInput.R5[Coll[Long]].get.size).append(whiteListedTokenIds.slice(stakingStateInput.R5[Coll[Long]].get.size-4,whiteListedTokenIds.size).map{(tokId: Coll[Byte]) => 0L})
         val longIndices = profit.indices.map{(i: Int) => i*8}
 
         val stakingStateOutput = OUTPUTS(0)
-        val outputProfit = stakingStateOutput.R5[Coll[Long]].get.slice(3,stakingStateOutput.R5[Coll[Long]].get.size)
+        val outputProfit = stakingStateOutput.R5[Coll[Long]].get.slice(5,stakingStateOutput.R5[Coll[Long]].get.size)
 
         val stakeOperations  = getVar[Coll[(Coll[Byte], Coll[Byte])]](1).get
         val proof   = getVar[Coll[Byte]](2).get
@@ -39,18 +40,18 @@
         val keyInOutput = userOutput.tokens.getOrElse(0,OUTPUTS(0).tokens(0))._1 == stakeOperations(0)._1
 
         val currentStakeState = stakeState.get(stakeOperations(0)._1, proof).get
-        val currentProfits = longIndices.map{(i: Int) => byteArrayToLong(currentStakeState.slice(i,i+8))}
-        val newProfits = longIndices.map{(i: Int) => byteArrayToLong(stakeOperations(0)._2.slice(i,i+8))}
+        val currentProfits = longIndices.map{(i: Int) => byteArrayToLong(currentStakeState.slice(i+stakeInfoOffset,i+8+stakeInfoOffset))}
+        val newProfits = longIndices.map{(i: Int) => byteArrayToLong(stakeOperations(0)._2.slice(i+stakeInfoOffset,i+8+stakeInfoOffset))}
         val combinedProfit = currentProfits.zip(newProfits)
 
         val currentStakeAmount = currentProfits(0)
         val newStakeAmount = newProfits(0)
 
-        val tokensStaked = newStakeAmount - currentStakeAmount == (stakingStateOutput.tokens(1)._2 - stakingStateInput.tokens(1)._2) && newStakeAmount - currentStakeAmount == stakingStateOutput.R5[Coll[Long]].get(2) - totalStaked
+        val tokensStaked = newStakeAmount - currentStakeAmount == (stakingStateOutput.tokens(1)._2 - stakingStateInput.tokens(1)._2) && newStakeAmount - currentStakeAmount == stakingStateOutput.R5[Coll[Long]].get(1) - totalStaked
 
         val singleStakeOp = stakeOperations.size == 1
 
-        val correctNewState = stakeState.update(stakeOperations, proof).get.digest == stakingStateOutput.R4[AvlTree].get.digest
+        val correctNewState = stakeState.update(stakeOperations, proof).get.digest == stakingStateOutput.R4[Coll[AvlTree]].get(0).digest
 
         val noAddedOrNegativeProfit = combinedProfit.slice(1,combinedProfit.size).forall{(p: (Long, Long)) => p._1 >= p._2 && p._2 >= 0L}
 

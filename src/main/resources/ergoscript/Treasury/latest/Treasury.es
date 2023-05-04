@@ -50,7 +50,7 @@
             ), paideiaProof)
 
             val baseFee = byteArrayToLong(paideiaConfigValues(0).get.slice(1,9))
-            val paideiaFee = baseFee*stakeStateOutput.R5[Coll[Long]].get(1)+1L
+            val paideiaFee = baseFee*stakeStateOutput.R5[Coll[Long]].get(2)+1L
 
             val correctErg = treasuryOutput.value >= treasuryNerg - byteArrayToLong(paideiaConfigValues(3).get.slice(1,9))
             val correctPaideia = treasuryOutput.tokens.fold(0L, {(z: Long, t: (Coll[Byte], Long)) => z + (if (t._1 == paideiaTokenId) t._2 else 0L)}) >=
@@ -69,7 +69,7 @@
                 splitProfitOutput.tokens(0)._2 >= paideiaFee
             ))
         } else {
-            if (stakeStateOutput.R5[Coll[Long]].get(2) > stakeStateInput.R5[Coll[Long]].get(2) && stakeStateOutput.tokens(1)._2 == stakeStateInput.tokens(1)._2) {
+            if (stakeStateOutput.R5[Coll[Long]].get(1) > stakeStateInput.R5[Coll[Long]].get(1) && stakeStateOutput.tokens(1)._2 == stakeStateInput.tokens(1)._2) {
                 val paideiaConfigValues = paideiaConfig.R4[AvlTree].get.getMany(Coll(
                     _IM_PAIDEIA_FEE_COMPOUND_OPERATOR_PAIDEIA,
                     _IM_PAIDEIA_FEE_OPERATOR_MAX_ERG

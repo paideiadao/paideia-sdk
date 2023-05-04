@@ -24,30 +24,30 @@
         val stakingStateInput = INPUTS(0)
         val correctStakingState = stakingStateInput.tokens(0)._1 == stakingStateTokenId.slice(6,38)
 
-        val stakeState = stakingStateInput.R4[AvlTree].get
+        val stakeState = stakingStateInput.R4[Coll[AvlTree]].get(0)
 
         val nextSnapshot = stakingStateInput.R5[Coll[Long]].get(0)
-        val totalStaked = stakingStateInput.R5[Coll[Long]].get(2)
+        val totalStaked = stakingStateInput.R5[Coll[Long]].get(1)
         val whiteListedTokenIds = profitTokenIds.slice(0,(profitTokenIds.size-6)/37).indices.map{(i: Int) =>
             profitTokenIds.slice(6+(37*i)+5,6+(37*(i+1)))
         }
-        val profit = stakingStateInput.R5[Coll[Long]].get.slice(3,stakingStateInput.R5[Coll[Long]].get.size).append(whiteListedTokenIds.slice(stakingStateInput.R5[Coll[Long]].get.size-2,whiteListedTokenIds.size).map{(tokId: Coll[Byte]) => 0L})
+        val profit = stakingStateInput.R5[Coll[Long]].get.slice(4,stakingStateInput.R5[Coll[Long]].get.size).append(whiteListedTokenIds.slice(stakingStateInput.R5[Coll[Long]].get.size-3,whiteListedTokenIds.size).map{(tokId: Coll[Byte]) => 0L})
         val snapshotsStaked = stakingStateInput.R6[Coll[Long]].get
-        val snapshotsTree = stakingStateInput.R7[Coll[AvlTree]].get
+        val snapshotsTree = stakingStateInput.R7[Coll[(AvlTree, AvlTree)]].get
         val snapshotsProfit = stakingStateInput.R8[Coll[Coll[Long]]].get
 
         val emptyDigest = Coll(78,-58,31,72,91,-104,-21,-121,21,63,124,87,-37,79,94,-51,117,85,111,-35,-68,64,59,65,-84,-8,68,31,-34,-114,22,9,0).map{(i: Int) => i.toByte}
 
         val stakingStateOutput = OUTPUTS(0)
 
-        val outputProfit = stakingStateOutput.R5[Coll[Long]].get.slice(3,stakingStateOutput.R5[Coll[Long]].get.size)
+        val outputProfit = stakingStateOutput.R5[Coll[Long]].get.slice(4,stakingStateOutput.R5[Coll[Long]].get.size)
         val newSnapshotsStaked = stakingStateOutput.R6[Coll[Long]].get
-        val newSnapshotsTrees = stakingStateOutput.R7[Coll[AvlTree]].get
+        val newSnapshotsTrees = stakingStateOutput.R7[Coll[(AvlTree, AvlTree)]].get
         val newSnapshotsProfit = stakingStateOutput.R8[Coll[Coll[Long]]].get
 
         val correctNewSnapshot = allOf(Coll(
             newSnapshotsStaked(newSnapshotsStaked.size-1) == totalStaked,
-            newSnapshotsTrees(newSnapshotsTrees.size-1).digest == stakeState.digest,
+            newSnapshotsTrees(newSnapshotsTrees.size-1)._1.digest == stakeState.digest,
             newSnapshotsProfit(newSnapshotsProfit.size-1)(0) == min(emissionAmount,stakingStateInput.tokens(1)._2-totalStaked-profit(0)-1)
         ))
 
@@ -58,7 +58,7 @@
         
         //When a staker gets rewarded for the staking period his entry gets removed from the snapshot. An empty snapshot is proof of having handled all staker rewards for that period.
         val correctHistoryShift = allOf(Coll( 
-                snapshotsTree(0).digest == emptyDigest,
+                snapshotsTree(0)._1.digest == emptyDigest,
                 newSnapshotsTrees.slice(0,emissionDelay-1) == snapshotsTree.slice(1,emissionDelay),
                 newSnapshotsStaked.slice(0,emissionDelay-1).indices.forall{(i: Int) => newSnapshotsStaked(i) == snapshotsStaked(i+1)}
             ))

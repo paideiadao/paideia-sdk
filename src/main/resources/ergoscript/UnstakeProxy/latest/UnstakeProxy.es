@@ -15,11 +15,13 @@
     val plasmaStakingOutput = OUTPUTS(0)
     val userOutput = OUTPUTS(2)
 
-    val stakeState = plasmaStakingInput.R4[AvlTree].get
+    val stakeInfoOffset = 8
+
+    val stakeState = plasmaStakingInput.R4[Coll[AvlTree]].get(0)
 
     val newStakeRecord = SELF.R5[Coll[Byte]].get
-    val newStake = byteArrayToLong(newStakeRecord.slice(0,8))
-    val longIndices = newStakeRecord.slice(0,newStakeRecord.size/8).indices
+    val newStake = byteArrayToLong(newStakeRecord.slice(stakeInfoOffset,stakeInfoOffset+8))
+    val longIndices = newStakeRecord.slice(0,newStakeRecord.size/8-(stakeInfoOffset/8)).indices
 
     val whiteListedTokenIds = configValues(1).get.slice(0,(configValues(1).get.size-6)/37).indices.map{(i: Int) =>
         configValues(1).get.slice(6+(37*i)+5,6+(37*(i+1)))
@@ -30,8 +32,8 @@
 
     val correctReturnedProfits = {
         val currentStakeState = stakeState.get(stakeOperations(0)._1, proof).get
-        val currentProfits = longIndices.map{(i: Int) => byteArrayToLong(currentStakeState.slice(i*8,i*8+8))}
-        val newProfits = longIndices.map{(i: Int) => byteArrayToLong(stakeOperations(0)._2.slice(i*8,i*8+8))}
+        val currentProfits = longIndices.map{(i: Int) => byteArrayToLong(currentStakeState.slice(i*8+stakeInfoOffset,i*8+8+stakeInfoOffset))}
+        val newProfits = longIndices.map{(i: Int) => byteArrayToLong(stakeOperations(0)._2.slice(i*8+stakeInfoOffset,i*8+8+stakeInfoOffset))}
         val combinedProfit = currentProfits.zip(newProfits)
 
         val currentStakeAmount = currentProfits(0)
@@ -59,7 +61,7 @@
 
         val keyInOutput = userOutput.tokens(0)._1 == stakeOperations(0)._1
 
-        val correctNewState = stakeState.update(stakeOperations, proof).get.digest == plasmaStakingOutput.R4[AvlTree].get.digest
+        val correctNewState = stakeState.update(stakeOperations, proof).get.digest == plasmaStakingOutput.R4[Coll[AvlTree]].get(0).digest
    
         allOf(Coll(
             keyInOutput,
@@ -71,7 +73,7 @@
 
         val keyInInput = SELF.tokens(0)._1 == keys(0)
 
-        val correctNewState = stakeState.remove(keys, removeProof).get.digest == plasmaStakingOutput.R4[AvlTree].get.digest
+        val correctNewState = stakeState.remove(keys, removeProof).get.digest == plasmaStakingOutput.R4[Coll[AvlTree]].get(0).digest
         
         allOf(Coll(
             keyInInput,

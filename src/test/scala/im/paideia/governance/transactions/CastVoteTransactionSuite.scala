@@ -9,12 +9,11 @@ import im.paideia.util.ConfKeys
 import org.ergoplatform.appkit.ErgoId
 import im.paideia.DAO
 import im.paideia.common.contracts.PaideiaContractSignature
-import im.paideia.governance.contracts.Vote
 import im.paideia.Paideia
 import im.paideia.staking.TotalStakingState
 import org.ergoplatform.appkit.Address
 import im.paideia.common.contracts.Config
-import im.paideia.staking.contracts.StakeState
+import im.paideia.staking.contracts._
 import im.paideia.governance.contracts.CastVote
 import im.paideia.governance.Proposal
 import im.paideia.governance.VoteRecord
@@ -65,13 +64,17 @@ class CastVoteTransactionSuite extends PaideiaTestSuite {
         config.set(ConfKeys.im_paideia_staking_emission_amount, 100000L)
         config.set(ConfKeys.im_paideia_staking_cyclelength, 1000000L)
         config.set(ConfKeys.im_paideia_staking_profit_thresholds, Array(0L, 0L))
+        val voteContract = StakeVote(PaideiaContractSignature(daoKey = daoKey))
+        config
+          .set(
+            ConfKeys.im_paideia_contracts_staking_vote,
+            voteContract.contractSignature
+          )
+        voteContract.newBox(voteContract.box(ctx).inputBox(), false)
         val digest2 = config._config.digest
         val dao     = new DAO(daoKey, config)
         Paideia.addDAO(dao)
         dao.proposals(0) = Proposal(dao.key, 0)
-
-        val voteContract = Vote(PaideiaContractSignature(daoKey = dao.key))
-        config.set(ConfKeys.im_paideia_contracts_vote, voteContract.contractSignature)
 
         val proposalContract = ProposalBasic(PaideiaContractSignature(daoKey = dao.key))
         val proposalBox = proposalContract.box(
@@ -87,7 +90,6 @@ class CastVoteTransactionSuite extends PaideiaTestSuite {
 
         val state    = TotalStakingState(dao.key, 0L)
         val stakeKey = Util.randomKey
-        val voteKey  = Util.randomKey
 
         val stakingContract = StakeState(PaideiaContractSignature(daoKey = dao.key))
 
@@ -111,18 +113,15 @@ class CastVoteTransactionSuite extends PaideiaTestSuite {
         stakingContract.clearBoxes()
         stakingContract.newBox(stakingStateBox, false)
 
-        val voteBox = voteContract.box(ctx, voteKey, stakeKey, 0L).inputBox()
-        voteContract.clearBoxes()
-        voteContract.newBox(voteBox, false)
-
         val castVoteContract = CastVote(PaideiaContractSignature(daoKey = dao.key))
         val castVoteBox = castVoteContract
-          .box(ctx, voteKey, 0, VoteRecord(Array(100L, 0L)), dummyAddress)
+          .box(ctx, stakeKey, 0, VoteRecord(Array(100L, 0L)), dummyAddress)
           .ergoTransactionOutput()
 
         val dummyTx = (new ErgoTransaction()).addOutputsItem(castVoteBox)
         Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
         val eventResponse = Paideia.handleEvent(CreateTransactionsEvent(ctx, 0L, 0L))
+        eventResponse.exceptions.map(e => throw e)
         assert(eventResponse.unsignedTransactions.size === 1)
         ctx
           .newProverBuilder()

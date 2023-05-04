@@ -29,7 +29,6 @@ class CreateDAOTransactionSuite extends PaideiaTestSuite {
         val daoGovTokenId     = Util.randomKey
         val proposalTokenId   = Util.randomKey
         val actionTokenId     = Util.randomKey
-        val voteTokenId       = Util.randomKey
         val stakeStateTokenId = Util.randomKey
         config.set(ConfKeys.im_paideia_dao_name, "Test DAO")
         config
@@ -41,10 +40,6 @@ class CreateDAOTransactionSuite extends PaideiaTestSuite {
         config.set(
           ConfKeys.im_paideia_dao_action_tokenid,
           ErgoId.create(actionTokenId).getBytes()
-        )
-        config.set(
-          ConfKeys.im_paideia_dao_vote_tokenid,
-          ErgoId.create(voteTokenId).getBytes()
         )
         config.set(ConfKeys.im_paideia_dao_key, ErgoId.create(daoKey).getBytes())
         config.set(
@@ -85,12 +80,6 @@ class CreateDAOTransactionSuite extends PaideiaTestSuite {
           false
         )
         mintContract.newBox(
-          mintContract
-            .box(ctx, voteTokenId, Long.MaxValue, "Test DAO Vote", "Test DAO Vote", 0)
-            .inputBox(),
-          false
-        )
-        mintContract.newBox(
           mintContract.box(ctx, daoKey, 1L, "Test DAO Key", "Test DAO Key", 0).inputBox(),
           false
         )
@@ -116,6 +105,7 @@ class CreateDAOTransactionSuite extends PaideiaTestSuite {
         val dummyTx = (new ErgoTransaction()).addOutputsItem(protoDAOBox)
         Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
         val eventResponse = Paideia.handleEvent(CreateTransactionsEvent(ctx, 0L, 0L))
+        eventResponse.exceptions.map(e => throw e)
         assert(eventResponse.unsignedTransactions.size === 1)
         ctx
           .newProverBuilder()

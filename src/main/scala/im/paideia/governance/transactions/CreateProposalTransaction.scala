@@ -79,7 +79,6 @@ final case class CreateProposalTransaction(
     ctx,
     dao,
     daoOriginInputBox.propTokens - 1L,
-    daoOriginInputBox.voteTokens,
     daoOriginInputBox.actionTokens - createProposalInputBox.actionBoxes.size.toLong,
     daoOriginInputBox.useContract
   )

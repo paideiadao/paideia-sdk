@@ -48,16 +48,6 @@ case class CreateDAOTransaction(
     )
   )(0)
 
-  val voteMintBox = Paideia.getBox(
-    new FilterLeaf[String](
-      FilterType.FTEQ,
-      new ErgoId(dao.config.getArray[Byte](ConfKeys.im_paideia_dao_vote_tokenid))
-        .toString(),
-      CompareField.ASSET,
-      0
-    )
-  )(0)
-
   val actionMintBox = Paideia.getBox(
     new FilterLeaf[String](
       FilterType.FTEQ,
@@ -104,7 +94,6 @@ case class CreateDAOTransaction(
   ).box(
     _ctx,
     dao,
-    Long.MaxValue,
     Long.MaxValue,
     Long.MaxValue
   )
@@ -175,15 +164,6 @@ case class CreateDAOTransaction(
     ContextVar.of(2.toByte, ConfKeys.im_paideia_dao_action_tokenid.ergoValue)
   )
 
-  val voteMintContext = List(
-    mintPaideiaConfigProof,
-    ContextVar.of(
-      1.toByte,
-      dao.config.getProof(ConfKeys.im_paideia_dao_vote_tokenid)(Some(configDigest))
-    ),
-    ContextVar.of(2.toByte, ConfKeys.im_paideia_dao_vote_tokenid.ergoValue)
-  )
-
   val daoKeyMintContext = List(
     mintPaideiaConfigProof,
     ContextVar
@@ -207,23 +187,11 @@ case class CreateDAOTransaction(
     ContextVar.of(0.toByte, 1.toByte),
     ContextVar.of(
       1.toByte,
-      paideiaConfig.getProof(
-        ConfKeys.im_paideia_contracts_dao,
-        ConfKeys.im_paideia_default_config,
-        ConfKeys.im_paideia_default_config_signature,
-        ConfKeys.im_paideia_default_treasury,
-        ConfKeys.im_paideia_default_treasury_signature
-      )(Some(paideiaConfigDigest))
+      protoDAOInputBox.useContract.getConfigContext(Some(paideiaConfigDigest))
     ),
     ContextVar.of(
       2.toByte,
-      dao.config.getProof(
-        ConfKeys.im_paideia_dao_proposal_tokenid,
-        ConfKeys.im_paideia_dao_vote_tokenid,
-        ConfKeys.im_paideia_dao_action_tokenid,
-        ConfKeys.im_paideia_dao_key,
-        ConfKeys.im_paideia_staking_state_tokenid
-      )(Some(configDigest))
+      protoDAOInputBox.useContract.getDAOConfigContext(dao.config, Some(configDigest))
     ),
     ContextVar.of(
       3.toByte, {
@@ -264,7 +232,6 @@ case class CreateDAOTransaction(
     protoDAOInput.withContextVars(contextVarsProtoDAO: _*),
     proposalMintBox.withContextVars(proposalMintContext: _*),
     actionMintBox.withContextVars(actionMintContext: _*),
-    voteMintBox.withContextVars(voteMintContext: _*),
     daoKeyMintBox.withContextVars(daoKeyMintContext: _*),
     stakeStateMintBox.withContextVars(stakeStateMintContext: _*)
   )

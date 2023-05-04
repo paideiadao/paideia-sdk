@@ -63,6 +63,12 @@ object StakingTest {
         ConfKeys.im_paideia_contracts_staking_compound,
         compoundContract.contractSignature
       )
+    val voteContract = StakeVote(PaideiaContractSignature(daoKey = daoKey))
+    dao.config
+      .set(
+        ConfKeys.im_paideia_contracts_staking_vote,
+        voteContract.contractSignature
+      )
     val snapshotContract = StakeSnapshot(PaideiaContractSignature(daoKey = daoKey))
     dao.config
       .set(

@@ -116,6 +116,17 @@ class ProposalBasic(contractSignature: PaideiaContractSignature)
     cons
   }
 
+  def getVote(
+    voteKey: String,
+    proposalIndex: Int,
+    digestOrHeight: Either[ADDigest, Int]
+  ): Option[VoteRecord] = {
+    val proposal = Paideia.getDAO(contractSignature.daoKey).proposals(proposalIndex)
+    val voteId   = ErgoId.create(voteKey)
+    val lookUp   = proposal.votes.lookUpWithDigest(voteId)(digestOrHeight.left.toOption)
+    lookUp.response.head.tryOp.get
+  }
+
   def castVote(
     ctx: BlockchainContextImpl,
     inputBox: InputBox,

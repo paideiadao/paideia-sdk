@@ -43,8 +43,14 @@ case class UnstakeTransaction(
 
   val state = TotalStakingState(daoKey)
 
-  val newStakeRecord = StakeRecord.stakeRecordConversion.convertFromBytes(
-    unstakeProxyInput.getRegisters().get(1).getValue().asInstanceOf[Coll[Byte]].toArray
+  val newStakeAndProfitRecord = unstakeProxyInput
+    .getRegisters()
+    .get(1)
+    .getValue()
+    .asInstanceOf[Coll[Byte]]
+
+  val newStakeRecord: StakeRecord = StakeRecord.stakeRecordConversion.convertFromBytes(
+    newStakeAndProfitRecord.toArray
   )
 
   val whiteListedTokens = config
@@ -91,11 +97,13 @@ case class UnstakeTransaction(
 
   val newExtraTokens = stakeStateInputBox.extraTokens
     .map { (et: ErgoToken) =>
-      val stakeRecordIndex = whiteListedTokens.indexOf(et.getId())
+      val profitRecordIndex = whiteListedTokens.indexOf(et.getId())
       new ErgoToken(
         et.getId(),
         et.getValue() - (currentStakeRecord
-          .rewards(1 + stakeRecordIndex) - newStakeRecord.rewards(1 + stakeRecordIndex))
+          .rewards(1 + profitRecordIndex) - newStakeRecord.rewards(
+          1 + profitRecordIndex
+        ))
       )
     }
     .filter((et: ErgoToken) => et.getValue() > 0L)

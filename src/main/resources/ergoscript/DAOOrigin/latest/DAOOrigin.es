@@ -22,49 +22,7 @@
 
     val configProof = getVar[Coll[Byte]](1).get
 
-    val validTransaction = if (daoInput.tokens(2)._2-1 == daoOutput.tokens(2)._2) {
-
-        val configValues = configInput.R4[AvlTree].get.getMany(Coll(
-            _IM_PAIDEIA_CONTRACTS_VOTE,
-            _IM_PAIDEIA_STAKING_STATE_TOKENID
-        ),configProof)
-
-        val stakeInput = CONTEXT.dataInputs(2)
-
-        val correctStakeInput = stakeInput.tokens(0)._1 == configValues(1).get.slice(6,38)
-
-        val stakeProof = getVar[Coll[Byte]](2).get
-
-        val voteOutput = OUTPUTS(1)
-
-        val stake = stakeInput.R4[AvlTree].get.get(voteOutput.tokens(1)._1, stakeProof).get
-
-        val correctStake = stake.size > 0
-
-        val correctDAOOutput = allOf(Coll(
-            blake2b256(daoOutput.propositionBytes) == paideiaConfigValues(0).get.slice(1,33),
-            daoOutput.value >= daoInput.value,
-            daoOutput.tokens(0) == daoInput.tokens(0),
-            daoOutput.tokens(1) == daoInput.tokens(1),
-            daoOutput.tokens(2)._1 == daoInput.tokens(2)._1,
-            daoOutput.tokens(3) == daoInput.tokens(3),
-            daoOutput.tokens.size == 4
-        ))
-
-        val correctVoteOutput = allOf(Coll(
-            blake2b256(voteOutput.propositionBytes) == configValues(0).get.slice(1,33),
-            voteOutput.value == 1000000L,
-            voteOutput.tokens(0)._1 == daoInput.tokens(2)._1,
-            voteOutput.tokens(0)._2 == 1L
-        ))
-
-        allOf(Coll(
-            correctStakeInput,
-            correctDAOOutput,
-            correctVoteOutput,
-            correctStake
-        ))
-    } else {
+    val validTransaction = {
         if (daoInput.tokens(1)._2-1 == daoOutput.tokens(1)._2) {
             val createProposalInput = INPUTS(1)
 
@@ -86,10 +44,9 @@
                 daoOutput.value >= daoInput.value,
                 daoOutput.tokens(0) == daoInput.tokens(0),
                 daoOutput.tokens(1)._1 == daoInput.tokens(1)._1,
-                daoOutput.tokens(2) == daoInput.tokens(2),
-                daoOutput.tokens(3)._1 == daoInput.tokens(3)._1,
-                daoOutput.tokens(3)._2 == daoInput.tokens(3)._2 - actionBoxes.size,
-                daoOutput.tokens.size == 4
+                daoOutput.tokens(2)._1 == daoInput.tokens(2)._1,
+                daoOutput.tokens(2)._2 == daoInput.tokens(2)._2 - actionBoxes.size,
+                daoOutput.tokens.size == 3
             ))
 
             val proposalOutput = OUTPUTS(1)
@@ -111,7 +68,7 @@
                 (i: Int) =>
                 allOf(Coll(
                     actionOutputs(i).value >= actionBoxes(i).value,
-                    actionOutputs(i).tokens(0)._1 == daoInput.tokens(3)._1,
+                    actionOutputs(i).tokens(0)._1 == daoInput.tokens(2)._1,
                     actionOutputs(i).tokens(0)._2 == 1L,
                     actionOutputs(i).R4[Coll[Long]].get(0) == proposalId,
                     actionOutputs(i).R4[Coll[Long]].get(1) >= 0L,

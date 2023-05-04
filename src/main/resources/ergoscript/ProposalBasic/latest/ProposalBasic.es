@@ -1,6 +1,8 @@
 {
     val proposalBasicInput = SELF
 
+    val proposalBasicInputIndex = INPUTS.indexOf(proposalBasicInput, -1)
+
     val configInput = CONTEXT.dataInputs(0)
 
     val correctConfig = configInput.tokens(0)._1 == _IM_PAIDEIA_DAO_KEY
@@ -12,16 +14,18 @@
         _IM_PAIDEIA_STAKING_STATE_TOKENID
     ),configProof)
 
-    val stakeInput = CONTEXT.dataInputs(1)
-
-    val correctStakeInput = stakeInput.tokens(0)._1 == configValues(1).get.slice(6,38)
-
-    val proposalBasicOutput = OUTPUTS(0)
-
     val passedInput = proposalBasicInput.R4[Coll[Int]].get(1)
-    val passedOutput = proposalBasicOutput.R4[Coll[Int]].get(1)
 
-    val validTransaction = if (passedInput != passedOutput && passedInput == -1) {
+    val validTransaction = if (proposalBasicInputIndex == 0 && passedInput == -1) {
+
+        val stakeInput = CONTEXT.dataInputs(1)
+
+        val correctStakeInput = stakeInput.tokens(0)._1 == configValues(1).get.slice(6,38)
+
+        val proposalBasicOutput = OUTPUTS(0)
+
+        val passedOutput = proposalBasicOutput.R4[Coll[Int]].get(1)
+
         val paideiaConfigInput = CONTEXT.dataInputs(2)
 
         val paideiaCorrectConfig = paideiaConfigInput.tokens(0)._1 == _PAIDEIA_DAO_KEY
@@ -76,16 +80,22 @@
 
         allOf(Coll(
             paideiaCorrectConfig,
-            correctOut,
-            passedEnd,
-            correctSplitProfitOut
+            // correctOut,
+            // passedEnd,
+            // correctSplitProfitOut
         ))
     } else {
-        if (proposalBasicInput.R5[Coll[Long]].get != proposalBasicOutput.R5[Coll[Long]].get) {
-            val castVoteInput = INPUTS(2)
-            val voteInput = INPUTS(1)
 
-            val voteKey = voteInput.R5[Coll[Byte]].get
+        val stakeInput = INPUTS(0)
+
+        val correctStakeInput = stakeInput.tokens(0)._1 == configValues(1).get.slice(6,38)
+
+        val proposalBasicOutput = OUTPUTS(2)
+
+        if (proposalBasicInput.R5[Coll[Long]].get != proposalBasicOutput.R5[Coll[Long]].get) {
+            val castVoteInput = INPUTS(3)
+
+            val voteKey = castVoteInput.tokens(0)._1
             val votes = proposalBasicInput.R6[AvlTree].get
 
             val currentVoteProof = getVar[Coll[Byte]](1).get
@@ -134,9 +144,9 @@
 
             val stakeProof = getVar[Coll[Byte]](3).get
 
-            val currentStakeState = stakeInput.R4[AvlTree].get.get(voteInput.tokens(1)._1, stakeProof).get
+            val currentStakeState = stakeInput.R4[Coll[AvlTree]].get(0).get(castVoteInput.tokens(0)._1, stakeProof).get
 
-            val currentStakeAmount = byteArrayToLong(currentStakeState.slice(0,8))
+            val currentStakeAmount = byteArrayToLong(currentStakeState.slice(8,16))
 
             allOf(Coll(
                 currentStakeAmount >= newVoteCount,
@@ -146,7 +156,8 @@
                 proposalBasicOutput.R4[Coll[Int]].get == proposalBasicInput.R4[Coll[Int]].get,
                 proposalBasicOutput.R5[Coll[Long]].get(0) == proposalBasicInput.R5[Coll[Long]].get(0),
                 correctVoteValues,
-                proposalBasicOutput.R6[AvlTree].get.digest == newVotes.digest
+                proposalBasicOutput.R6[AvlTree].get.digest == newVotes.digest,
+                correctStakeInput
             ))
         } else {
             false
@@ -155,7 +166,6 @@
 
     sigmaProp(allOf(Coll(
         correctConfig,
-        correctStakeInput,
         validTransaction
     )))
 }

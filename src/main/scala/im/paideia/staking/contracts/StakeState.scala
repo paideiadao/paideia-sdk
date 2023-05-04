@@ -47,7 +47,9 @@ class StakeState(contractSignature: PaideiaContractSignature)
     nextEmission: Long,
     profit: Array[Long],
     extraTokens: List[ErgoToken] = List[ErgoToken](),
-    snapshots: Array[StakingSnapshot]
+    snapshots: Array[StakingSnapshot],
+    voted: Long,
+    votedTotal: Long
   ): StakeStateBox = {
     val dao   = Paideia.getDAO(daoKey)
     val state = TotalStakingState(daoKey)
@@ -61,8 +63,11 @@ class StakeState(contractSignature: PaideiaContractSignature)
       stakedTokenTotal,
       nextEmission,
       profit,
-      state.currentStakingState.plasmaMap.digest,
-      snapshots
+      state.currentStakingState.stakeRecords.digest,
+      state.currentStakingState.participationRecords.digest,
+      snapshots,
+      voted,
+      votedTotal
     )
   }
 
@@ -84,9 +89,16 @@ class StakeState(contractSignature: PaideiaContractSignature)
       List[ErgoToken](),
       Range(0, emissionDelay.toInt)
         .map(i =>
-          StakingSnapshot(0L, state.currentStakingState.plasmaMap.digest, emptyProfit)
+          StakingSnapshot(
+            0L,
+            state.currentStakingState.stakeRecords.digest,
+            state.currentStakingState.participationRecords.digest,
+            emptyProfit
+          )
         )
-        .toArray
+        .toArray,
+      0L,
+      0L
     )
   }
 
@@ -108,8 +120,8 @@ class StakeState(contractSignature: PaideiaContractSignature)
                  val stakeBox = StakeStateBox.fromInputBox(cte.ctx, stakeStateInput)
                  if (
                    stakeBox.state
-                     .firstMatchingSnapshot(stakeBox.snapshots(0).digest)
-                     .size(Some(stakeBox.snapshots(0).digest)) > 0
+                     .firstMatchingSnapshot(stakeBox.snapshots(0).stakeDigest)
+                     .size(Some(stakeBox.snapshots(0).stakeDigest)) > 0
                  ) {
                    PaideiaEventResponse(
                      1,
@@ -186,7 +198,7 @@ class StakeState(contractSignature: PaideiaContractSignature)
                                 .convertFromBytes(kv._2.toArray)
                             )
                           )
-                      stakingState.state.currentStakingState.plasmaMap
+                      stakingState.state.currentStakingState.stakeRecords
                         .insertWithDigest(operations: _*)(digestOrHeight)
                     case StakingContextVars.CHANGE_STAKE =>
                       val operations =
@@ -201,7 +213,7 @@ class StakeState(contractSignature: PaideiaContractSignature)
                                 .convertFromBytes(kv._2.toArray)
                             )
                           )
-                      stakingState.state.currentStakingState.plasmaMap
+                      stakingState.state.currentStakingState.stakeRecords
                         .updateWithDigest(operations: _*)(digestOrHeight)
                     case StakingContextVars.UNSTAKE =>
                       val operations =
@@ -212,7 +224,7 @@ class StakeState(contractSignature: PaideiaContractSignature)
                           .map((kv: (Coll[Byte], Coll[Byte])) =>
                             ByteConversion.convertsId.convertFromBytes(kv._1.toArray)
                           )
-                      stakingState.state.currentStakingState.plasmaMap
+                      stakingState.state.currentStakingState.stakeRecords
                         .deleteWithDigest(operations: _*)(digestOrHeight)
                     case StakingContextVars.SNAPSHOT =>
                       if (
@@ -239,15 +251,15 @@ class StakeState(contractSignature: PaideiaContractSignature)
                             )
                           )
                       val removeOps = operations.map(_._1)
-                      stakingState.state.currentStakingState.plasmaMap
+                      stakingState.state.currentStakingState.stakeRecords
                         .updateWithDigest(operations: _*)(digestOrHeight)
                       stakingState.state
-                        .firstMatchingSnapshot(stakingState.snapshots(0).digest)
-                        .plasmaMap
+                        .firstMatchingSnapshot(stakingState.snapshots(0).stakeDigest)
+                        .stakeRecords
                         .deleteWithDigest(removeOps: _*)(
                           if (te.mempool)
                             Left(
-                              stakingState.snapshots(0).digest
+                              stakingState.snapshots(0).stakeDigest
                             )
                           else
                             Right(te.height)
@@ -277,7 +289,8 @@ class StakeState(contractSignature: PaideiaContractSignature)
         ConfKeys.im_paideia_contracts_staking_unstake,
         ConfKeys.im_paideia_contracts_staking_snapshot,
         ConfKeys.im_paideia_contracts_staking_compound,
-        ConfKeys.im_paideia_contracts_staking_profitshare
+        ConfKeys.im_paideia_contracts_staking_profitshare,
+        ConfKeys.im_paideia_contracts_staking_vote
       )(configDigest)
   }
 
@@ -311,6 +324,10 @@ class StakeState(contractSignature: PaideiaContractSignature)
     cons.put(
       "_IM_PAIDEIA_CONTRACTS_STAKING_PROFITSHARE",
       ConfKeys.im_paideia_contracts_staking_profitshare.ergoValue.getValue()
+    )
+    cons.put(
+      "_IM_PAIDEIA_CONTRACTS_STAKING_VOTE",
+      ConfKeys.im_paideia_contracts_staking_vote.ergoValue.getValue()
     )
     cons
   }

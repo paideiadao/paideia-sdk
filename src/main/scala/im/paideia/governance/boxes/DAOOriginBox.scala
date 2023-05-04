@@ -18,7 +18,6 @@ case class DAOOriginBox(
   _ctx: BlockchainContextImpl,
   dao: DAO,
   propTokens: Long,
-  voteTokens: Long,
   actionTokens: Long,
   useContract: DAOOrigin
 ) extends PaideiaBox {
@@ -41,10 +40,6 @@ case class DAOOriginBox(
         propTokens
       ),
       new ErgoToken(
-        dao.config.getArray[Byte](ConfKeys.im_paideia_dao_vote_tokenid),
-        voteTokens
-      ),
-      new ErgoToken(
         dao.config.getArray[Byte](ConfKeys.im_paideia_dao_action_tokenid),
         actionTokens
       )
@@ -63,7 +58,6 @@ object DAOOriginBox {
       ),
       inp.getTokens().get(1).getValue(),
       inp.getTokens().get(2).getValue(),
-      inp.getTokens().get(3).getValue(),
       contract
     )
   }

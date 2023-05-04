@@ -4,13 +4,15 @@ import scorex.crypto.authds.ADDigest
 
 final case class StakingSnapshot(
   totalStaked: Long,
-  digest: ADDigest,
+  stakeDigest: ADDigest,
+  participationDigest: ADDigest,
   profit: List[Long]
 ) {
   def addProfit(addedProfit: Array[Long]) = {
     StakingSnapshot(
       totalStaked,
-      digest,
+      stakeDigest,
+      participationDigest,
       profit.zip(addedProfit).map(pp => pp._1 + pp._2)
     )
   }
