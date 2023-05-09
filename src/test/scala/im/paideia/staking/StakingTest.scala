@@ -81,6 +81,12 @@ object StakingTest {
         ConfKeys.im_paideia_contracts_staking_profitshare,
         profitShareContract.contractSignature
       )
+    val stakeStateContract = StakeState(PaideiaContractSignature(daoKey = daoKey))
+    dao.config
+      .set(
+        ConfKeys.im_paideia_contracts_staking_state,
+        stakeStateContract.contractSignature
+      )
 
     dao
   }

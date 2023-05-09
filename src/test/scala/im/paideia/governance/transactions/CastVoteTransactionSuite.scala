@@ -92,6 +92,11 @@ class CastVoteTransactionSuite extends PaideiaTestSuite {
         val stakeKey = Util.randomKey
 
         val stakingContract = StakeState(PaideiaContractSignature(daoKey = dao.key))
+        config
+          .set(
+            ConfKeys.im_paideia_contracts_staking_state,
+            stakingContract.contractSignature
+          )
 
         val dummyAddress =
           Address.create("9h7L7sUHZk43VQC3PHtSp5ujAWcZtYmWATBH746wi75C5XHi68b")
