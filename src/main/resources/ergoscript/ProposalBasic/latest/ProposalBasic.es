@@ -177,11 +177,7 @@
             else 
                 -2
 
-        val padTokens: Long = 
-            if (proposalBasic.tokens(1)._2 >= padFee) 
-                proposalBasic.tokens(1)._2 
-            else 
-                padFee
+        val padTokens: Long = min(proposalBasic.tokens(1)._2,padFee)
 
         ///////////////////////////////////////////////////////////////////////
         // Simple conditions                                                 //
@@ -227,6 +223,7 @@
 
         allOf(Coll(
             paideiaCorrectConfig,
+            correctWinningVote,
             correctOut,
             passedEnd,
             correctSplitProfitOut
