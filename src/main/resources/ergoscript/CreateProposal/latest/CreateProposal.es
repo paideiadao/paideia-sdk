@@ -33,7 +33,8 @@
 
     val daoOriginKey: Coll[Byte] = daoOrigin.R4[Coll[Byte]].get
 
-    val userProp: Coll[Byte] = createProposal.R4[Coll[Byte]].get
+    val userProp: Coll[Byte]      = createProposal.R4[Coll[Byte]].get
+    val requestedBoxes: Coll[Box] = createProposal.R5[Coll[Box]].get
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -66,6 +67,12 @@
         }
     )
 
+    val boxesCreated: Boolean = 
+        requestedBoxes.zip(OUTPUTS.slice(1,requestedBoxes.size)).forall{
+            (bb: (Box, Box)) =>
+            bb._1.bytesWithoutRef == bb._2.bytesWithoutRef
+        }
+
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
     // Final contract result                                                 //
@@ -74,6 +81,7 @@
 
     sigmaProp(allOf(Coll(
         keyReturned,
-        correctDaoOrigin
+        correctDaoOrigin,
+        boxesCreated
     )))
 }
