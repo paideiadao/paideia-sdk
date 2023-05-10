@@ -61,6 +61,8 @@
 
     val daoKey: Coll[Byte] = daoOrigin.R4[Coll[Byte]].get
 
+    val daoKeyO: Coll[Byte] = daoOriginO.R4[Coll[Byte]].get
+
     val paideiaConfigTree: AvlTree = paideiaConfig.R4[AvlTree].get
 
     val configTree: AvlTree = config.R4[AvlTree].get
@@ -144,9 +146,11 @@
             daoOriginO.value        >= daoOrigin.value,
             daoOriginO.tokens(0)    == daoOrigin.tokens(0),
             daoOriginO.tokens(1)._1 == daoOrigin.tokens(1)._1,
+            daoOriginO.tokens(1)._2 == daoOrigin.tokens(1)._2 - 1L,
             daoOriginO.tokens(2)._1 == daoOrigin.tokens(2)._1,
             daoOriginO.tokens(2)._2 == daoOrigin.tokens(2)._2 - actionBoxes.size,
-            daoOriginO.tokens.size  == 3
+            daoOriginO.tokens.size  == 3,
+            daoKeyO                 == daoKey
         )
     )
 

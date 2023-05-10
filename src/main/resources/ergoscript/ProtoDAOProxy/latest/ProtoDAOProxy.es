@@ -78,6 +78,7 @@
     ///////////////////////////////////////////////////////////////////////////
 
     val configValues: Coll[Coll[Byte]] = protoDaoProxy.R4[Coll[Coll[Byte]]].get
+    val stakePoolSize: Long            = protoDaoProxy.R5[Coll[Long]].get(0)
 
     val paideiaConfigTree: AvlTree = paideiaConfig.R4[AvlTree].get
 
@@ -139,6 +140,7 @@
     ),configInsertProof).get
 
     val daoName: Coll[Byte] = configValues(0).slice(5,configValues(0).size)
+    val daoGovernanceTokenId: Coll[Byte] = configValues(1).slice(6,38)
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -152,7 +154,9 @@
 
     val validProtoDAOOut: Boolean = allOf(Coll(
         blake2b256(protoDaoO.propositionBytes) == protoDaoContractHash,
-        configTreeO.digest == filledOutConfigTree.digest
+        configTreeO.digest == filledOutConfigTree.digest,
+        protoDaoO.tokens(1)._1 == daoGovernanceTokenId,
+        protoDaoO.tokens(1)._2 == stakePoolSize + 1L
     ))
 
     val validMintOut = allOf(Coll(
@@ -173,6 +177,7 @@
 
     sigmaProp(allOf(
         Coll(
+            correctConfig,
             validEmptyConfig,
             validProtoDAOOut,
             validMintOut
