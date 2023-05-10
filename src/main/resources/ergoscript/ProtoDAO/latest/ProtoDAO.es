@@ -73,7 +73,8 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val configTree: AvlTree = protoDao.R4[AvlTree].get
+    val configTree: AvlTree      = protoDao.R4[AvlTree].get
+    val protoDaoKey: Coll[Byte]  = protoDao.R5[Coll[Byte]].get
 
     val paideiaConfigTree: AvlTree = paideiaConfig.R4[AvlTree].get
 
@@ -111,7 +112,8 @@
         // Registers                                                         //
         ///////////////////////////////////////////////////////////////////////
 
-        val configTreeO: AvlTree = protoDaoO.R4[AvlTree].get
+        val configTreeO: AvlTree     = protoDaoO.R4[AvlTree].get
+        val protoDaoOKey: Coll[Byte] = protoDaoO.R5[Coll[Byte]].get
 
         val mintOName: Coll[Byte]     = mintO.R4[Coll[Byte]].get
         val mintODesc: Coll[Byte]     = mintO.R5[Coll[Byte]].get
@@ -194,7 +196,9 @@
         val validProtoDAOOut = allOf(Coll(
             blake2b256(protoDaoO.propositionBytes) == protoDaoContractHash,
             protoDaoO.tokens == protoDao.tokens,
-            configTreeO.digest == configTreeOut.digest
+            configTreeO.digest == configTreeOut.digest,
+            protoDaoO.value >= protoDao.value - 2000000L,
+            protoDaoOKey == protoDaoKey
         ))
 
         ///////////////////////////////////////////////////////////////////////
