@@ -246,6 +246,7 @@
         noAddedOrNegativeProfit,
         correctErgProfit,
         correctTokenProfit,
-        selfOutput
+        selfOutput,
+        unchangedRegisters
     )))
 }
