@@ -1,89 +1,207 @@
 {
-    val configTokenId = _IM_PAIDEIA_DAO_KEY 
-    val config = CONTEXT.dataInputs(0)
-    val correctConfigTokenId = config.tokens(0)._1 == configTokenId
 
-    val configProof = getVar[Coll[Byte]](0).get
+    /**
+     *
+     *  UnstakeProxy
+     *
+     *  Proxy to help the user unstake assets from the staking setup.
+     *
+     */
 
-    val configValues = config.R4[AvlTree].get.getMany(Coll(
-        _IM_PAIDEIA_STAKING_STATE_TOKENID,
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Constants                                                             //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    val daoKey: Coll[Byte] = _IM_PAIDEIA_DAO_KEY
+
+    val imPaideiaStakeStateTokenId: Coll[Byte] = 
+        _IM_PAIDEIA_STAKING_STATE_TOKENID
+
+    val imPaideiaStakingProfitTokenIds: Coll[Byte] = 
         _IM_PAIDEIA_STAKING_PROFIT_TOKENIDS
-    ),configProof)
 
-    val plasmaStakingInput = INPUTS(0)
-    val correctPlasmaStakingInput = INPUTS(0).tokens(0)._1 == configValues(0).get.slice(6,38)
-    val plasmaStakingOutput = OUTPUTS(0)
-    val userOutput = OUTPUTS(2)
+    val stakeInfoOffset: Int = 8
 
-    val stakeInfoOffset = 8
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Inputs                                                                //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
 
-    val stakeState = plasmaStakingInput.R4[Coll[AvlTree]].get(0)
+    val stakeState: Box = INPUTS(0)
+    val proxy: Box      = SELF
 
-    val newStakeRecord = SELF.R5[Coll[Byte]].get
-    val newStake = byteArrayToLong(newStakeRecord.slice(stakeInfoOffset,stakeInfoOffset+8))
-    val longIndices = newStakeRecord.slice(0,newStakeRecord.size/8-(stakeInfoOffset/8)).indices
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Data Inputs                                                           //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
 
-    val whiteListedTokenIds = configValues(1).get.slice(0,(configValues(1).get.size-6)/37).indices.map{(i: Int) =>
-        configValues(1).get.slice(6+(37*i)+5,6+(37*(i+1)))
-    }
+     val config: Box = CONTEXT.dataInputs(0)
 
-    val stakeOperations = Coll((SELF.tokens(0)._1,newStakeRecord))
-    val proof = getVar[Coll[Byte]](1).get
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Outputs                                                               //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
 
-    val correctReturnedProfits = {
-        val currentStakeState = stakeState.get(stakeOperations(0)._1, proof).get
-        val currentProfits = longIndices.map{(i: Int) => byteArrayToLong(currentStakeState.slice(i*8+stakeInfoOffset,i*8+8+stakeInfoOffset))}
-        val newProfits = longIndices.map{(i: Int) => byteArrayToLong(stakeOperations(0)._2.slice(i*8+stakeInfoOffset,i*8+8+stakeInfoOffset))}
-        val combinedProfit = currentProfits.zip(newProfits)
+    val stakeStateO: Box = OUTPUTS(0)
+    val userO: Box       = OUTPUTS(2)
 
-        val currentStakeAmount = currentProfits(0)
-        val newStakeAmount = newProfits(0)
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Registers                                                             //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
 
-        val tokensUnstaked = currentStakeAmount - newStakeAmount == userOutput.tokens.fold(0L, {(z: Long, token: (Coll[Byte], Long)) => if (token._1 == plasmaStakingInput.tokens(1)._1) z + token._2 else z})
+    val configTree: AvlTree = config.R4[AvlTree].get
 
-        val correctErgProfit = currentProfits(1)-newProfits(1) == userOutput.value-1000000L
+    val stakeStateTree: AvlTree = stakeState.R4[Coll[AvlTree]].get(0)
 
-        val correctTokenProfit = plasmaStakingInput.tokens.slice(2,plasmaStakingInput.tokens.size).forall{
-            (token: (Coll[Byte], Long)) =>
-            val profitIndex = whiteListedTokenIds.indexOf(token._1,-3)
-            val tokenAmountInOutput = userOutput.tokens.fold(0L, {(z: Long, outputToken: (Coll[Byte], Long)) => if (outputToken._1 == token._1) z + outputToken._2 else z})
-            tokenAmountInOutput == currentProfits(profitIndex+2) - newProfits(profitIndex+2)
+    val newStakeRecord: Coll[Byte] = proxy.R5[Coll[Byte]].get
+
+    val stakeStateOTree: AvlTree = stakeStateO.R4[Coll[AvlTree]].get(0)
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Context variables                                                     //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    val configProof: Coll[Byte] = getVar[Coll[Byte]](0).get
+    val proof: Coll[Byte]       = getVar[Coll[Byte]](1).get
+    val removeProof: Coll[Byte] = getVar[Coll[Byte]](2).get
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // DAO Config value extraction                                           //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    val configValues: Coll[Option[Coll[Byte]]] = configTree.getMany(
+        Coll(
+            imPaideiaStakeStateTokenId,
+            imPaideiaStakingProfitTokenIds
+        ),
+        configProof
+    )
+
+    val stakeStateTokenId: Coll[Byte] = configValues(0).get.slice(6,38)
+    val profitTokenIds: Coll[Byte]    = configValues(1).get
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Intermediate calculations                                             //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    val newStake: Long = byteArrayToLong(
+        newStakeRecord.slice(stakeInfoOffset,stakeInfoOffset+8)
+    )
+
+    val longIndices: Coll[Int] = 
+        newStakeRecord.slice(0,newStakeRecord.size/8-(stakeInfoOffset/8)).indices
+
+    val whiteListedTokenIds: Coll[Coll[Byte]] = 
+        profitTokenIds.slice(0,(profitTokenIds.size-6)/37).indices.map{
+            (i: Int) =>
+            profitTokenIds.slice(6+(37*i)+5,6+(37*(i+1)))
         }
-        
-        allOf(Coll(
-            tokensUnstaked,
-            correctErgProfit,
-            correctTokenProfit
-        ))
+
+    val stakeKey: Coll[Byte] = proxy.tokens(0)._1
+
+    val stakeOperations: Coll[(Coll[Byte],Coll[Byte])] = 
+        Coll((stakeKey,newStakeRecord))
+
+    val currentStakeState: Coll[Byte] = 
+        stakeStateTree.get(stakeOperations(0)._1, proof).get
+
+    val currentProfits: Coll[Long] = longIndices.map{
+        (i: Int) => 
+        byteArrayToLong(
+            currentStakeState.slice(i*8+stakeInfoOffset,i*8+8+stakeInfoOffset)
+        )
     }
 
-    val validTx = if (newStake > 0) {
-
-        val keyInOutput = userOutput.tokens(0)._1 == stakeOperations(0)._1
-
-        val correctNewState = stakeState.update(stakeOperations, proof).get.digest == plasmaStakingOutput.R4[Coll[AvlTree]].get(0).digest
-   
-        allOf(Coll(
-            keyInOutput,
-            correctNewState
-        ))
-    } else {
-        val keys = Coll(SELF.tokens(0)._1)
-        val removeProof = getVar[Coll[Byte]](2).get
-
-        val keyInInput = SELF.tokens(0)._1 == keys(0)
-
-        val correctNewState = stakeState.remove(keys, removeProof).get.digest == plasmaStakingOutput.R4[Coll[AvlTree]].get(0).digest
-        
-        allOf(Coll(
-            keyInInput,
-            correctNewState
-        ))
+    val newProfits: Coll[Long] = longIndices.map{
+        (i: Int) => 
+        byteArrayToLong(
+            stakeOperations(0)._2.slice(
+                i*8+stakeInfoOffset,
+                i*8+8+stakeInfoOffset
+            )
+        )
     }
+    
+    val combinedProfit: Coll[(Long, Long)] = currentProfits.zip(newProfits)
+
+    val currentStakeAmount: Long = currentProfits(0)
+
+    val newStakeAmount: Long = newProfits(0)
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Simple conditions                                                     //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    val correctConfig: Boolean = config.tokens(0)._1 == daoKey
+
+    val correctStakeState: Boolean = 
+        stakeState.tokens(0)._1 == stakeStateTokenId
+
+    val tokensUnstaked: Boolean = 
+        currentStakeAmount - newStakeAmount == userO.tokens.fold(0L, {
+            (z: Long, token: (Coll[Byte], Long)) => 
+            if (token._1 == stakeState.tokens(1)._1) 
+                z + token._2 
+            else 
+                z
+        })
+
+    val correctErgProfit: Boolean = 
+        currentProfits(1) - newProfits(1) == userO.value-1000000L
+
+    val correctTokenProfit: Boolean = 
+        stakeState.tokens.slice(2,stakeState.tokens.size).forall{
+            (token: (Coll[Byte], Long)) =>
+            val profitIndex: Int = whiteListedTokenIds.indexOf(token._1,-3)
+            val tokenAmountInOutput: Long = userO.tokens.fold(0L, {
+                (z: Long, outputToken: (Coll[Byte], Long)) => 
+                if (outputToken._1 == token._1) z + outputToken._2 else z
+            })
+            tokenAmountInOutput == 
+                currentProfits(profitIndex+2) - newProfits(profitIndex+2)
+        }
+
+    val keyPresent: Boolean = 
+        if (newStake > 0)
+            userO.tokens(0)._1 == stakeKey
+        else
+            proxy.tokens(0)._1 == stakeKey
+
+    val correctNewState: Boolean =
+        if (newStake > 0)
+            stakeStateTree.update(stakeOperations, proof).get.digest == 
+            stakeStateOTree.digest
+        else
+            stakeStateTree.remove(Coll(stakeKey), removeProof).get.digest == 
+            stakeStateOTree.digest
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Final contract result                                                 //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
 
     sigmaProp(allOf(Coll(
-        correctConfigTokenId,
-        correctReturnedProfits,
-        validTx
+        correctConfig,
+        correctStakeState,
+        tokensUnstaked,
+        correctErgProfit,
+        correctTokenProfit,
+        keyPresent,
+        correctNewState
     )))
 }
