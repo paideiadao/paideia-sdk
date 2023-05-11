@@ -102,6 +102,15 @@ class StakingState(
     )(digestOrHeight)
   }
 
+  def insertParticipations(
+    newParticipation: List[(String, ParticipationRecord)],
+    digestOrHeight: Either[ADDigest, Int]
+  ): ProvenResultWithDigest[ParticipationRecord] = {
+    participationRecords.insertWithDigest(
+      newParticipation.map(kv => (ErgoId.create(kv._1), kv._2)): _*
+    )(digestOrHeight)
+  }
+
   def changeParticipations(
     newParticipation: List[(String, ParticipationRecord)],
     digestOrHeight: Either[ADDigest, Int]

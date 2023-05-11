@@ -6,6 +6,7 @@ import im.paideia.common.boxes.PaideiaBox
 import org.ergoplatform.appkit.InputBox
 import im.paideia.governance.VoteRecord
 import scorex.crypto.authds.ADDigest
+import io.getblok.getblok_plasma.collections.ProvenResult
 
 abstract trait ProposalContract {
 
@@ -21,5 +22,5 @@ abstract trait ProposalContract {
     voteKey: String,
     proposalIndex: Int,
     digestOrHeight: Either[ADDigest, Int]
-  ): Option[VoteRecord]
+  ): ProvenResult[VoteRecord]
 }

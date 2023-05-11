@@ -33,6 +33,8 @@ import io.getblok.getblok_plasma.collections.OpResult
 import im.paideia.DAO
 import im.paideia.governance.VoteRecord
 import sigmastate.AvlTreeData
+import im.paideia.governance.Proposal
+import io.getblok.getblok_plasma.collections.ProvenResult
 
 case class StakeStateBox(
   _ctx: BlockchainContextImpl,
@@ -313,9 +315,10 @@ case class StakeStateBox(
   def vote(
     stakeKey: String,
     proposalExpiration: Long,
-    previousVote: Option[VoteRecord],
+    voteProof: ProvenResult[VoteRecord],
     newVote: VoteRecord
   ): StakingContextVars = {
+    val previousVote = voteProof.response.head.tryOp.get
     val voteChange = newVote.voteCount - previousVote
       .getOrElse(VoteRecord(Array(0L)))
       .voteCount
@@ -343,15 +346,22 @@ case class StakeStateBox(
         Left(stateDigest)
       )
     val updateParticipationProof =
-      state.currentStakingState.changeParticipations(
-        List((stakeKey, currentParticipation)),
-        Left(participationDigest)
-      )
+      if (currentParticipationOpt.isDefined)
+        state.currentStakingState.changeParticipations(
+          List((stakeKey, currentParticipation)),
+          Left(participationDigest)
+        )
+      else
+        state.currentStakingState.insertParticipations(
+          List((stakeKey, currentParticipation)),
+          Left(participationDigest)
+        )
     stateDigest         = updateStakeProof.digest
     participationDigest = updateParticipationProof.digest
     StakingContextVars.vote(
-      List((stakeKey, currentStake)),
-      List((stakeKey, currentParticipation)),
+      voteProof,
+      getStakeProof,
+      getParticipationProof,
       updateStakeProof.toProvenResult,
       updateParticipationProof.toProvenResult
     )

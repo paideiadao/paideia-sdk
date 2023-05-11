@@ -7,6 +7,7 @@ import io.getblok.getblok_plasma.collections.ProvenResult
 import special.collection.Coll
 import org.ergoplatform.appkit.ErgoId
 import org.ergoplatform.appkit.ErgoType
+import im.paideia.governance.VoteRecord
 
 case class StakingContextVars(
   stakingStateContextVars: List[ContextVar],
@@ -146,56 +147,22 @@ object StakingContextVars {
   }
 
   def vote(
-    updatedStakes: List[(String, StakeRecord)],
-    updatedParticipation: List[(String, ParticipationRecord)],
+    voteProof: ProvenResult[VoteRecord],
     stakeProof: ProvenResult[StakeRecord],
-    participationProof: ProvenResult[ParticipationRecord]
+    participationProof: ProvenResult[ParticipationRecord],
+    updatedStakeProof: ProvenResult[StakeRecord],
+    updatedParticipationProof: ProvenResult[ParticipationRecord]
   ): StakingContextVars = {
-    val stakeOperations = ErgoValue.of(
-      updatedStakes
-        .map((kv: (String, StakeRecord)) =>
-          ErgoValue
-            .pairOf(
-              ErgoValue
-                .of(ByteConversion.convertsId.convertToBytes(ErgoId.create(kv._1))),
-              ErgoValue.of(StakeRecord.stakeRecordConversion.convertToBytes(kv._2))
-            )
-            .getValue
-        )
-        .toArray,
-      ErgoType.pairType(
-        ErgoType.collType(ErgoType.byteType()),
-        ErgoType.collType(ErgoType.byteType())
-      )
-    )
-    val participationOperations = ErgoValue.of(
-      updatedParticipation
-        .map((kv: (String, ParticipationRecord)) =>
-          ErgoValue
-            .pairOf(
-              ErgoValue
-                .of(ByteConversion.convertsId.convertToBytes(ErgoId.create(kv._1))),
-              ErgoValue.of(
-                ParticipationRecord.participationRecordConversion.convertToBytes(kv._2)
-              )
-            )
-            .getValue
-        )
-        .toArray,
-      ErgoType.pairType(
-        ErgoType.collType(ErgoType.byteType()),
-        ErgoType.collType(ErgoType.byteType())
-      )
-    )
     StakingContextVars(
       List(
         new ContextVar(1.toByte, VOTE)
       ),
       List(
-        new ContextVar(1.toByte, stakeOperations),
+        new ContextVar(1.toByte, voteProof.proof.ergoValue),
         new ContextVar(2.toByte, stakeProof.proof.ergoValue),
-        new ContextVar(3.toByte, participationOperations),
-        new ContextVar(4.toByte, participationProof.proof.ergoValue)
+        new ContextVar(3.toByte, updatedStakeProof.proof.ergoValue),
+        new ContextVar(4.toByte, participationProof.proof.ergoValue),
+        new ContextVar(5.toByte, updatedParticipationProof.proof.ergoValue)
       )
     )
   }
