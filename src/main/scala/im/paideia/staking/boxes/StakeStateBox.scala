@@ -81,7 +81,11 @@ case class StakeStateBox(
     ),
     ErgoValueBuilder.buildFor(
       Colls.fromArray(
-        snapshots.map(kv => kv.totalStaked)
+        Array(
+          Colls.fromArray(snapshots.map(kv => kv.totalStaked)),
+          Colls.fromArray(snapshots.map(kv => kv.voted)),
+          Colls.fromArray(snapshots.map(kv => kv.votedTotal))
+        )
       )
     ),
     ErgoValueBuilder.buildFor(
@@ -256,6 +260,8 @@ case class StakeStateBox(
     val removeProof = snapshot.unstake(keys, Left(snapshots(0).stakeDigest))
     snapshots(0) = StakingSnapshot(
       snapshots(0).totalStaked,
+      snapshots(0).voted,
+      snapshots(0).votedTotal,
       removeProof.digest,
       snapshots(0).participationDigest,
       snapshots(0).profit
@@ -283,13 +289,24 @@ case class StakeStateBox(
     snapshots = snapshots.slice(1, snapshots.size) ++ Array(
       StakingSnapshot(
         state.currentStakingState.totalStaked(Some(stateDigest)),
+        voted,
+        votedTotal,
         stateDigest,
         participationDigest,
         snapshotProfit.toList
       )
     )
+    voted                         = 0L
+    votedTotal                    = 0L
     snapshots(0)                  = snapshots(0).addProfit(profit)
     state.snapshots(nextEmission) = state.currentStakingState.clone(dao.key, nextEmission)
+    val currentParticipation =
+      state.currentStakingState.participationRecords.getMap(Some(participationDigest)).get
+    val participationResult = state.currentStakingState.participationRecords
+      .deleteWithDigest(currentParticipation.toMap.keys.toArray: _*)(
+        Left(participationDigest)
+      )
+    participationDigest = participationResult.digest
     profit = Array.fill(
       dao.config.getArray[Object](ConfKeys.im_paideia_staking_profit_tokenids).size + 2
     )(0L)
@@ -383,8 +400,12 @@ object StakeStateBox {
       .getValue()
       .asInstanceOf[Coll[AvlTree]]
       .map(_.digest.toArray)
+    val snapshotValues =
+      inp.getRegisters().get(2).getValue().asInstanceOf[Coll[Coll[Long]]].toArray
     val snapshotStakedTotals =
-      inp.getRegisters().get(2).getValue().asInstanceOf[Coll[Long]].toArray
+      snapshotValues(0).toArray
+    val snapshotVoted       = snapshotValues(1).toArray
+    val snapshotVotedTotals = snapshotValues(2).toArray
     val snapshotTrees =
       inp.getRegisters().get(3).getValue().asInstanceOf[Coll[(AvlTree, AvlTree)]].toArray
     val snapshotProfit =
@@ -402,17 +423,18 @@ object StakeStateBox {
       longValues.slice(5, longValues.size),
       ADDigest @@ stateTrees(0),
       ADDigest @@ stateTrees(1),
-      snapshotStakedTotals
-        .zip(snapshotTrees)
-        .zip(snapshotProfit)
-        .map((vals: ((Long, (AvlTree, AvlTree)), Coll[Long])) =>
+      snapshotStakedTotals.indices
+        .map((i: Int) =>
           StakingSnapshot(
-            vals._1._1,
-            ADDigest @@ vals._1._2._1.digest.toArray,
-            ADDigest @@ vals._1._2._2.digest.toArray,
-            vals._2.toArray.toList
+            snapshotStakedTotals(i),
+            snapshotVoted(i),
+            snapshotVotedTotals(i),
+            ADDigest @@ snapshotTrees(i)._1.digest.toArray,
+            ADDigest @@ snapshotTrees(i)._2.digest.toArray,
+            snapshotProfit(i).toArray.toList
           )
-        ),
+        )
+        .toArray,
       longValues(3),
       longValues(4)
     )

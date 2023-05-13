@@ -70,7 +70,8 @@
     val stakers: Long            = stakeStateR5(2)
     val voted: Long              = stakeStateR5(3)
     val votedTotal: Long         = stakeStateR5(4)
-    val stakeStateR6: Coll[Long] = stakeState.R6[Coll[Long]].get
+    val stakeStateR6: Coll[Coll[Long]] = 
+        stakeState.R6[Coll[Coll[Long]]].get
 
     val stakeStateR7: Coll[(AvlTree,AvlTree)] = 
         stakeState.R7[Coll[(AvlTree,AvlTree)]].get
@@ -86,7 +87,8 @@
     val votedO: Long              = stakeStateOR5(3)
     val votedTotalO: Long         = stakeStateOR5(4)
     val profitO: Coll[Long]       = stakeStateOR5.slice(5,stakeStateOR5.size)
-    val stakeStateOR6: Coll[Long] = stakeStateO.R6[Coll[Long]].get
+    val stakeStateOR6: Coll[Coll[Long]] = 
+        stakeStateO.R6[Coll[Coll[Long]]].get
 
     val stakeStateOR7: Coll[(AvlTree,AvlTree)] = 
         stakeStateO.R7[Coll[(AvlTree,AvlTree)]].get

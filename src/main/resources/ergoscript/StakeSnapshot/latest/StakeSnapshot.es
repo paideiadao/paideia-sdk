@@ -75,21 +75,44 @@
 
     val configTree: AvlTree = config.R4[AvlTree].get
 
-    val stakeStateTree: AvlTree = stakeState.R4[Coll[AvlTree]].get(0)
+    val stakeStateTree: AvlTree    = stakeState.R4[Coll[AvlTree]].get(0)
+    val participationTree: AvlTree = stakeState.R4[Coll[AvlTree]].get(1)
 
     val stakeStateR5: Coll[Long]    = stakeState.R5[Coll[Long]].get
     val nextSnapshot: Long          = stakeStateR5(0)
     val totalStaked: Long           = stakeStateR5(1)
-    val snapshotsStaked: Coll[Long] = stakeState.R6[Coll[Long]].get
+    val stakers: Long               = stakeStateR5(2)
+    val voted: Long                 = stakeStateR5(3)
+    val votedTotal: Long            = stakeStateR5(4)
+
+    val stakeStateR6: Coll[Coll[Long]] = 
+        stakeState.R6[Coll[Coll[Long]]].get
+
+    val snapshotsStaked: Coll[Long]     = stakeStateR6(0)
+    val snapshotsVoted: Coll[Long]      = stakeStateR6(1)
+    val snapshotsVotedTotal: Coll[Long] = stakeStateR6(2)
 
     val snapshotsTree: Coll[(AvlTree, AvlTree)] = 
         stakeState.R7[Coll[(AvlTree, AvlTree)]].get
 
     val snapshotsProfit: Coll[Coll[Long]] = stakeState.R8[Coll[Coll[Long]]].get
 
+    val stakeStateOTree: AvlTree    = stakeStateO.R4[Coll[AvlTree]].get(0)
+    val participationTreeO: AvlTree = stakeStateO.R4[Coll[AvlTree]].get(1)
+
     val stakeStateOR5: Coll[Long]      = stakeStateO.R5[Coll[Long]].get
     val nextSnapshotO: Long            = stakeStateOR5(0)
-    val newSnapshotsStaked: Coll[Long] = stakeStateO.R6[Coll[Long]].get
+    val totalStakedO: Long             = stakeStateOR5(1)
+    val stakersO: Long                 = stakeStateOR5(2)
+    val votedO: Long                   = stakeStateOR5(3)
+    val votedTotalO: Long              = stakeStateOR5(4)
+
+    val stakeStateOR6: Coll[Coll[Long]] = 
+        stakeStateO.R6[Coll[Coll[Long]]].get
+
+    val newSnapshotsStaked: Coll[Long]     = stakeStateOR6(0)
+    val newSnapshotsVoted: Coll[Long]      = stakeStateOR6(1)
+    val newSnapshotsVotedTotal: Coll[Long] = stakeStateOR6(2)
 
     val newSnapshotsTrees: Coll[(AvlTree, AvlTree)] = 
         stakeStateO.R7[Coll[(AvlTree, AvlTree)]].get
@@ -162,13 +185,25 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val correctStakeState: Boolean = 
-        stakeState.tokens(0)._1 == stakeStateTokenId
+    val correctStakeState: Boolean = allOf(Coll(
+        stakeState.tokens(0)._1 == stakeStateTokenId,
+        stakeStateO.tokens == stakeState.tokens,
+        totalStakedO == totalStaked,
+        stakersO == stakers,
+        votedO == 0L,
+        votedTotalO == 0L,
+        stakeStateOTree.digest == stakeStateTree.digest,
+        participationTreeO.digest == emptyDigest
+    ))
 
     val correctNewSnapshot: Boolean = allOf(Coll(
         newSnapshotsStaked(newSnapshotsStaked.size-1) == totalStaked,
+        newSnapshotsVoted(newSnapshotsStaked.size-1) == voted,
+        newSnapshotsVotedTotal(newSnapshotsStaked.size-1) == votedTotal,
         newSnapshotsTrees(newSnapshotsTrees.size-1)._1.digest == 
             stakeStateTree.digest,
+        newSnapshotsTrees(newSnapshotsTrees.size-1)._2.digest == 
+            participationTree.digest,
         newSnapshotsProfit(newSnapshotsProfit.size-1)(0) == 
         min(
             emissionAmount,
@@ -189,6 +224,8 @@
         snapshotsTree(0)._1.digest == emptyDigest,
         newSnapshotsTrees.slice(0,emissionDelay-1) == 
             snapshotsTree.slice(1,emissionDelay),
+        newSnapshotsVoted.slice(0,emissionDelay-1) == 
+            snapshotsVoted.slice(1,emissionDelay),
         newSnapshotsStaked.slice(0,emissionDelay-1).indices.forall{
             (i: Int) => newSnapshotsStaked(i) == snapshotsStaked(i+1)}
     ))

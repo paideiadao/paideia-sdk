@@ -91,6 +91,8 @@ class StakeState(contractSignature: PaideiaContractSignature)
         .map(i =>
           StakingSnapshot(
             0L,
+            0L,
+            0L,
             state.currentStakingState.stakeRecords.digest,
             state.currentStakingState.participationRecords.digest,
             emptyProfit
