@@ -63,12 +63,35 @@
 
     val configTree: AvlTree = config.R4[AvlTree].get
 
-    val stakeStateTree: AvlTree  = stakeState.R4[Coll[AvlTree]].get(0)
-    val stakeStateR5: Coll[Long] = stakeState.R5[Coll[Long]].get
-    val totalStaked: Long        = stakeStateR5(1)
+    val stakeStateTree: AvlTree     = stakeState.R4[Coll[AvlTree]].get(0)
+    val participationTree: AvlTree  = stakeState.R4[Coll[AvlTree]].get(1)
+    val stakeStateR5: Coll[Long]    = stakeState.R5[Coll[Long]].get
+    val nextEmission: Long          = stakeStateR5(0)
+    val totalStaked: Long           = stakeStateR5(1)
+    val stakers: Long               = stakeStateR5(2)
+    val r5Rest: Coll[Long]          = stakeStateR5.slice(3, stakeStateR5.size)
 
-    val stakeStateOTree: AvlTree = stakeStateO.R4[Coll[AvlTree]].get(0)
-    val totalStakedO: Long       = stakeStateO.R5[Coll[Long]].get(1)
+    val stakeStateR6: Coll[Coll[Long]] = stakeState.R6[Coll[Coll[Long]]].get
+
+    val stakeStateR7: Coll[(AvlTree, AvlTree)] = 
+        stakeState.R7[Coll[(AvlTree, AvlTree)]].get
+
+    val stakeStateR8: Coll[Coll[Long]] = stakeState.R8[Coll[Coll[Long]]].get
+
+    val stakeStateOTree: AvlTree     = stakeStateO.R4[Coll[AvlTree]].get(0)
+    val participationTreeO: AvlTree  = stakeStateO.R4[Coll[AvlTree]].get(1)
+    val stakeStateOR5: Coll[Long]    = stakeStateO.R5[Coll[Long]].get
+    val nextEmissionO: Long          = stakeStateOR5(0)
+    val totalStakedO: Long           = stakeStateOR5(1)
+    val stakersO: Long               = stakeStateOR5(2)
+    val r5RestO: Coll[Long]          = stakeStateOR5.slice(3, stakeStateOR5.size)
+
+    val stakeStateOR6: Coll[Coll[Long]] = stakeStateO.R6[Coll[Coll[Long]]].get
+
+    val stakeStateOR7: Coll[(AvlTree, AvlTree)] = 
+        stakeStateO.R7[Coll[(AvlTree, AvlTree)]].get
+
+    val stakeStateOR8: Coll[Coll[Long]] = stakeStateO.R8[Coll[Coll[Long]]].get
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -146,8 +169,15 @@
 
     val correctConfig: Boolean = config.tokens(0)._1 == daoKey
 
-    val correctStakeState: Boolean = 
-        stakeState.tokens(0)._1 == stakeStateTokenId
+    val correctStakeState: Boolean = allOf(Coll(
+        stakeState.tokens(0)._1 == stakeStateTokenId,
+        participationTreeO == participationTree,
+        nextEmissionO == nextEmission,
+        r5RestO == r5Rest,
+        stakeStateOR6 == stakeStateR6,
+        stakeStateOR7 == stakeStateR7,
+        stakeStateOR8 == stakeStateR8
+    ))
 
     val keyInInput: Boolean = proxy.tokens(0)._1 == keys(0)
 
@@ -173,6 +203,8 @@
 
     val singleStakeOp: Boolean = keys.size == 1
 
+    val correctStakersCount: Boolean = stakers - 1L == stakersO
+
     val correctNewState: Boolean = 
         stakeStateTree.remove(keys, removeProof).get.digest == 
             stakeStateOTree.digest
@@ -197,6 +229,7 @@
         correctTokenProfit,
         singleStakeOp,
         correctNewState,
-        selfOutput
+        selfOutput,
+        correctStakersCount
     )))
 }
