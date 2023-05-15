@@ -8,7 +8,9 @@ final case class StakingSnapshot(
   votedTotal: Long,
   stakeDigest: ADDigest,
   participationDigest: ADDigest,
-  profit: List[Long]
+  profit: List[Long],
+  pureParticipationWeight: Long,
+  participationWeight: Long
 ) {
   def addProfit(addedProfit: Array[Long]) = {
     StakingSnapshot(
@@ -17,7 +19,9 @@ final case class StakingSnapshot(
       votedTotal,
       stakeDigest,
       participationDigest,
-      profit.zip(addedProfit).map(pp => pp._1 + pp._2)
+      profit.zip(addedProfit).map(pp => pp._1 + pp._2),
+      pureParticipationWeight,
+      participationWeight
     )
   }
 }

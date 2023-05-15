@@ -109,6 +109,12 @@ object ConfKeys {
   val im_paideia_staking_profit_share_pct = DAOConfigKey(
     "im.paideia.staking.profit.sharepct"
   )
+  val im_paideia_staking_weight_pureparticipation = DAOConfigKey(
+    "im.paideia.staking.weight.pureparticipation"
+  )
+  val im_paideia_staking_weight_participation = DAOConfigKey(
+    "im.paideia.staking.weight.participation"
+  )
   val im_paideia_contracts_proposal_base = "im.paideia.contracts.proposal."
 
   def im_paideia_contracts_proposal(ergoTreeBytes: Array[Byte]) =

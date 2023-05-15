@@ -61,20 +61,26 @@
 
     val configTree: AvlTree = config.R4[AvlTree].get
 
-    val stakeStateTree: AvlTree     = stakeState.R4[Coll[AvlTree]].get(0)
-    val stakeStateR5: Coll[Long]    = stakeState.R5[Coll[Long]].get
-    val totalStaked: Long           = stakeStateR5(1)
-    val snapshotsStaked: Coll[Long] = stakeState.R6[Coll[Long]].get
+    val stakeStateTree: AvlTree         = stakeState.R4[Coll[AvlTree]].get(0)
+    val stakeStateR5: Coll[Long]        = stakeState.R5[Coll[Long]].get
+    val totalStaked: Long               = stakeStateR5(1)
+    val stakeStateR6: Coll[Coll[Long]]  = stakeState.R6[Coll[Coll[Long]]].get
+    val snapshotsStaked: Coll[Long]     = stakeStateR6(0)
+    val snapshotsVoted: Coll[Long]      = stakeStateR6(1)
+    val snapshotsVotedTotal: Coll[Long] = stakeStateR6(2)
+    val snapshotsPPWeight: Coll[Long]   = stakeStateR6(3)
+    val snapshotsPWeight: Coll[Long]    = stakeStateR6(4)
 
     val snapshotsTree: Coll[(AvlTree, AvlTree)] = 
         stakeState.R7[Coll[(AvlTree, AvlTree)]].get
 
     val snapshotsProfit: Coll[Coll[Long]] = stakeState.R8[Coll[Coll[Long]]].get
 
-    val stakeStateOTree: AvlTree     = stakeStateO.R4[Coll[AvlTree]].get(0)
-    val stakeStateOR5: Coll[Long]    = stakeStateO.R5[Coll[Long]].get
-    val totalStakedO: Long           = stakeStateOR5(1)
-    val snapshotsStakedO: Coll[Long] = stakeStateO.R6[Coll[Long]].get
+    val stakeStateOTree: AvlTree        = stakeStateO.R4[Coll[AvlTree]].get(0)
+    val stakeStateOR5: Coll[Long]       = stakeStateO.R5[Coll[Long]].get
+    val totalStakedO: Long              = stakeStateOR5(1)
+    val stakeStateOR6: Coll[Coll[Long]] = stakeStateO.R6[Coll[Coll[Long]]].get
+    val snapshotsStakedO: Coll[Long]    = stakeStateOR6(0)
 
     val snapshotsTreeO: Coll[(AvlTree, AvlTree)] = 
         stakeStateO.R7[Coll[(AvlTree, AvlTree)]].get
@@ -90,9 +96,10 @@
     val compoundOperations: Coll[(Coll[Byte], Coll[Byte])] = 
         getVar[Coll[(Coll[Byte], Coll[Byte])]](1).get
 
-    val proof: Coll[Byte]         = getVar[Coll[Byte]](2).get
-    val snapshotProof: Coll[Byte] = getVar[Coll[Byte]](3).get
-    val removeProof: Coll[Byte]   = getVar[Coll[Byte]](4).get
+    val proof: Coll[Byte]                      = getVar[Coll[Byte]](2).get
+    val snapshotProof: Coll[Byte]              = getVar[Coll[Byte]](3).get
+    val removeProof: Coll[Byte]                = getVar[Coll[Byte]](4).get
+    val snapshotParticipationProof: Coll[Byte] = getVar[Coll[Byte]](5).get
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -118,6 +125,30 @@
     // Intermediate calculations                                             //
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
+
+    val actualPPWeight: Byte = if (snapshotsVoted(0) > 0)
+            snapshotsPPWeight(0).toByte
+        else
+            0.toByte
+
+    val actualPWeight: Byte = if (snapshotsVotedTotal(0) > 0)
+            snapshotsPWeight(0).toByte
+        else
+            0.toByte
+
+    val totalParticipationWeight: Byte =
+        actualPPWeight + actualPWeight
+
+    val stakingWeight: Byte = 
+        if (totalParticipationWeight > 0)
+            max(
+                100.toByte - totalParticipationWeight,
+                0.toByte
+            )
+        else
+            100.toByte
+
+    val totalWeight: Byte = totalParticipationWeight + stakingWeight
 
     val whiteListedTokenIds: Coll[Coll[Byte]] = 
         profitTokenIds.slice(0,(profitTokenIds.size-6)/37).indices.map{
@@ -163,15 +194,28 @@
             }
         }
 
-    val snapshotStakes = snapshotsTree(0)._1.getMany(keys,snapshotProof)
+    val snapshotStakes: Coll[Long] = snapshotsTree(0)._1.getMany(keys,snapshotProof)
         .map{
             (b: Option[Coll[Byte]]) => 
-            longIndices.map{
-                (i: Int) => 
                 byteArrayToLong(
-                    b.get.slice(i+stakeInfoOffset,i+8+stakeInfoOffset)
+                    b.get.slice(stakeInfoOffset,8+stakeInfoOffset)
                 )
-            }
+        }
+
+    val snapshotParticipation: Coll[(Long,Long)] = snapshotsTree(0)._2.getMany(
+        keys,
+        snapshotParticipationProof)
+        .map{
+            (b: Option[Coll[Byte]]) =>
+            if (b.isDefined)
+                (byteArrayToLong(
+                    b.get.slice(0,8)
+                ),
+                byteArrayToLong(
+                    b.get.slice(8,16)
+                ))
+            else
+                (0L,0L)
         }
 
     val newStakes: Coll[Coll[Long]] = compoundOperations.map{
@@ -191,7 +235,16 @@
             if (currentStakes(index)(0)>=0L) {
                 val r = snapshotProfit.map{
                     (p: Long) => 
-                    (snapshotStakes(index)(0).toBigInt * p.toBigInt / snapshotStaked)
+                    (((snapshotStakes(index).toBigInt * p.toBigInt / snapshotStaked) * stakingWeight) +
+                    (if (actualPPWeight > 0) 
+                        (snapshotParticipation(index)._1.toBigInt * p.toBigInt / snapshotsVoted(0)) * snapshotsPPWeight(0)
+                    else
+                        0.toBigInt) +
+                    (if (actualPWeight > 0)
+                        (snapshotParticipation(index)._2.toBigInt * p.toBigInt / snapshotsVotedTotal(0)) * snapshotsPWeight(0)
+                    else
+                        0.toBigInt)) /
+                    totalWeight
                 }
                 val newStake: Coll[BigInt] = currentStakes(index).zip(r).map{
                     (ll: (Long,BigInt)) => ll._1+ll._2
