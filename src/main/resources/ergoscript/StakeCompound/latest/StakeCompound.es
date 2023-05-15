@@ -62,8 +62,11 @@
     val configTree: AvlTree = config.R4[AvlTree].get
 
     val stakeStateTree: AvlTree         = stakeState.R4[Coll[AvlTree]].get(0)
+    val participationTree: AvlTree      = stakeState.R4[Coll[AvlTree]].get(1)
     val stakeStateR5: Coll[Long]        = stakeState.R5[Coll[Long]].get
+    val nextEmission: Long              = stakeStateR5(0)
     val totalStaked: Long               = stakeStateR5(1)
+    val r5Rest: Coll[Long]              = stakeStateR5.slice(2, stakeStateR5.size)
     val stakeStateR6: Coll[Coll[Long]]  = stakeState.R6[Coll[Coll[Long]]].get
     val snapshotsStaked: Coll[Long]     = stakeStateR6(0)
     val snapshotsVoted: Coll[Long]      = stakeStateR6(1)
@@ -74,17 +77,23 @@
     val snapshotsTree: Coll[(AvlTree, AvlTree)] = 
         stakeState.R7[Coll[(AvlTree, AvlTree)]].get
 
+    val stakeStateR8: Coll[Coll[Long]] = stakeState.R8[Coll[Coll[Long]]].get
+
     val snapshotsProfit: Coll[Coll[Long]] = stakeState.R8[Coll[Coll[Long]]].get
 
     val stakeStateOTree: AvlTree        = stakeStateO.R4[Coll[AvlTree]].get(0)
+    val participationTreeO: AvlTree     = stakeStateO.R4[Coll[AvlTree]].get(1)
     val stakeStateOR5: Coll[Long]       = stakeStateO.R5[Coll[Long]].get
+    val nextEmissionO: Long             = stakeStateOR5(0)
     val totalStakedO: Long              = stakeStateOR5(1)
+    val r5RestO: Coll[Long]             = stakeStateOR5.slice(2, stakeStateOR5.size)
     val stakeStateOR6: Coll[Coll[Long]] = stakeStateO.R6[Coll[Coll[Long]]].get
-    val snapshotsStakedO: Coll[Long]    = stakeStateOR6(0)
 
     val snapshotsTreeO: Coll[(AvlTree, AvlTree)] = 
         stakeStateO.R7[Coll[(AvlTree, AvlTree)]].get
         
+    val stakeStateOR8: Coll[Coll[Long]] = stakeStateO.R8[Coll[Coll[Long]]].get
+
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
     // Context variables                                                     //
@@ -288,6 +297,20 @@
         .update(filteredCompoundOperations, proof).get.digest == 
         stakeStateOTree.digest
 
+    val correctUnchanged: Boolean = allOf(Coll(
+        stakeStateO.value == stakeState.value,
+        stakeStateO.tokens == stakeState.tokens,
+        participationTreeO.digest == participationTree.digest,
+        snapshotsTreeO(0)._2 == snapshotsTree(0)._2,
+        snapshotsTreeO.slice(1,snapshotsTreeO.size) == snapshotsTree.slice(1,snapshotsTree.size),
+        nextEmissionO == nextEmission,
+        r5RestO == r5Rest,
+        stakeStateOR6 == stakeStateR6,
+        snapshotsTreeO.slice(1, snapshotsTreeO.size) == snapshotsTree.slice(1, snapshotsTree.size),
+        snapshotsTreeO(0)._2 == snapshotsTree(0)._2,
+        stakeStateOR8 == stakeStateR8
+    ))
+
     val selfOutput: Boolean = allOf(Coll(
         blake2b256(compoundO.propositionBytes) == compoundContractHash,
         compoundO.value >= SELF.value
@@ -306,6 +329,7 @@
         correctTotalStaked,
         correctSnapshot,
         correctNewState,
-        selfOutput
+        selfOutput,
+        correctUnchanged
     )))
 }
