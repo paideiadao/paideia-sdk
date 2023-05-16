@@ -22,6 +22,16 @@ import im.paideia.governance.contracts.DAOOrigin
 import im.paideia.util.Util
 import im.paideia.staking.contracts.SplitProfit
 import im.paideia.staking.contracts.StakeState
+import im.paideia.governance.contracts.ActionSendFundsBasic
+import im.paideia.governance.contracts.ActionUpdateConfig
+import im.paideia.governance.contracts.ProposalBasic
+import im.paideia.staking.contracts.ChangeStake
+import im.paideia.staking.contracts.Stake
+import im.paideia.staking.contracts.StakeCompound
+import im.paideia.staking.contracts.StakeProfitShare
+import im.paideia.staking.contracts.StakeSnapshot
+import im.paideia.staking.contracts.StakeVote
+import im.paideia.staking.contracts.Unstake
 
 class PaideiaTestSuite extends AnyFunSuite with HttpClientTesting {}
 
@@ -44,6 +54,11 @@ object PaideiaTestSuite {
         ErgoId.create(Util.randomKey).getBytes()
       )
       Paideia.addDAO(DAO(Env.paideiaDaoKey, paideiaConfig))
+      val proposalTokenId = Util.randomKey
+      paideiaConfig.set(
+        ConfKeys.im_paideia_dao_proposal_tokenid,
+        ErgoId.create(proposalTokenId).getBytes()
+      )
       val configContract = Config(PaideiaContractSignature(daoKey = Env.paideiaDaoKey))
       val paideiaOriginContract = PaideiaOrigin(
         PaideiaContractSignature(daoKey = Env.paideiaDaoKey)
@@ -60,6 +75,39 @@ object PaideiaTestSuite {
       val mintContract = Mint(PaideiaContractSignature(daoKey = Env.paideiaDaoKey))
       val daoContract  = DAOOrigin(PaideiaContractSignature(daoKey = Env.paideiaDaoKey))
       val splitProfitContract = SplitProfit(
+        PaideiaContractSignature(daoKey = Env.paideiaDaoKey)
+      )
+      val actionSendFundsContract = ActionSendFundsBasic(
+        PaideiaContractSignature(daoKey = Env.paideiaDaoKey)
+      )
+      val actionUpdateConfigContract = ActionUpdateConfig(
+        PaideiaContractSignature(daoKey = Env.paideiaDaoKey)
+      )
+      val proposalBasicContract = ProposalBasic(
+        PaideiaContractSignature(daoKey = Util.randomKey)
+      )
+      val stakingChangeContract = ChangeStake(
+        PaideiaContractSignature(daoKey = Env.paideiaDaoKey)
+      )
+      val stakingStakeContract = Stake(
+        PaideiaContractSignature(daoKey = Env.paideiaDaoKey)
+      )
+      val stakingCompoundContract = StakeCompound(
+        PaideiaContractSignature(daoKey = Env.paideiaDaoKey)
+      )
+      val stakingProfitShareContract = StakeProfitShare(
+        PaideiaContractSignature(daoKey = Env.paideiaDaoKey)
+      )
+      val stakingSnapshotContract = StakeSnapshot(
+        PaideiaContractSignature(daoKey = Env.paideiaDaoKey)
+      )
+      val stakingStateContract = StakeState(
+        PaideiaContractSignature(daoKey = Env.paideiaDaoKey)
+      )
+      val stakingVoteContract = StakeVote(
+        PaideiaContractSignature(daoKey = Env.paideiaDaoKey)
+      )
+      val stakeUnstakeContract = Unstake(
         PaideiaContractSignature(daoKey = Env.paideiaDaoKey)
       )
       paideiaConfig.set(
@@ -100,6 +148,94 @@ object PaideiaTestSuite {
       paideiaConfig.set(
         ConfKeys.im_paideia_default_config_signature,
         configContract.contractSignature
+      )
+      paideiaConfig.set(
+        ConfKeys.im_paideia_default_action_sendfunds,
+        actionSendFundsContract.ergoTree.bytes
+      )
+      paideiaConfig.set(
+        ConfKeys.im_paideia_default_action_sendfunds_signature,
+        actionSendFundsContract.contractSignature
+      )
+      paideiaConfig.set(
+        ConfKeys.im_paideia_default_action_updateconfig,
+        actionUpdateConfigContract.ergoTree.bytes
+      )
+      paideiaConfig.set(
+        ConfKeys.im_paideia_default_action_updateconfig_signature,
+        actionUpdateConfigContract.contractSignature
+      )
+      paideiaConfig.set(
+        ConfKeys.im_paideia_default_proposal_basic,
+        proposalBasicContract.ergoTree.bytes
+      )
+      paideiaConfig.set(
+        ConfKeys.im_paideia_default_proposal_basic_signature,
+        proposalBasicContract.contractSignature
+      )
+      paideiaConfig.set(
+        ConfKeys.im_paideia_default_staking_change,
+        stakingChangeContract.ergoTree.bytes
+      )
+      paideiaConfig.set(
+        ConfKeys.im_paideia_default_staking_change_signature,
+        stakingChangeContract.contractSignature
+      )
+      paideiaConfig.set(
+        ConfKeys.im_paideia_default_staking_stake,
+        stakingStakeContract.ergoTree.bytes
+      )
+      paideiaConfig.set(
+        ConfKeys.im_paideia_default_staking_stake_signature,
+        stakingStakeContract.contractSignature
+      )
+      paideiaConfig.set(
+        ConfKeys.im_paideia_default_staking_compound,
+        stakingCompoundContract.ergoTree.bytes
+      )
+      paideiaConfig.set(
+        ConfKeys.im_paideia_default_staking_compound_signature,
+        stakingCompoundContract.contractSignature
+      )
+      paideiaConfig.set(
+        ConfKeys.im_paideia_default_staking_profitshare,
+        stakingProfitShareContract.ergoTree.bytes
+      )
+      paideiaConfig.set(
+        ConfKeys.im_paideia_default_staking_profitshare_signature,
+        stakingProfitShareContract.contractSignature
+      )
+      paideiaConfig.set(
+        ConfKeys.im_paideia_default_staking_snapshot,
+        stakingSnapshotContract.ergoTree.bytes
+      )
+      paideiaConfig.set(
+        ConfKeys.im_paideia_default_staking_snapshot_signature,
+        stakingSnapshotContract.contractSignature
+      )
+      paideiaConfig.set(
+        ConfKeys.im_paideia_default_staking_state,
+        stakingStateContract.ergoTree.bytes
+      )
+      paideiaConfig.set(
+        ConfKeys.im_paideia_default_staking_state_signature,
+        stakingStateContract.contractSignature
+      )
+      paideiaConfig.set(
+        ConfKeys.im_paideia_default_staking_vote,
+        stakingVoteContract.ergoTree.bytes
+      )
+      paideiaConfig.set(
+        ConfKeys.im_paideia_default_staking_vote_signature,
+        stakingVoteContract.contractSignature
+      )
+      paideiaConfig.set(
+        ConfKeys.im_paideia_default_staking_unstake,
+        stakeUnstakeContract.ergoTree.bytes
+      )
+      paideiaConfig.set(
+        ConfKeys.im_paideia_default_staking_unstake_signature,
+        stakeUnstakeContract.contractSignature
       )
       paideiaConfig.set(ConfKeys.im_paideia_fees_compound_operator_paideia, 1000L)
       paideiaConfig.set(ConfKeys.im_paideia_fees_emit_paideia, 1000L)
