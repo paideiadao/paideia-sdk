@@ -453,7 +453,9 @@ case class StakeStateBox(
       getStakeProof,
       getParticipationProof,
       updateStakeProof.toProvenResult,
-      updateParticipationProof.toProvenResult
+      updateParticipationProof.toProvenResult,
+      currentStake,
+      currentParticipation
     )
   }
 }

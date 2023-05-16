@@ -8,6 +8,8 @@ import special.collection.Coll
 import org.ergoplatform.appkit.ErgoId
 import org.ergoplatform.appkit.ErgoType
 import im.paideia.governance.VoteRecord
+import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
+import sigmastate.eval.Colls
 
 case class StakingContextVars(
   stakingStateContextVars: List[ContextVar],
@@ -153,7 +155,9 @@ object StakingContextVars {
     stakeProof: ProvenResult[StakeRecord],
     participationProof: ProvenResult[ParticipationRecord],
     updatedStakeProof: ProvenResult[StakeRecord],
-    updatedParticipationProof: ProvenResult[ParticipationRecord]
+    updatedParticipationProof: ProvenResult[ParticipationRecord],
+    newStakeRecord: StakeRecord,
+    newParticipationRecord: ParticipationRecord
   ): StakingContextVars = {
     StakingContextVars(
       List(
@@ -164,7 +168,25 @@ object StakingContextVars {
         new ContextVar(2.toByte, stakeProof.proof.ergoValue),
         new ContextVar(3.toByte, updatedStakeProof.proof.ergoValue),
         new ContextVar(4.toByte, participationProof.proof.ergoValue),
-        new ContextVar(5.toByte, updatedParticipationProof.proof.ergoValue)
+        new ContextVar(5.toByte, updatedParticipationProof.proof.ergoValue),
+        new ContextVar(
+          6.toByte,
+          ErgoValueBuilder.buildFor(
+            Colls.fromArray(
+              StakeRecord.stakeRecordConversion.convertToBytes(newStakeRecord)
+            )
+          )
+        ),
+        new ContextVar(
+          7.toByte,
+          ErgoValueBuilder.buildFor(
+            Colls.fromArray(
+              ParticipationRecord.participationRecordConversion.convertToBytes(
+                newParticipationRecord
+              )
+            )
+          )
+        )
       )
     )
   }

@@ -118,6 +118,8 @@
     val updateStakeProof: Coll[Byte]         = getVar[Coll[Byte]](3).get
     val participationProof: Coll[Byte]       = getVar[Coll[Byte]](4).get
     val updateParticipationProof: Coll[Byte] = getVar[Coll[Byte]](5).get
+    val newStakeRecord: Coll[Byte]           = getVar[Coll[Byte]](6).get
+    val newParticipationRecord: Coll[Byte]   = getVar[Coll[Byte]](7).get
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -200,27 +202,34 @@
         currentVoted + 1L
     }
 
+    val updatedStakeRecord: Coll[Byte] = 
+        longToByteArray(newLockedUntil).append(
+            currentStakeState.slice(8,currentStakeState.size)
+        )
+
     val updatedStakeState: AvlTree = stakeStateTree.update(
-        Coll((stakeKey, 
-            longToByteArray(newLockedUntil).append(
-                currentStakeState.slice(8,currentStakeState.size)
-            )
+        Coll((
+            stakeKey, 
+            updatedStakeRecord
         )), updateStakeProof).get
+
+    val updatedParticipationRecord: Coll[Byte] = 
+        longToByteArray(newVoted).append(
+            longToByteArray(newVotedTotal)
+        )
 
     val updatedParticipationState: AvlTree = 
         if (currentParticipation.isDefined)
             participationTree.update(
-                Coll((stakeKey, 
-                    longToByteArray(newVoted).append(
-                        longToByteArray(newVotedTotal)
-                    )
+                Coll((
+                    stakeKey, 
+                    updatedParticipationRecord
                 )), updateParticipationProof).get
         else
             participationTree.insert(
-                Coll((stakeKey, 
-                    longToByteArray(newVoted).append(
-                        longToByteArray(newVotedTotal)
-                    )
+                Coll((
+                    stakeKey, 
+                    updatedParticipationRecord
                 )), updateParticipationProof).get
 
     ///////////////////////////////////////////////////////////////////////////
@@ -254,6 +263,11 @@
         stakeStateOR8 == stakeStateR8
     ))
 
+    val correctNewStakeRecord: Boolean = newStakeRecord == updatedStakeRecord
+
+    val correctNewParticipationRecord: Boolean = 
+        newParticipationRecord == updatedParticipationRecord
+
     val selfOutput: Boolean = allOf(Coll(
         blake2b256(voteO.propositionBytes) == stakeVoteContractHash,
         voteO.value >= vote.value
@@ -271,6 +285,8 @@
         keyInOutput,
         correctStakeOutput,
         correctStakeState,
-        correctConfig
+        correctConfig,
+        correctNewStakeRecord,
+        correctNewParticipationRecord
     )))
 }
