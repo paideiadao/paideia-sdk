@@ -1,5 +1,14 @@
 {
-
+    // Refund logic
+    sigmaProp(
+    if (OUTPUTS.size == 2) {
+        allOf(Coll(
+            OUTPUTS(0).value >= SELF.value - 1000000L,
+            OUTPUTS(0).tokens == SELF.tokens,
+            OUTPUTS(0).propositionBytes == SELF.R6[Coll[Byte]].get,
+            CONTEXT.preHeader.height >= SELF.creationInfo._1 + 30
+        ))
+    } else {
     /**
      *
      *  ProtoDAO Proxy
@@ -175,12 +184,12 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    sigmaProp(allOf(
+    allOf(
         Coll(
             correctConfig,
             validEmptyConfig,
             validProtoDAOOut,
             validMintOut
         )
-    ))
+    )})
 }

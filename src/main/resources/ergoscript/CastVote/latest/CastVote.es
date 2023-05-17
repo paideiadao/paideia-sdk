@@ -1,5 +1,14 @@
 {
-
+    // Refund logic
+    sigmaProp(
+    if (INPUTS(0).id == SELF.id) {
+        allOf(Coll(
+            OUTPUTS(0).value >= SELF.value - 1000000L,
+            OUTPUTS(0).tokens == SELF.tokens,
+            OUTPUTS(0).propositionBytes == SELF.R6[Coll[Byte]].get,
+            CONTEXT.preHeader.height >= SELF.creationInfo._1 + 30
+        ))
+    } else {
     /**
      *
      *  CastVote
@@ -92,8 +101,8 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    sigmaProp(allOf(Coll(
+    allOf(Coll(
         voteKeyReturned,
         validProposal
-    )))
+    ))})
 }

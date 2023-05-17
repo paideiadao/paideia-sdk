@@ -1,4 +1,5 @@
 {
+    // Refund logic
     sigmaProp(
     if (INPUTS(0).id == SELF.id) {
         allOf(Coll(

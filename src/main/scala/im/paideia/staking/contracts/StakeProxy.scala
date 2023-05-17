@@ -22,6 +22,8 @@ import java.util.HashMap
 import org.ergoplatform.appkit.ErgoId
 import sigmastate.eval.Colls
 import im.paideia.common.events.CreateTransactionsEvent
+import im.paideia.common.transactions.RefundTransaction
+import special.collection.Coll
 
 class StakeProxy(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -49,12 +51,28 @@ class StakeProxy(contractSignature: PaideiaContractSignature)
               PaideiaEventResponse(
                 1,
                 List(
-                  StakeTransaction(
-                    cte.ctx,
-                    boxes(b),
-                    Address.create(Env.operatorAddress).getErgoAddress,
-                    contractSignature.daoKey
-                  )
+                  if (boxes(b).getCreationHeight() < cte.height - 30) {
+                    RefundTransaction(
+                      cte.ctx,
+                      boxes(b),
+                      Address.fromPropositionBytes(
+                        NetworkType.MAINNET,
+                        boxes(b)
+                          .getRegisters()
+                          .get(0)
+                          .getValue()
+                          .asInstanceOf[Coll[Byte]]
+                          .toArray
+                      )
+                    )
+                  } else {
+                    StakeTransaction(
+                      cte.ctx,
+                      boxes(b),
+                      Address.create(Env.operatorAddress).getErgoAddress,
+                      contractSignature.daoKey
+                    )
+                  }
                 )
               )
             }
