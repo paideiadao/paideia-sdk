@@ -22,6 +22,9 @@ import scorex.crypto.hash.Blake2b256
 import special.sigma.AvlTree
 import scorex.crypto.authds.ADDigest
 import im.paideia.common.events.CreateTransactionsEvent
+import org.ergoplatform.appkit.NetworkType
+import im.paideia.common.transactions.RefundTransaction
+import special.collection.Coll
 
 class CastVote(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -61,12 +64,28 @@ class CastVote(contractSignature: PaideiaContractSignature)
           PaideiaEventResponse(
             1,
             List(
-              CastVoteTransaction(
-                cte.ctx,
-                boxes(b),
-                Paideia.getDAO(contractSignature.daoKey),
-                Address.create(Env.operatorAddress)
-              )
+              if (boxes(b).getCreationHeight() < cte.height - 30) {
+                RefundTransaction(
+                  cte.ctx,
+                  boxes(b),
+                  Address.fromPropositionBytes(
+                    NetworkType.MAINNET,
+                    boxes(b)
+                      .getRegisters()
+                      .get(2)
+                      .getValue()
+                      .asInstanceOf[Coll[Byte]]
+                      .toArray
+                  )
+                )
+              } else {
+                CastVoteTransaction(
+                  cte.ctx,
+                  boxes(b),
+                  Paideia.getDAO(contractSignature.daoKey),
+                  Address.create(Env.operatorAddress)
+                )
+              }
             )
           )
         })
