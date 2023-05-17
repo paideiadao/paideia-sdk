@@ -60,6 +60,7 @@
 
     val stakeStateTree: AvlTree = stakeState.R4[Coll[AvlTree]].get(0)
 
+    val userProp: Coll[Byte]       = proxy.R4[Coll[Byte]].get
     val newStakeRecord: Coll[Byte] = proxy.R5[Coll[Byte]].get
 
     val stakeStateOTree: AvlTree = stakeStateO.R4[Coll[AvlTree]].get(0)
@@ -182,6 +183,8 @@
         else
             proxy.tokens(0)._1 == stakeKey
 
+    val correctUserOutput: Boolean = userO.propositionBytes == userProp
+
     val correctNewState: Boolean =
         if (newStake > 0)
             stakeStateTree.update(stakeOperations, proof).get.digest == 
@@ -189,6 +192,7 @@
         else
             stakeStateTree.remove(Coll(stakeKey), removeProof).get.digest == 
             stakeStateOTree.digest
+            
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
     // Final contract result                                                 //
@@ -202,6 +206,7 @@
         correctErgProfit,
         correctTokenProfit,
         keyPresent,
-        correctNewState
+        correctNewState,
+        correctUserOutput
     )))
 }

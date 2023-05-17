@@ -5,7 +5,6 @@ import java.nio.charset.StandardCharsets
 
 object ConfKeys {
   val im_paideia_default_treasury = DAOConfigKey("im.paideia.default.treasury")
-
   val im_paideia_default_treasury_signature = DAOConfigKey(
     "im.paideia.default.treasury.signature"
   )
@@ -13,6 +12,66 @@ object ConfKeys {
 
   val im_paideia_default_config_signature = DAOConfigKey(
     "im.paideia.default.config.signature"
+  )
+  val im_paideia_default_action_sendfunds = DAOConfigKey(
+    "im.paideia.default.action.sendfunds"
+  )
+  val im_paideia_default_action_sendfunds_signature = DAOConfigKey(
+    "im.paideia.default.action.sendfunds.signature"
+  )
+  val im_paideia_default_action_updateconfig = DAOConfigKey(
+    "im.paideia.default.action.updateconfig"
+  )
+  val im_paideia_default_action_updateconfig_signature = DAOConfigKey(
+    "im.paideia.default.action.updateconfig.signature"
+  )
+  val im_paideia_default_proposal_basic = DAOConfigKey(
+    "im.paideia.default.proposal.basic"
+  )
+  val im_paideia_default_proposal_basic_signature = DAOConfigKey(
+    "im.paideia.default.proposal.basic.signature"
+  )
+  val im_paideia_default_staking_change = DAOConfigKey(
+    "im.paideia.default.staking.change"
+  )
+  val im_paideia_default_staking_change_signature = DAOConfigKey(
+    "im.paideia.default.staking.change.signature"
+  )
+  val im_paideia_default_staking_stake = DAOConfigKey("im.paideia.default.staking.stake")
+  val im_paideia_default_staking_stake_signature = DAOConfigKey(
+    "im.paideia.default.staking.stake.signature"
+  )
+  val im_paideia_default_staking_compound = DAOConfigKey(
+    "im.paideia.default.staking.compound"
+  )
+  val im_paideia_default_staking_compound_signature = DAOConfigKey(
+    "im.paideia.default.staking.compound.signature"
+  )
+  val im_paideia_default_staking_profitshare = DAOConfigKey(
+    "im.paideia.default.staking.profitshare"
+  )
+  val im_paideia_default_staking_profitshare_signature = DAOConfigKey(
+    "im.paideia.default.staking.profitshare.signature"
+  )
+  val im_paideia_default_staking_snapshot = DAOConfigKey(
+    "im.paideia.default.staking.snapshot"
+  )
+  val im_paideia_default_staking_snapshot_signature = DAOConfigKey(
+    "im.paideia.default.staking.snapshot.signature"
+  )
+  val im_paideia_default_staking_state = DAOConfigKey("im.paideia.default.staking.state")
+  val im_paideia_default_staking_state_signature = DAOConfigKey(
+    "im.paideia.default.staking.state.signature"
+  )
+  val im_paideia_default_staking_vote = DAOConfigKey("im.paideia.default.staking.vote")
+  val im_paideia_default_staking_vote_signature = DAOConfigKey(
+    "im.paideia.default.staking.vote.signature"
+  )
+  val im_paideia_default_staking_unstake = DAOConfigKey(
+    "im.paideia.default.staking.unstake"
+  )
+  val im_paideia_default_staking_unstake_signature = DAOConfigKey(
+    "im.paideia.default.staking.unstake.signature"
   )
   val im_paideia_fees_createdao_erg = DAOConfigKey("im.paideia.fees.createdao.erg")
 
@@ -41,10 +100,11 @@ object ConfKeys {
   val im_paideia_contracts_protodaoproxy = DAOConfigKey(
     "im.paideia.contracts.protodaoproxy"
   )
-  val im_paideia_contracts_mint     = DAOConfigKey("im.paideia.contracts.mint")
-  val im_paideia_contracts_dao      = DAOConfigKey("im.paideia.contracts.dao")
-  val im_paideia_contracts_config   = DAOConfigKey("im.paideia.contracts.config")
-  val im_paideia_contracts_treasury = DAOConfigKey("im.paideia.contracts.treasury")
+  val im_paideia_contracts_mint      = DAOConfigKey("im.paideia.contracts.mint")
+  val im_paideia_contracts_dao       = DAOConfigKey("im.paideia.contracts.dao")
+  val im_paideia_contracts_config    = DAOConfigKey("im.paideia.contracts.config")
+  val im_paideia_contracts_treasury  = DAOConfigKey("im.paideia.contracts.treasury")
+  val im_paideia_contracts_createdao = DAOConfigKey("im.paideia.contracts.createdao")
   val im_paideia_contracts_staking_state = DAOConfigKey(
     "im.paideia.contracts.staking.state"
   )
@@ -74,9 +134,6 @@ object ConfKeys {
     "im.paideia.contracts.split.profit"
   )
 
-  val im_paideia_contracts_operatorincentive = DAOConfigKey(
-    "im.paideia.contracts.operatorincentive"
-  )
   val im_paideia_contracts_vote        = DAOConfigKey("im.paideia.contracts.vote")
   val im_paideia_dao_name              = DAOConfigKey("im.paideia.dao.name")
   val im_paideia_dao_tokenid           = DAOConfigKey("im.paideia.dao.tokenid")
@@ -108,6 +165,12 @@ object ConfKeys {
 
   val im_paideia_staking_profit_share_pct = DAOConfigKey(
     "im.paideia.staking.profit.sharepct"
+  )
+  val im_paideia_staking_weight_pureparticipation = DAOConfigKey(
+    "im.paideia.staking.weight.pureparticipation"
+  )
+  val im_paideia_staking_weight_participation = DAOConfigKey(
+    "im.paideia.staking.weight.participation"
   )
   val im_paideia_contracts_proposal_base = "im.paideia.contracts.proposal."
 

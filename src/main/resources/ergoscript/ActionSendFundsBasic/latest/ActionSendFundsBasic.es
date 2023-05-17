@@ -98,7 +98,7 @@
         // Create output box for repeated action and check its correctness
         val repeatOutput = OUTPUTS(sendFundsActionOutputs.size)
         allOf(Coll(
-            repeatOutput.value                 >= sendFundsAction.value,
+            repeatOutput.value                 == sendFundsAction.value,
             repeatOutput.tokens                == sendFundsAction.tokens,
             repeatOutput.R4[Coll[Long]].get(0) == sendFundsActionProposalIndex,
             repeatOutput.R4[Coll[Long]].get(1) == sendFundsActionProposalOption,
@@ -116,6 +116,15 @@
                 token._1 == sendFundsAction.tokens(0)._1
             }
         })
+    }
+
+    val changeBoxPresent: Boolean = 
+        blake2b256(OUTPUTS(OUTPUTS.size-1).propositionBytes) == treasuryContractHash
+
+    val minerO: Box = if (changeBoxPresent) {
+        OUTPUTS(OUTPUTS.size-2)
+    } else {
+        OUTPUTS(OUTPUTS.size-1)
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -151,14 +160,17 @@
         boxes._1.bytesWithoutRef == boxes._2.bytesWithoutRef
     }
 
-    val changeBoxPresent = blake2b256(OUTPUTS(OUTPUTS.size-1).propositionBytes) == treasuryContractHash
-
     val correctOutputNumber = OUTPUTS.size == 
         sendFundsActionOutputs.size +
         (if (repeatedAction) 1 else 0) +
         (if (changeBoxPresent) 2 else 1)
 
     val noExtraBurn = countTokens(INPUTS) == countTokens(OUTPUTS) + (if (repeatedAction) 0L else 1L)
+
+    val correctMinerOut: Boolean = allOf(Coll(
+        minerO.value <= 5000000L,
+        minerO.tokens.size == 0
+    ))
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -173,6 +185,7 @@
         repeatOrBurn,
         correctOutput,
         correctOutputNumber,
-        noExtraBurn
+        noExtraBurn,
+        correctMinerOut
     )))
 }

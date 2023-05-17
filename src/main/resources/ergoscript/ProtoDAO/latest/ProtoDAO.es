@@ -23,17 +23,10 @@
     val actionText: Coll[Byte]                 = _ACTION
     val stakeStateText: Coll[Byte]             = _STAKE_STATE
     val imPaideiaContractsDao: Coll[Byte]      = _IM_PAIDEIA_CONTRACTS_DAO
-    val imPaideiaDefaultConfig: Coll[Byte]     = _IM_PAIDEIA_DEFAULT_CONFIG
-    val imPaideiaDefaultTreasury: Coll[Byte]   = _IM_PAIDEIA_DEFAULT_TREASURY
     val imPaideiaDaoKey: Coll[Byte]            = _IM_PAIDEIA_DAO_KEY
-    val imPaideiaContractsTreasury: Coll[Byte] = _IM_PAIDEIA_CONTRACTS_TREASURY
-    val imPaideiaContractsConfig: Coll[Byte]   = _IM_PAIDEIA_CONTRACTS_CONFIG
 
-    val imPaideiaDefaultConfigSig: Coll[Byte] = 
-        _IM_PAIDEIA_DEFAULT_CONFIG_SIGNATURE
-
-    val imPaideiaDefaultTreasurySig: Coll[Byte] = 
-        _IM_PAIDEIA_DEFAULT_TREASURY_SIGNATURE
+    val imPaideiaContractsCreateDao: Coll[Byte] = 
+        _IM_PAIDEIA_CONTRACTS_CREATE_DAO
 
     val imPaideiaStakingStateTokenId: Coll[Byte] = 
         _IM_PAIDEIA_STAKING_STATE_TOKENID
@@ -73,7 +66,8 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val configTree: AvlTree = protoDao.R4[AvlTree].get
+    val configTree: AvlTree      = protoDao.R4[AvlTree].get
+    val protoDaoKey: Coll[Byte]  = protoDao.R5[Coll[Byte]].get
 
     val paideiaConfigTree: AvlTree = paideiaConfig.R4[AvlTree].get
 
@@ -111,7 +105,8 @@
         // Registers                                                         //
         ///////////////////////////////////////////////////////////////////////
 
-        val configTreeO: AvlTree = protoDaoO.R4[AvlTree].get
+        val configTreeO: AvlTree     = protoDaoO.R4[AvlTree].get
+        val protoDaoOKey: Coll[Byte] = protoDaoO.R5[Coll[Byte]].get
 
         val mintOName: Coll[Byte]     = mintO.R4[Coll[Byte]].get
         val mintODesc: Coll[Byte]     = mintO.R5[Coll[Byte]].get
@@ -194,7 +189,9 @@
         val validProtoDAOOut = allOf(Coll(
             blake2b256(protoDaoO.propositionBytes) == protoDaoContractHash,
             protoDaoO.tokens == protoDao.tokens,
-            configTreeO.digest == configTreeOut.digest
+            configTreeO.digest == configTreeOut.digest,
+            protoDaoO.value >= protoDao.value - 2000000L,
+            protoDaoOKey == protoDaoKey
         ))
 
         ///////////////////////////////////////////////////////////////////////
@@ -207,34 +204,16 @@
         ))
 
     } else {
-
         /**
         * Create DAO Transaction
-        * Makes sure the dao origin box and stake state box are created
-        * correctly and the config has the correct values
+        * Logic moved to separate contract
         */
 
         ///////////////////////////////////////////////////////////////////////
-        // Outputs                                                           //
+        // Inputs                                                            //
         ///////////////////////////////////////////////////////////////////////
 
-        val daoOriginO: Box = OUTPUTS(0)
-        val configO: Box    = OUTPUTS(1)
-
-        ///////////////////////////////////////////////////////////////////////
-        // Registers                                                         //
-        ///////////////////////////////////////////////////////////////////////
-
-        val daoKeyO: Coll[Byte] = daoOriginO.R4[Coll[Byte]].get
-
-        val configTreeO: AvlTree = configO.R4[AvlTree].get
-
-        ///////////////////////////////////////////////////////////////////////
-        // Context variables                                                 //
-        ///////////////////////////////////////////////////////////////////////
-
-        val insertProof: Coll[Byte]        = getVar[Coll[Byte]](3).get
-        val insertValues: Coll[Coll[Byte]] = getVar[Coll[Coll[Byte]]](4).get
+        val createDao: Box = INPUTS(1)
 
         ///////////////////////////////////////////////////////////////////////
         // AVL Tree value extraction                                         //
@@ -243,115 +222,14 @@
         val paideiaConfigValues: Coll[Option[Coll[Byte]]] = 
             paideiaConfigTree.getMany(
                 Coll(
-                    imPaideiaContractsDao,
-                    imPaideiaDefaultConfig,
-                    imPaideiaDefaultConfigSig,
-                    imPaideiaDefaultTreasury,
-                    imPaideiaDefaultTreasurySig
+                    imPaideiaContractsCreateDao
                 ),
                 paideiaConfigProof
             )
 
-        val daoOriginContractHash: Coll[Byte] = 
-            paideiaConfigValues(0).get.slice(1,33)
+        val createDaoHash: Coll[Byte] = paideiaConfigValues(0).get.slice(1,33)
 
-        val defaultConfigContract: Coll[Byte] = 
-            paideiaConfigValues(1).get.slice(6,paideiaConfigValues(1).get.size)
-
-        val defaultConfigContractSig: Coll[Byte] = paideiaConfigValues(2).get
-
-        val defaultTreasuryContract: Coll[Byte] =
-            paideiaConfigValues(3).get.slice(6,paideiaConfigValues(3).get.size)
-
-        val defaultTreasuryContractSig: Coll[Byte] = paideiaConfigValues(4).get
-
-        val configValues: Coll[Option[Coll[Byte]]] = configTree.getMany(
-            Coll(
-                imPaideiaDaoProposalTokenId,
-                imPaideiaDaoActionTokenId,
-                imPaideiaDaoKey
-            ),
-            configProof
-        )
-
-        val proposalTokenId: Coll[Byte] = configValues(0).get.slice(6,38)
-        val actionTokenId: Coll[Byte]   = configValues(1).get.slice(6,38)
-        val daoKey: Coll[Byte]          = configValues(2).get.slice(6,38)
-
-        ///////////////////////////////////////////////////////////////////////
-        // Intermediate calculations                                         //
-        ///////////////////////////////////////////////////////////////////////
-
-        val treasuryContractSignature: Coll[Byte] = insertValues(0)
-        val configContractSignature: Coll[Byte]   = insertValues(1)
-        val treasuryContractHash: Coll[Byte]      = treasuryContractSignature.slice(1,33)
-        val configContractHash: Coll[Byte]        = configContractSignature.slice(1,33)
-
-        val finalConfig: AvlTree = configTree.insert(
-            Coll(
-                (imPaideiaContractsTreasury,treasuryContractSignature),
-                (imPaideiaContractsConfig,configContractSignature)
-            ),
-            insertProof
-        ).get
-
-        val correctConfigContract: Coll[Byte] = blake2b256(
-            substConstants(
-                defaultConfigContract,
-                Coll(7),
-                Coll(actionTokenId)
-            )
-        )
-
-        val correctTreasuryContract: Coll[Byte] = blake2b256(
-            substConstants(
-                defaultTreasuryContract,
-                Coll(2),
-                Coll(actionTokenId)
-            )
-        )
-
-        ///////////////////////////////////////////////////////////////////////
-        // Simple conditions                                                 //
-        ///////////////////////////////////////////////////////////////////////
-
-        val correctDAOOutput: Boolean = allOf(Coll(
-            blake2b256(daoOriginO.propositionBytes) == daoOriginContractHash,
-            daoOriginO.value >= 1000000L,
-            daoOriginO.tokens(0) == protoDao.tokens(0),
-            daoOriginO.tokens(1)._1 == proposalTokenId,
-            daoOriginO.tokens(1)._2 == maxLong,
-            daoOriginO.tokens(2)._1 == actionTokenId,
-            daoOriginO.tokens(2)._2 == maxLong,
-            daoOriginO.tokens.size == 3,
-            daoKeyO == daoKey
-        ))
-
-        val correctConfigOutput: Boolean = allOf(Coll(
-                blake2b256(configO.propositionBytes) == configContractHash,
-                configO.value >= 1000000L,
-                configO.tokens(0)._1 == daoKey,
-                configO.tokens(0)._2 == 1L,
-                configO.tokens.size == 1,
-                configTreeO.digest == finalConfig.digest
-            ))
-
-        val correctContracts: Boolean = allOf(Coll(
-            defaultConfigContractSig.patch(1,correctConfigContract,32) 
-                == configContractSignature,
-            defaultTreasuryContractSig.patch(1,correctTreasuryContract,32) 
-                == treasuryContractSignature
-        ))
-
-        ///////////////////////////////////////////////////////////////////////
-        // Transaction validity                                              //
-        ///////////////////////////////////////////////////////////////////////
-
-        allOf(Coll(
-            correctContracts,
-            correctDAOOutput,
-            correctConfigOutput
-        ))
+        blake2b256(createDao.propositionBytes) == createDaoHash
     }
 
     ///////////////////////////////////////////////////////////////////////////

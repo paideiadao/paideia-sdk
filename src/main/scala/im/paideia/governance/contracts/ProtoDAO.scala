@@ -161,20 +161,8 @@ class ProtoDAO(contractSignature: PaideiaContractSignature)
       ErgoValue.of(" Stake State".getBytes(StandardCharsets.UTF_8)).getValue()
     )
     cons.put(
-      "_IM_PAIDEIA_DEFAULT_TREASURY",
-      ConfKeys.im_paideia_default_treasury.ergoValue.getValue()
-    )
-    cons.put(
-      "_IM_PAIDEIA_DEFAULT_TREASURY_SIGNATURE",
-      ConfKeys.im_paideia_default_treasury_signature.ergoValue.getValue()
-    )
-    cons.put(
-      "_IM_PAIDEIA_DEFAULT_CONFIG",
-      ConfKeys.im_paideia_default_config.ergoValue.getValue()
-    )
-    cons.put(
-      "_IM_PAIDEIA_DEFAULT_CONFIG_SIGNATURE",
-      ConfKeys.im_paideia_default_config_signature.ergoValue.getValue()
+      "_IM_PAIDEIA_CONTRACTS_CREATE_DAO",
+      ConfKeys.im_paideia_contracts_createdao.ergoValue.getValue()
     )
     cons
   }
@@ -182,21 +170,9 @@ class ProtoDAO(contractSignature: PaideiaContractSignature)
   override def getConfigContext(configDigest: Option[ADDigest]) = Paideia
     .getConfig(contractSignature.daoKey)
     .getProof(
-      ConfKeys.im_paideia_contracts_dao,
-      ConfKeys.im_paideia_default_config,
-      ConfKeys.im_paideia_default_config_signature,
-      ConfKeys.im_paideia_default_treasury,
-      ConfKeys.im_paideia_default_treasury_signature
+      ConfKeys.im_paideia_contracts_createdao
     )(configDigest)
 
-  def getDAOConfigContext(daoConfig: DAOConfig, configDigest: Option[ADDigest]) =
-    daoConfig
-      .getProof(
-        ConfKeys.im_paideia_dao_proposal_tokenid,
-        ConfKeys.im_paideia_dao_action_tokenid,
-        ConfKeys.im_paideia_dao_key,
-        ConfKeys.im_paideia_staking_state_tokenid
-      )(configDigest)
 }
 
 object ProtoDAO extends PaideiaActor {

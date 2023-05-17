@@ -110,7 +110,8 @@
             originO.tokens(1)._1     == origin.tokens(1)._1,
             originO.tokens(1)._2     == origin.tokens(1)._2 - 1L,
             originO.tokens.size      == 2,
-            originO.propositionBytes == origin.propositionBytes
+            originO.propositionBytes == origin.propositionBytes,
+            originO.value            >= origin.value
         )
     )
 

@@ -65,12 +65,36 @@
 
     val stakeStateTree: AvlTree  = stakeState.R4[Coll[AvlTree]].get(0)
     val stakeStateR5: Coll[Long] = stakeState.R5[Coll[Long]].get
+    val nextEmission: Long       = stakeStateR5(0)
     val totalStaked: Long        = stakeStateR5(1)
+    val stakers: Long            = stakeStateR5(2)
+    val voted: Long              = stakeStateR5(3)
+    val votedTotal: Long         = stakeStateR5(4)
+    val stakeStateR6: Coll[Coll[Long]] = 
+        stakeState.R6[Coll[Coll[Long]]].get
+
+    val stakeStateR7: Coll[(AvlTree,AvlTree)] = 
+        stakeState.R7[Coll[(AvlTree,AvlTree)]].get
+
+    val stakeStateR8: Coll[Coll[Long]] = stakeState.R8[Coll[Coll[Long]]].get
+    val participationTree: AvlTree     = stakeState.R4[Coll[AvlTree]].get(1)
 
     val stakeStateTreeO: AvlTree  = stakeStateO.R4[Coll[AvlTree]].get(0)
     val stakeStateOR5: Coll[Long] = stakeStateO.R5[Coll[Long]].get
+    val nextEmissionO: Long       = stakeStateOR5(0)
     val totalStakedO: Long        = stakeStateOR5(1)
-    val outputProfit: Coll[Long]  = stakeStateOR5.slice(5,stakeStateOR5.size)
+    val stakersO: Long            = stakeStateOR5(2)
+    val votedO: Long              = stakeStateOR5(3)
+    val votedTotalO: Long         = stakeStateOR5(4)
+    val profitO: Coll[Long]       = stakeStateOR5.slice(5,stakeStateOR5.size)
+    val stakeStateOR6: Coll[Coll[Long]] = 
+        stakeStateO.R6[Coll[Coll[Long]]].get
+
+    val stakeStateOR7: Coll[(AvlTree,AvlTree)] = 
+        stakeStateO.R7[Coll[(AvlTree,AvlTree)]].get
+
+    val stakeStateOR8: Coll[Coll[Long]] = stakeStateO.R8[Coll[Coll[Long]]].get
+    val participationTreeO: AvlTree     = stakeStateO.R4[Coll[AvlTree]].get(1)
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -196,6 +220,18 @@
                 currentProfits(profitIndex+2) - newProfits(profitIndex+2)
         }
 
+    val unchangedRegisters: Boolean = allOf(Coll(
+        participationTreeO == participationTree,
+        profitO == profit,
+        nextEmissionO == nextEmission,
+        stakersO == stakers,
+        votedO == voted,
+        votedTotalO == votedTotal,
+        stakeStateOR6 == stakeStateR6,
+        stakeStateOR7 == stakeStateR7,
+        stakeStateOR8 == stakeStateR8
+    ))
+
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
     // Final contract result                                                 //
@@ -212,6 +248,7 @@
         noAddedOrNegativeProfit,
         correctErgProfit,
         correctTokenProfit,
-        selfOutput
+        selfOutput,
+        unchangedRegisters
     )))
 }

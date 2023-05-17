@@ -59,6 +59,7 @@
     ///////////////////////////////////////////////////////////////////////////
 
     val userProp: Coll[Byte] = stakeProxy.R4[Coll[Byte]].get
+    val stakeAmount: Long    = stakeProxy.R5[Long].get
 
     val configTree: AvlTree = config.R4[AvlTree].get
 
@@ -122,10 +123,6 @@
             stakeOperations(0)._2.slice(i+stakeInfoOffset,i+8+stakeInfoOffset)
         )
     }
-
-    val stakeAmount: Long = stakeRecord(0)
-
-    
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //

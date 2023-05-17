@@ -53,6 +53,7 @@
     ///////////////////////////////////////////////////////////////////////////
 
     val userPropositionBytes: Coll[Byte] = addStakeProxy.R4[Coll[Byte]].get
+    val addStakeAmount: Long             = addStakeProxy.R5[Long].get
 
     val stakeStateTree: AvlTree = stakeState.R4[Coll[AvlTree]].get(0)
 
@@ -121,7 +122,7 @@
     val keyInOutput: Boolean = userO.tokens(0)._1 == stakeOperations(0)._1
 
     val tokensStaked: Boolean = 
-        newStakeAmount - currentStakeAmount == SELF.tokens(1)._2
+        newStakeAmount - currentStakeAmount == addStakeAmount
 
     val singleStakeOp: Boolean = stakeOperations.size == 1
 

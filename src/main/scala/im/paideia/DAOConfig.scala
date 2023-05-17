@@ -48,6 +48,20 @@ case class DAOConfig(
     deserialized.asInstanceOf[T]
   }
 
+  def withDefault[T](
+    key: DAOConfigKey,
+    default: T,
+    digestOpt: Option[ADDigest] = None
+  ): T = {
+    val check = _config.lookUpWithDigest(key)(digestOpt).response.head.tryOp.get
+    if (check.isDefined) {
+      val deserialized = DAOConfigValueDeserializer.deserialize(check.get)
+      deserialized.asInstanceOf[T]
+    } else {
+      default
+    }
+  }
+
   def getArray[T](key: DAOConfigKey, digestOpt: Option[ADDigest] = None)(implicit
     tag: ClassTag[T]
   ): Array[T] = {

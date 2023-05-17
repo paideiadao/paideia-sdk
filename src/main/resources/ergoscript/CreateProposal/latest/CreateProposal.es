@@ -22,7 +22,8 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val daoOrigin: Box = INPUTS(0)
+    val daoOrigin: Box      = INPUTS(0)
+    val createProposal: Box = SELF
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -32,6 +33,22 @@
 
     val daoOriginKey: Coll[Byte] = daoOrigin.R4[Coll[Byte]].get
 
+    val userProp: Coll[Byte]      = createProposal.R4[Coll[Byte]].get
+    val requestedBoxes: Coll[Box] = createProposal.R5[Coll[Box]].get
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Intermediate Calculations                                             //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    val userO: Coll[Box] = OUTPUTS.filter{
+        (b: Box) =>
+        b.propositionBytes == userProp
+    }
+
+    val stakeKey: Coll[Byte] = createProposal.tokens(0)._1
+
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
     // Simple conditions                                                     //
@@ -40,11 +57,31 @@
 
     val correctDaoOrigin: Boolean = daoOriginKey == imPaideiaDaoKey
 
+    val keyReturned: Boolean = anyOf(
+        userO.flatMap{
+            (b: Box) =>
+            b.tokens
+        }.map{
+            (t: (Coll[Byte], Long)) =>
+            t._1 == stakeKey
+        }
+    )
+
+    val boxesCreated: Boolean = 
+        requestedBoxes.zip(OUTPUTS.slice(1,requestedBoxes.size)).forall{
+            (bb: (Box, Box)) =>
+            bb._1.bytesWithoutRef == bb._2.bytesWithoutRef
+        }
+
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
     // Final contract result                                                 //
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    sigmaProp(correctDaoOrigin)
+    sigmaProp(allOf(Coll(
+        keyReturned,
+        correctDaoOrigin,
+        boxesCreated
+    )))
 }

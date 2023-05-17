@@ -60,10 +60,17 @@
 
     val configTree: AvlTree = config.R4[AvlTree].get
 
-    val stakeStateTree: AvlTree  = stakeState.R4[Coll[AvlTree]].get(0)
+    val stakeStateR4: Coll[AvlTree]  = stakeState.R4[Coll[AvlTree]].get
     val stakeStateR5: Coll[Long] = stakeState.R5[Coll[Long]].get
+    val stakeStateR6: Coll[Coll[Long]]  = stakeState.R6[Coll[Coll[Long]]].get
+    val stakeStateR7: Coll[(AvlTree, AvlTree)]  = stakeState.R7[Coll[(AvlTree, AvlTree)]].get
+    val stakeStateR8: Coll[Coll[Long]]  = stakeState.R8[Coll[Coll[Long]]].get
 
+    val stakeStateOR4: Coll[AvlTree]  = stakeStateO.R4[Coll[AvlTree]].get
     val stakeStateOR5: Coll[Long] = stakeStateO.R5[Coll[Long]].get
+    val stakeStateOR6: Coll[Coll[Long]]  = stakeStateO.R6[Coll[Coll[Long]]].get
+    val stakeStateOR7: Coll[(AvlTree, AvlTree)]  = stakeStateO.R7[Coll[(AvlTree, AvlTree)]].get
+    val stakeStateOR8: Coll[Coll[Long]]  = stakeStateO.R8[Coll[Coll[Long]]].get
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -110,7 +117,11 @@
             whiteListedTokenIds.size
         ).map{(tokId: Coll[Byte]) => 0L})
 
+    val r5Rest: Coll[Long] = stakeStateR5.slice(0,5)
+
     val outputProfit: Coll[Long] = stakeStateOR5.slice(5,stakeStateOR5.size)
+
+    val r5RestO: Coll[Long] = stakeStateOR5.slice(0,5)
 
     val ergProfit: Long = stakeStateO.value - stakeState.value
 
@@ -124,8 +135,14 @@
 
     val correctConfig: Boolean = config.tokens(0)._1 == daoKey
 
-    val correctStakeState: Boolean = 
-        stakeState.tokens(0)._1 == stakeStateTokenId
+    val correctStakeState: Boolean = allOf(Coll(
+        stakeState.tokens(0)._1 == stakeStateTokenId,
+        stakeStateOR4 == stakeStateR4,
+        r5RestO == r5Rest,
+        stakeStateOR6 == stakeStateR6,
+        stakeStateOR7 == stakeStateR7,
+        stakeStateOR8 == stakeStateR8
+    ))
 
     val correctErgProfit: Boolean = 
         ergProfit >= 0L && outputProfit(1) - profit(1) == ergProfit

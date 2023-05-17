@@ -47,6 +47,9 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
+    val proposalIndex: Int              = proposal.R4[Coll[Int]].get(0)
+
+    val castVoteProposalIndex: Int       = castVote.R4[Int].get
     val userPropositionBytes: Coll[Byte] = castVote.R6[Coll[Byte]].get
 
     ///////////////////////////////////////////////////////////////////////////
@@ -73,8 +76,10 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val validProposal: Boolean = 
+    val validProposal: Boolean = allOf(Coll(
+        proposalIndex == castVoteProposalIndex,
         proposal.tokens(0)._1 == imPaideiaDaoProposalTokenId
+    ))
 
     val voteKeyReturned: Boolean = allOf(Coll(
         userO.tokens(0) == castVote.tokens(0),

@@ -35,6 +35,12 @@
     val imPaideiaStakingProfitTokenIds: Coll[Byte] = 
         _IM_PAIDEIA_STAKING_PROFIT_TOKENIDS
 
+    val imPaideiaStakingPureParticipationWeight: Coll[Byte] =
+        _IM_PAIDEIA_STAKING_WEIGHT_PURE_PARTICIPATION
+
+    val imPaideiaStakingParticipationWeight: Coll[Byte] =
+        _IM_PAIDEIA_STAKING_WEIGHT_PARTICIPATION
+
     val emptyDigest: Coll[Byte] = 
         Coll(78,-58,31,72,91,-104,-21,-121,21,63,124,87,-37,79,94,-51,117,
             85,111,-35,-68,64,59,65,-84,-8,68,31,-34,-114,22,9,0).map{
@@ -75,21 +81,48 @@
 
     val configTree: AvlTree = config.R4[AvlTree].get
 
-    val stakeStateTree: AvlTree = stakeState.R4[Coll[AvlTree]].get(0)
+    val stakeStateTree: AvlTree    = stakeState.R4[Coll[AvlTree]].get(0)
+    val participationTree: AvlTree = stakeState.R4[Coll[AvlTree]].get(1)
 
     val stakeStateR5: Coll[Long]    = stakeState.R5[Coll[Long]].get
     val nextSnapshot: Long          = stakeStateR5(0)
     val totalStaked: Long           = stakeStateR5(1)
-    val snapshotsStaked: Coll[Long] = stakeState.R6[Coll[Long]].get
+    val stakers: Long               = stakeStateR5(2)
+    val voted: Long                 = stakeStateR5(3)
+    val votedTotal: Long            = stakeStateR5(4)
+
+    val stakeStateR6: Coll[Coll[Long]] = 
+        stakeState.R6[Coll[Coll[Long]]].get
+
+    val snapshotsStaked: Coll[Long]     = stakeStateR6(0)
+    val snapshotsVoted: Coll[Long]      = stakeStateR6(1)
+    val snapshotsVotedTotal: Coll[Long] = stakeStateR6(2)
+    val snapshotsPPWeight: Coll[Long]   = stakeStateR6(3)
+    val snapshotsPWeight: Coll[Long]    = stakeStateR6(4)
 
     val snapshotsTree: Coll[(AvlTree, AvlTree)] = 
         stakeState.R7[Coll[(AvlTree, AvlTree)]].get
 
     val snapshotsProfit: Coll[Coll[Long]] = stakeState.R8[Coll[Coll[Long]]].get
 
+    val stakeStateOTree: AvlTree    = stakeStateO.R4[Coll[AvlTree]].get(0)
+    val participationTreeO: AvlTree = stakeStateO.R4[Coll[AvlTree]].get(1)
+
     val stakeStateOR5: Coll[Long]      = stakeStateO.R5[Coll[Long]].get
     val nextSnapshotO: Long            = stakeStateOR5(0)
-    val newSnapshotsStaked: Coll[Long] = stakeStateO.R6[Coll[Long]].get
+    val totalStakedO: Long             = stakeStateOR5(1)
+    val stakersO: Long                 = stakeStateOR5(2)
+    val votedO: Long                   = stakeStateOR5(3)
+    val votedTotalO: Long              = stakeStateOR5(4)
+
+    val stakeStateOR6: Coll[Coll[Long]] = 
+        stakeStateO.R6[Coll[Coll[Long]]].get
+
+    val newSnapshotsStaked: Coll[Long]     = stakeStateOR6(0)
+    val newSnapshotsVoted: Coll[Long]      = stakeStateOR6(1)
+    val newSnapshotsVotedTotal: Coll[Long] = stakeStateOR6(2)
+    val newSnapshotsPPWeight: Coll[Long]   = stakeStateOR6(3)
+    val newSnapshotsPWeight: Coll[Long]    = stakeStateOR6(4)
 
     val newSnapshotsTrees: Coll[(AvlTree, AvlTree)] = 
         stakeStateO.R7[Coll[(AvlTree, AvlTree)]].get
@@ -118,7 +151,9 @@
             imPaideiaStakingEmissionAmount,
             imPaideiaStakingEmissionDelay,
             imPaideiaStakingCycleLength,
-            imPaideiaStakingProfitTokenIds
+            imPaideiaStakingProfitTokenIds,
+            imPaideiaStakingPureParticipationWeight,
+            imPaideiaStakingParticipationWeight
         ),
         configProof
     )
@@ -135,11 +170,35 @@
 
     val profitTokenIds: Coll[Byte] = configValues(5).get
 
+    val pureParticipationWeight: Byte = 
+        if (configValues(6).isDefined)
+            configValues(6).get(1)
+        else
+            0.toByte
+
+    val participationWeight: Byte = 
+        if (configValues(7).isDefined)
+            configValues(7).get(1)
+        else
+            0.toByte
+
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
     // Intermediate calculations                                             //
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
+
+    val cappedPPWeight: Byte = max(
+        0.toByte,
+        min(
+            100.toByte, 
+            pureParticipationWeight))
+
+    val cappedPWeight: Byte = max(
+        0.toByte,
+        min(
+            100.toByte - cappedPPWeight, 
+            participationWeight))
 
     val whiteListedTokenIds: Coll[Coll[Byte]] = 
         profitTokenIds.slice(0,(profitTokenIds.size-6)/37).indices.map{
@@ -162,13 +221,27 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val correctStakeState: Boolean = 
-        stakeState.tokens(0)._1 == stakeStateTokenId
+    val correctStakeState: Boolean = allOf(Coll(
+        stakeState.tokens(0)._1 == stakeStateTokenId,
+        stakeStateO.tokens == stakeState.tokens,
+        totalStakedO == totalStaked,
+        stakersO == stakers,
+        votedO == 0L,
+        votedTotalO == 0L,
+        stakeStateOTree.digest == stakeStateTree.digest,
+        participationTreeO.digest == emptyDigest
+    ))
 
     val correctNewSnapshot: Boolean = allOf(Coll(
         newSnapshotsStaked(newSnapshotsStaked.size-1) == totalStaked,
+        newSnapshotsVoted(newSnapshotsStaked.size-1) == voted,
+        newSnapshotsVotedTotal(newSnapshotsStaked.size-1) == votedTotal,
+        newSnapshotsPPWeight(newSnapshotsStaked.size-1) == cappedPPWeight,
+        newSnapshotsPWeight(newSnapshotsPWeight.size-1) == cappedPWeight,
         newSnapshotsTrees(newSnapshotsTrees.size-1)._1.digest == 
             stakeStateTree.digest,
+        newSnapshotsTrees(newSnapshotsTrees.size-1)._2.digest == 
+            participationTree.digest,
         newSnapshotsProfit(newSnapshotsProfit.size-1)(0) == 
         min(
             emissionAmount,
@@ -189,8 +262,16 @@
         snapshotsTree(0)._1.digest == emptyDigest,
         newSnapshotsTrees.slice(0,emissionDelay-1) == 
             snapshotsTree.slice(1,emissionDelay),
-        newSnapshotsStaked.slice(0,emissionDelay-1).indices.forall{
-            (i: Int) => newSnapshotsStaked(i) == snapshotsStaked(i+1)}
+        newSnapshotsVoted.slice(0,emissionDelay-1) == 
+            snapshotsVoted.slice(1,emissionDelay),
+        newSnapshotsVotedTotal.slice(0,emissionDelay-1) == 
+            snapshotsVotedTotal.slice(1,emissionDelay),
+        newSnapshotsPPWeight.slice(0,emissionDelay-1) == 
+            snapshotsPPWeight.slice(1,emissionDelay),
+        newSnapshotsPWeight.slice(0,emissionDelay-1) == 
+            snapshotsPWeight.slice(1,emissionDelay),
+        newSnapshotsStaked.slice(0,emissionDelay-1) == 
+            snapshotsStaked.slice(1,emissionDelay)
     ))
 
     val profitReset: Boolean = outputProfit.forall{(p: Long) => p==0L}
@@ -198,7 +279,11 @@
     val correctSize: Boolean = allOf(Coll(
         newSnapshotsTrees.size == emissionDelay,
         newSnapshotsStaked.size == emissionDelay,
-        newSnapshotsProfit.size == emissionDelay
+        newSnapshotsProfit.size == emissionDelay,
+        newSnapshotsPPWeight.size == emissionDelay,
+        newSnapshotsPWeight.size == emissionDelay,
+        newSnapshotsVoted.size == emissionDelay,
+        newSnapshotsVotedTotal.size == emissionDelay
     ))
 
     val correctNextShapshot: Boolean = 
