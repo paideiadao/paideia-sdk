@@ -23,6 +23,7 @@ import scorex.crypto.hash.Blake2b256
 import im.paideia.util.ConfKeys
 import sigmastate.eval.Colls
 import im.paideia.governance.GovernanceType
+import org.ergoplatform.appkit.Address
 
 case class ProtoDAOProxyBox(
   _ctx: BlockchainContextImpl,
@@ -37,13 +38,14 @@ case class ProtoDAOProxyBox(
   stakingEmissionAmount: Long,
   stakingEmissionDelay: Byte,
   stakingCycleLength: Long,
-  stakingProfitSharePct: Byte
+  stakingProfitSharePct: Byte,
+  userAddress: Address
 ) extends PaideiaBox {
 
   ctx = _ctx
   value = ProtoDAO.tokensToMint.size * 2000000L + paideiaDaoConfig[Long](
     ConfKeys.im_paideia_fees_createdao_erg
-  ) + 3000000L
+  ) + 10000000L
   contract = useContract.contract
 
   override def registers: List[ErgoValue[_]] = {
@@ -73,7 +75,8 @@ case class ProtoDAOProxyBox(
             stakePoolSize
           )
         )
-      )
+      ),
+      ErgoValueBuilder.buildFor(Colls.fromArray(userAddress.toPropositionBytes()))
     )
   }
 
@@ -135,7 +138,11 @@ object ProtoDAOProxyBox {
       stakingEmissionAmount,
       stakingEmissionDelay,
       stakingCycleLength,
-      stakingProfitSharePct
+      stakingProfitSharePct,
+      Address.fromPropositionBytes(
+        ctx.getNetworkType(),
+        inp.getRegisters().get(2).getValue().asInstanceOf[Coll[Byte]].toArray
+      )
     )
   }
 }

@@ -1,153 +1,255 @@
 {
-    val maxLong = 9223372036854775807L
+    /**
+     *
+     *  ProtoDAO
+     *
+     *  Some actions need to be taken before a DAO can be started. This contract
+     *  ensures this is done correctly
+     *
+     */
 
-    val transactionType = getVar[Byte](0).get
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Constants                                                             //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
 
-    val paideiaConfigBox = CONTEXT.dataInputs(0)
-    val paideiaConfig = paideiaConfigBox.R4[AvlTree].get
-    val paideiaConfigProof = getVar[Coll[Byte]](1).get
+    val paideiaDaoKey: Coll[Byte]              = _PAIDEIA_DAO_KEY
+    val imPaideiaContractsProtoDao: Coll[Byte] = _IM_PAIDEIA_CONTRACTS_PROTODAO
+    val imPaideiaContractsMint: Coll[Byte]     = _IM_PAIDEIA_CONTRACTS_MINT
+    val imPaideiaDaoName: Coll[Byte]           = _IM_PAIDEIA_DAO_NAME
+    val proposalText: Coll[Byte]               = _PROPOSAL
+    val imPaideiaDaoActionTokenId: Coll[Byte]  = _IM_PAIDEIA_DAO_ACTION_TOKENID
+    val actionText: Coll[Byte]                 = _ACTION
+    val stakeStateText: Coll[Byte]             = _STAKE_STATE
+    val imPaideiaContractsDao: Coll[Byte]      = _IM_PAIDEIA_CONTRACTS_DAO
+    val imPaideiaDaoKey: Coll[Byte]            = _IM_PAIDEIA_DAO_KEY
 
-    val correctDataInput = paideiaConfigBox.tokens(0)._1 == _PAIDEIA_DAO_KEY
+    val imPaideiaContractsCreateDao: Coll[Byte] = 
+        _IM_PAIDEIA_CONTRACTS_CREATE_DAO
 
-    val config = SELF.R4[AvlTree].get
+    val imPaideiaStakingStateTokenId: Coll[Byte] = 
+        _IM_PAIDEIA_STAKING_STATE_TOKENID
 
-    val configProof = getVar[Coll[Byte]](2).get
+    val imPaideiaDaoProposalTokenId: Coll[Byte] = 
+        _IM_PAIDEIA_DAO_PROPOSAL_TOKENID
 
-    val validTransaction = if (transactionType == 0.toByte) {
-        
-        val paideiaConfigValues = paideiaConfig.getMany(Coll(
-            _IM_PAIDEIA_CONTRACTS_PROTODAO,
-            _IM_PAIDEIA_CONTRACTS_MINT
-        ),paideiaConfigProof)
+    val maxLong: Long = 9223372036854775807L
 
-        val mintAction = getVar[Coll[Byte]](3).get
+    val mintTransaction: Byte      = 0.toByte
+    val createDaoTransaction: Byte = 1.toByte
 
-        val configValues = config.getMany(Coll(
-            _IM_PAIDEIA_DAO_NAME
-        ),configProof)
+    val decimals0: Coll[Byte] = Coll(48.toByte)
 
-        val configInsertProof = getVar[Coll[Byte]](4).get
-        
-        val configOut = config.insert(Coll(
-            (mintAction,Coll(10.toByte,0.toByte,0.toByte,0.toByte,0.toByte,32.toByte) ++ SELF.id)
-        ),configInsertProof).get
+    val collBytePrefix: Coll[Byte] = 
+        Coll(10.toByte,0.toByte,0.toByte,0.toByte,0.toByte,32.toByte)
 
-        val mintOut = OUTPUTS(1)
-        val daoName = configValues(0).get.slice(5,configValues(0).get.size)
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Inputs                                                                //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
 
-        val mintInfo = if (mintAction == _IM_PAIDEIA_DAO_VOTE_TOKENID) {
-            (daoName++_VOTE,maxLong)
-        } else {
-            if (mintAction == _IM_PAIDEIA_DAO_PROPOSAL_TOKENID) {
-                (daoName++_PROPOSAL,maxLong)
+    val protoDao: Box = SELF
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Data Inputs                                                           //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    val paideiaConfig: Box = CONTEXT.dataInputs(0)
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Registers                                                             //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    val configTree: AvlTree      = protoDao.R4[AvlTree].get
+    val protoDaoKey: Coll[Byte]  = protoDao.R5[Coll[Byte]].get
+
+    val paideiaConfigTree: AvlTree = paideiaConfig.R4[AvlTree].get
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Context variables                                                     //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    val transactionType: Byte          = getVar[Byte](0).get
+    val paideiaConfigProof: Coll[Byte] = getVar[Coll[Byte]](1).get
+    val configProof: Coll[Byte]        = getVar[Coll[Byte]](2).get
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Transaction dependent logic                                           //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    val validTransaction = if (transactionType == mintTransaction) {
+
+        /**
+        * Mint Transaction
+        * Mint a token to be used in the DAO
+        */
+
+        ///////////////////////////////////////////////////////////////////////
+        // Outputs                                                           //
+        ///////////////////////////////////////////////////////////////////////
+
+        val protoDaoO: Box = OUTPUTS(0)
+        val mintO: Box     = OUTPUTS(1)
+
+        ///////////////////////////////////////////////////////////////////////
+        // Registers                                                         //
+        ///////////////////////////////////////////////////////////////////////
+
+        val configTreeO: AvlTree     = protoDaoO.R4[AvlTree].get
+        val protoDaoOKey: Coll[Byte] = protoDaoO.R5[Coll[Byte]].get
+
+        val mintOName: Coll[Byte]     = mintO.R4[Coll[Byte]].get
+        val mintODesc: Coll[Byte]     = mintO.R5[Coll[Byte]].get
+        val mintODecimals: Coll[Byte] = mintO.R6[Coll[Byte]].get
+
+        ///////////////////////////////////////////////////////////////////////
+        // Context variables                                                 //
+        ///////////////////////////////////////////////////////////////////////
+
+        val mintAction: Coll[Byte]        = getVar[Coll[Byte]](3).get
+        val configInsertProof: Coll[Byte] = getVar[Coll[Byte]](4).get
+
+        ///////////////////////////////////////////////////////////////////////
+        // AVL Tree value extraction                                         //
+        ///////////////////////////////////////////////////////////////////////
+
+        val paideiaConfigValues: Coll[Option[Coll[Byte]]] = 
+            paideiaConfigTree.getMany(
+                Coll(
+                    imPaideiaContractsProtoDao,
+                    imPaideiaContractsMint
+                ),
+                paideiaConfigProof
+            )
+
+        val protoDaoContractHash: Coll[Byte] = paideiaConfigValues(0).get.slice(1,33)
+        val mintContractHash: Coll[Byte]     = paideiaConfigValues(1).get.slice(1,33)
+
+        val configValues: Coll[Option[Coll[Byte]]] = configTree.getMany(
+            Coll(
+                imPaideiaDaoName  
+            ),
+            configProof
+        )
+
+        val daoName: Coll[Byte] = 
+            configValues(0).get.slice(5,configValues(0).get.size)
+
+        ///////////////////////////////////////////////////////////////////////
+        // Intermediate calculations                                         //
+        ///////////////////////////////////////////////////////////////////////
+
+        val configTreeOut: AvlTree = configTree.insert(
+            Coll(
+                (
+                    mintAction,
+                    collBytePrefix ++ protoDao.id)
+            ),
+            configInsertProof
+        ).get
+
+        val mintInfo: (Coll[Byte], Long) = 
+            if (mintAction == imPaideiaDaoProposalTokenId) {
+                (daoName++proposalText,maxLong)
             } else {
-                if (mintAction == _IM_PAIDEIA_DAO_ACTION_TOKENID) {
-                    (daoName++_ACTION,maxLong)
+                if (mintAction == imPaideiaDaoActionTokenId) {
+                    (daoName++actionText,maxLong)
                 } else {
-                    if (mintAction == _IM_PAIDEIA_STAKING_STATE_TOKENID) {
-                        (daoName++_STAKE_STATE,1L)
+                    if (mintAction == imPaideiaStakingStateTokenId) {
+                        (daoName++stakeStateText,1L)
                     } else {
                         (daoName,-1L)
                     }
                 }
             }
-        }
 
-        val validMint = allOf(Coll(
-            blake2b256(mintOut.propositionBytes) == paideiaConfigValues(1).get.slice(1,33),
-            mintOut.tokens(0)._1 == SELF.id,
-            mintOut.tokens(0)._2 == mintInfo._2,
-            mintOut.R4[Coll[Byte]].get == mintInfo._1,
-            mintOut.R5[Coll[Byte]].get == mintOut.R4[Coll[Byte]].get,
-            mintOut.R6[Coll[Byte]].get == Coll(48.toByte)
+        ///////////////////////////////////////////////////////////////////////
+        // Simple conditions                                                 //
+        ///////////////////////////////////////////////////////////////////////
+
+        val validMint: Boolean = allOf(Coll(
+            blake2b256(mintO.propositionBytes) == mintContractHash,
+            mintO.tokens(0)._1 == SELF.id,
+            mintO.tokens(0)._2 == mintInfo._2,
+            mintOName == mintInfo._1,
+            mintODesc == mintOName,
+            mintODecimals == decimals0
         ))
-
-        val protoDAOOut = OUTPUTS(0)
 
         val validProtoDAOOut = allOf(Coll(
-            blake2b256(protoDAOOut.propositionBytes) == paideiaConfigValues(0).get.slice(1,33),
-            protoDAOOut.tokens == SELF.tokens,
-            protoDAOOut.R4[AvlTree].get.digest == configOut.digest
+            blake2b256(protoDaoO.propositionBytes) == protoDaoContractHash,
+            protoDaoO.tokens == protoDao.tokens,
+            configTreeO.digest == configTreeOut.digest,
+            protoDaoO.value >= protoDao.value - 2000000L,
+            protoDaoOKey == protoDaoKey
         ))
 
+        ///////////////////////////////////////////////////////////////////////
+        // Transaction validity                                              //
+        ///////////////////////////////////////////////////////////////////////
+
         allOf(Coll(
-            correctDataInput,
             validMint,
             validProtoDAOOut
         ))
+
     } else {
-        if (transactionType == 1.toByte) {
-            val paideiaConfigValues = paideiaConfig.getMany(Coll(
-                _IM_PAIDEIA_CONTRACTS_DAO,
-                _IM_PAIDEIA_DEFAULT_CONFIG,
-                _IM_PAIDEIA_DEFAULT_CONFIG_SIGNATURE,
-                _IM_PAIDEIA_DEFAULT_TREASURY,
-                _IM_PAIDEIA_DEFAULT_TREASURY_SIGNATURE
-            ),paideiaConfigProof)
-            
-            val configValues = config.getMany(Coll(
-                _IM_PAIDEIA_DAO_PROPOSAL_TOKENID,
-                _IM_PAIDEIA_DAO_VOTE_TOKENID,
-                _IM_PAIDEIA_DAO_ACTION_TOKENID,
-                _IM_PAIDEIA_DAO_KEY
-            ),configProof)
+        /**
+        * Create DAO Transaction
+        * Logic moved to separate contract
+        */
 
-            val daoOutput = OUTPUTS(0)
-            val configOutput = OUTPUTS(1)
+        ///////////////////////////////////////////////////////////////////////
+        // Inputs                                                            //
+        ///////////////////////////////////////////////////////////////////////
 
-            val correctDAOOutput = allOf(Coll(
-                blake2b256(daoOutput.propositionBytes) == paideiaConfigValues(0).get.slice(1,33),
-                daoOutput.value >= 1000000L,
-                daoOutput.tokens(0) == SELF.tokens(0),
-                daoOutput.tokens(1)._1 == configValues(0).get.slice(6,38),
-                daoOutput.tokens(1)._2 == maxLong,
-                daoOutput.tokens(2)._1 == configValues(1).get.slice(6,38),
-                daoOutput.tokens(2)._2 == maxLong,
-                daoOutput.tokens(3)._1 == configValues(2).get.slice(6,38),
-                daoOutput.tokens(3)._2 == maxLong,
-                daoOutput.tokens.size == 4,
-                daoOutput.R4[Coll[Byte]].get == configValues(3).get.slice(6,38)
-            ))
+        val createDao: Box = INPUTS(1)
 
-            val insertProof = getVar[Coll[Byte]](3).get
+        ///////////////////////////////////////////////////////////////////////
+        // AVL Tree value extraction                                         //
+        ///////////////////////////////////////////////////////////////////////
 
-            val insertValues = getVar[Coll[Coll[Byte]]](4).get
+        val paideiaConfigValues: Coll[Option[Coll[Byte]]] = 
+            paideiaConfigTree.getMany(
+                Coll(
+                    imPaideiaContractsCreateDao
+                ),
+                paideiaConfigProof
+            )
 
-            val treasuryContractSignature = insertValues(0)
-            val configContractSignature = insertValues(1)
+        val createDaoHash: Coll[Byte] = paideiaConfigValues(0).get.slice(1,33)
 
-            val finalConfig = config.insert(Coll(
-                (_IM_PAIDEIA_CONTRACTS_TREASURY,treasuryContractSignature),
-                (_IM_PAIDEIA_CONTRACTS_CONFIG,configContractSignature)
-            ),insertProof)
-
-            val correctConfigOutput = allOf(Coll(
-                blake2b256(configOutput.propositionBytes) == configContractSignature.slice(1,33),
-                configOutput.value >= 1000000L,
-                configOutput.tokens(0)._1 == configValues(3).get.slice(6,38),
-                configOutput.tokens(0)._2 == 1L,
-                configOutput.tokens.size == 1,
-                configOutput.R4[AvlTree].get.digest == finalConfig.get.digest
-            ))
-
-            val correctConfigContract = blake2b256(substConstants(paideiaConfigValues(1).get.slice(6,paideiaConfigValues(1).get.size),Coll(7),Coll(configValues(2).get.slice(6,38))))
-            val correctTreasuryContract = blake2b256(substConstants(paideiaConfigValues(3).get.slice(6,paideiaConfigValues(3).get.size),Coll(2),Coll(configValues(2).get.slice(6,38))))
-
-            val correctContracts = allOf(Coll(
-                paideiaConfigValues(2).get.patch(1,correctConfigContract,32) == configContractSignature,
-                paideiaConfigValues(4).get.patch(1,correctTreasuryContract,32) == treasuryContractSignature
-            ))
-
-            allOf(Coll(
-                correctContracts,
-                correctDataInput,
-                correctDAOOutput,
-                correctConfigOutput
-            ))
-        } else {
-            false
-        }
+        blake2b256(createDao.propositionBytes) == createDaoHash
     }
 
-    sigmaProp(validTransaction)
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Simple conditions                                                     //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    val correctConfig: Boolean = paideiaConfig.tokens(0)._1 == paideiaDaoKey
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Final contract result                                                 //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    sigmaProp(allOf(
+        Coll(
+            correctConfig,
+            validTransaction
+        )
+    ))
 }

@@ -44,6 +44,14 @@ class StakeSnapshot(contractSignature: PaideiaContractSignature)
       "_IM_PAIDEIA_STAKING_PROFIT_TOKENIDS",
       ConfKeys.im_paideia_staking_profit_tokenids.ergoValue.getValue()
     )
+    cons.put(
+      "_IM_PAIDEIA_STAKING_WEIGHT_PURE_PARTICIPATION",
+      ConfKeys.im_paideia_staking_weight_pureparticipation.ergoValue.getValue()
+    )
+    cons.put(
+      "_IM_PAIDEIA_STAKING_WEIGHT_PARTICIPATION",
+      ConfKeys.im_paideia_staking_weight_participation.ergoValue.getValue()
+    )
     cons
   }
 
@@ -55,7 +63,9 @@ class StakeSnapshot(contractSignature: PaideiaContractSignature)
       ConfKeys.im_paideia_staking_emission_amount,
       ConfKeys.im_paideia_staking_emission_delay,
       ConfKeys.im_paideia_staking_cyclelength,
-      ConfKeys.im_paideia_staking_profit_tokenids
+      ConfKeys.im_paideia_staking_profit_tokenids,
+      ConfKeys.im_paideia_staking_weight_pureparticipation,
+      ConfKeys.im_paideia_staking_weight_participation
     )(configDigest)
 }
 

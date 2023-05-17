@@ -22,6 +22,7 @@ import org.ergoplatform.appkit.ContextVar
 import im.paideia.governance.VoteRecord
 import scorex.crypto.authds.ADDigest
 import im.paideia.common.events.CreateTransactionsEvent
+import io.getblok.getblok_plasma.collections.ProvenResult
 
 class ProposalBasic(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature)
@@ -114,6 +115,16 @@ class ProposalBasic(contractSignature: PaideiaContractSignature)
     cons.put("_PAIDEIA_DAO_KEY", ErgoId.create(Env.paideiaDaoKey).getBytes())
     cons.put("_PAIDEIA_TOKEN_ID", ErgoId.create(Env.paideiaTokenId).getBytes())
     cons
+  }
+
+  def getVote(
+    voteKey: String,
+    proposalIndex: Int,
+    digestOrHeight: Either[ADDigest, Int]
+  ): ProvenResult[VoteRecord] = {
+    val proposal = Paideia.getDAO(contractSignature.daoKey).proposals(proposalIndex)
+    val voteId   = ErgoId.create(voteKey)
+    proposal.votes.lookUpWithDigest(voteId)(digestOrHeight.left.toOption)
   }
 
   def castVote(

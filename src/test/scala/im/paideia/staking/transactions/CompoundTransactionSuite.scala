@@ -6,6 +6,7 @@ import org.ergoplatform.appkit.Address
 import org.ergoplatform.appkit.RestApiErgoClient
 import org.ergoplatform.appkit.NetworkType
 import org.ergoplatform.appkit.BlockchainContext
+import org.ergoplatform.appkit.ErgoId
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.staking._
 import org.ergoplatform.appkit.ErgoToken
@@ -54,10 +55,10 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
             100000000L
           )
 
-        stakingState.stake(Util.randomKey, 100L)
+        stakingState.stake(Util.randomKey, 1000000000000L)
 
         Range(0, dao.config[Long](ConfKeys.im_paideia_staking_emission_delay).toInt)
-          .foreach(_ => stakingState.emit(9999999999999999L, 9999999L))
+          .foreach(_ => stakingState.emit(9999999999999999L, 99999999999L))
         val dummyAddress = Address.create("4MQyML64GnzMxZgm")
 
         val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
@@ -106,7 +107,12 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
       override def apply(_ctx: BlockchainContext): Unit = {
         val ctx = _ctx.asInstanceOf[BlockchainContextImpl]
         PaideiaTestSuite.init(ctx)
-        val dao   = StakingTest.testDAO
+        val dao    = StakingTest.testDAO
+        val sigUsd = Util.randomKey
+        dao.config.set(
+          ConfKeys.im_paideia_staking_profit_tokenids,
+          Array(ErgoId.create(sigUsd).getBytes())
+        )
         val state = TotalStakingState(dao.key, 0L)
 
         val stakingContract = StakeState(PaideiaContractSignature(daoKey = dao.key))

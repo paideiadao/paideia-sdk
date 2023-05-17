@@ -31,7 +31,7 @@ object StakingTest {
       ConfKeys.im_paideia_dao_action_tokenid,
       ErgoId.create(Util.randomKey).getBytes()
     )
-    config.set(ConfKeys.im_paideia_staking_emission_amount, 100000L)
+    config.set(ConfKeys.im_paideia_staking_emission_amount, 1000000000L)
     config.set(ConfKeys.im_paideia_staking_cyclelength, 1000000L)
     config.set(ConfKeys.im_paideia_staking_profit_thresholds, Array(0L, 0L))
 
@@ -63,6 +63,12 @@ object StakingTest {
         ConfKeys.im_paideia_contracts_staking_compound,
         compoundContract.contractSignature
       )
+    val voteContract = StakeVote(PaideiaContractSignature(daoKey = daoKey))
+    dao.config
+      .set(
+        ConfKeys.im_paideia_contracts_staking_vote,
+        voteContract.contractSignature
+      )
     val snapshotContract = StakeSnapshot(PaideiaContractSignature(daoKey = daoKey))
     dao.config
       .set(
@@ -74,6 +80,12 @@ object StakingTest {
       .set(
         ConfKeys.im_paideia_contracts_staking_profitshare,
         profitShareContract.contractSignature
+      )
+    val stakeStateContract = StakeState(PaideiaContractSignature(daoKey = daoKey))
+    dao.config
+      .set(
+        ConfKeys.im_paideia_contracts_staking_state,
+        stakeStateContract.contractSignature
       )
 
     dao

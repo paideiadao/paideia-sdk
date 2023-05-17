@@ -177,6 +177,41 @@ class MempoolPlasmaMap[K, V](
     ProvenResult(response, Proof(proof))
   }
 
+  def lookUpDeleteWithDigest(
+    keys: K*
+  )(digestOrHeight: Either[ADDigest, Int]): ProvenResultWithDigest[V] = {
+    val map = digestOrHeight match {
+      case Right(i) => newlyConfirmedMap.getOrElse(initiate())
+      case Left(onDigest) =>
+        getMap(Some(onDigest)).get.copy()
+    }
+    map.prover.generateProof()
+    val response = keys
+      .map(k =>
+        OpResult(
+          map.prover
+            .performOneOperation(Lookup(convertKey.toADKey(k)))
+            .map(o => o.map(v => convertVal.convertFromBytes(v)))
+        )
+      )
+    val removeResponse = keys
+      .map(k =>
+        OpResult(
+          map.prover
+            .performOneOperation(Remove(convertKey.toADKey(k)))
+            .map(o => o.map(v => convertVal.convertFromBytes(v)))
+        )
+      )
+    val proof = map.prover.generateProof()
+    digestOrHeight match {
+      case Right(i) =>
+        opQueue.enqueue((i, DeleteBatch(keys)))
+        map.cachedMap = None
+      case Left(onDigest) => mempoolMaps(map.digest.toList) = map
+    }
+    ProvenResultWithDigest(response ++ removeResponse, Proof(proof), map.digest)
+  }
+
   def getMap(digestOpt: Option[ADDigest]): Option[PlasmaMapWithMap[K, V]] = {
     digestOpt match {
       case None => Some(newlyConfirmedMap.getOrElse(initiate()))

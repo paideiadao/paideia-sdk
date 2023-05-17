@@ -9,7 +9,6 @@ import im.paideia.util.ConfKeys
 import org.ergoplatform.appkit.ErgoId
 import im.paideia.DAO
 import im.paideia.Paideia
-import im.paideia.governance.contracts.Vote
 import im.paideia.common.contracts.PaideiaContractSignature
 import im.paideia.staking.TotalStakingState
 import org.ergoplatform.appkit.Address
@@ -71,9 +70,6 @@ class CreateProposalTransactionSuite extends PaideiaTestSuite {
         val dao = new DAO(daoKey, config)
         Paideia.addDAO(dao)
 
-        val voteContract = Vote(PaideiaContractSignature(daoKey = dao.key))
-        config.set(ConfKeys.im_paideia_contracts_vote, voteContract.contractSignature)
-
         val state    = TotalStakingState(dao.key, 0L)
         val stakeKey = Util.randomKey
 
@@ -84,7 +80,7 @@ class CreateProposalTransactionSuite extends PaideiaTestSuite {
           DAOOrigin(PaideiaContractSignature(daoKey = Env.paideiaDaoKey))
         daoOriginContract.newBox(
           daoOriginContract
-            .box(ctx, dao, Long.MaxValue, Long.MaxValue, Long.MaxValue)
+            .box(ctx, dao, Long.MaxValue, Long.MaxValue)
             .inputBox(),
           false
         )
@@ -134,7 +130,6 @@ class CreateProposalTransactionSuite extends PaideiaTestSuite {
           ctx.createPreHeader().build().getTimestamp() - 3600000,
           Array(
             CostingBox(
-              false,
               ctx
                 .newTxBuilder()
                 .outBoxBuilder()

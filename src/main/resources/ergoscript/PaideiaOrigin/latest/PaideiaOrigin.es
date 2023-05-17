@@ -1,45 +1,153 @@
 {
-    val paideiaConfigBox = CONTEXT.dataInputs(0)
-    val paideiaConfig = paideiaConfigBox.R4[AvlTree].get
-    val paideiaConfigProof = getVar[Coll[Byte]](0).get
-    val configValues = paideiaConfig.getMany(Coll(
-        _IM_PAIDEIA_FEES_CREATEDAO_ERG,
-        _IM_PAIDEIA_FEES_CREATEDAO_PAIDEIA,
-        _IM_PAIDEIA_CONTRACTS_PROTODAO,
-       _IM_PAIDEIA_CONTRACTS_PROTODAOPROXY,
-       _IM_PAIDEIA_CONTRACTS_SPLIT_PROFIT
-    ),paideiaConfigProof)
 
-    val correctDataInput = paideiaConfigBox.tokens(0)._1 == _PAIDEIA_DAO_KEY
+    /**
+     *
+     *  CastVote
+     *
+     *  This contract ensures the is added correctly to the proposal tally and
+     *  the stake key is returned to the user.
+     *
+     */
 
-    val createDAOFeeErg = byteArrayToLong(configValues(0).get.slice(1,9))
-    val createDAOFeePaideia = byteArrayToLong(configValues(1).get.slice(1,9))
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Constants                                                             //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
 
-    val protoDAOContract = configValues(2).get.slice(1,33)
-    val protoDAOProxyContract = configValues(3).get.slice(1,33)
-    val paideiaProfitShareContract = configValues(4).get.slice(1,33)
+    val paideiaDaoKey: Coll[Byte]              = _PAIDEIA_DAO_KEY
+    val paideiaTokenId: Coll[Byte]             = _PAIDEIA_TOKEN_ID
+    val imPaideiaFeesCreateDaoErg: Coll[Byte]  = _IM_PAIDEIA_FEES_CREATEDAO_ERG
+    val imPaideiaFeesCreateDaoPai: Coll[Byte]  = _IM_PAIDEIA_FEES_CREATEDAO_PAIDEIA
+    val imPaideiaContractsProtoDao: Coll[Byte] = _IM_PAIDEIA_CONTRACTS_PROTODAO
 
-    val originOut = OUTPUTS(1)
-    val protoDAOOut = OUTPUTS(0)
-    val paideiaProfitShareOut = OUTPUTS(2)
-    val protoDAOProxyIn = INPUTS(0)
+    val imPaideiaContractsProtoDaoProxy: Coll[Byte] = 
+        _IM_PAIDEIA_CONTRACTS_PROTODAOPROXY
 
-    val validProtoDAOCreation = allOf(Coll(
-        originOut.tokens(0)._1 == SELF.tokens(0)._1,
-        originOut.tokens(0)._2 == SELF.tokens(0)._2,
-        originOut.tokens(1)._1 == SELF.tokens(1)._1,
-        originOut.tokens(1)._2 == SELF.tokens(1)._2 - 1L,
-        originOut.tokens.size == 2,
-        originOut.propositionBytes == SELF.propositionBytes,
-        blake2b256(protoDAOOut.propositionBytes) == protoDAOContract,
-        protoDAOOut.tokens(0)._1 == SELF.tokens(1)._1,
-        protoDAOOut.tokens(0)._2 == 1L,
-        blake2b256(paideiaProfitShareOut.propositionBytes) == paideiaProfitShareContract,
-        paideiaProfitShareOut.value == createDAOFeeErg + 1000000L,
-        paideiaProfitShareOut.tokens(0)._1 == _PAIDEIA_TOKEN_ID,
-        paideiaProfitShareOut.tokens(0)._2 == createDAOFeePaideia,
-        blake2b256(protoDAOProxyIn.propositionBytes) == protoDAOProxyContract
+    val imPaideiaContractsSplitProfit: Coll[Byte] = 
+        _IM_PAIDEIA_CONTRACTS_SPLIT_PROFIT
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Inputs                                                                //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    val protoDAOProxy: Box = INPUTS(0)
+    val origin: Box        = SELF
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Data Inputs                                                           //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    val paideiaConfig: Box = CONTEXT.dataInputs(0)
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Outputs                                                               //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    val protoDaoO: Box    = OUTPUTS(0)
+    val originO: Box      = OUTPUTS(1)
+    val profitShareO: Box = OUTPUTS(2)
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Registers                                                             //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    val paideiaConfigTree: AvlTree = paideiaConfig.R4[AvlTree].get
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Context variables                                                     //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    val paideiaConfigProof: Coll[Byte] = getVar[Coll[Byte]](0).get
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // DAO Config value extraction                                           //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    val configValues: Coll[Option[Coll[Byte]]] = paideiaConfigTree.getMany(
+        Coll(
+            imPaideiaFeesCreateDaoErg,
+            imPaideiaFeesCreateDaoPai,
+            imPaideiaContractsProtoDao,
+            imPaideiaContractsProtoDaoProxy,
+            imPaideiaContractsSplitProfit
+        ),
+        paideiaConfigProof
+    )
+
+    val createDAOFeeErg: Long = byteArrayToLong(configValues(0).get.slice(1,9))
+
+    val createDAOFeePaideia: Long = 
+        byteArrayToLong(configValues(1).get.slice(1,9))
+
+    val protoDAOContractHash: Coll[Byte]      = configValues(2).get.slice(1,33)
+    val protoDAOProxyContractHash: Coll[Byte] = configValues(3).get.slice(1,33)
+    val profitShareContractHash: Coll[Byte]   = configValues(4).get.slice(1,33)
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Simple conditions                                                     //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    val correctConfig = paideiaConfig.tokens(0)._1 == paideiaDaoKey
+
+    val correctPaideiaOrigin: Boolean = allOf(
+        Coll(
+            originO.tokens(0)        == origin.tokens(0),
+            originO.tokens(1)._1     == origin.tokens(1)._1,
+            originO.tokens(1)._2     == origin.tokens(1)._2 - 1L,
+            originO.tokens.size      == 2,
+            originO.propositionBytes == origin.propositionBytes,
+            originO.value            >= origin.value
+        )
+    )
+
+    val correctProtoOut: Boolean = allOf(
+        Coll(
+            blake2b256(protoDaoO.propositionBytes) == protoDAOContractHash,
+            protoDaoO.tokens(0)._1 == origin.tokens(1)._1,
+            protoDaoO.tokens(0)._2 == 1L
+        )
+    )
+
+    val correctPaideiaProfit: Boolean = allOf(
+        Coll(
+            blake2b256(profitShareO.propositionBytes) == profitShareContractHash,
+            profitShareO.value == createDAOFeeErg + 1000000L,
+            profitShareO.tokens(0)._1 == paideiaTokenId,
+            profitShareO.tokens(0)._2 == createDAOFeePaideia,
+        )
+    )
+
+    val correctProtoDaoProxy: Boolean = 
+        blake2b256(protoDAOProxy.propositionBytes) == protoDAOProxyContractHash
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Final contract result                                                 //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    sigmaProp(allOf(
+        Coll(
+            correctConfig,
+            correctPaideiaOrigin,
+            correctProtoOut,
+            correctPaideiaProfit,
+            correctProtoDaoProxy
+        )
     ))
-
-    sigmaProp(validProtoDAOCreation)
 }

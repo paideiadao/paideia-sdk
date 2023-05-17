@@ -168,6 +168,6 @@ trait PaideiaBox {
     *   a CostingBox initialized as false and representing the input box of this output
     *   box.
     */
-  def box(): Box = CostingBox(false, inputBox().getErgoBox())
+  def box(): Box = CostingBox(inputBox().getErgoBox())
 
 }
