@@ -40,6 +40,7 @@ import im.paideia.staking.contracts.StakeProfitShare
 import im.paideia.staking.contracts.StakeSnapshot
 import im.paideia.staking.contracts.StakeVote
 import im.paideia.staking.contracts.Unstake
+import im.paideia.governance.contracts.CreateDAO
 
 case class CreateDAOTransaction(
   _ctx: BlockchainContextImpl,
@@ -156,6 +157,15 @@ case class CreateDAOTransaction(
   val stakingUnstakeContract       = Unstake(PaideiaContractSignature(daoKey = dao.key))
   val stakingUnstakeContractSignature = stakingUnstakeContract.contractSignature
 
+  val createDaoContract = CreateDAO(
+    paideiaConfig[PaideiaContractSignature](
+      ConfKeys.im_paideia_contracts_createdao
+    )
+      .withDaoKey(Env.paideiaDaoKey)
+  )
+  val createDaoInput =
+    createDaoContract.boxes(createDaoContract.getUtxoSet.toArray.apply(0))
+
   val configDigest =
     ADDigest @@ protoDAOInput
       .getRegisters()
@@ -221,18 +231,17 @@ case class CreateDAOTransaction(
 
   var resultingDigest: Option[ADDigest] = None
 
-  val contextVarsProtoDAO = List(
-    ContextVar.of(0.toByte, 1.toByte),
+  val contextVarsCreateDAO = List(
+    ContextVar.of(
+      0.toByte,
+      createDaoContract.getConfigContext(Some(paideiaConfigDigest))
+    ),
     ContextVar.of(
       1.toByte,
-      protoDAOInputBox.useContract.getConfigContext(Some(paideiaConfigDigest))
+      createDaoContract.getDAOConfigContext(dao.config, Some(configDigest))
     ),
     ContextVar.of(
-      2.toByte,
-      protoDAOInputBox.useContract.getDAOConfigContext(dao.config, Some(configDigest))
-    ),
-    ContextVar.of(
-      3.toByte, {
+      2.toByte, {
         var result = dao.config
           .insertProof(
             (
@@ -299,7 +308,7 @@ case class CreateDAOTransaction(
       }
     ),
     ContextVar.of(
-      4.toByte,
+      3.toByte,
       ErgoValueBuilder.buildFor(
         Colls.fromArray(
           Array(
@@ -327,7 +336,7 @@ case class CreateDAOTransaction(
       )
     ),
     ContextVar.of(
-      5.toByte,
+      4.toByte,
       ErgoValueBuilder.buildFor(
         Colls.fromArray(
           Array(
@@ -340,19 +349,52 @@ case class CreateDAOTransaction(
     )
   )
 
+  val contextVarsProtoDAO = List(
+    ContextVar.of(0.toByte, 1.toByte),
+    ContextVar.of(
+      1.toByte,
+      protoDAOInputBox.useContract.getConfigContext(Some(paideiaConfigDigest))
+    ),
+    ContextVar.of(
+      2.toByte,
+      ErgoValueBuilder.buildFor(Colls.fromArray(Array[Byte]()))
+    )
+  )
+
   val configOutput = configContract.box(_ctx, dao, resultingDigest)
+
+  val stakeChangeO      = stakingChangeContract.box(_ctx).outBox
+  val stakeStakeO       = stakingStakeContract.box(_ctx).outBox
+  val stakeUnstakeO     = stakingUnstakeContract.box(_ctx).outBox
+  val stakeCompoundO    = stakingCompoundContract.box(_ctx).outBox
+  val stakeSnapshotO    = stakingSnapshotContract.box(_ctx).outBox
+  val stakeVoteO        = stakingVoteContract.box(_ctx).outBox
+  val stakeProfitShareO = stakingProfitShareContract.box(_ctx).outBox
+  val createDaoO        = createDaoContract.box(_ctx).outBox
 
   ctx           = _ctx
   fee           = 1000000
   changeAddress = _changeAddress
   inputs = List[InputBox](
     protoDAOInput.withContextVars(contextVarsProtoDAO: _*),
+    createDaoInput.withContextVars(contextVarsCreateDAO: _*),
     proposalMintBox.withContextVars(proposalMintContext: _*),
     actionMintBox.withContextVars(actionMintContext: _*),
     daoKeyMintBox.withContextVars(daoKeyMintContext: _*),
     stakeStateMintBox.withContextVars(stakeStateMintContext: _*)
   )
   dataInputs = List[InputBox](paideiaConfigBox)
-  outputs =
-    List[OutBox](daoOriginOutput.outBox, configOutput.outBox, stakeStateOutput.outBox)
+  outputs = List[OutBox](
+    daoOriginOutput.outBox,
+    configOutput.outBox,
+    stakeStateOutput.outBox,
+    stakeChangeO,
+    stakeStakeO,
+    stakeUnstakeO,
+    stakeCompoundO,
+    stakeSnapshotO,
+    stakeVoteO,
+    stakeProfitShareO,
+    createDaoO
+  )
 }

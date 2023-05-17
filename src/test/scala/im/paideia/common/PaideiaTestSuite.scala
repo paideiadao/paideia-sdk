@@ -32,6 +32,7 @@ import im.paideia.staking.contracts.StakeProfitShare
 import im.paideia.staking.contracts.StakeSnapshot
 import im.paideia.staking.contracts.StakeVote
 import im.paideia.staking.contracts.Unstake
+import im.paideia.governance.contracts.CreateDAO
 
 class PaideiaTestSuite extends AnyFunSuite with HttpClientTesting {}
 
@@ -109,6 +110,13 @@ object PaideiaTestSuite {
       )
       val stakeUnstakeContract = Unstake(
         PaideiaContractSignature(daoKey = Env.paideiaDaoKey)
+      )
+      val createDaoContract = CreateDAO(
+        PaideiaContractSignature(daoKey = Env.paideiaDaoKey)
+      )
+      paideiaConfig.set(
+        ConfKeys.im_paideia_contracts_createdao,
+        createDaoContract.contractSignature
       )
       paideiaConfig.set(
         ConfKeys.im_paideia_contracts_treasury,
@@ -249,6 +257,7 @@ object PaideiaTestSuite {
         paideiaOriginContract.box(ctx, paideiaConfig, 1000000L).inputBox(),
         false
       )
+      createDaoContract.newBox(createDaoContract.box(ctx).inputBox(), false)
       // initializedPaideia = true
     }
   }
