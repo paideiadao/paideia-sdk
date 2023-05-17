@@ -25,6 +25,8 @@ import im.paideia.staking.transactions.UnstakeTransaction
 import im.paideia.staking.StakeRecord
 import im.paideia.util.ConfKeys
 import im.paideia.common.events.CreateTransactionsEvent
+import im.paideia.common.transactions.RefundTransaction
+import special.collection.Coll
 
 class UnstakeProxy(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -55,12 +57,28 @@ class UnstakeProxy(contractSignature: PaideiaContractSignature)
                 PaideiaEventResponse(
                   1,
                   List(
-                    UnstakeTransaction(
-                      cte.ctx,
-                      boxes(b),
-                      Address.create(Env.operatorAddress).getErgoAddress,
-                      contractSignature.daoKey
-                    )
+                    if (boxes(b).getCreationHeight() < cte.height - 30) {
+                      RefundTransaction(
+                        cte.ctx,
+                        boxes(b),
+                        Address.fromPropositionBytes(
+                          NetworkType.MAINNET,
+                          boxes(b)
+                            .getRegisters()
+                            .get(0)
+                            .getValue()
+                            .asInstanceOf[Coll[Byte]]
+                            .toArray
+                        )
+                      )
+                    } else {
+                      UnstakeTransaction(
+                        cte.ctx,
+                        boxes(b),
+                        Address.create(Env.operatorAddress).getErgoAddress,
+                        contractSignature.daoKey
+                      )
+                    }
                   )
                 )
               }
