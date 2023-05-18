@@ -41,7 +41,9 @@ class CreateProtoDAOTransactionSuite extends PaideiaTestSuite {
             stakingEmissionDelay  = 1,
             stakingCycleLength    = 3600000L,
             stakingProfitSharePct = 50,
-            dummyAddress
+            dummyAddress,
+            0.toByte,
+            20.toByte
           )
           .ergoTransactionOutput()
         val dummyTx = (new ErgoTransaction()).addOutputsItem(protoDAOProxyBox)
@@ -83,7 +85,9 @@ class CreateProtoDAOTransactionSuite extends PaideiaTestSuite {
             stakingEmissionDelay  = 1,
             stakingCycleLength    = 3600000L,
             stakingProfitSharePct = 50,
-            dummyAddress
+            dummyAddress,
+            0.toByte,
+            20.toByte
           )
           .ergoTransactionOutput()
           .creationHeight(0)

@@ -39,7 +39,9 @@ case class ProtoDAOProxyBox(
   stakingEmissionDelay: Byte,
   stakingCycleLength: Long,
   stakingProfitSharePct: Byte,
-  userAddress: Address
+  userAddress: Address,
+  pureParticipationWeight: Byte,
+  participationWeight: Byte
 ) extends PaideiaBox {
 
   ctx = _ctx
@@ -65,7 +67,9 @@ case class ProtoDAOProxyBox(
             Colls.fromArray(DAOConfigValueSerializer(stakingEmissionAmount)),
             Colls.fromArray(DAOConfigValueSerializer(stakingEmissionDelay)),
             Colls.fromArray(DAOConfigValueSerializer(stakingCycleLength)),
-            Colls.fromArray(DAOConfigValueSerializer(stakingProfitSharePct))
+            Colls.fromArray(DAOConfigValueSerializer(stakingProfitSharePct)),
+            Colls.fromArray(DAOConfigValueSerializer(pureParticipationWeight)),
+            Colls.fromArray(DAOConfigValueSerializer(participationWeight))
           )
         )
       ),
@@ -111,13 +115,15 @@ object ProtoDAOProxyBox {
         .asInstanceOf[Array[Any]]
         .map(_.asInstanceOf[Byte])
     )
-    val daoGovernanceType: Byte     = DAOConfigValueDeserializer(byteRegister(2))
-    val quorum: Byte                = DAOConfigValueDeserializer(byteRegister(3))
-    val threshold: Byte             = DAOConfigValueDeserializer(byteRegister(4))
-    val stakingEmissionAmount: Long = DAOConfigValueDeserializer(byteRegister(5))
-    val stakingEmissionDelay: Byte  = DAOConfigValueDeserializer(byteRegister(6))
-    val stakingCycleLength: Long    = DAOConfigValueDeserializer(byteRegister(7))
-    val stakingProfitSharePct: Byte = DAOConfigValueDeserializer(byteRegister(8))
+    val daoGovernanceType: Byte       = DAOConfigValueDeserializer(byteRegister(2))
+    val quorum: Byte                  = DAOConfigValueDeserializer(byteRegister(3))
+    val threshold: Byte               = DAOConfigValueDeserializer(byteRegister(4))
+    val stakingEmissionAmount: Long   = DAOConfigValueDeserializer(byteRegister(5))
+    val stakingEmissionDelay: Byte    = DAOConfigValueDeserializer(byteRegister(6))
+    val stakingCycleLength: Long      = DAOConfigValueDeserializer(byteRegister(7))
+    val stakingProfitSharePct: Byte   = DAOConfigValueDeserializer(byteRegister(8))
+    val pureParticipationWeight: Byte = DAOConfigValueDeserializer(byteRegister(9))
+    val participationWeight: Byte     = DAOConfigValueDeserializer(byteRegister(10))
 
     ProtoDAOProxyBox(
       ctx,
@@ -142,7 +148,9 @@ object ProtoDAOProxyBox {
       Address.fromPropositionBytes(
         ctx.getNetworkType(),
         inp.getRegisters().get(2).getValue().asInstanceOf[Coll[Byte]].toArray
-      )
+      ),
+      pureParticipationWeight,
+      participationWeight
     )
   }
 }

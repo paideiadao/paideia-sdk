@@ -35,6 +35,12 @@
     val imPaideiaDaoThreshold: Coll[Byte]      = _IM_PAIDEIA_DAO_THRESHOLD
     val daoKeyText: Coll[Byte]                 = _DAO_KEY
 
+    val imPaideiaStakingPureParticipationWeight: Coll[Byte] =
+        _IM_PAIDEIA_STAKING_PUREPARTICIPATION_WEIGHT
+
+    val imPaideiaStakingParticipationWeight: Coll[Byte] =
+        _IM_PAIDEIA_STAKING_PARTICIPATION_WEIGHT
+
     val imPaideiaStakingProfitSharePct: Coll[Byte] = 
         _IM_PAIDEIA_STAKING_PROFITSHARE_PCT
 
@@ -145,7 +151,9 @@
         (imPaideiaStakingEmissionAmount,configValues(5)),
         (imPaideiaStakingEmissionDelay,configValues(6)),
         (imPaideiaStakingCycleLength,configValues(7)),
-        (imPaideiaStakingProfitSharePct,configValues(8))
+        (imPaideiaStakingProfitSharePct,configValues(8)),
+        (imPaideiaStakingPureParticipationWeight,configValues(9)),
+        (imPaideiaStakingParticipationWeight,configValues(10))
     ),configInsertProof).get
 
     val daoName: Coll[Byte] = configValues(0).slice(5,configValues(0).size)
