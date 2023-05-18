@@ -36,7 +36,7 @@ case class AddStakeTransaction(
   daoKey: String
 ) extends PaideiaTransaction {
   val stakingKey = addStakeProxyInput.getTokens().get(0).getId().toString()
-  val amount     = addStakeProxyInput.getTokens().get(1).getValue()
+  val amount     = addStakeProxyInput.getRegisters().get(1).getValue().asInstanceOf[Long]
   val config     = Paideia.getConfig(daoKey)
 
   val state = TotalStakingState(daoKey)
