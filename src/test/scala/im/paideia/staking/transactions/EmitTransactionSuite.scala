@@ -19,7 +19,7 @@ import org.ergoplatform.restapi.client.FullBlock
 import org.ergoplatform.restapi.client.BlockHeader
 import im.paideia.common.events.BlockEvent
 import im.paideia.Paideia
-import im.paideia.staking.contracts.PlasmaStaking
+import im.paideia.staking.contracts._
 import im.paideia.common.contracts.Config
 import im.paideia.common.contracts.PaideiaContractSignature
 import im.paideia.util.ConfKeys
@@ -41,9 +41,12 @@ class EmitTransactionSuite extends PaideiaTestSuite {
         val dao   = StakingTest.testDAO
         val state = TotalStakingState(dao.key, 0L, true)
 
-        val stakingContract = PlasmaStaking(PaideiaContractSignature(daoKey = dao.key))
+        val stakingContract = StakeState(PaideiaContractSignature(daoKey = dao.key))
         dao.config
-          .set(ConfKeys.im_paideia_contracts_staking, stakingContract.contractSignature)
+          .set(
+            ConfKeys.im_paideia_contracts_staking_state,
+            stakingContract.contractSignature
+          )
 
         val stakingState = stakingContract
           .emptyBox(
@@ -51,6 +54,9 @@ class EmitTransactionSuite extends PaideiaTestSuite {
             dao,
             100000000L
           )
+
+        val snapshotContract = StakeSnapshot(PaideiaContractSignature(daoKey = dao.key))
+        snapshotContract.newBox(snapshotContract.box(ctx).inputBox(), false)
 
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
 
@@ -98,9 +104,12 @@ class EmitTransactionSuite extends PaideiaTestSuite {
         val dao   = StakingTest.testDAO
         val state = TotalStakingState(dao.key, 0L)
 
-        val stakingContract = PlasmaStaking(PaideiaContractSignature(daoKey = dao.key))
+        val stakingContract = StakeState(PaideiaContractSignature(daoKey = dao.key))
         dao.config
-          .set(ConfKeys.im_paideia_contracts_staking, stakingContract.contractSignature)
+          .set(
+            ConfKeys.im_paideia_contracts_staking_state,
+            stakingContract.contractSignature
+          )
 
         val stakingState = stakingContract
           .emptyBox(
@@ -124,6 +133,9 @@ class EmitTransactionSuite extends PaideiaTestSuite {
             .inputBox(),
           false
         )
+
+        val snapshotContract = StakeSnapshot(PaideiaContractSignature(daoKey = dao.key))
+        snapshotContract.newBox(snapshotContract.box(ctx).inputBox(), false)
 
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
 
@@ -157,9 +169,12 @@ class EmitTransactionSuite extends PaideiaTestSuite {
         val dao   = StakingTest.testDAO
         val state = TotalStakingState(dao.key, 0L)
 
-        val stakingContract = PlasmaStaking(PaideiaContractSignature(daoKey = dao.key))
+        val stakingContract = StakeState(PaideiaContractSignature(daoKey = dao.key))
         dao.config
-          .set(ConfKeys.im_paideia_contracts_staking, stakingContract.contractSignature)
+          .set(
+            ConfKeys.im_paideia_contracts_staking_state,
+            stakingContract.contractSignature
+          )
 
         val stakingState = stakingContract
           .emptyBox(
@@ -192,6 +207,9 @@ class EmitTransactionSuite extends PaideiaTestSuite {
 
         stakingState
           .profitShare(List(0L, 1000L, 1000L), List(new ErgoToken(sigUsd, 1000L)))
+
+        val snapshotContract = StakeSnapshot(PaideiaContractSignature(daoKey = dao.key))
+        snapshotContract.newBox(snapshotContract.box(ctx).inputBox(), false)
 
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
 

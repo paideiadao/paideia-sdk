@@ -35,10 +35,12 @@ class SplitProfit(contractSig: PaideiaContractSignature)
       case cte: CreateTransactionsEvent => {
         if ((cte.height > lastProfitSplit + 30) || getUtxoSet.size > 50) {
           lastProfitSplit = cte.height.toInt
-          if (getUtxoSet.size > 0 && getUtxoSet
-                .map(boxes(_))
-                .take(50)
-                .foldLeft(0L)((z: Long, b: InputBox) => z + b.getValue()) >= 3000000L) {
+          if (
+            getUtxoSet.size > 0 && getUtxoSet
+              .map(boxes(_))
+              .take(50)
+              .foldLeft(0L)((z: Long, b: InputBox) => z + b.getValue()) >= 3000000L
+          ) {
             PaideiaEventResponse(
               1,
               List(
@@ -73,8 +75,8 @@ class SplitProfit(contractSig: PaideiaContractSignature)
       ConfKeys.im_paideia_contracts_treasury.ergoValue.getValue()
     )
     cons.put(
-      "_IM_PAIDEIA_CONTRACTS_STAKING",
-      ConfKeys.im_paideia_contracts_staking.ergoValue.getValue()
+      "_IM_PAIDEIA_CONTRACTS_STAKING_STATE",
+      ConfKeys.im_paideia_contracts_staking_state.ergoValue.getValue()
     )
     cons.put(
       "_IM_PAIDEIA_PROFIT_SHARING_PCT",

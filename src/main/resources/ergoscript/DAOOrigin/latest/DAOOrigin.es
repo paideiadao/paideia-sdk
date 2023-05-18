@@ -1,138 +1,196 @@
 {
-    val daoInput = SELF
 
-    val maxLong = 9223372036854775807L
+    /**
+     *
+     *  DAOOrigin
+     *
+     *  Holds the dao token verifying it as a genuine Paideia DAO and hands
+     *  controls the proposal/action creation process.
+     *
+     */
 
-    val paideiaConfigInput = CONTEXT.dataInputs(0)
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Constants                                                             //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
 
-    val paideiaCorrectConfig = paideiaConfigInput.tokens(0)._1 == _PAIDEIA_DAO_KEY
+    val paideiaDaoKey: Coll[Byte]              = _PAIDEIA_DAO_KEY
+    val imPaideiaContractsDao: Coll[Byte]      = _IM_PAIDEIA_CONTRACTS_DAO
+    val imPaideiaContractsProposal: Coll[Byte] = _IM_PAIDEIA_CONTRACTS_PROPOSAL
+    val imPaideiaContractsAction: Coll[Byte]   = _IM_PAIDEIA_CONTRACTS_ACTION
+    val paideiaTokenId: Coll[Byte]             = _PAIDEIA_TOKENID
 
-    val paideiaConfigProof = getVar[Coll[Byte]](0).get
-
-    val paideiaConfigValues = paideiaConfigInput.R4[AvlTree].get.getMany(Coll(
-        _IM_PAIDEIA_CONTRACTS_DAO,
+    val imPaideiaFeesCreateProposalPaideia: Coll[Byte] =  
         _IM_PAIDEIA_FEES_CREATEPROPOSAL_PAIDEIA
-    ),paideiaConfigProof)
 
-    val daoOutput = OUTPUTS(0)
+    val maxLong: Long = 9223372036854775807L
 
-    val configInput = CONTEXT.dataInputs(1)
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Inputs                                                                //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
 
-    val correctConfig = configInput.tokens(0)._1 == daoInput.R4[Coll[Byte]].get
+    val daoOrigin: Box      = SELF
+    val createProposal: Box = INPUTS(1)
 
-    val configProof = getVar[Coll[Byte]](1).get
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Data Inputs                                                           //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
 
-    val validTransaction = if (daoInput.tokens(2)._2-1 == daoOutput.tokens(2)._2) {
+    val paideiaConfig: Box = CONTEXT.dataInputs(0)
+    val config: Box        = CONTEXT.dataInputs(1)
 
-        val configValues = configInput.R4[AvlTree].get.getMany(Coll(
-            _IM_PAIDEIA_CONTRACTS_VOTE,
-            _IM_PAIDEIA_STAKING_STATE_TOKENID
-        ),configProof)
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Outputs                                                               //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
 
-        val stakeInput = CONTEXT.dataInputs(2)
+    val daoOriginO: Box = OUTPUTS(0)
+    val proposalO: Box  = OUTPUTS(1)
 
-        val correctStakeInput = stakeInput.tokens(0)._1 == configValues(1).get.slice(6,38)
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Registers                                                             //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
 
-        val stakeProof = getVar[Coll[Byte]](2).get
+    val daoKey: Coll[Byte] = daoOrigin.R4[Coll[Byte]].get
 
-        val voteOutput = OUTPUTS(1)
+    val daoKeyO: Coll[Byte] = daoOriginO.R4[Coll[Byte]].get
 
-        val stake = stakeInput.R4[AvlTree].get.get(voteOutput.tokens(1)._1, stakeProof).get
+    val paideiaConfigTree: AvlTree = paideiaConfig.R4[AvlTree].get
 
-        val correctStake = stake.size > 0
+    val configTree: AvlTree = config.R4[AvlTree].get
 
-        val correctDAOOutput = allOf(Coll(
-            blake2b256(daoOutput.propositionBytes) == paideiaConfigValues(0).get.slice(1,33),
-            daoOutput.value >= daoInput.value,
-            daoOutput.tokens(0) == daoInput.tokens(0),
-            daoOutput.tokens(1) == daoInput.tokens(1),
-            daoOutput.tokens(2)._1 == daoInput.tokens(2)._1,
-            daoOutput.tokens(3) == daoInput.tokens(3),
-            daoOutput.tokens.size == 4
-        ))
+    val createProposalR5: Coll[Box] = createProposal.R5[Coll[Box]].get
+    val proposalBox: Box            = createProposalR5(0)
 
-        val correctVoteOutput = allOf(Coll(
-            blake2b256(voteOutput.propositionBytes) == configValues(0).get.slice(1,33),
-            voteOutput.value == 1000000L,
-            voteOutput.tokens(0)._1 == daoInput.tokens(2)._1,
-            voteOutput.tokens(0)._2 == 1L
-        ))
+    val actionBoxes: Coll[Box] = createProposalR5.slice(1,createProposalR5.size)
 
-        allOf(Coll(
-            correctStakeInput,
-            correctDAOOutput,
-            correctVoteOutput,
-            correctStake
-        ))
-    } else {
-        if (daoInput.tokens(1)._2-1 == daoOutput.tokens(1)._2) {
-            val createProposalInput = INPUTS(1)
+    val proposalIndex: Long = proposalO.R4[Coll[Int]].get(0).toLong
+    
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Context variables                                                     //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
 
-            val actionBoxes = createProposalInput.R5[Coll[Box]].get.slice(1,createProposalInput.R5[Coll[Box]].get.size)
-            val proposalBox = createProposalInput.R5[Coll[Box]].get(0)
+    val paideiaConfigProof: Coll[Byte] = getVar[Coll[Byte]](0).get
+    val configProof: Coll[Byte]        = getVar[Coll[Byte]](1).get
 
-            val proposalId = maxLong-daoInput.tokens(1)._2
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // DAO Config value extraction                                           //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
 
-            val configValues = configInput.R4[AvlTree].get.getMany(
-                Coll(blake2b256(_IM_PAIDEIA_CONTRACTS_PROPOSAL++proposalBox.propositionBytes))++
-                actionBoxes.map{
-                    (box: Box) =>
-                    blake2b256(_IM_PAIDEIA_CONTRACTS_ACTION++box.propositionBytes)
-                }
-            ,configProof)
+    val paideiaConfigValues: Coll[Option[Coll[Byte]]] = 
+        paideiaConfigTree.getMany(
+            Coll(
+                imPaideiaContractsDao,
+                imPaideiaFeesCreateProposalPaideia
+            ),
+            paideiaConfigProof
+        )
 
-            val correctDAOOutput = allOf(Coll(
-                blake2b256(daoOutput.propositionBytes) == paideiaConfigValues(0).get.slice(1,33),
-                daoOutput.value >= daoInput.value,
-                daoOutput.tokens(0) == daoInput.tokens(0),
-                daoOutput.tokens(1)._1 == daoInput.tokens(1)._1,
-                daoOutput.tokens(2) == daoInput.tokens(2),
-                daoOutput.tokens(3)._1 == daoInput.tokens(3)._1,
-                daoOutput.tokens(3)._2 == daoInput.tokens(3)._2 - actionBoxes.size,
-                daoOutput.tokens.size == 4
-            ))
+    val daoOriginContractHash: Coll[Byte] = paideiaConfigValues(0).get.slice(1,33)
+    val createProposalFee: Long = 
+        byteArrayToLong(paideiaConfigValues(1).get.slice(1,9))
 
-            val proposalOutput = OUTPUTS(1)
+    val configValues: Coll[Option[Coll[Byte]]] = configTree.getMany(
+        Coll(
+            blake2b256(imPaideiaContractsProposal++proposalBox.propositionBytes)
+        )++actionBoxes.map{
+            (box: Box) =>
+            blake2b256(imPaideiaContractsAction++box.propositionBytes)
+        },
+        configProof
+    )
 
-            val correctProposalOutput = allOf(Coll(
-                proposalOutput.value >= proposalBox.value,
-                proposalOutput.R4[Coll[Int]].get(0).toLong == proposalId,
-                proposalOutput.tokens(0)._1 == daoInput.tokens(1)._1,
-                proposalOutput.tokens(0)._2 == 1L,
-                proposalOutput.tokens(1)._1 == _PAIDEIA_TOKENID,
-                proposalOutput.tokens(1)._2 == byteArrayToLong(paideiaConfigValues(1).get.slice(1,9)),
-                proposalOutput.propositionBytes == createProposalInput.R5[Coll[Box]].get(0).propositionBytes,
-                blake2b256(proposalOutput.propositionBytes) == configValues(0).get.slice(1,33)
-            ))
-
-            val actionOutputs = OUTPUTS.slice(2,actionBoxes.size+2)
-
-            val correctActionOutputs = actionOutputs.indices.forall{
-                (i: Int) =>
-                allOf(Coll(
-                    actionOutputs(i).value >= actionBoxes(i).value,
-                    actionOutputs(i).tokens(0)._1 == daoInput.tokens(3)._1,
-                    actionOutputs(i).tokens(0)._2 == 1L,
-                    actionOutputs(i).R4[Coll[Long]].get(0) == proposalId,
-                    actionOutputs(i).R4[Coll[Long]].get(1) >= 0L,
-                    blake2b256(actionOutputs(i).propositionBytes) == configValues(i+1).get.slice(1,33)
-                ))
-            }
-
-            allOf(Coll(
-                correctDAOOutput,
-                correctProposalOutput,
-                correctActionOutputs
-            ))
-
-        } else {
-            false
+    val proposalContractHash: Coll[Byte] = configValues(0).get.slice(1,33)
+    val actionContractHashes: Coll[Coll[Byte]] = 
+        configValues.slice(1,configValues.size).map{
+            (cv: Option[Coll[Byte]]) =>
+            cv.get.slice(1,33)
         }
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Intermediate calculations                                             //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    val proposalId: Long = maxLong - daoOrigin.tokens(1)._2
+
+    val actionOutputs: Coll[Box] = OUTPUTS.slice(2,actionBoxes.size+2)
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Simple conditions                                                     //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    val paideiaCorrectConfig: Boolean = 
+        paideiaConfig.tokens(0)._1 == paideiaDaoKey
+
+    val correctConfig: Boolean = config.tokens(0)._1 == daoKey
+
+    val correctDAOOutput: Boolean = allOf(
+        Coll(
+            blake2b256(daoOriginO.propositionBytes) == daoOriginContractHash,
+            daoOriginO.value        >= daoOrigin.value,
+            daoOriginO.tokens(0)    == daoOrigin.tokens(0),
+            daoOriginO.tokens(1)._1 == daoOrigin.tokens(1)._1,
+            daoOriginO.tokens(1)._2 == daoOrigin.tokens(1)._2 - 1L,
+            daoOriginO.tokens(2)._1 == daoOrigin.tokens(2)._1,
+            daoOriginO.tokens(2)._2 == daoOrigin.tokens(2)._2 - actionBoxes.size,
+            daoOriginO.tokens.size  == 3,
+            daoKeyO                 == daoKey
+        )
+    )
+
+    val correctProposalOutput: Boolean = allOf(
+        Coll(
+            proposalO.value >= proposalBox.value,
+            proposalIndex == proposalId,
+            proposalO.tokens(0)._1 == daoOrigin.tokens(1)._1,
+            proposalO.tokens(0)._2 == 1L,
+            proposalO.tokens(1)._1 == paideiaTokenId,
+            proposalO.tokens(1)._2 == createProposalFee,
+            proposalO.propositionBytes == proposalBox.propositionBytes,
+            blake2b256(proposalO.propositionBytes) == proposalContractHash
+        )
+    )
+
+    val correctActionOutputs: Boolean = actionOutputs.indices.forall{
+        (i: Int) =>
+        allOf(Coll(
+            actionOutputs(i).value >= actionBoxes(i).value,
+            actionOutputs(i).tokens(0)._1 == daoOrigin.tokens(2)._1,
+            actionOutputs(i).tokens(0)._2 == 1L,
+            actionOutputs(i).R4[Coll[Long]].get(0) == proposalId,
+            actionOutputs(i).R4[Coll[Long]].get(1) >= 0L,
+            blake2b256(actionOutputs(i).propositionBytes) == 
+                actionContractHashes(i)
+        ))
     }
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Final contract result                                                 //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
 
     sigmaProp(allOf(Coll(
         paideiaCorrectConfig,
         correctConfig,
-        validTransaction,
+        correctDAOOutput,
+        correctProposalOutput,
+        correctActionOutputs
     )))
 }

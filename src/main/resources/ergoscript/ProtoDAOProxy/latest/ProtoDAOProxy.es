@@ -1,50 +1,203 @@
 {
-    val paideiaConfigBox = CONTEXT.dataInputs(0)
-    val paideiaConfig = paideiaConfigBox.R4[AvlTree].get
-    val paideiaConfigProof = getVar[Coll[Byte]](0).get
-    val paideiaConfigValues = paideiaConfig.getMany(Coll(
-        _IM_PAIDEIA_CONTRACTS_PROTODAO,
-        _IM_PAIDEIA_CONTRACTS_MINT
-    ),paideiaConfigProof)
+    // Refund logic
+    sigmaProp(
+    if (OUTPUTS.size == 2) {
+        allOf(Coll(
+            OUTPUTS(0).value >= SELF.value - 1000000L,
+            OUTPUTS(0).tokens == SELF.tokens,
+            OUTPUTS(0).propositionBytes == SELF.R6[Coll[Byte]].get,
+            CONTEXT.preHeader.height >= SELF.creationInfo._1 + 30
+        ))
+    } else {
+    /**
+     *
+     *  ProtoDAO Proxy
+     *
+     *  The contract is used by a user to initiate the dao creation process
+     *  and ensure it uses the configurations requested by the user
+     *
+     */
 
-    val correctDataInput = paideiaConfigBox.tokens(0)._1 == _PAIDEIA_DAO_KEY
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Constants                                                             //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
 
-    val emptyConfigDigest = _EMPTY_CONFIG_DIGEST
-    val emptyConfig = getVar[AvlTree](1).get
-    val validEmptyConfig = emptyConfigDigest == emptyConfig.digest
-    val configInsertProof = getVar[Coll[Byte]](2).get
-    val configValues = SELF.R4[Coll[Coll[Byte]]].get
-    val filledOutConfig = emptyConfig.insert(Coll(
-        (_IM_PAIDEIA_DAO_NAME,configValues(0)),
-        (_IM_PAIDEIA_DAO_GOVERNANCE_TOKEN_ID,configValues(1)),
-        (_IM_PAIDEIA_DAO_KEY,Coll(10.toByte,0.toByte,0.toByte,0.toByte,0.toByte,32.toByte) ++ SELF.id),
-        (_IM_PAIDEIA_DAO_GOVERNANCE_TYPE,configValues(2)),
-        (_IM_PAIDEIA_DAO_QUORUM,configValues(3)),
-        (_IM_PAIDEIA_DAO_THRESHOLD,configValues(4)),
-        (_IM_PAIDEIA_STAKING_EMISSION_AMOUNT,configValues(5)),
-        (_IM_PAIDEIA_STAKING_EMISSION_DELAY,configValues(6)),
-        (_IM_PAIDEIA_STAKING_CYCLE_LENGTH,configValues(7)),
-        (_IM_PAIDEIA_STAKING_PROFITSHARE_PCT,configValues(8))
+    val imPaideiaContractsProtoDao: Coll[Byte] = _IM_PAIDEIA_CONTRACTS_PROTODAO
+    val imPaideiaContractsMint: Coll[Byte]     = _IM_PAIDEIA_CONTRACTS_MINT
+    val paideiaDaoKey: Coll[Byte]              = _PAIDEIA_DAO_KEY
+    val emptyConfigDigest: Coll[Byte]          = _EMPTY_CONFIG_DIGEST
+    val imPaideiaDaoName: Coll[Byte]           = _IM_PAIDEIA_DAO_NAME
+    val imPaideiaDaoKey: Coll[Byte]            = _IM_PAIDEIA_DAO_KEY
+    val imPaideiaDaoGovernanceType: Coll[Byte] = _IM_PAIDEIA_DAO_GOVERNANCE_TYPE
+    val imPaideiaDaoQuorum: Coll[Byte]         = _IM_PAIDEIA_DAO_QUORUM
+    val imPaideiaDaoThreshold: Coll[Byte]      = _IM_PAIDEIA_DAO_THRESHOLD
+    val daoKeyText: Coll[Byte]                 = _DAO_KEY
+
+    val imPaideiaStakingPureParticipationWeight: Coll[Byte] =
+        _IM_PAIDEIA_STAKING_PUREPARTICIPATION_WEIGHT
+
+    val imPaideiaStakingParticipationWeight: Coll[Byte] =
+        _IM_PAIDEIA_STAKING_PARTICIPATION_WEIGHT
+
+    val imPaideiaStakingProfitSharePct: Coll[Byte] = 
+        _IM_PAIDEIA_STAKING_PROFITSHARE_PCT
+
+    val imPaideiaStakingCycleLength: Coll[Byte] = 
+        _IM_PAIDEIA_STAKING_CYCLE_LENGTH
+
+    val imPaideiaStakingEmissionDelay: Coll[Byte] = 
+        _IM_PAIDEIA_STAKING_EMISSION_DELAY
+
+    val imPaideiaStakingEmissionAmount: Coll[Byte] = 
+        _IM_PAIDEIA_STAKING_EMISSION_AMOUNT
+
+    val collBPrefix: Coll[Byte] = 
+        Coll(10.toByte,0.toByte,0.toByte,0.toByte,0.toByte,32.toByte)
+
+    val imPaideiaDaoGovernanceTokenId: Coll[Byte] = 
+        _IM_PAIDEIA_DAO_GOVERNANCE_TOKEN_ID
+
+    val decimals0: Coll[Byte] =  Coll(48.toByte)
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Inputs                                                                //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    val protoDaoProxy: Box = SELF
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Data Inputs                                                           //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    val paideiaConfig: Box = CONTEXT.dataInputs(0)
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Outputs                                                               //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    val protoDaoO: Box = OUTPUTS(0)
+    val mintO: Box     = OUTPUTS(3)
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Registers                                                             //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    val configValues: Coll[Coll[Byte]] = protoDaoProxy.R4[Coll[Coll[Byte]]].get
+    val stakePoolSize: Long            = protoDaoProxy.R5[Coll[Long]].get(0)
+
+    val paideiaConfigTree: AvlTree = paideiaConfig.R4[AvlTree].get
+
+    val mintOName: Coll[Byte]     = mintO.R4[Coll[Byte]].get
+    val mintODesc: Coll[Byte]     = mintO.R5[Coll[Byte]].get
+    val mintODecimals: Coll[Byte] = mintO.R6[Coll[Byte]].get
+
+    val configTreeO: AvlTree = protoDaoO.R4[AvlTree].get
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Context variables                                                     //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    val paideiaConfigProof: Coll[Byte] = getVar[Coll[Byte]](0).get
+    val emptyConfig: AvlTree           = getVar[AvlTree](1).get
+    val configInsertProof: Coll[Byte]  = getVar[Coll[Byte]](2).get
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // DAO Config value extraction                                           //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    val paideiaConfigValues: Coll[Option[Coll[Byte]]] = 
+        paideiaConfigTree.getMany(
+            Coll(
+                imPaideiaContractsProtoDao,
+                imPaideiaContractsMint
+            ),
+            paideiaConfigProof
+        )
+
+    val protoDaoContractHash: Coll[Byte] = 
+        paideiaConfigValues(0).get.slice(1,33)
+
+    val mintContractHash: Coll[Byte] = paideiaConfigValues(1).get.slice(1,33)
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Intermediate calculations                                             //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    val daoKey: Coll[Byte] = protoDaoProxy.id
+
+    val filledOutConfigTree: AvlTree = emptyConfig.insert(Coll(
+        (imPaideiaDaoName, configValues(0)),
+        (imPaideiaDaoGovernanceTokenId, configValues(1)),
+        (imPaideiaDaoKey, collBPrefix ++ daoKey),
+        (imPaideiaDaoGovernanceType,configValues(2)),
+        (imPaideiaDaoQuorum,configValues(3)),
+        (imPaideiaDaoThreshold,configValues(4)),
+        (imPaideiaStakingEmissionAmount,configValues(5)),
+        (imPaideiaStakingEmissionDelay,configValues(6)),
+        (imPaideiaStakingCycleLength,configValues(7)),
+        (imPaideiaStakingProfitSharePct,configValues(8)),
+        (imPaideiaStakingPureParticipationWeight,configValues(9)),
+        (imPaideiaStakingParticipationWeight,configValues(10))
     ),configInsertProof).get
 
-    val protoDAOOut = OUTPUTS(0)
-    val mintOut = OUTPUTS(3)
+    val daoName: Coll[Byte] = configValues(0).slice(5,configValues(0).size)
+    val daoGovernanceTokenId: Coll[Byte] = configValues(1).slice(6,38)
 
-    val validProtoDAOOut = allOf(Coll(
-        validEmptyConfig,
-        blake2b256(protoDAOOut.propositionBytes) == paideiaConfigValues(0).get.slice(1,33),
-        protoDAOOut.R4[AvlTree].get.digest == filledOutConfig.digest
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Simple conditions                                                     //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    val correctConfig: Boolean = paideiaConfig.tokens(0)._1 == paideiaDaoKey
+
+    val validEmptyConfig: Boolean = emptyConfigDigest == emptyConfig.digest
+
+    val validProtoDAOOut: Boolean = allOf(Coll(
+        blake2b256(protoDaoO.propositionBytes) == protoDaoContractHash,
+        configTreeO.digest == filledOutConfigTree.digest,
+        protoDaoO.tokens(1)._1 == daoGovernanceTokenId,
+        protoDaoO.tokens(1)._2 == stakePoolSize + 1L
     ))
 
     val validMintOut = allOf(Coll(
-        blake2b256(mintOut.propositionBytes) == paideiaConfigValues(1).get.slice(1,33),
-        mintOut.tokens(0)._1 == SELF.id,
-        mintOut.tokens(0)._2 == 1L,
-        mintOut.R4[Coll[Byte]].get == configValues(0).slice(5,configValues(0).size)++_DAO_KEY,
+        blake2b256(mintO.propositionBytes) == mintContractHash,
+        mintO.tokens(0)._1 == daoKey,
+        mintO.tokens(0)._2 == 1L,
+        mintOName == daoName ++ daoKeyText,
         //Description is the same as token name
-        mintOut.R5[Coll[Byte]].get == mintOut.R4[Coll[Byte]].get,
-        mintOut.R6[Coll[Byte]].get == Coll(48.toByte)
+        mintODesc == mintOName,
+        mintODecimals == decimals0
     ))
 
-    sigmaProp(validProtoDAOOut && validMintOut)
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Final contract result                                                 //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    allOf(
+        Coll(
+            correctConfig,
+            validEmptyConfig,
+            validProtoDAOOut,
+            validMintOut
+        )
+    )})
 }

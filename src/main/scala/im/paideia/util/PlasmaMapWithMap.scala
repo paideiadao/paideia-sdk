@@ -73,8 +73,8 @@ class PlasmaMapWithMap[K, V](
 
 object PlasmaMapWithMap {
 
-  def apply[K, V](pMap: PlasmaMap[K, V])(
-    implicit convertKey: ByteConversion[K],
+  def apply[K, V](pMap: PlasmaMap[K, V])(implicit
+    convertKey: ByteConversion[K],
     convertVal: ByteConversion[V]
   ): PlasmaMapWithMap[K, V] =
     new PlasmaMapWithMap[K, V](pMap.flags, pMap.params, Some(pMap.prover))

@@ -17,17 +17,25 @@ import sigmastate.eval.Colls
 import special.collection.Coll
 import special.sigma.Box
 
-/**
-  * Represents a CreateProposalBox with essential information like context, action boxes and the contract instance.
+/** Represents a CreateProposalBox with essential information like context, action boxes
+  * and the contract instance.
   *
-  * @constructor create CreateProposalBox
-  * @param _ctx The blockchain context for this box
-  * @param proposalBox The proposal box contained in this CreateProposalBox
-  * @param actionBoxes An array of all the boxes involved in creating the proposal
-  * @param voteKey ID of the vote represented by the CreateProposalBox
-  * @param userAddress User address who created this proposal
-  * @param useContract Contract instance used in creating the proposal
-  * @extends PaideiaBox
+  * @constructor
+  *   create CreateProposalBox
+  * @param _ctx
+  *   The blockchain context for this box
+  * @param proposalBox
+  *   The proposal box contained in this CreateProposalBox
+  * @param actionBoxes
+  *   An array of all the boxes involved in creating the proposal
+  * @param voteKey
+  *   ID of the vote represented by the CreateProposalBox
+  * @param userAddress
+  *   User address who created this proposal
+  * @param useContract
+  *   Contract instance used in creating the proposal
+  * @extends
+  *   PaideiaBox
   */
 final case class CreateProposalBox(
   _ctx: BlockchainContextImpl,
@@ -42,13 +50,13 @@ final case class CreateProposalBox(
   ctx      = _ctx
   contract = useContract.contract
   value = 3000000L + proposalBox.value + actionBoxes.foldLeft(0L) { (z: Long, b: Box) =>
-      z + b.value
-    }
+    z + b.value
+  }
 
-  /**
-    * Returns a list of tokens contained in this CreateProposalBox
+  /** Returns a list of tokens contained in this CreateProposalBox
     *
-    * @return List of ErgoToken objects contained in this box
+    * @return
+    *   List of ErgoToken objects contained in this box
     */
   override def tokens: List[ErgoToken] = List(
     new ErgoToken(voteKey, 1L),
@@ -62,10 +70,10 @@ final case class CreateProposalBox(
     )
   )
 
-  /**
-    * Returns a list of registers contained in this CreateProposalBox
+  /** Returns a list of registers contained in this CreateProposalBox
     *
-    * @return List of ErgoValue[_] objects representing registers
+    * @return
+    *   List of ErgoValue[_] objects representing registers
     */
   override def registers: List[ErgoValue[_]] = List(
     ErgoValueBuilder.buildFor(Colls.fromArray(userAddress.toPropositionBytes())),
@@ -79,12 +87,14 @@ final case class CreateProposalBox(
 
 object CreateProposalBox {
 
-  /**
-    * Construct a CreateProposalBox object from an input box.
+  /** Construct a CreateProposalBox object from an input box.
     *
-    * @param ctx Blockchain context containing context variables.
-    * @param inp Input box to extract data from.
-    * @return A new CreateProposalBox object populated with data extracted from inp.
+    * @param ctx
+    *   Blockchain context containing context variables.
+    * @param inp
+    *   Input box to extract data from.
+    * @return
+    *   A new CreateProposalBox object populated with data extracted from inp.
     */
   def fromInputBox(ctx: BlockchainContextImpl, inp: InputBox): CreateProposalBox = {
     val contract = CreateProposal

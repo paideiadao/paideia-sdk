@@ -23,14 +23,18 @@ import scala.collection.JavaConverters._
 import scorex.crypto.authds.ADDigest
 import special.sigma.AvlTree
 
-/**
-  * A transaction that updates configuration of the Paideia DAO and creates a new Config box while consuming an existing `configInput` box
-  * and an `actionInput` box which contains proposals to update/insert/remove state.
+/** A transaction that updates configuration of the Paideia DAO and creates a new Config
+  * box while consuming an existing `configInput` box and an `actionInput` box which
+  * contains proposals to update/insert/remove state.
   *
-  * @param _ctx The context of the blockchain in which this transaction is made
-  * @param dao The instance of [[DAO]] used in this transaction
-  * @param actionInput The action box which contains proposals to update/insert/remove
-  * @return A new instance of UpdateConfigTransaction with configured properties
+  * @param _ctx
+  *   The context of the blockchain in which this transaction is made
+  * @param dao
+  *   The instance of [[DAO]] used in this transaction
+  * @param actionInput
+  *   The action box which contains proposals to update/insert/remove
+  * @return
+  *   A new instance of UpdateConfigTransaction with configured properties
   */
 final case class UpdateConfigTransaction(
   _ctx: BlockchainContextImpl,

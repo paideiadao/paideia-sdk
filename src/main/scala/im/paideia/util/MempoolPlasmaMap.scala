@@ -33,7 +33,7 @@ class MempoolPlasmaMap[K, V](
   mempoolMaps: HashMap[List[Byte], PlasmaMapWithMap[K, V]] =
     new HashMap[List[Byte], PlasmaMapWithMap[K, V]](),
   private var newlyConfirmedMap: Option[PlasmaMapWithMap[K, V]] = None,
-  opQueue: Queue[(Int, BatchOperation[K, V])]                   = Queue.empty[(Int, BatchOperation[K, V])]
+  opQueue: Queue[(Int, BatchOperation[K, V])] = Queue.empty[(Int, BatchOperation[K, V])]
 )(implicit val convertKey: ByteConversion[K], convertVal: ByteConversion[V])
   extends LocalPlasmaBase[K, V] {
 
@@ -177,6 +177,41 @@ class MempoolPlasmaMap[K, V](
     ProvenResult(response, Proof(proof))
   }
 
+  def lookUpDeleteWithDigest(
+    keys: K*
+  )(digestOrHeight: Either[ADDigest, Int]): ProvenResultWithDigest[V] = {
+    val map = digestOrHeight match {
+      case Right(i) => newlyConfirmedMap.getOrElse(initiate())
+      case Left(onDigest) =>
+        getMap(Some(onDigest)).get.copy()
+    }
+    map.prover.generateProof()
+    val response = keys
+      .map(k =>
+        OpResult(
+          map.prover
+            .performOneOperation(Lookup(convertKey.toADKey(k)))
+            .map(o => o.map(v => convertVal.convertFromBytes(v)))
+        )
+      )
+    val removeResponse = keys
+      .map(k =>
+        OpResult(
+          map.prover
+            .performOneOperation(Remove(convertKey.toADKey(k)))
+            .map(o => o.map(v => convertVal.convertFromBytes(v)))
+        )
+      )
+    val proof = map.prover.generateProof()
+    digestOrHeight match {
+      case Right(i) =>
+        opQueue.enqueue((i, DeleteBatch(keys)))
+        map.cachedMap = None
+      case Left(onDigest) => mempoolMaps(map.digest.toList) = map
+    }
+    ProvenResultWithDigest(response ++ removeResponse, Proof(proof), map.digest)
+  }
+
   def getMap(digestOpt: Option[ADDigest]): Option[PlasmaMapWithMap[K, V]] = {
     digestOpt match {
       case None => Some(newlyConfirmedMap.getOrElse(initiate()))
@@ -223,8 +258,8 @@ object MempoolPlasmaMap {
     store: VersionedAVLStorage[Digest32],
     flags: AvlTreeFlags,
     params: PlasmaParameters
-  )(
-    implicit convertKey: ByteConversion[K],
+  )(implicit
+    convertKey: ByteConversion[K],
     convertVal: ByteConversion[V]
   ): MempoolPlasmaMap[K, V] = {
     new MempoolPlasmaMap[K, V](store, flags, params)

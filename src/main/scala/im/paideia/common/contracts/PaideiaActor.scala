@@ -13,19 +13,17 @@ import scala.util.Success
 import scala.util.Try
 import scala.util.Failure
 
-/**
-  * Trait representing a Paideia Actor.
+/** Trait representing a Paideia Actor.
   */
 trait PaideiaActor {
 
-  /**
-    * A HashMap containing contract instances. The key is the contract's serialised hash value
+  /** A HashMap containing contract instances. The key is the contract's serialised hash
+    * value
     */
   var contractInstances: HashMap[List[Byte], PaideiaContract] =
     HashMap[List[Byte], PaideiaContract]()
 
-  /**
-    * Clears contractInstances HashMap entry.
+  /** Clears contractInstances HashMap entry.
     */
   def clear = {
     contractInstances = HashMap[List[Byte], PaideiaContract]()
@@ -33,13 +31,17 @@ trait PaideiaActor {
 
   def apply(contractSignature: PaideiaContractSignature): PaideiaContract = ???
 
-  /**
-    * Gets an instance of provided T by creating or getting a cached instance of the contract from the contractInstances map.
+  /** Gets an instance of provided T by creating or getting a cached instance of the
+    * contract from the contractInstances map.
     *
-    * @param contractSignature The signature of the Paideia contract
-    * @param default The default instance of the Paideia Contract.
-    * @tparam T Generic type of Paideia Contract subtype
-    * @return A new instance of provided subtype of Paideia Contract.
+    * @param contractSignature
+    *   The signature of the Paideia contract
+    * @param default
+    *   The default instance of the Paideia Contract.
+    * @tparam T
+    *   Generic type of Paideia Contract subtype
+    * @return
+    *   A new instance of provided subtype of Paideia Contract.
     */
   def getContractInstance[T <: PaideiaContract](
     contractSignature: PaideiaContractSignature,
@@ -53,11 +55,14 @@ trait PaideiaActor {
     contractInstance
   }
 
-  /**
-    * Handles incoming PaideiaEvent by merging responses from all registered Paideia contracts using the handleEvent method.
+  /** Handles incoming PaideiaEvent by merging responses from all registered Paideia
+    * contracts using the handleEvent method.
     *
-    * @param event Incoming Paideia Event to be passed on to registered contracts
-    * @return An instance of PaideiaEventResponse that has been merged after being handled by registered contracts.
+    * @param event
+    *   Incoming Paideia Event to be passed on to registered contracts
+    * @return
+    *   An instance of PaideiaEventResponse that has been merged after being handled by
+    *   registered contracts.
     */
   def handleEvent(event: PaideiaEvent): PaideiaEventResponse =
     PaideiaEventResponse.merge(
@@ -71,20 +76,23 @@ trait PaideiaActor {
         .toList
     )
 
-  /**
-    * Generates a list of InputBoxes filtered by the given FilterNode.
+  /** Generates a list of InputBoxes filtered by the given FilterNode.
     *
-    * @param boxFilter The Ergo Filters object used to filter input boxes.
-    * @return A List of Input Boxes.
+    * @param boxFilter
+    *   The Ergo Filters object used to filter input boxes.
+    * @return
+    *   A List of Input Boxes.
     */
   def getBox(boxFilter: FilterNode): List[InputBox] =
     contractInstances.values.flatMap(_.getBox(boxFilter)).toList
 
-  /**
-    * Retrieves the proposal contract by serialised hash.
+  /** Retrieves the proposal contract by serialised hash.
     *
-    * @param contractHash The hash value of the ProposalContract.
-    * @return Try with either the ProposalContract, or an exception in case target is not a proposal contract.
+    * @param contractHash
+    *   The hash value of the ProposalContract.
+    * @return
+    *   Try with either the ProposalContract, or an exception in case target is not a
+    *   proposal contract.
     */
   def getProposalContract(contractHash: List[Byte]): Try[ProposalContract] =
     Try {

@@ -27,6 +27,8 @@ import io.getblok.getblok_plasma.collections.PlasmaMap
 import sigmastate.AvlTreeFlags
 import io.getblok.getblok_plasma.PlasmaParameters
 import im.paideia.common.events.CreateTransactionsEvent
+import im.paideia.common.transactions.RefundTransaction
+import special.collection.Coll
 
 class ProtoDAOProxy(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -43,7 +45,10 @@ class ProtoDAOProxy(contractSignature: PaideiaContractSignature)
     stakingEmissionAmount: Long,
     stakingEmissionDelay: Byte,
     stakingCycleLength: Long,
-    stakingProfitSharePct: Byte
+    stakingProfitSharePct: Byte,
+    userAddress: Address,
+    pureParticipationWeight: Byte,
+    participationWeight: Byte
   ): ProtoDAOProxyBox = {
     ProtoDAOProxyBox(
       ctx,
@@ -58,7 +63,10 @@ class ProtoDAOProxy(contractSignature: PaideiaContractSignature)
       stakingEmissionAmount,
       stakingEmissionDelay,
       stakingCycleLength,
-      stakingProfitSharePct
+      stakingProfitSharePct,
+      userAddress,
+      pureParticipationWeight,
+      participationWeight
     )
   }
 
@@ -70,11 +78,27 @@ class ProtoDAOProxy(contractSignature: PaideiaContractSignature)
             PaideiaEventResponse(
               1,
               List(
-                CreateProtoDAOTransaction(
-                  cte.ctx,
-                  boxes(b),
-                  Address.create(Env.operatorAddress).getErgoAddress
-                )
+                if (boxes(b).getCreationHeight() < cte.height - 30) {
+                  RefundTransaction(
+                    cte.ctx,
+                    boxes(b),
+                    Address.fromPropositionBytes(
+                      NetworkType.MAINNET,
+                      boxes(b)
+                        .getRegisters()
+                        .get(2)
+                        .getValue()
+                        .asInstanceOf[Coll[Byte]]
+                        .toArray
+                    )
+                  )
+                } else {
+                  CreateProtoDAOTransaction(
+                    cte.ctx,
+                    boxes(b),
+                    Address.create(Env.operatorAddress).getErgoAddress
+                  )
+                }
               )
             )
 
@@ -152,6 +176,14 @@ class ProtoDAOProxy(contractSignature: PaideiaContractSignature)
     cons.put(
       "_IM_PAIDEIA_STAKING_PROFITSHARE_PCT",
       ConfKeys.im_paideia_staking_profit_share_pct.ergoValue.getValue()
+    )
+    cons.put(
+      "_IM_PAIDEIA_STAKING_PUREPARTICIPATION_WEIGHT",
+      ConfKeys.im_paideia_staking_weight_pureparticipation.ergoValue.getValue()
+    )
+    cons.put(
+      "_IM_PAIDEIA_STAKING_PARTICIPATION_WEIGHT",
+      ConfKeys.im_paideia_staking_weight_participation.ergoValue.getValue()
     )
     cons
   }

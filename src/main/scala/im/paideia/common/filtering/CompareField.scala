@@ -1,8 +1,7 @@
 package im.paideia.common.filtering
 
-/**
-  *  Enumeration of fields used for comparing the equality between InputBoxes.
-  *  These fields are the ErgoTree, value, assets and registers.
+/** Enumeration of fields used for comparing the equality between InputBoxes. These fields
+  * are the ErgoTree, value, assets and registers.
   */
 object CompareField extends Enumeration {
   type CompareField = Value

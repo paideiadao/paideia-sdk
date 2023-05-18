@@ -11,14 +11,15 @@ import sigmastate.eval.Colls
 import org.ergoplatform.appkit.Address
 
 final case class SplitProfitBox(
-    _ctx: BlockchainContextImpl,
-    _value: Long,
-    _tokens: List[ErgoToken],
-    useContract: SplitProfit) extends PaideiaBox {
+  _ctx: BlockchainContextImpl,
+  _value: Long,
+  _tokens: List[ErgoToken],
+  useContract: SplitProfit
+) extends PaideiaBox {
 
-    ctx = _ctx
-    value = _value
-    contract = useContract.contract
+  ctx      = _ctx
+  value    = _value
+  contract = useContract.contract
 
-    override def tokens: List[ErgoToken] = _tokens
+  override def tokens: List[ErgoToken] = _tokens
 }

@@ -35,7 +35,7 @@ class TotalStakingState(
         snapshots.keys.toSeq
           .sortBy(l => -l)
           .find(ss =>
-            snapshots.get(ss).get.plasmaMap.getMap(Some(snapshotDigest)).isDefined
+            snapshots.get(ss).get.stakeRecords.getMap(Some(snapshotDigest)).isDefined
           )
           .get
       )
@@ -62,7 +62,7 @@ object TotalStakingState {
     val daoConfig    = Paideia.getConfig(daoKey)
     val currentState = StakingState(daoKey, nextEmission, true)
     val profitTokensSize =
-      daoConfig.getArray[Array[Byte]](ConfKeys.im_paideia_staking_profit_tokenids).size
+      daoConfig.getArray[Object](ConfKeys.im_paideia_staking_profit_tokenids).size
     val cycleLength = daoConfig[Long](ConfKeys.im_paideia_staking_cyclelength)
     val snapshots =
       HashMap[Long, StakingState](

@@ -22,18 +22,21 @@ import scorex.crypto.hash.Blake2b256
 import special.sigma.AvlTree
 import scorex.crypto.authds.ADDigest
 import im.paideia.common.events.CreateTransactionsEvent
+import org.ergoplatform.appkit.NetworkType
+import im.paideia.common.transactions.RefundTransaction
+import special.collection.Coll
 
 class CastVote(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
 
   def box(
     ctx: BlockchainContextImpl,
-    voteKey: String,
+    stakeKey: String,
     proposalIndex: Int,
     vote: VoteRecord,
     userAddress: Address
   ): CastVoteBox = {
-    CastVoteBox(ctx, voteKey, proposalIndex, vote, userAddress, this)
+    CastVoteBox(ctx, stakeKey, proposalIndex, vote, userAddress, this)
   }
 
   override lazy val constants: HashMap[String, Object] = {
@@ -61,12 +64,28 @@ class CastVote(contractSignature: PaideiaContractSignature)
           PaideiaEventResponse(
             1,
             List(
-              CastVoteTransaction(
-                cte.ctx,
-                boxes(b),
-                Paideia.getDAO(contractSignature.daoKey),
-                Address.create(Env.operatorAddress)
-              )
+              if (boxes(b).getCreationHeight() < cte.height - 30) {
+                RefundTransaction(
+                  cte.ctx,
+                  boxes(b),
+                  Address.fromPropositionBytes(
+                    NetworkType.MAINNET,
+                    boxes(b)
+                      .getRegisters()
+                      .get(2)
+                      .getValue()
+                      .asInstanceOf[Coll[Byte]]
+                      .toArray
+                  )
+                )
+              } else {
+                CastVoteTransaction(
+                  cte.ctx,
+                  boxes(b),
+                  Paideia.getDAO(contractSignature.daoKey),
+                  Address.create(Env.operatorAddress)
+                )
+              }
             )
           )
         })
@@ -91,7 +110,7 @@ class CastVote(contractSignature: PaideiaContractSignature)
                   te.ctx,
                   proposalBox,
                   castVoteBox.vote,
-                  castVoteBox.voteKey,
+                  castVoteBox.stakeKey,
                   if (te.mempool)
                     Left(
                       ADDigest @@ proposalBox
