@@ -46,7 +46,9 @@ class ProtoDAOProxy(contractSignature: PaideiaContractSignature)
     stakingEmissionDelay: Byte,
     stakingCycleLength: Long,
     stakingProfitSharePct: Byte,
-    userAddress: Address
+    userAddress: Address,
+    pureParticipationWeight: Byte,
+    participationWeight: Byte
   ): ProtoDAOProxyBox = {
     ProtoDAOProxyBox(
       ctx,
@@ -62,7 +64,9 @@ class ProtoDAOProxy(contractSignature: PaideiaContractSignature)
       stakingEmissionDelay,
       stakingCycleLength,
       stakingProfitSharePct,
-      userAddress
+      userAddress,
+      pureParticipationWeight,
+      participationWeight
     )
   }
 
@@ -172,6 +176,14 @@ class ProtoDAOProxy(contractSignature: PaideiaContractSignature)
     cons.put(
       "_IM_PAIDEIA_STAKING_PROFITSHARE_PCT",
       ConfKeys.im_paideia_staking_profit_share_pct.ergoValue.getValue()
+    )
+    cons.put(
+      "_IM_PAIDEIA_STAKING_PUREPARTICIPATION_WEIGHT",
+      ConfKeys.im_paideia_staking_weight_pureparticipation.ergoValue.getValue()
+    )
+    cons.put(
+      "_IM_PAIDEIA_STAKING_PARTICIPATION_WEIGHT",
+      ConfKeys.im_paideia_staking_weight_participation.ergoValue.getValue()
     )
     cons
   }

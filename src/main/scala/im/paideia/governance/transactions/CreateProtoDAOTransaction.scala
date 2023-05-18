@@ -169,6 +169,16 @@ case class CreateProtoDAOTransaction(
             (
               ConfKeys.im_paideia_staking_profit_share_pct,
               DAOConfigValueSerializer[Byte](protoDAOProxyInputBox.stakingProfitSharePct)
+            ),
+            (
+              ConfKeys.im_paideia_staking_weight_pureparticipation,
+              DAOConfigValueSerializer[Byte](
+                protoDAOProxyInputBox.pureParticipationWeight
+              )
+            ),
+            (
+              ConfKeys.im_paideia_staking_weight_participation,
+              DAOConfigValueSerializer[Byte](protoDAOProxyInputBox.participationWeight)
             )
           )(Left(newDAOConfig._config.digest))
         resultingDigest = Some(result._2)
