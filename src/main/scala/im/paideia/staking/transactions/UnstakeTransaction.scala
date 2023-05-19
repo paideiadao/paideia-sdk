@@ -204,7 +204,13 @@ case class UnstakeTransaction(
     .toList
 
   val stakeKeyReturned =
-    if (contextVars(1).getValue.getValue != StakingContextVars.UNSTAKE)
+    if (contextVars(1).getValue.getValue != StakingContextVars.UNSTAKE.getValue())
+      List[ErgoToken](new ErgoToken(stakingKey, 1L))
+    else
+      List[ErgoToken]()
+
+  tokensToBurn =
+    if (contextVars(1).getValue.getValue == StakingContextVars.UNSTAKE.getValue())
       List[ErgoToken](new ErgoToken(stakingKey, 1L))
     else
       List[ErgoToken]()

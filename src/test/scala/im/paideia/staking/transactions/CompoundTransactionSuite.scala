@@ -172,4 +172,156 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
       }
     })
   }
+
+  test("Sign compound tx on 1 staker with second staker missing") {
+    val ergoClient = createMockedErgoClient(MockData(Nil, Nil))
+    ergoClient.execute(new java.util.function.Function[BlockchainContext, Unit] {
+      override def apply(_ctx: BlockchainContext): Unit = {
+        val ctx = _ctx.asInstanceOf[BlockchainContextImpl]
+        PaideiaTestSuite.init(ctx)
+        val dao       = StakingTest.testDAO
+        val state     = TotalStakingState(dao.key, 0L)
+        val randomKey = Util.randomKey
+
+        val stakingContract = StakeState(PaideiaContractSignature(daoKey = dao.key))
+        dao.config
+          .set(
+            ConfKeys.im_paideia_contracts_staking_state,
+            stakingContract.contractSignature
+          )
+
+        val stakingState = stakingContract
+          .emptyBox(
+            ctx,
+            dao,
+            100000000L
+          )
+
+        stakingState.stake(Util.randomKey, 1000000000000L)
+        stakingState.stake(randomKey, 1000000000000L)
+
+        Range(0, dao.config[Long](ConfKeys.im_paideia_staking_emission_delay).toInt)
+          .foreach(_ => stakingState.emit(9999999999999999L, 99999999999L))
+        val currentStake = stakingState.getStake(randomKey)
+        currentStake.stake   = 0L
+        currentStake.rewards = currentStake.rewards.map(_ => 0L)
+        stakingState.unstake(randomKey, currentStake, List[ErgoToken]())
+        val dummyAddress = Address.create("4MQyML64GnzMxZgm")
+
+        val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
+        treasuryContract.clearBoxes()
+        treasuryContract.newBox(
+          treasuryContract
+            .box(
+              ctx,
+              dao.config,
+              1000000000L,
+              List(new ErgoToken(Env.paideiaTokenId, 10000000L))
+            )
+            .inputBox(),
+          false
+        )
+
+        val compoundContract = StakeCompound(PaideiaContractSignature(daoKey = dao.key))
+        compoundContract.newBox(compoundContract.box(ctx).inputBox(), false)
+
+        val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
+
+        val configBox = Config(configContract.contractSignature).box(ctx, dao).inputBox()
+        configContract.clearBoxes()
+        configContract.newBox(configBox, false)
+
+        val stakingStateBox = stakingState
+          .ergoTransactionOutput()
+        stakingContract.clearBoxes()
+
+        val dummyTx = (new ErgoTransaction()).addOutputsItem(stakingStateBox)
+        Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
+        val eventResponse = Paideia.handleEvent(CreateTransactionsEvent(ctx, 0L, 0L))
+        eventResponse.exceptions.map(e => throw e)
+        assert(eventResponse.unsignedTransactions.size === 1)
+        ctx
+          .newProverBuilder()
+          .build()
+          .sign(eventResponse.unsignedTransactions(0).unsigned)
+      }
+    })
+  }
+
+  // test("Sign compound tx on 0 staker with all stakers missing") {
+  //   val ergoClient = createMockedErgoClient(MockData(Nil, Nil))
+  //   ergoClient.execute(new java.util.function.Function[BlockchainContext, Unit] {
+  //     override def apply(_ctx: BlockchainContext): Unit = {
+  //       val ctx = _ctx.asInstanceOf[BlockchainContextImpl]
+  //       PaideiaTestSuite.init(ctx)
+  //       val dao        = StakingTest.testDAO
+  //       val state      = TotalStakingState(dao.key, 0L)
+  //       val randomKey  = Util.randomKey
+  //       val randomKey2 = Util.randomKey
+
+  //       val stakingContract = StakeState(PaideiaContractSignature(daoKey = dao.key))
+  //       dao.config
+  //         .set(
+  //           ConfKeys.im_paideia_contracts_staking_state,
+  //           stakingContract.contractSignature
+  //         )
+
+  //       val stakingState = stakingContract
+  //         .emptyBox(
+  //           ctx,
+  //           dao,
+  //           100000000L
+  //         )
+
+  //       stakingState.stake(randomKey2, 1000000000000L)
+  //       stakingState.stake(randomKey, 1000000000000L)
+
+  //       Range(0, dao.config[Long](ConfKeys.im_paideia_staking_emission_delay).toInt)
+  //         .foreach(_ => stakingState.emit(9999999999999999L, 99999999999L))
+  //       val currentStake = stakingState.getStake(randomKey)
+  //       currentStake.stake   = 0L
+  //       currentStake.rewards = currentStake.rewards.map(_ => 0L)
+  //       stakingState.unstake(randomKey, currentStake, List[ErgoToken]())
+  //       stakingState.unstake(randomKey2, currentStake, List[ErgoToken]())
+  //       val dummyAddress = Address.create("4MQyML64GnzMxZgm")
+
+  //       val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
+  //       treasuryContract.clearBoxes()
+  //       treasuryContract.newBox(
+  //         treasuryContract
+  //           .box(
+  //             ctx,
+  //             dao.config,
+  //             1000000000L,
+  //             List(new ErgoToken(Env.paideiaTokenId, 10000000L))
+  //           )
+  //           .inputBox(),
+  //         false
+  //       )
+
+  //       val compoundContract = StakeCompound(PaideiaContractSignature(daoKey = dao.key))
+  //       compoundContract.newBox(compoundContract.box(ctx).inputBox(), false)
+
+  //       val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
+
+  //       val configBox = Config(configContract.contractSignature).box(ctx, dao).inputBox()
+  //       configContract.clearBoxes()
+  //       configContract.newBox(configBox, false)
+
+  //       val stakingStateBox = stakingState
+  //         .ergoTransactionOutput()
+  //       stakingContract.clearBoxes()
+
+  //       val dummyTx = (new ErgoTransaction()).addOutputsItem(stakingStateBox)
+  //       Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
+  //       val eventResponse = Paideia.handleEvent(CreateTransactionsEvent(ctx, 0L, 0L))
+  //       eventResponse.exceptions.map(e => throw e)
+  //       assert(eventResponse.unsignedTransactions.size === 1)
+  //       ctx
+  //         .newProverBuilder()
+  //         .build()
+  //         .sign(eventResponse.unsignedTransactions(0).unsigned)
+  //     }
+  //   })
+  // }
 }

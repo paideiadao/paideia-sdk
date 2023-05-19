@@ -212,6 +212,15 @@ class UnstakeTransactionSuite extends PaideiaTestSuite {
         eventResponse.exceptions.map(e => throw e)
         assert(eventResponse.unsignedTransactions.size === 1)
         assert(eventResponse.unsignedTransactions(0).isInstanceOf[UnstakeTransaction])
+        assert(
+          eventResponse
+            .unsignedTransactions(0)
+            .unsigned()
+            .getOutputs()
+            .asScala
+            .flatMap(_.getTokens().asScala)
+            .forall(!_.getId().toString().equals(testKey))
+        )
         ctx
           .newProverBuilder()
           .build()
