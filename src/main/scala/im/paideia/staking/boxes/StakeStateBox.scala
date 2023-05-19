@@ -225,7 +225,19 @@ case class StakeStateBox(
     val currentStakes = keys
       .zip(
         currentStakesProvenResult.response.map((p: OpResult[StakeRecord]) =>
-          p.tryOp.get.get
+          p.tryOp.get match {
+            case Some(sr) => sr
+            case None =>
+              StakeRecord(
+                0,
+                0,
+                List.fill(
+                  dao.config
+                    .getArray[Object](ConfKeys.im_paideia_staking_profit_tokenids)
+                    .size + 1
+                )(0L)
+              )
+          }
         )
       )
       .zip(
@@ -282,7 +294,7 @@ case class StakeStateBox(
     val updatedStakesAndProfits =
       currentStakes.map((kv: ((String, StakeRecord), Option[ParticipationRecord])) => {
         kv._1._2.stake match {
-          case -1 => kv._1
+          case 0 => kv._1
           case _ => {
             val snapshotStake =
               snapshot.getStake(kv._1._1, Some(snapshots(0).stakeDigest)).stake
@@ -314,9 +326,12 @@ case class StakeStateBox(
           }
         }
       })
-
+    val check = updatedStakesAndProfits.filter(_._2.stake > 0)
     val result =
-      state.currentStakingState.changeStakes(updatedStakesAndProfits, Left(stateDigest))
+      state.currentStakingState.changeStakes(
+        updatedStakesAndProfits.filter(_._2.stake > 0),
+        Left(stateDigest)
+      )
     stateDigest = result.digest
     val removeProof = snapshot.unstake(keys, Left(snapshots(0).stakeDigest))
     snapshots(0) = StakingSnapshot(
