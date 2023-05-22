@@ -85,7 +85,8 @@ object StakingContextVars {
     proof: ProvenResult[StakeRecord],
     snapshotProof: ProvenResult[StakeRecord],
     removeProof: ProvenResult[StakeRecord],
-    participationProof: ProvenResult[ParticipationRecord]
+    participationProof: ProvenResult[ParticipationRecord],
+    updateStakeProof: ProvenResult[StakeRecord]
   ): StakingContextVars = {
     val operations = ErgoValue.of(
       updatedStakes
@@ -113,7 +114,8 @@ object StakingContextVars {
         new ContextVar(2.toByte, proof.proof.ergoValue),
         new ContextVar(3.toByte, snapshotProof.proof.ergoValue),
         new ContextVar(4.toByte, removeProof.proof.ergoValue),
-        new ContextVar(5.toByte, participationProof.proof.ergoValue)
+        new ContextVar(5.toByte, participationProof.proof.ergoValue),
+        new ContextVar(6.toByte, updateStakeProof.proof.ergoValue)
       )
     )
   }

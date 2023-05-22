@@ -26,6 +26,13 @@
     val imPaideiaStakeStateTokenId: Coll[Byte] = 
         _IM_PAIDEIA_STAKING_STATE_TOKEN_ID
 
+    val emptyDigest: Coll[Byte] = Coll(78.toByte,-58.toByte,31.toByte,
+        72.toByte,91.toByte,-104.toByte,-21.toByte,-121.toByte,21.toByte,
+        63.toByte,124.toByte,87.toByte,-37.toByte,79.toByte,94.toByte,
+        -51.toByte,117.toByte,85.toByte,111.toByte,-35.toByte,-68.toByte,
+        64.toByte,59.toByte,65.toByte,-84.toByte,-8.toByte,68.toByte,31.toByte,
+        -34.toByte,-114.toByte,22.toByte,9.toByte,0.toByte)
+
     val stakeInfoOffset: Int = 8
 
     ///////////////////////////////////////////////////////////////////////////
@@ -109,6 +116,7 @@
     val snapshotProof: Coll[Byte]              = getVar[Coll[Byte]](3).get
     val removeProof: Coll[Byte]                = getVar[Coll[Byte]](4).get
     val snapshotParticipationProof: Coll[Byte] = getVar[Coll[Byte]](5).get
+    val updateStakeProof: Coll[Byte]           = getVar[Coll[Byte]](6).get
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -294,8 +302,10 @@
         .remove(keys, removeProof).get.digest == snapshotsTreeO(0)._1.digest
 
     val correctNewState: Boolean = stakeStateTree
-        .update(filteredCompoundOperations, proof).get.digest == 
+        .update(filteredCompoundOperations, updateStakeProof).get.digest == 
         stakeStateOTree.digest
+
+    val minimumKeys: Boolean = keys.size >= 10 || snapshotsTreeO(0)._1.digest == emptyDigest
 
     val correctUnchanged: Boolean = allOf(Coll(
         stakeStateO.value == stakeState.value,
@@ -330,6 +340,7 @@
         correctSnapshot,
         correctNewState,
         selfOutput,
-        correctUnchanged
+        correctUnchanged,
+        minimumKeys
     )))
 }

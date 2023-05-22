@@ -326,7 +326,6 @@ case class StakeStateBox(
           }
         }
       })
-    val check = updatedStakesAndProfits.filter(_._2.stake > 0)
     val result =
       state.currentStakingState.changeStakes(
         updatedStakesAndProfits.filter(_._2.stake > 0),
@@ -350,7 +349,8 @@ case class StakeStateBox(
         currentStakesProvenResult,
         snapshotProvenResult,
         removeProof.toProvenResult,
-        snapshotParticipationResult
+        snapshotParticipationResult,
+        result.toProvenResult
       )
   }
 

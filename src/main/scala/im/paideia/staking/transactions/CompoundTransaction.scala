@@ -142,6 +142,13 @@ case class CompoundTransaction(
         ConfKeys.im_paideia_fees_compound_operator_paideia,
         ConfKeys.im_paideia_fees_operator_max_erg
       )(Some(paideiaConfigDigest))
+    ),
+    ContextVar.of(
+      1.toByte,
+      config.getProof(
+        ConfKeys.im_paideia_contracts_staking_compound,
+        ConfKeys.im_paideia_contracts_staking_snapshot
+      )(Some(configDigest))
     )
   )
 
