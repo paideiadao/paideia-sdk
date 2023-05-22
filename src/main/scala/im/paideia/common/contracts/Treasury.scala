@@ -81,6 +81,14 @@ class Treasury(contractSignature: PaideiaContractSignature)
       "_IM_PAIDEIA_FEE_COMPOUND_OPERATOR_PAIDEIA",
       ConfKeys.im_paideia_fees_compound_operator_paideia.ergoValue.getValue()
     )
+    cons.put(
+      "_IM_PAIDEIA_CONTRACTS_STAKING_COMPOUND",
+      ConfKeys.im_paideia_contracts_staking_compound.ergoValue.getValue()
+    )
+    cons.put(
+      "_IM_PAIDEIA_CONTRACTS_STAKING_SNAPSHOT",
+      ConfKeys.im_paideia_contracts_staking_snapshot.ergoValue.getValue()
+    )
     cons
   }
 

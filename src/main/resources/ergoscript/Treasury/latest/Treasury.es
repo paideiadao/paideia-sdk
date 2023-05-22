@@ -31,6 +31,12 @@
     val imPaideiaFeeCompoundOperatorPaideia: Coll[Byte] = 
         _IM_PAIDEIA_FEE_COMPOUND_OPERATOR_PAIDEIA
 
+    val imPaideiaContractsStakingCompound: Coll[Byte] =
+        _IM_PAIDEIA_CONTRACTS_STAKING_COMPOUND
+
+    val imPaideiaContractsStakingSnapshot: Coll[Byte] =
+        _IM_PAIDEIA_CONTRACTS_STAKING_SNAPSHOT
+
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
     // Intermediate calculations                                             //
@@ -69,6 +75,7 @@
         // Data Inputs                                                       //
         ///////////////////////////////////////////////////////////////////////
 
+        val config: Box        = CONTEXT.dataInputs(0)
         val paideiaConfig: Box = CONTEXT.dataInputs(1)
 
         ///////////////////////////////////////////////////////////////////////
@@ -97,11 +104,26 @@
 
         val paideiaConfigTree: AvlTree = paideiaConfig.R4[AvlTree].get
 
+        val configTree: AvlTree = config.R4[AvlTree].get
+
         ///////////////////////////////////////////////////////////////////////
         // Context variables                                                 //
         ///////////////////////////////////////////////////////////////////////
 
         val paideiaProof: Coll[Byte] = getVar[Coll[Byte]](0).get
+        val configProof: Coll[Byte] = getVar[Coll[Byte]](1).get
+
+        ///////////////////////////////////////////////////////////////////////
+        // DAO Config                                                        //
+        ///////////////////////////////////////////////////////////////////////
+
+        val configValues: Coll[Option[Coll[Byte]]] = configTree.getMany(Coll(
+            imPaideiaContractsStakingCompound,
+            imPaideiaContractsStakingSnapshot
+        ), configProof)
+
+        val compoundContractHash: Coll[Byte] = configValues(0).get.slice(1,33)
+        val snapshotContractHash: Coll[Byte] = configValues(1).get.slice(1,33)
 
         ///////////////////////////////////////////////////////////////////////
         // Intermediate calculations                                         //
@@ -187,6 +209,9 @@
 
             val paideiaFee: Long = baseFee*stakersO+1L
 
+            val snapshotContractPresent: Boolean = 
+                blake2b256(INPUTS(1).propositionBytes) == snapshotContractHash
+
             val correctErg: Boolean = 
                 treasuryO.value >= treasuryNerg - maxErgOperator
 
@@ -201,7 +226,8 @@
                 correctTokens,
                 noMissingTokens,
                 splitProfitOutput.tokens(0)._1 == paideiaTokenId,
-                splitProfitOutput.tokens(0)._2 >= paideiaFee
+                splitProfitOutput.tokens(0)._2 >= paideiaFee,
+                snapshotContractPresent
             ))
         } else {
             val paideiaConfigValues = paideiaConfigTree.getMany(Coll(
@@ -226,7 +252,8 @@
             }) >= treasuryPaideia - paideiaOperator
                 
 
-            val stakedIncrease: Boolean = totalStakedO > totalStaked
+            val compoundContractPresent: Boolean = 
+                blake2b256(INPUTS(1).propositionBytes) == compoundContractHash
 
             val govTokensSame: Boolean = 
                 stakeStateO.tokens(1)._2 == stakeState.tokens(1)._2
@@ -236,7 +263,7 @@
                 correctPaideia,
                 correctTokens,
                 noMissingTokens,
-                stakedIncrease,
+                compoundContractPresent,
                 govTokensSame
             ))
         }
