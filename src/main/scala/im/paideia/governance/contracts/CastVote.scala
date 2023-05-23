@@ -25,6 +25,11 @@ import im.paideia.common.events.CreateTransactionsEvent
 import org.ergoplatform.appkit.NetworkType
 import im.paideia.common.transactions.RefundTransaction
 import special.collection.Coll
+import im.paideia.common.filtering.FilterLeaf
+import im.paideia.common.filtering.FilterType
+import org.ergoplatform.appkit.ErgoId
+import im.paideia.common.filtering.CompareField
+import org.ergoplatform.appkit.InputBox
 
 class CastVote(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -91,10 +96,31 @@ class CastVote(contractSignature: PaideiaContractSignature)
             .map(eti =>
               if (boxSet.contains(eti.getBoxId())) {
                 val castVoteBox = CastVoteBox.fromInputBox(te.ctx, boxes(eti.getBoxId()))
+                val proposalInput = Paideia
+                  .getBox(
+                    new FilterLeaf(
+                      FilterType.FTEQ,
+                      new ErgoId(
+                        Paideia
+                          .getConfig(contractSignature.daoKey)
+                          .getArray[Byte](ConfKeys.im_paideia_dao_proposal_tokenid)
+                      )
+                        .toString(),
+                      CompareField.ASSET,
+                      0
+                    )
+                  )
+                  .filter((box: InputBox) =>
+                    box
+                      .getRegisters()
+                      .get(0)
+                      .getValue()
+                      .asInstanceOf[Coll[Int]](0) == castVoteBox.proposalIndex
+                  )(0)
                 val proposalContract = Paideia
                   .getProposalContract(
                     Blake2b256(
-                      new InputBoxImpl(te.tx.getOutputs().get(0)).getErgoTree().bytes
+                      proposalInput.getErgoTree().bytes
                     ).array.toList
                   )
                 val proposalBox = proposalContract
