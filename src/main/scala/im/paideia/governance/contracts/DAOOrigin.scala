@@ -15,6 +15,11 @@ import org.ergoplatform.appkit.ErgoId
 import org.ergoplatform.appkit.ErgoValue
 import java.nio.charset.StandardCharsets
 import sigmastate.eval.Colls
+import im.paideia.common.events.PaideiaEventResponse
+import im.paideia.common.events.TransactionEvent
+import im.paideia.common.events.PaideiaEvent
+import im.paideia.Paideia
+import special.collection.Coll
 
 class DAOOrigin(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -25,6 +30,34 @@ class DAOOrigin(contractSignature: PaideiaContractSignature)
     actionTokens: Long
   ): DAOOriginBox = {
     DAOOriginBox(ctx, dao, propTokens, actionTokens, this)
+  }
+
+  override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
+    val response: PaideiaEventResponse = event match {
+      case te: TransactionEvent => {
+        if (!te.mempool && getUtxoSet.contains(te.tx.getInputs().get(0).getBoxId())) {
+          val proposalIndex =
+            Long.MaxValue - te.tx.getOutputs().get(0).getAssets().get(1).getAmount() - 1
+          Paideia
+            .getDAO(
+              new ErgoId(
+                ErgoValue
+                  .fromHex(te.tx.getOutputs().get(0).getAdditionalRegisters().get("R4"))
+                  .getValue()
+                  .asInstanceOf[Coll[Byte]]
+                  .toArray
+              ).toString()
+            )
+            .newProposal(proposalIndex.toInt)
+          PaideiaEventResponse(1)
+        } else {
+          PaideiaEventResponse(0)
+        }
+      }
+      case _ => PaideiaEventResponse(0)
+    }
+    val superResponse = super.handleEvent(event)
+    response
   }
 
   override lazy val constants: HashMap[String, Object] = {
