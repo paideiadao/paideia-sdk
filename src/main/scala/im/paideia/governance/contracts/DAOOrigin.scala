@@ -56,6 +56,10 @@ class DAOOrigin(contractSignature: PaideiaContractSignature)
         ConfKeys.im_paideia_contracts_action(Array[Byte]()).originalKeyBytes
       )
     )
+    cons.put(
+      "_IM_PAIDEIA_DAO_MIN_PROPOSAL_TIME",
+      ConfKeys.im_paideia_dao_min_proposal_time.ergoValue.getValue()
+    )
     cons
   }
 }

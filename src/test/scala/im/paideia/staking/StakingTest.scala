@@ -39,6 +39,8 @@ object StakingTest {
     Paideia.addDAO(dao)
     TotalStakingState(daoKey, 0L)
 
+    dao.config.set(ConfKeys.im_paideia_dao_min_proposal_time, 3600000L)
+
     val changeStakeContract = ChangeStake(PaideiaContractSignature(daoKey = daoKey))
     dao.config
       .set(

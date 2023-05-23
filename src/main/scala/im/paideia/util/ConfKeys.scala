@@ -144,6 +144,7 @@ object ConfKeys {
   val im_paideia_dao_quorum            = DAOConfigKey("im.paideia.dao.quorum")
   val im_paideia_dao_threshold         = DAOConfigKey("im.paideia.dao.threshold")
   val im_paideia_dao_governance_type   = DAOConfigKey("im.paideia.dao.governance.type")
+  val im_paideia_dao_min_proposal_time = DAOConfigKey("im.paideia.dao.min.proposal.time")
   val im_paideia_staking_state_tokenid = DAOConfigKey("im.paideia.staking.state.tokenid")
 
   val im_paideia_staking_emission_amount = DAOConfigKey(

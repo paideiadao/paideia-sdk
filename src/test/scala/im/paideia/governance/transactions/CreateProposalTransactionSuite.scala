@@ -62,6 +62,7 @@ class CreateProposalTransactionSuite extends PaideiaTestSuite {
           ConfKeys.im_paideia_staking_state_tokenid,
           ErgoId.create(stakeStateTokenId).getBytes()
         )
+        config.set(ConfKeys.im_paideia_dao_min_proposal_time, 3600000L)
         config.set(ConfKeys.im_paideia_staking_profit_tokenids, Array[Array[Byte]]())
         config.set(ConfKeys.im_paideia_staking_emission_delay, 4L)
         config.set(ConfKeys.im_paideia_staking_emission_amount, 100000L)
@@ -113,7 +114,7 @@ class CreateProposalTransactionSuite extends PaideiaTestSuite {
           0,
           Array(0L, 0L),
           0L,
-          ctx.createPreHeader().build().getTimestamp() + 3600000,
+          ctx.createPreHeader().build().getTimestamp() + 3700000,
           -1.toShort
         )
 
