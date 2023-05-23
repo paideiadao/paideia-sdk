@@ -24,6 +24,9 @@
     val imPaideiaFeesCreateProposalPaideia: Coll[Byte] =  
         _IM_PAIDEIA_FEES_CREATEPROPOSAL_PAIDEIA
 
+    val imPaideiaDaoMinProposalTime: Coll[Byte] = 
+        _IM_PAIDEIA_DAO_MIN_PROPOSAL_TIME
+
     val maxLong: Long = 9223372036854775807L
 
     ///////////////////////////////////////////////////////////////////////////
@@ -72,7 +75,9 @@
 
     val actionBoxes: Coll[Box] = createProposalR5.slice(1,createProposalR5.size)
 
-    val proposalIndex: Long = proposalO.R4[Coll[Int]].get(0).toLong
+    val proposalIndex: Long    = proposalO.R4[Coll[Int]].get(0).toLong
+    val proposalOR5: Coll[Long] = proposalO.R5[Coll[Long]].get
+    val proposalEndTime: Long  = proposalOR5(0)
     
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -104,6 +109,7 @@
 
     val configValues: Coll[Option[Coll[Byte]]] = configTree.getMany(
         Coll(
+            imPaideiaDaoMinProposalTime,
             blake2b256(imPaideiaContractsProposal++proposalBox.propositionBytes)
         )++actionBoxes.map{
             (box: Box) =>
@@ -112,9 +118,10 @@
         configProof
     )
 
-    val proposalContractHash: Coll[Byte] = configValues(0).get.slice(1,33)
+    val minProposalTime: Long = byteArrayToLong(configValues(0).get.slice(1,9))
+    val proposalContractHash: Coll[Byte] = configValues(1).get.slice(1,33)
     val actionContractHashes: Coll[Coll[Byte]] = 
-        configValues.slice(1,configValues.size).map{
+        configValues.slice(2,configValues.size).map{
             (cv: Option[Coll[Byte]]) =>
             cv.get.slice(1,33)
         }
@@ -140,6 +147,8 @@
 
     val correctConfig: Boolean = config.tokens(0)._1 == daoKey
 
+    val currentTime: Long = CONTEXT.preHeader.timestamp
+
     val correctDAOOutput: Boolean = allOf(
         Coll(
             blake2b256(daoOriginO.propositionBytes) == daoOriginContractHash,
@@ -163,7 +172,9 @@
             proposalO.tokens(1)._1 == paideiaTokenId,
             proposalO.tokens(1)._2 == createProposalFee,
             proposalO.propositionBytes == proposalBox.propositionBytes,
-            blake2b256(proposalO.propositionBytes) == proposalContractHash
+            blake2b256(proposalO.propositionBytes) == proposalContractHash,
+            proposalEndTime >= currentTime + minProposalTime,
+            proposalOR5.slice(1,proposalOR5.size).forall{(p: Long) => p == 0L}
         )
     )
 

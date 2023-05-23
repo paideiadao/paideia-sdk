@@ -133,6 +133,7 @@ final case class CreateProposalTransaction(
       1.toByte,
       dao.config.getProof(
         List(
+          ConfKeys.im_paideia_dao_min_proposal_time,
           ConfKeys.im_paideia_contracts_proposal(proposalOutput.getErgoTree().bytes)
         ) ++
           actionOutputs.map((ao: OutBox) =>
