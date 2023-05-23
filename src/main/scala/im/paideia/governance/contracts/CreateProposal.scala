@@ -16,6 +16,9 @@ import im.paideia.util.Env
 import java.util.HashMap
 import org.ergoplatform.appkit.ErgoId
 import im.paideia.common.events.CreateTransactionsEvent
+import im.paideia.common.transactions.RefundTransaction
+import org.ergoplatform.appkit.NetworkType
+import special.collection.Coll
 
 class CreateProposal(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
