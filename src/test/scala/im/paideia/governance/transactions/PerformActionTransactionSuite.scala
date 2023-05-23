@@ -148,6 +148,7 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
         val eventResponse = Paideia.handleEvent(
           CreateTransactionsEvent(ctx, proposalBox.endTime + 1000L, 0L)
         )
+        eventResponse.exceptions.map(e => throw e)
         assert(eventResponse.unsignedTransactions.size === 1)
         ctx
           .newProverBuilder()
