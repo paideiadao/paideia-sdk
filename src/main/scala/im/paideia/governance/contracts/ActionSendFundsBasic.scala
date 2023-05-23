@@ -17,6 +17,9 @@ import java.util.HashMap
 import org.ergoplatform.appkit.ErgoId
 import im.paideia.util.ConfKeys
 import im.paideia.common.events.CreateTransactionsEvent
+import im.paideia.common.filtering.FilterLeaf
+import im.paideia.common.filtering.FilterType
+import im.paideia.common.filtering.CompareField
 
 class ActionSendFundsBasic(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -49,7 +52,43 @@ class ActionSendFundsBasic(contractSignature: PaideiaContractSignature)
         PaideiaEventResponse.merge(
           boxes.values
             .map((b: InputBox) => {
+              val proposalInput = Paideia
+                .getBox(
+                  new FilterLeaf[String](
+                    FilterType.FTEQ,
+                    new ErgoId(
+                      Paideia
+                        .getConfig(contractSignature.daoKey)
+                        .getArray(ConfKeys.im_paideia_dao_proposal_tokenid)
+                    )
+                      .toString(),
+                    CompareField.ASSET,
+                    0
+                  )
+                )
+                .filter((box: InputBox) =>
+                  box
+                    .getRegisters()
+                    .get(0)
+                    .getValue()
+                    .asInstanceOf[Coll[Int]](0) == b
+                    .getRegisters()
+                    .get(0)
+                    .getValue()
+                    .asInstanceOf[Coll[Long]](0)
+                    .toInt
+                )(0)
               if (
+                proposalInput
+                  .getRegisters()
+                  .get(0)
+                  .getValue()
+                  .asInstanceOf[Coll[Int]](1) == b
+                  .getRegisters()
+                  .get(0)
+                  .getValue()
+                  .asInstanceOf[Coll[Long]](1)
+                  .toInt &&
                 cte.currentTime > b
                   .getRegisters()
                   .get(0)
