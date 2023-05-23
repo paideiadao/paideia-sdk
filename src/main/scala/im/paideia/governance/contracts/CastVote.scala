@@ -47,12 +47,6 @@ class CastVote(contractSignature: PaideiaContractSignature)
         .getConfig(contractSignature.daoKey)
         .getArray[Byte](ConfKeys.im_paideia_dao_proposal_tokenid)
     )
-    cons.put(
-      "_IM_PAIDEIA_DAO_VOTE_TOKENID",
-      Paideia
-        .getConfig(contractSignature.daoKey)
-        .getArray[Byte](ConfKeys.im_paideia_dao_vote_tokenid)
-    )
     cons
   }
 
