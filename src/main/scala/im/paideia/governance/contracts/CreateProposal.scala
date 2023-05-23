@@ -37,11 +37,27 @@ class CreateProposal(contractSignature: PaideiaContractSignature)
             PaideiaEventResponse(
               1,
               List(
-                CreateProposalTransaction(
-                  cte.ctx,
-                  boxes(b),
-                  Address.create(Env.operatorAddress)
-                )
+                if (boxes(b).getCreationHeight() < cte.height - 30) {
+                  RefundTransaction(
+                    cte.ctx,
+                    boxes(b),
+                    Address.fromPropositionBytes(
+                      NetworkType.MAINNET,
+                      boxes(b)
+                        .getRegisters()
+                        .get(0)
+                        .getValue()
+                        .asInstanceOf[Coll[Byte]]
+                        .toArray
+                    )
+                  )
+                } else {
+                  CreateProposalTransaction(
+                    cte.ctx,
+                    boxes(b),
+                    Address.create(Env.operatorAddress)
+                  )
+                }
               )
             )
 
