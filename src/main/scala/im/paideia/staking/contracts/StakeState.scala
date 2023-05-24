@@ -133,7 +133,10 @@ class StakeState(contractSignature: PaideiaContractSignature)
                  val stakeBox = StakeStateBox.fromInputBox(cte.ctx, stakeStateInput)
                  if (
                    stakeBox.state
-                     .firstMatchingSnapshot(stakeBox.snapshots(0).stakeDigest)
+                     .firstMatchingSnapshot(
+                       stakeBox.snapshots(0).stakeDigest,
+                       stakeBox.snapshots(0).participationDigest
+                     )
                      .size(Some(stakeBox.snapshots(0).stakeDigest)) > 0
                  ) {
                    PaideiaEventResponse(
@@ -290,7 +293,10 @@ class StakeState(contractSignature: PaideiaContractSignature)
                       stakingState.state.currentStakingState.stakeRecords
                         .updateWithDigest(operations: _*)(digestOrHeight)
                       stakingState.state
-                        .firstMatchingSnapshot(stakingState.snapshots(0).stakeDigest)
+                        .firstMatchingSnapshot(
+                          stakingState.snapshots(0).stakeDigest,
+                          stakingState.snapshots(0).participationDigest
+                        )
                         .stakeRecords
                         .deleteWithDigest(removeOps: _*)(
                           if (te.mempool)
