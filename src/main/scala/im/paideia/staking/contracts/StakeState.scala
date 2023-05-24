@@ -263,10 +263,16 @@ class StakeState(contractSignature: PaideiaContractSignature)
                       )
                         stakingState.state.snapshots(stakingState.newNextEmission) =
                           stakingState.state.currentStakingState
-                            .clone(
-                              contractSignature.daoKey,
-                              stakingState.newNextEmission
-                            )
+                            .clone(contractSignature.daoKey, stakingState.newNextEmission)
+                      val currentParticipation =
+                        stakingState.state.currentStakingState.participationRecords
+                          .getMap(participationDigestOrHeight.left.toOption)
+                          .get
+                      val participationResult =
+                        stakingState.state.currentStakingState.participationRecords
+                          .deleteWithDigest(currentParticipation.toMap.keys.toArray: _*)(
+                            participationDigestOrHeight
+                          )
                     case StakingContextVars.COMPOUND =>
                       val operations =
                         companionContext(1.toByte)
