@@ -94,7 +94,7 @@ case class StakeStateBox(
       Colls.fromArray[(AvlTree, AvlTree)](
         snapshots
           .map(kv => {
-            val snap = state.firstMatchingSnapshot(kv.stakeDigest)
+            val snap = state.firstMatchingSnapshot(kv.stakeDigest, kv.participationDigest)
             (
               snap.stakeRecords.ergoValue(Some(kv.stakeDigest)).getValue,
               snap.participationRecords.ergoValue(Some(kv.participationDigest)).getValue
@@ -214,8 +214,11 @@ case class StakeStateBox(
   ): StakingContextVars = {
     if (snapshots.size < dao.config[Long](ConfKeys.im_paideia_staking_emission_delay))
       throw new Exception("Not enough snapshots gathered yet")
-    val snapshot = state.firstMatchingSnapshot(snapshots(0).stakeDigest)
-    val keys     = snapshot.getKeys(0, batchSize, Some(snapshots(0).stakeDigest))
+    val snapshot = state.firstMatchingSnapshot(
+      snapshots(0).stakeDigest,
+      snapshots(0).participationDigest
+    )
+    val keys = snapshot.getKeys(0, batchSize, Some(snapshots(0).stakeDigest))
     if (keys.size <= 0) throw new Exception("No keys found to compound")
     val currentStakesProvenResult =
       state.currentStakingState.getStakes(keys, Some(stateDigest))

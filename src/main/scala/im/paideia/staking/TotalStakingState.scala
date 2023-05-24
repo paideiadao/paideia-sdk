@@ -28,14 +28,21 @@ class TotalStakingState(
 ) {
 
   def firstMatchingSnapshot(
-    snapshotDigest: ADDigest
+    snapshotDigest: ADDigest,
+    participationDigest: ADDigest
   ): StakingState = {
     snapshots
       .get(
         snapshots.keys.toSeq
-          .sortBy(l => -l)
+          // .sortBy(l => -l)
           .find(ss =>
-            snapshots.get(ss).get.stakeRecords.getMap(Some(snapshotDigest)).isDefined
+            snapshots.get(ss).get.stakeRecords.getMap(Some(snapshotDigest)).isDefined &&
+              snapshots
+                .get(ss)
+                .get
+                .participationRecords
+                .getMap(Some(participationDigest))
+                .isDefined
           )
           .get
       )
