@@ -115,7 +115,16 @@ final case class SendFundsBasicTransaction(
   inputs     = List(actionInput.withContextVars(context: _*)) ++ coveringTreasuryBoxes
   dataInputs = List(configInput, proposalInput)
   outputs = actionInputBox.outputs.map { (b: Box) =>
-    new OutBoxImpl((new CostingSigmaDslBuilder()).toErgoBox(b).toCandidate)
+    val ergoBox = (new CostingSigmaDslBuilder()).toErgoBox(b)
+    new OutBoxImpl(
+      new ErgoBoxCandidate(
+        ergoBox.value,
+        ergoBox.ergoTree,
+        ctx.getHeight(),
+        ergoBox.additionalTokens,
+        ergoBox.additionalRegisters
+      )
+    )
   }.toList ++ selfOutput
 
   changeAddress = treasuryAddress.getErgoAddress()

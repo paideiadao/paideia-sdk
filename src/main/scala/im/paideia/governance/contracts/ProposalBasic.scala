@@ -111,6 +111,10 @@ class ProposalBasic(contractSignature: PaideiaContractSignature)
       "_IM_PAIDEIA_DAO_QUORUM",
       ConfKeys.im_paideia_dao_quorum.ergoValue.getValue()
     )
+    cons.put(
+      "_IM_PAIDEIA_DAO_THRESHOLD",
+      ConfKeys.im_paideia_dao_threshold.ergoValue.getValue()
+    )
     cons.put("_IM_PAIDEIA_DAO_KEY", ErgoId.create(contractSignature.daoKey).getBytes())
     cons.put("_PAIDEIA_DAO_KEY", ErgoId.create(Env.paideiaDaoKey).getBytes())
     cons.put("_PAIDEIA_TOKEN_ID", ErgoId.create(Env.paideiaTokenId).getBytes())

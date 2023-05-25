@@ -15,10 +15,11 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val imPaideiaDaoKey: Coll[Byte]    = _IM_PAIDEIA_DAO_KEY
-    val imPaideiaDaoQuorum: Coll[Byte] = _IM_PAIDEIA_DAO_QUORUM
-    val paideiaDaoKey: Coll[Byte]      = _PAIDEIA_DAO_KEY
-    val paideiaTokenId: Coll[Byte]     = _PAIDEIA_TOKEN_ID
+    val imPaideiaDaoKey: Coll[Byte]       = _IM_PAIDEIA_DAO_KEY
+    val imPaideiaDaoQuorum: Coll[Byte]    = _IM_PAIDEIA_DAO_QUORUM
+    val imPaideiaDaoThreshold: Coll[Byte] = _IM_PAIDEIA_DAO_THRESHOLD
+    val paideiaDaoKey: Coll[Byte]         = _PAIDEIA_DAO_KEY
+    val paideiaTokenId: Coll[Byte]        = _PAIDEIA_TOKEN_ID
 
     val imPaideiaContractsSplitProfit: Coll[Byte] = 
         _IM_PAIDEIA_CONTRACTS_SPLIT_PROFIT
@@ -84,14 +85,16 @@
     val configValues = configTree.getMany(
         Coll(
             imPaideiaDaoQuorum,
+            imPaideiaDaoThreshold,
             imPaideiaStakingStateTokenId
         ),
         configProof
     )
 
-    val quorumNeeded: Long = byteArrayToLong(configValues(0).get.slice(1,9))
+    val quorumNeeded: Long    = byteArrayToLong(configValues(0).get.slice(1,9))
+    val thresholdNeeded: Long = byteArrayToLong(configValues(1).get.slice(1,9))
 
-    val stakeStateTokenId: Coll[Byte] = configValues(1).get.slice(6,38)
+    val stakeStateTokenId: Coll[Byte] = configValues(2).get.slice(6,38)
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -142,7 +145,7 @@
 
         val paideiaConfigTree: AvlTree = paideiaConfig.R4[AvlTree].get
 
-        val totalStaked: Long = stakeState.R5[Coll[Long]].get(2)
+        val totalStaked: Long = stakeState.R5[Coll[Long]].get(1)
 
         ///////////////////////////////////////////////////////////////////////
         // Context variables                                                 //
@@ -172,7 +175,8 @@
         // Intermediate calculations                                         //
         ///////////////////////////////////////////////////////////////////////
 
-        val passedOption: Int = if (voted > (totalStaked*quorumNeeded/1000)) 
+        val passedOption: Int = 
+            if (voted > (totalStaked*quorumNeeded/1000) && winningVote._2 > (voted*thresholdNeeded/1000)) 
                 winningVote._1
             else 
                 -2
@@ -204,8 +208,7 @@
             proposalIndexO == proposalIndex,
             proposalBasicOR5 == proposalBasicR5,
             votesTreeO == votesTree,
-            passedOutput == passedOption,
-            correctWinningVote
+            passedOutput == passedOption
         ))
 
         val correctSplitProfitOut: Boolean = allOf(Coll(
@@ -222,6 +225,7 @@
         ///////////////////////////////////////////////////////////////////////
 
         allOf(Coll(
+            correctstakeState,
             paideiaCorrectConfig,
             correctWinningVote,
             correctOut,
@@ -362,7 +366,8 @@
             endTimeO == endTime,
             correctVoteValues,
             votesTreeO.digest == newVotesTree.digest,
-            correctStakeState
+            correctStakeState,
+            R5Changed
         ))
     }
 

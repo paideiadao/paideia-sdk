@@ -381,7 +381,7 @@
     val correctActionSendFundsContract: Coll[Byte] = blake2b256(
         substConstants(
             defaultActionSendFundsContract,
-            Coll(16,18),
+            Coll(33,35),
             Coll(daoKey,proposalTokenId)
         )
     )
@@ -397,7 +397,7 @@
     val correctProposalBasicContract: Coll[Byte] = blake2b256(
         substConstants(
             defaultProposalBasicContract,
-            Coll(7),
+            Coll(11),
             Coll(daoKey)
         )
     )
@@ -520,7 +520,7 @@
         defaultActionUpdateConfigSig.patch(1,correctActionUpdateConfigContract,32)
             == actionUpdateConfigSignature,
         defaultProposalBasicSig.patch(1,correctProposalBasicContract,32)
-            == proposalBasicSignature,
+           == proposalBasicSignature,
         defaultStakingChangeSig.patch(1,correctStakingChangeContract,32)
             == stakingChangeSignature,
         defaultStakingCompoundSig.patch(1,correctStakingCompoundContract,32)
