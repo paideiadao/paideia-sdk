@@ -143,6 +143,7 @@ final case class EvaluateProposalBasicTransaction(
       0.toByte,
       dao.config.getProof(
         ConfKeys.im_paideia_dao_quorum,
+        ConfKeys.im_paideia_dao_threshold,
         ConfKeys.im_paideia_staking_state_tokenid
       )(Some(configDigest))
     ),
