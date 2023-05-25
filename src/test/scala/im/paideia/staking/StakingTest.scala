@@ -25,7 +25,7 @@ object StakingTest {
       ErgoId.create(stakeStateTokenId).getBytes()
     )
     config.set(ConfKeys.im_paideia_staking_profit_tokenids, Array[Array[Byte]]())
-    config.set(ConfKeys.im_paideia_staking_emission_delay, 4L)
+    config.set(ConfKeys.im_paideia_staking_emission_delay, 1L)
     config.set(ConfKeys.im_paideia_dao_tokenid, ErgoId.create(daoTokenId).getBytes())
     config.set(
       ConfKeys.im_paideia_dao_action_tokenid,
