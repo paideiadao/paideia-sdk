@@ -55,7 +55,8 @@ class ActionUpdateConfig(contractSignature: PaideiaContractSignature)
     val response: PaideiaEventResponse = event match {
       case cte: CreateTransactionsEvent => {
         PaideiaEventResponse.merge(
-          boxes.values
+          getUtxoSet
+            .map(boxes(_))
             .map((b: InputBox) => {
               if (
                 cte.currentTime > b
