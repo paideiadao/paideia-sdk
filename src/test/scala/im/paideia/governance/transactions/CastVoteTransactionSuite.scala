@@ -75,11 +75,12 @@ class CastVoteTransactionSuite extends PaideiaTestSuite {
         val digest2 = config._config.digest
         val dao     = new DAO(daoKey, config)
         Paideia.addDAO(dao)
-        dao.proposals(0) = Proposal(dao.key, 0)
+        dao.proposals(0) = Proposal(dao.key, 0, "test")
 
         val proposalContract = ProposalBasic(PaideiaContractSignature(daoKey = dao.key))
         val proposalBox = proposalContract.box(
           ctx,
+          "test",
           0,
           Array(0L, 0L),
           0L,
@@ -189,11 +190,12 @@ class CastVoteTransactionSuite extends PaideiaTestSuite {
         val digest2 = config._config.digest
         val dao     = new DAO(daoKey, config)
         Paideia.addDAO(dao)
-        dao.proposals(0) = Proposal(dao.key, 0)
+        dao.proposals(0) = Proposal(dao.key, 0, "test")
 
         val proposalContract = ProposalBasic(PaideiaContractSignature(daoKey = dao.key))
         val proposalBox = proposalContract.box(
           ctx,
+          "test",
           0,
           Array(0L, 0L),
           0L,

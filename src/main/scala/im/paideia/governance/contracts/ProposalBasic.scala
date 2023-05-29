@@ -30,6 +30,7 @@ class ProposalBasic(contractSignature: PaideiaContractSignature)
 
   def box(
     ctx: BlockchainContextImpl,
+    name: String,
     proposalIndex: Int,
     voteCount: Array[Long],
     totalVotes: Long,
@@ -40,6 +41,7 @@ class ProposalBasic(contractSignature: PaideiaContractSignature)
     ProposalBasicBox(
       ctx,
       Paideia.getDAO(contractSignature.daoKey),
+      name,
       Paideia.getConfig(Env.paideiaDaoKey)(
         ConfKeys.im_paideia_fees_createproposal_paideia
       ),
@@ -154,6 +156,7 @@ class ProposalBasic(contractSignature: PaideiaContractSignature)
           ),
           box(
             ctx,
+            inp.name,
             inp.proposalIndex,
             inp.voteCount.zip(vote.votes).map { (ll: (Long, Long)) =>
               ll._1 + ll._2
@@ -177,6 +180,7 @@ class ProposalBasic(contractSignature: PaideiaContractSignature)
           ),
           box(
             ctx,
+            inp.name,
             inp.proposalIndex,
             inp.voteCount.zip(voteChange.votes).map { (ll: (Long, Long)) =>
               ll._1 + ll._2

@@ -42,7 +42,11 @@
 
     val daoOriginKey: Coll[Byte] = daoOrigin.R4[Coll[Byte]].get
 
-    val userProp: Coll[Byte]      = createProposal.R4[Coll[Byte]].get
+    val createProposalR4: Coll[Coll[Byte]] = 
+        createProposal.R4[Coll[Coll[Byte]]].get
+
+    val userProp: Coll[Byte]      = createProposalR4(0)
+    val name: Coll[Byte]          = createProposalR4(1)
     val requestedBoxes: Coll[Box] = createProposal.R5[Coll[Box]].get
 
     ///////////////////////////////////////////////////////////////////////////

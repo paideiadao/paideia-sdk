@@ -38,6 +38,14 @@ class DAOOrigin(contractSignature: PaideiaContractSignature)
         if (!te.mempool && getUtxoSet.contains(te.tx.getInputs().get(0).getBoxId())) {
           val proposalIndex =
             Long.MaxValue - te.tx.getOutputs().get(0).getAssets().get(1).getAmount() - 1
+          val proposalName = new String(
+            ErgoValue
+              .fromHex(te.tx.getOutputs().get(1).getAdditionalRegisters().get(3))
+              .getValue()
+              .asInstanceOf[Coll[Byte]]
+              .toArray,
+            StandardCharsets.UTF_8
+          )
           Paideia
             .getDAO(
               new ErgoId(
@@ -48,7 +56,7 @@ class DAOOrigin(contractSignature: PaideiaContractSignature)
                   .toArray
               ).toString()
             )
-            .newProposal(proposalIndex.toInt)
+            .newProposal(proposalIndex.toInt, proposalName)
           PaideiaEventResponse(1)
         } else {
           PaideiaEventResponse(0)

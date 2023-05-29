@@ -16,10 +16,12 @@ import im.paideia.util.Env
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 import sigmastate.eval.Colls
 import scorex.crypto.authds.ADDigest
+import java.nio.charset.StandardCharsets
 
 case class ProposalBasicBox(
   _ctx: BlockchainContextImpl,
   dao: DAO,
+  name: String,
   paideiaTokens: Long,
   proposalIndex: Int,
   voteCount: Array[Long],
@@ -51,7 +53,8 @@ case class ProposalBasicBox(
       ErgoValueBuilder.buildFor(
         Colls.fromArray(Array[Long](endTime, totalVotes) ++ voteCount)
       ),
-      dao.proposals(proposalIndex.toInt).votes.ergoValue(digestOpt)
+      dao.proposals(proposalIndex.toInt).votes.ergoValue(digestOpt),
+      ErgoValueBuilder.buildFor(Colls.fromArray(name.getBytes(StandardCharsets.UTF_8)))
     )
   }
 }
@@ -69,9 +72,14 @@ object ProposalBasicBox {
       inp.getRegisters().get(0).getValue().asInstanceOf[Coll[Int]].map(_.toInt).toArray
     val paideiaTokens =
       if (inp.getTokens().size() > 1) inp.getTokens.get(1).getValue else 0L
+    val name = new String(
+      inp.getRegisters().get(3).getValue().asInstanceOf[Coll[Byte]].toArray,
+      StandardCharsets.UTF_8
+    )
     ProposalBasicBox(
       ctx,
       Paideia.getDAO(contract.contractSignature.daoKey),
+      name,
       paideiaTokens,
       ints(0),
       voteCount,

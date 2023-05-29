@@ -64,7 +64,7 @@ class EvaluateProposalTransactionSuite extends PaideiaTestSuite {
         val dao = new DAO(daoKey, config)
         Paideia.addDAO(dao)
 
-        dao.proposals(0) = Proposal(dao.key, 0)
+        dao.proposals(0) = Proposal(dao.key, 0, "test")
 
         val proposalContract = ProposalBasic(PaideiaContractSignature(daoKey = dao.key))
 
@@ -94,7 +94,8 @@ class EvaluateProposalTransactionSuite extends PaideiaTestSuite {
           .inputBox()
         stakingContract.clearBoxes()
         stakingContract.newBox(stakingStateBox, false)
-        val proposalBox = proposalContract.box(ctx, 0, Array(1000L, 0L), 1000L, 1000L, -1)
+        val proposalBox =
+          proposalContract.box(ctx, "test", 0, Array(1000L, 0L), 1000L, 1000L, -1)
         proposalContract.newBox(proposalBox.inputBox(), false)
 
         val eventResponse = Paideia.handleEvent(
@@ -147,7 +148,7 @@ class EvaluateProposalTransactionSuite extends PaideiaTestSuite {
         val dao = new DAO(daoKey, config)
         Paideia.addDAO(dao)
 
-        dao.proposals(0) = Proposal(dao.key, 0)
+        dao.proposals(0) = Proposal(dao.key, 0, "test")
 
         val proposalContract = ProposalBasic(PaideiaContractSignature(daoKey = dao.key))
 
@@ -177,7 +178,8 @@ class EvaluateProposalTransactionSuite extends PaideiaTestSuite {
           .inputBox()
         stakingContract.clearBoxes()
         stakingContract.newBox(stakingStateBox, false)
-        val proposalBox = proposalContract.box(ctx, 0, Array(1L, 0L), 1L, 1000L, -1)
+        val proposalBox =
+          proposalContract.box(ctx, "test", 0, Array(1L, 0L), 1L, 1000L, -1)
         proposalContract.newBox(proposalBox.inputBox(), false)
 
         val eventResponse = Paideia.handleEvent(

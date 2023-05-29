@@ -15,12 +15,13 @@ import im.paideia.util.MempoolPlasmaMap
 case class Proposal(
   daoKey: String,
   proposalIndex: Int,
-  votes: MempoolPlasmaMap[ErgoId, VoteRecord]
+  votes: MempoolPlasmaMap[ErgoId, VoteRecord],
+  name: String
 )
 
 object Proposal {
 
-  def apply(daoKey: String, proposalIndex: Int): Proposal = {
+  def apply(daoKey: String, proposalIndex: Int, name: String): Proposal = {
     val folder = new File("./proposals/" ++ daoKey ++ "/" ++ proposalIndex.toString())
     folder.mkdirs()
     val ldbStore = new LDBVersionedStore(folder, 10)
@@ -36,7 +37,8 @@ object Proposal {
         avlStorage,
         AvlTreeFlags.AllOperationsAllowed,
         PlasmaParameters.default
-      )
+      ),
+      name
     )
   }
 }

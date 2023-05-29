@@ -25,12 +25,13 @@ class CreateProposal(contractSignature: PaideiaContractSignature)
 
   def box(
     ctx: BlockchainContextImpl,
+    name: String,
     proposalBox: Box,
     actionBoxes: Array[Box],
     voteKey: String,
     userAddress: Address
   ): CreateProposalBox =
-    CreateProposalBox(ctx, proposalBox, actionBoxes, voteKey, userAddress, this)
+    CreateProposalBox(ctx, proposalBox, actionBoxes, voteKey, name, userAddress, this)
 
   override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
     val response: PaideiaEventResponse = event match {
