@@ -93,6 +93,7 @@ final case class EvaluateProposalBasicTransaction(
     */
   val proposalBasicOut = ProposalBasic(PaideiaContractSignature(daoKey = dao.key)).box(
     _ctx,
+    proposalInputBox.name,
     proposalInputBox.proposalIndex,
     proposalInputBox.voteCount,
     proposalInputBox.totalVotes,

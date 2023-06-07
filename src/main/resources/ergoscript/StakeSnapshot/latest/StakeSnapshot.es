@@ -206,14 +206,14 @@
             profitTokenIds.slice(6+(37*i)+5,6+(37*(i+1)))
         }
 
-    val profit: Coll[Long] = stakeStateR5.slice(4,stakeStateR5.size).append(
+    val profit: Coll[Long] = stakeStateR5.slice(5,stakeStateR5.size).append(
         whiteListedTokenIds.slice(
             stakeStateR5.size-3,
             whiteListedTokenIds.size)
         .map{(tokId: Coll[Byte]) => 0L}
     )
 
-    val outputProfit: Coll[Long] = stakeStateOR5.slice(4,stakeStateOR5.size)
+    val outputProfit: Coll[Long] = stakeStateOR5.slice(5,stakeStateOR5.size)
         
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -246,13 +246,16 @@
         min(
             emissionAmount,
             stakeState.tokens(1)._2-totalStaked-profit(0)-1
-        )
+        ) + (if (emissionDelay == 1) profit(0) else 0L)
     ))
 
     val correctProfitAddedToSnapshot: Boolean = allOf(Coll(
         newSnapshotsProfit(0).slice(1,profit.size).indices.forall{
             (i: Int) => newSnapshotsProfit(0)(i+1) == profit(i+1)},
-        newSnapshotsProfit(0)(0) == snapshotsProfit(1)(0) + profit(0)
+        if (emissionDelay > 1) 
+            newSnapshotsProfit(0)(0) == snapshotsProfit(1)(0) + profit(0)
+        else
+            true
     ))
 
     // When a staker gets rewarded for the staking period his entry gets 
@@ -309,6 +312,7 @@
         correctStakeState,
         correctNewSnapshot,
         correctHistoryShift,
+        correctProfitAddedToSnapshot,
         correctSize,
         profitReset,
         correctNextShapshot,

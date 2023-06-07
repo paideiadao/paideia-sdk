@@ -86,7 +86,7 @@ class CreateProposalTransactionSuite extends PaideiaTestSuite {
           false
         )
 
-        dao.proposals(0) = Proposal(daoKey, 0)
+        dao.proposals(0) = Proposal(daoKey, 0, "test")
 
         val stakingContract = StakeState(PaideiaContractSignature(daoKey = dao.key))
 
@@ -111,6 +111,7 @@ class CreateProposalTransactionSuite extends PaideiaTestSuite {
         )
         val proposalBox = proposalContract.box(
           ctx,
+          "test",
           0,
           Array(0L, 0L),
           0L,
@@ -152,6 +153,7 @@ class CreateProposalTransactionSuite extends PaideiaTestSuite {
           CreateProposal(PaideiaContractSignature(daoKey = dao.key))
         val createProposalBox = createProposalContract.box(
           ctx,
+          "test",
           proposalBox.box,
           Array(actionBox.box, actionBox.box),
           stakeKey,

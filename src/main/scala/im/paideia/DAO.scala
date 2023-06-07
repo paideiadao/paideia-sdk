@@ -8,8 +8,8 @@ case class DAO(
   config: DAOConfig,
   proposals: HashMap[Int, Proposal] = new HashMap[Int, Proposal]()
 ) {
-  def newProposal(index: Int): Proposal = {
-    proposals(index) = Proposal(key, index)
+  def newProposal(index: Int, name: String): Proposal = {
+    proposals(index) = Proposal(key, index, name)
     proposals(index)
   }
 }

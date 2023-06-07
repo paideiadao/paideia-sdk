@@ -16,6 +16,7 @@ import scorex.crypto.hash.Blake2b256
 import sigmastate.eval.Colls
 import special.collection.Coll
 import special.sigma.Box
+import java.nio.charset.StandardCharsets
 
 /** Represents a CreateProposalBox with essential information like context, action boxes
   * and the contract instance.
@@ -42,6 +43,7 @@ final case class CreateProposalBox(
   proposalBox: Box,
   actionBoxes: Array[Box],
   voteKey: String,
+  name: String,
   userAddress: Address,
   useContract: CreateProposal
 ) extends PaideiaBox {
@@ -76,7 +78,14 @@ final case class CreateProposalBox(
     *   List of ErgoValue[_] objects representing registers
     */
   override def registers: List[ErgoValue[_]] = List(
-    ErgoValueBuilder.buildFor(Colls.fromArray(userAddress.toPropositionBytes())),
+    ErgoValueBuilder.buildFor(
+      Colls.fromArray(
+        Array(
+          Colls.fromArray(userAddress.toPropositionBytes()),
+          Colls.fromArray(name.getBytes(StandardCharsets.UTF_8))
+        )
+      )
+    ),
     ErgoValueBuilder.buildFor(
       Colls.fromArray(
         Array(proposalBox) ++ actionBoxes
@@ -102,7 +111,11 @@ object CreateProposalBox {
       .asInstanceOf[CreateProposal]
     val userAddress = Address.fromPropositionBytes(
       ctx.getNetworkType(),
-      inp.getRegisters().get(0).getValue().asInstanceOf[Coll[Byte]].toArray
+      inp.getRegisters().get(0).getValue().asInstanceOf[Coll[Coll[Byte]]](0).toArray
+    )
+    val name = new String(
+      inp.getRegisters().get(0).getValue().asInstanceOf[Coll[Coll[Byte]]](1).toArray,
+      StandardCharsets.UTF_8
     )
     val boxes   = inp.getRegisters().get(1).getValue().asInstanceOf[Coll[Box]]
     val voteKey = inp.getTokens().get(0).getId().toString()
@@ -111,6 +124,7 @@ object CreateProposalBox {
       boxes(0),
       boxes.slice(1, boxes.size).toArray,
       voteKey,
+      name,
       userAddress,
       contract
     )
