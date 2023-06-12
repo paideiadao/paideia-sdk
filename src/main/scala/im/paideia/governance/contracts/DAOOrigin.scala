@@ -40,7 +40,7 @@ class DAOOrigin(contractSignature: PaideiaContractSignature)
             Long.MaxValue - te.tx.getOutputs().get(0).getAssets().get(1).getAmount() - 1
           val proposalName = new String(
             ErgoValue
-              .fromHex(te.tx.getOutputs().get(1).getAdditionalRegisters().get(3))
+              .fromHex(te.tx.getOutputs().get(1).getAdditionalRegisters().get("R7"))
               .getValue()
               .asInstanceOf[Coll[Byte]]
               .toArray,

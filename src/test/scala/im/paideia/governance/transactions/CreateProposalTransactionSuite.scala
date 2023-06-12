@@ -165,7 +165,7 @@ class CreateProposalTransactionSuite extends PaideiaTestSuite {
         Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
         val eventResponse = Paideia.handleEvent(CreateTransactionsEvent(ctx, 0L, 0L))
         assert(eventResponse.unsignedTransactions.size === 1)
-        ctx
+        val signed = ctx
           .newProverBuilder()
           .build()
           .sign(eventResponse.unsignedTransactions(0).unsigned)
