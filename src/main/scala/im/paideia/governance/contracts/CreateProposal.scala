@@ -51,7 +51,7 @@ class CreateProposal(contractSignature: PaideiaContractSignature)
                         .getRegisters()
                         .get(0)
                         .getValue()
-                        .asInstanceOf[Coll[Byte]]
+                        .asInstanceOf[Coll[Coll[Byte]]](0)
                         .toArray
                     )
                   )
