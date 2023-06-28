@@ -18,7 +18,7 @@ import im.paideia.DAOConfigKey
 import im.paideia.common.transactions.PaideiaTransaction
 import org.ergoplatform.appkit.OutBox
 import im.paideia.util.ConfKeys
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 import javax.naming.Context
 import im.paideia.staking.contracts.StakeState
 import im.paideia.staking.TotalStakingState
@@ -29,7 +29,7 @@ import sigmastate.eval.Colls
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 import scorex.crypto.authds.ADDigest
 import special.sigma.AvlTree
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoToken
 import im.paideia.governance.contracts.ActionSendFundsBasic
 import im.paideia.governance.contracts.ActionUpdateConfig
 import im.paideia.governance.contracts.ProposalBasic

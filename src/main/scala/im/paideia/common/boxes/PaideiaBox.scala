@@ -3,7 +3,7 @@ package im.paideia.common.boxes
 import im.paideia.util.Util
 import org.ergoplatform.appkit.ContextVar
 import org.ergoplatform.appkit.ErgoContract
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoToken
 import org.ergoplatform.appkit.ErgoValue
 import org.ergoplatform.appkit.InputBox
 import org.ergoplatform.appkit.OutBox

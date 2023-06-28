@@ -12,7 +12,7 @@ import org.ergoplatform.appkit.NetworkType
 import im.paideia.common.contracts.Config
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.governance.contracts.PaideiaOrigin
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 import im.paideia.governance.contracts.ProtoDAOProxy
 import im.paideia.common.contracts.Treasury
 import im.paideia.governance.contracts.ProtoDAO
@@ -48,17 +48,17 @@ object PaideiaTestSuite {
       paideiaConfig.set(ConfKeys.im_paideia_fees_createdao_paideia, 100L)
       paideiaConfig.set(
         ConfKeys.im_paideia_dao_key,
-        ErgoId.create(Env.paideiaDaoKey).getBytes()
+        ErgoId.create(Env.paideiaDaoKey).getBytes
       )
       paideiaConfig.set(
         ConfKeys.im_paideia_dao_action_tokenid,
-        ErgoId.create(Util.randomKey).getBytes()
+        ErgoId.create(Util.randomKey).getBytes
       )
       Paideia.addDAO(DAO(Env.paideiaDaoKey, paideiaConfig))
       val proposalTokenId = Util.randomKey
       paideiaConfig.set(
         ConfKeys.im_paideia_dao_proposal_tokenid,
-        ErgoId.create(proposalTokenId).getBytes()
+        ErgoId.create(proposalTokenId).getBytes
       )
       val configContract = Config(PaideiaContractSignature(daoKey = Env.paideiaDaoKey))
       val paideiaOriginContract = PaideiaOrigin(

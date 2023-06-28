@@ -8,12 +8,12 @@ import im.paideia.governance.boxes.CreateProposalBox
 import im.paideia.Paideia
 import im.paideia.common.filtering._
 import im.paideia.util.Env
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 import im.paideia.governance.boxes.DAOOriginBox
 import org.ergoplatform.appkit.impl.OutBoxImpl
 import sigmastate.eval.CostingSigmaDslBuilder
 import special.sigma.Box
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoToken
 import java.nio.charset.StandardCharsets
 import org.ergoplatform.appkit.ContextVar
 import im.paideia.util.ConfKeys
@@ -47,7 +47,7 @@ final case class CreateProposalTransaction(
         ),
         new FilterLeaf(
           FilterType.FTEQ,
-          ErgoId.create(dao.key).getBytes().toIterable,
+          ErgoId.create(dao.key).getBytes.toIterable,
           CompareField.REGISTER,
           0
         )

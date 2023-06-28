@@ -8,7 +8,7 @@ import im.paideia.common.events.PaideiaEventResponse
 import im.paideia.common.events.TransactionEvent
 import im.paideia.common.boxes.ConfigBox
 import im.paideia.util.ConfKeys
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoToken
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import org.ergoplatform.restapi.client.ErgoTransactionInput
 

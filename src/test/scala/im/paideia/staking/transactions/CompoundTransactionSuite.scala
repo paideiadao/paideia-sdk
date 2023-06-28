@@ -6,10 +6,10 @@ import org.ergoplatform.appkit.Address
 import org.ergoplatform.appkit.RestApiErgoClient
 import org.ergoplatform.appkit.NetworkType
 import org.ergoplatform.appkit.BlockchainContext
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.staking._
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoToken
 import im.paideia.staking.transactions._
 import scala.collection.JavaConverters._
 import org.ergoplatform.appkit.InputBox
@@ -111,7 +111,7 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
         val sigUsd = Util.randomKey
         dao.config.set(
           ConfKeys.im_paideia_staking_profit_tokenids,
-          Array(ErgoId.create(sigUsd).getBytes())
+          Array(ErgoId.create(sigUsd).getBytes)
         )
         val state = TotalStakingState(dao.key, 0L)
 

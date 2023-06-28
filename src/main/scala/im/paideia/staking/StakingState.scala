@@ -1,16 +1,16 @@
 package im.paideia.staking
 
-import io.getblok.getblok_plasma.PlasmaParameters
-import io.getblok.getblok_plasma.collections.PlasmaMap
+import work.lithos.plasma.PlasmaParameters
+import work.lithos.plasma.collections.PlasmaMap
 import scala.collection.mutable.SortedSet
 import sigmastate.AvlTreeFlags
-import org.ergoplatform.appkit.ErgoId
-import io.getblok.getblok_plasma.ByteConversion.convertsLongVal
-import io.getblok.getblok_plasma.collections.ProvenResult
+import org.ergoplatform.sdk.ErgoId
+import work.lithos.plasma.ByteConversion.convertsLongVal
+import work.lithos.plasma.collections.ProvenResult
 import scala.util.Failure
 import scala.util.Success
 import im.paideia.DAOConfig
-import io.getblok.getblok_plasma.collections.ProxyPlasmaMap
+import work.lithos.plasma.collections.ProxyPlasmaMap
 import scorex.crypto.hash.Blake2b256
 import scorex.crypto.authds.avltree.batch.VersionedLDBAVLStorage
 import scorex.db.LDBVersionedStore

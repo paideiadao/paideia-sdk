@@ -14,13 +14,13 @@ import org.ergoplatform.appkit.impl.OutBoxImpl
 import org.ergoplatform.ErgoBoxCandidate
 import special.sigma.Box
 import sigmastate.eval.CostingSigmaDslBuilder
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoToken
 import scala.collection.JavaConverters._
 import im.paideia.common.contracts.PaideiaContractSignature
 import org.ergoplatform.appkit.ContextVar
 import im.paideia.Paideia
 import im.paideia.common.filtering._
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 import special.collection.Coll
 import scorex.crypto.authds.ADDigest
 import special.sigma.AvlTree

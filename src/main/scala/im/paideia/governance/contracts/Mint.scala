@@ -8,7 +8,7 @@ import im.paideia.governance.boxes.MintBox
 import java.util.HashMap
 import im.paideia.util.ConfKeys
 import im.paideia.util.Env
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 
 class Mint(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -37,7 +37,7 @@ class Mint(contractSignature: PaideiaContractSignature)
       "_IM_PAIDEIA_CONTRACTS_DAO",
       ConfKeys.im_paideia_contracts_dao.ergoValue.getValue()
     )
-    cons.put("_PAIDEIA_DAO_KEY", ErgoId.create(Env.paideiaDaoKey).getBytes())
+    cons.put("_PAIDEIA_DAO_KEY", ErgoId.create(Env.paideiaDaoKey).getBytes)
     cons
   }
 }

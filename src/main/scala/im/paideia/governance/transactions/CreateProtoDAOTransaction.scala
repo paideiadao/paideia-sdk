@@ -11,7 +11,7 @@ import im.paideia.util.Env
 import im.paideia.common.contracts.PaideiaContractSignature
 import im.paideia.governance.contracts.ProtoDAO
 import im.paideia.common.contracts.Treasury
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoToken
 import org.ergoplatform.appkit.OutBox
 import org.ergoplatform.ErgoAddress
 import im.paideia.governance.contracts.PaideiaOrigin
@@ -23,12 +23,12 @@ import im.paideia.DAOConfigValueSerializer
 import im.paideia.governance.contracts.Mint
 import im.paideia.DAOConfigValueDeserializer
 import im.paideia.governance.boxes.ProtoDAOProxyBox
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 import im.paideia.util.ConfKeys
 import im.paideia.staking.contracts.SplitProfit
-import io.getblok.getblok_plasma.collections.PlasmaMap
+import work.lithos.plasma.collections.PlasmaMap
 import sigmastate.AvlTreeFlags
-import io.getblok.getblok_plasma.PlasmaParameters
+import work.lithos.plasma.PlasmaParameters
 import im.paideia.DAOConfigKey
 import scorex.crypto.authds.ADDigest
 import special.sigma.AvlTree
@@ -64,7 +64,7 @@ case class CreateProtoDAOTransaction(
       networkType = _ctx.getNetworkType(),
       daoKey      = Env.paideiaDaoKey
     )
-  ).box(_ctx, paideiaConfig, paideiaOriginInput.getTokens().get(1).getValue() - 1L)
+  ).box(_ctx, paideiaConfig, paideiaOriginInput.getTokens().get(1).getValue - 1L)
 
   val paideiaSplitProfitContractSig = paideiaConfig[PaideiaContractSignature](
     ConfKeys.im_paideia_contracts_split_profit
@@ -133,12 +133,12 @@ case class CreateProtoDAOTransaction(
             (
               ConfKeys.im_paideia_dao_tokenid,
               DAOConfigValueSerializer(
-                ErgoId.create(protoDAOProxyInputBox.daoGovernanceTokenId).getBytes()
+                ErgoId.create(protoDAOProxyInputBox.daoGovernanceTokenId).getBytes
               )
             ),
             (
               ConfKeys.im_paideia_dao_key,
-              DAOConfigValueSerializer[Array[Byte]](protoDAOProxyInput.getId().getBytes())
+              DAOConfigValueSerializer[Array[Byte]](protoDAOProxyInput.getId().getBytes)
             ),
             (
               ConfKeys.im_paideia_dao_governance_type,

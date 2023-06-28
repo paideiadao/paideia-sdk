@@ -5,7 +5,7 @@ import im.paideia.common.contracts.PaideiaContractSignature
 import im.paideia.common.contracts.PaideiaContract
 import im.paideia.common.contracts.PaideiaActor
 import java.util.HashMap
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 import im.paideia.util.ConfKeys
 import scorex.crypto.authds.ADDigest
 import im.paideia.Paideia
@@ -19,7 +19,7 @@ class StakeSnapshot(contractSignature: PaideiaContractSignature)
 
   override lazy val constants: HashMap[String, Object] = {
     val cons = new HashMap[String, Object]()
-    cons.put("_IM_PAIDEIA_DAO_KEY", ErgoId.create(contractSignature.daoKey).getBytes())
+    cons.put("_IM_PAIDEIA_DAO_KEY", ErgoId.create(contractSignature.daoKey).getBytes)
     cons.put(
       "_IM_PAIDEIA_STAKING_STATE_TOKEN_ID",
       ConfKeys.im_paideia_staking_state_tokenid.ergoValue.getValue()

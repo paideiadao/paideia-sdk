@@ -2,14 +2,14 @@ package im.paideia.governance.boxes
 
 import im.paideia.common.boxes.PaideiaBox
 import im.paideia.util.Env
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoToken
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.governance.contracts.ProtoDAO
 import im.paideia.DAOConfig
 import org.ergoplatform.appkit.ErgoValue
 import im.paideia.DAO
 import im.paideia.Paideia
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 import im.paideia.util.ConfKeys
 import scorex.crypto.hash.Blake2b256
 import org.ergoplatform.appkit.InputBox
@@ -33,7 +33,7 @@ case class ProtoDAOBox(
   override def registers: List[ErgoValue[_]] = {
     List(
       dao.config._config.ergoValue(digestOpt),
-      ErgoValueBuilder.buildFor(Colls.fromArray(ErgoId.create(dao.key).getBytes()))
+      ErgoValueBuilder.buildFor(Colls.fromArray(ErgoId.create(dao.key).getBytes))
     )
   }
 
@@ -57,7 +57,7 @@ object ProtoDAOBox {
     ProtoDAOBox(
       ctx,
       Paideia.getDAO(contract.contractSignature.daoKey),
-      if (inp.getTokens().size > 1) inp.getTokens().get(1).getValue() - 1L else 0L,
+      if (inp.getTokens().size > 1) inp.getTokens().get(1).getValue - 1L else 0L,
       contract,
       inp.getValue()
     )

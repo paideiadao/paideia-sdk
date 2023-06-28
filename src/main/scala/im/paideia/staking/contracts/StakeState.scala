@@ -7,10 +7,10 @@ import sigmastate.Values
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.DAOConfig
 import im.paideia.staking.TotalStakingState
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoToken
 import im.paideia.staking.boxes.StakeStateBox
 import java.util.HashMap
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 import im.paideia.util.ConfKeys
 import im.paideia.DAO
 import im.paideia.common.events.PaideiaEventResponse
@@ -31,7 +31,7 @@ import org.ergoplatform.appkit.ErgoValue
 import im.paideia.staking.StakingContextVars
 import special.sigma.AvlTree
 import special.collection.Coll
-import io.getblok.getblok_plasma.ByteConversion
+import work.lithos.plasma.ByteConversion
 import im.paideia.staking.StakeRecord
 import im.paideia.common.events.CreateTransactionsEvent
 import java.lang
@@ -385,7 +385,7 @@ class StakeState(contractSignature: PaideiaContractSignature)
 
   override lazy val constants: HashMap[String, Object] = {
     val cons = new HashMap[String, Object]()
-    cons.put("_IM_PAIDEIA_DAO_KEY", ErgoId.create(contractSignature.daoKey).getBytes())
+    cons.put("_IM_PAIDEIA_DAO_KEY", ErgoId.create(contractSignature.daoKey).getBytes)
     cons.put(
       "_IM_PAIDEIA_CONTRACTS_STAKING_STATE",
       ConfKeys.im_paideia_contracts_staking_state.ergoValue.getValue()

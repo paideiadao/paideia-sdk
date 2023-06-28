@@ -2,7 +2,7 @@ package im.paideia.governance.boxes
 
 import im.paideia.common.boxes.PaideiaBox
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoToken
 import im.paideia.util.Env
 import im.paideia.governance.contracts.ProtoDAO
 import im.paideia.common.boxes.ConfigBox
@@ -11,7 +11,7 @@ import org.ergoplatform.appkit.ErgoValue
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 import im.paideia.DAOConfigValue
 import im.paideia.DAOConfigValueSerializer
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 import special.collection.Coll
 import org.ergoplatform.appkit.ErgoType
 import special.collection.CollOverArray
@@ -58,7 +58,7 @@ case class ProtoDAOProxyBox(
             Colls.fromArray(DAOConfigValueSerializer(daoName)),
             Colls.fromArray(
               DAOConfigValueSerializer(
-                ErgoId.create(daoGovernanceTokenId).getBytes().asInstanceOf[Array[Byte]]
+                ErgoId.create(daoGovernanceTokenId).getBytes.asInstanceOf[Array[Byte]]
               )
             ),
             Colls.fromArray(DAOConfigValueSerializer(governanceType.id.toByte)),
@@ -134,8 +134,8 @@ object ProtoDAOProxyBox {
       daoName,
       daoTokenId.toString(),
       inp.getTokens().toArray.foldLeft[Long](0L) { (z: Long, token) =>
-        z + (if (token.asInstanceOf[ErgoToken].getId() == daoTokenId)
-               token.asInstanceOf[ErgoToken].getValue() - 1L
+        z + (if (token.asInstanceOf[ErgoToken].getId == daoTokenId)
+               token.asInstanceOf[ErgoToken].getValue - 1L
              else 0L)
       },
       GovernanceType(daoGovernanceType.toInt),

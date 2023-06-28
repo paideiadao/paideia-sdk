@@ -102,7 +102,7 @@ final case class MintTransaction(
           .insertProof(
             (
               tokenToMint,
-              DAOConfigValueSerializer[Array[Byte]](protoDAOInput.getId().getBytes())
+              DAOConfigValueSerializer[Array[Byte]](protoDAOInput.getId().getBytes)
             )
           )(Left(configDigest))
         resultingDigest = Some(result._2)

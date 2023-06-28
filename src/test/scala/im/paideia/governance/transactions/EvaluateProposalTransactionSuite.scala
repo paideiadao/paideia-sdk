@@ -6,7 +6,7 @@ import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.util.Util
 import im.paideia.DAOConfig
 import im.paideia.util.ConfKeys
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 import im.paideia.DAO
 import im.paideia.governance.contracts.ProposalBasic
 import im.paideia.common.contracts.PaideiaContractSignature
@@ -23,7 +23,7 @@ import org.ergoplatform.restapi.client.Transactions
 import im.paideia.governance.Proposal
 import com.typesafe.config.ConfigList
 import im.paideia.common.events.CreateTransactionsEvent
-import sigmastate.lang.exceptions.InterpreterException
+import sigmastate.exceptions.InterpreterException
 
 class EvaluateProposalTransactionSuite extends PaideiaTestSuite {
   test("Evaluate basic proposal, quorum met") {
@@ -40,15 +40,15 @@ class EvaluateProposalTransactionSuite extends PaideiaTestSuite {
         val daoGovTokenId     = Util.randomKey
         config.set(ConfKeys.im_paideia_dao_name, "Test DAO")
         config
-          .set(ConfKeys.im_paideia_dao_tokenid, ErgoId.create(daoGovTokenId).getBytes())
+          .set(ConfKeys.im_paideia_dao_tokenid, ErgoId.create(daoGovTokenId).getBytes)
         config.set(
           ConfKeys.im_paideia_dao_proposal_tokenid,
-          ErgoId.create(proposalTokenId).getBytes()
+          ErgoId.create(proposalTokenId).getBytes
         )
-        config.set(ConfKeys.im_paideia_dao_key, ErgoId.create(daoKey).getBytes())
+        config.set(ConfKeys.im_paideia_dao_key, ErgoId.create(daoKey).getBytes)
         config.set(
           ConfKeys.im_paideia_staking_state_tokenid,
-          ErgoId.create(stakeStateTokenId).getBytes()
+          ErgoId.create(stakeStateTokenId).getBytes
         )
         config.set(ConfKeys.im_paideia_staking_profit_tokenids, Array[Array[Byte]]())
         config.set(ConfKeys.im_paideia_staking_emission_delay, 4L)
@@ -59,7 +59,7 @@ class EvaluateProposalTransactionSuite extends PaideiaTestSuite {
         config.set(ConfKeys.im_paideia_dao_threshold, 500L)
         config.set(
           ConfKeys.im_paideia_dao_action_tokenid,
-          ErgoId.create(actionTokenId).getBytes()
+          ErgoId.create(actionTokenId).getBytes
         )
         val dao = new DAO(daoKey, config)
         Paideia.addDAO(dao)
@@ -124,15 +124,15 @@ class EvaluateProposalTransactionSuite extends PaideiaTestSuite {
         val daoGovTokenId     = Util.randomKey
         config.set(ConfKeys.im_paideia_dao_name, "Test DAO")
         config
-          .set(ConfKeys.im_paideia_dao_tokenid, ErgoId.create(daoGovTokenId).getBytes())
+          .set(ConfKeys.im_paideia_dao_tokenid, ErgoId.create(daoGovTokenId).getBytes)
         config.set(
           ConfKeys.im_paideia_dao_proposal_tokenid,
-          ErgoId.create(proposalTokenId).getBytes()
+          ErgoId.create(proposalTokenId).getBytes
         )
-        config.set(ConfKeys.im_paideia_dao_key, ErgoId.create(daoKey).getBytes())
+        config.set(ConfKeys.im_paideia_dao_key, ErgoId.create(daoKey).getBytes)
         config.set(
           ConfKeys.im_paideia_staking_state_tokenid,
-          ErgoId.create(stakeStateTokenId).getBytes()
+          ErgoId.create(stakeStateTokenId).getBytes
         )
         config.set(ConfKeys.im_paideia_staking_profit_tokenids, Array[Array[Byte]]())
         config.set(ConfKeys.im_paideia_staking_emission_delay, 4L)
@@ -143,7 +143,7 @@ class EvaluateProposalTransactionSuite extends PaideiaTestSuite {
         config.set(ConfKeys.im_paideia_dao_threshold, 500L)
         config.set(
           ConfKeys.im_paideia_dao_action_tokenid,
-          ErgoId.create(actionTokenId).getBytes()
+          ErgoId.create(actionTokenId).getBytes
         )
         val dao = new DAO(daoKey, config)
         Paideia.addDAO(dao)

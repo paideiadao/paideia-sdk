@@ -5,7 +5,7 @@ import im.paideia.Paideia
 import im.paideia.common.boxes.PaideiaBox
 import im.paideia.governance.contracts.ActionSendFundsBasic
 import im.paideia.util.ConfKeys
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoToken
 import org.ergoplatform.appkit.ErgoValue
 import org.ergoplatform.appkit.InputBox
 import org.ergoplatform.appkit.impl.BlockchainContextImpl

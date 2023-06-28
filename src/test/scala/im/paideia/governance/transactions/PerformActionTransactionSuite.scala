@@ -6,7 +6,7 @@ import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.util.Util
 import im.paideia.DAOConfig
 import im.paideia.util.ConfKeys
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 import im.paideia.DAO
 import im.paideia.common.contracts.PaideiaContractSignature
 import im.paideia.Paideia
@@ -15,7 +15,7 @@ import im.paideia.governance.Proposal
 import im.paideia.governance.contracts.ProposalBasic
 import org.ergoplatform.appkit.Address
 import im.paideia.common.contracts.Config
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoToken
 import im.paideia.governance.contracts.ActionSendFundsBasic
 import org.ergoplatform.appkit.impl.InputBoxImpl
 import sigmastate.eval.CostingBox
@@ -50,20 +50,20 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
         val stakeStateTokenId = Util.randomKey
         config.set(ConfKeys.im_paideia_dao_name, "Test DAO")
         config
-          .set(ConfKeys.im_paideia_dao_tokenid, ErgoId.create(daoGovTokenId).getBytes())
+          .set(ConfKeys.im_paideia_dao_tokenid, ErgoId.create(daoGovTokenId).getBytes)
         config.set(
           ConfKeys.im_paideia_dao_proposal_tokenid,
-          ErgoId.create(proposalTokenId).getBytes()
+          ErgoId.create(proposalTokenId).getBytes
         )
         config.set(
           ConfKeys.im_paideia_dao_action_tokenid,
-          ErgoId.create(actionTokenId).getBytes()
+          ErgoId.create(actionTokenId).getBytes
         )
         config.set(
           ConfKeys.im_paideia_dao_vote_tokenid,
-          ErgoId.create(voteTokenId).getBytes()
+          ErgoId.create(voteTokenId).getBytes
         )
-        config.set(ConfKeys.im_paideia_dao_key, ErgoId.create(daoKey).getBytes())
+        config.set(ConfKeys.im_paideia_dao_key, ErgoId.create(daoKey).getBytes)
         val dao = new DAO(daoKey, config)
 
         val testToken = Util.randomKey
@@ -178,20 +178,20 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
         val stakeStateTokenId = Util.randomKey
         config.set(ConfKeys.im_paideia_dao_name, "Test DAO")
         config
-          .set(ConfKeys.im_paideia_dao_tokenid, ErgoId.create(daoGovTokenId).getBytes())
+          .set(ConfKeys.im_paideia_dao_tokenid, ErgoId.create(daoGovTokenId).getBytes)
         config.set(
           ConfKeys.im_paideia_dao_proposal_tokenid,
-          ErgoId.create(proposalTokenId).getBytes()
+          ErgoId.create(proposalTokenId).getBytes
         )
         config.set(
           ConfKeys.im_paideia_dao_action_tokenid,
-          ErgoId.create(actionTokenId).getBytes()
+          ErgoId.create(actionTokenId).getBytes
         )
         config.set(
           ConfKeys.im_paideia_dao_vote_tokenid,
-          ErgoId.create(voteTokenId).getBytes()
+          ErgoId.create(voteTokenId).getBytes
         )
-        config.set(ConfKeys.im_paideia_dao_key, ErgoId.create(daoKey).getBytes())
+        config.set(ConfKeys.im_paideia_dao_key, ErgoId.create(daoKey).getBytes)
         val dao = new DAO(daoKey, config)
 
         val testToken = Util.randomKey
@@ -229,7 +229,7 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
             (
               ConfKeys.im_paideia_staking_profit_tokenids,
               DAOConfigValueSerializer(
-                Array(ErgoId.create(Env.paideiaTokenId).getBytes())
+                Array(ErgoId.create(Env.paideiaTokenId).getBytes)
               )
             )
           )
@@ -270,20 +270,20 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
         val stakeStateTokenId = Util.randomKey
         config.set(ConfKeys.im_paideia_dao_name, "Test DAO")
         config
-          .set(ConfKeys.im_paideia_dao_tokenid, ErgoId.create(daoGovTokenId).getBytes())
+          .set(ConfKeys.im_paideia_dao_tokenid, ErgoId.create(daoGovTokenId).getBytes)
         config.set(
           ConfKeys.im_paideia_dao_proposal_tokenid,
-          ErgoId.create(proposalTokenId).getBytes()
+          ErgoId.create(proposalTokenId).getBytes
         )
         config.set(
           ConfKeys.im_paideia_dao_action_tokenid,
-          ErgoId.create(actionTokenId).getBytes()
+          ErgoId.create(actionTokenId).getBytes
         )
         config.set(
           ConfKeys.im_paideia_dao_vote_tokenid,
-          ErgoId.create(voteTokenId).getBytes()
+          ErgoId.create(voteTokenId).getBytes
         )
-        config.set(ConfKeys.im_paideia_dao_key, ErgoId.create(daoKey).getBytes())
+        config.set(ConfKeys.im_paideia_dao_key, ErgoId.create(daoKey).getBytes)
         val dao = new DAO(daoKey, config)
 
         val testToken = Util.randomKey
@@ -362,20 +362,20 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
         val stakeStateTokenId = Util.randomKey
         config.set(ConfKeys.im_paideia_dao_name, "Test DAO")
         config
-          .set(ConfKeys.im_paideia_dao_tokenid, ErgoId.create(daoGovTokenId).getBytes())
+          .set(ConfKeys.im_paideia_dao_tokenid, ErgoId.create(daoGovTokenId).getBytes)
         config.set(
           ConfKeys.im_paideia_dao_proposal_tokenid,
-          ErgoId.create(proposalTokenId).getBytes()
+          ErgoId.create(proposalTokenId).getBytes
         )
         config.set(
           ConfKeys.im_paideia_dao_action_tokenid,
-          ErgoId.create(actionTokenId).getBytes()
+          ErgoId.create(actionTokenId).getBytes
         )
         config.set(
           ConfKeys.im_paideia_dao_vote_tokenid,
-          ErgoId.create(voteTokenId).getBytes()
+          ErgoId.create(voteTokenId).getBytes
         )
-        config.set(ConfKeys.im_paideia_dao_key, ErgoId.create(daoKey).getBytes())
+        config.set(ConfKeys.im_paideia_dao_key, ErgoId.create(daoKey).getBytes)
         val dao = new DAO(daoKey, config)
 
         val testToken = Util.randomKey

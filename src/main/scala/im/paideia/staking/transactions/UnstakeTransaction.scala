@@ -8,7 +8,7 @@ import org.ergoplatform.ErgoAddress
 import org.ergoplatform.appkit.Eip4Token
 import org.ergoplatform.appkit.OutBox
 import org.ergoplatform.appkit.impl.ErgoTreeContract
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoToken
 import im.paideia.DAOConfig
 import im.paideia.staking._
 import im.paideia.staking.boxes._
@@ -17,7 +17,7 @@ import im.paideia.util.ConfKeys
 import im.paideia.common.contracts.PaideiaContractSignature
 import im.paideia.Paideia
 import im.paideia.common.filtering._
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 import org.ergoplatform.appkit.ContextVar
 import org.ergoplatform.appkit.Address
 import special.collection.Coll
@@ -37,7 +37,7 @@ case class UnstakeTransaction(
 
   ctx = _ctx
 
-  val stakingKey = unstakeProxyInput.getTokens().get(0).getId().toString()
+  val stakingKey = unstakeProxyInput.getTokens().get(0).getId.toString()
 
   val config = Paideia.getConfig(daoKey)
 
@@ -97,16 +97,16 @@ case class UnstakeTransaction(
 
   val newExtraTokens = stakeStateInputBox.extraTokens
     .map { (et: ErgoToken) =>
-      val profitRecordIndex = whiteListedTokens.indexOf(et.getId())
+      val profitRecordIndex = whiteListedTokens.indexOf(et.getId)
       new ErgoToken(
-        et.getId(),
-        et.getValue() - (currentStakeRecord
+        et.getId,
+        et.getValue - (currentStakeRecord
           .rewards(1 + profitRecordIndex) - newStakeRecord.rewards(
           1 + profitRecordIndex
         ))
       )
     }
-    .filter((et: ErgoToken) => et.getValue() > 0L)
+    .filter((et: ErgoToken) => et.getValue > 0L)
     .toList
 
   val stakingContextVars = stakeStateInputBox

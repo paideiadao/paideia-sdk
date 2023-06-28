@@ -15,9 +15,9 @@ import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import org.ergoplatform.appkit.impl.ErgoTreeContract
 import org.ergoplatform.appkit.ContextVar
 import im.paideia.staking.contracts.StakeState
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoToken
 import im.paideia.DAOConfig
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 import sigmastate.utils.Helpers
 import sigmastate.Values
 import im.paideia.staking._
@@ -29,12 +29,12 @@ import scorex.crypto.hash.Blake2b256
 import im.paideia.Paideia
 import scorex.crypto.authds.ADDigest
 import special.sigma.AvlTree
-import io.getblok.getblok_plasma.collections.OpResult
+import work.lithos.plasma.collections.OpResult
 import im.paideia.DAO
 import im.paideia.governance.VoteRecord
 import sigmastate.AvlTreeData
 import im.paideia.governance.Proposal
-import io.getblok.getblok_plasma.collections.ProvenResult
+import work.lithos.plasma.collections.ProvenResult
 
 case class StakeStateBox(
   _ctx: BlockchainContextImpl,
@@ -513,7 +513,7 @@ object StakeStateBox {
       inp.getValue(),
       inp.getTokens().subList(2, inp.getTokens().size()).asScala.toList,
       dao,
-      inp.getTokens().get(1).getValue() - 1L,
+      inp.getTokens().get(1).getValue - 1L,
       longValues(0),
       longValues.slice(5, longValues.size),
       ADDigest @@ stateTrees(0),

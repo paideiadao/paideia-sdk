@@ -5,7 +5,7 @@ import org.ergoplatform.appkit.NetworkType
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.DAOConfig
 import im.paideia.governance.boxes.ProtoDAOProxyBox
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoToken
 import im.paideia.util.Env
 import org.ergoplatform.restapi.client.ErgoTransactionOutput
 import im.paideia.governance.transactions.CreateProtoDAOTransaction
@@ -19,13 +19,13 @@ import org.ergoplatform.appkit.Address
 import java.util.HashMap
 import org.ergoplatform.appkit.ErgoValue
 import im.paideia.DAOConfigKey
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 import java.nio.charset.StandardCharsets
 import im.paideia.util.ConfKeys
 import im.paideia.governance.GovernanceType
-import io.getblok.getblok_plasma.collections.PlasmaMap
+import work.lithos.plasma.collections.PlasmaMap
 import sigmastate.AvlTreeFlags
-import io.getblok.getblok_plasma.PlasmaParameters
+import work.lithos.plasma.PlasmaParameters
 import im.paideia.common.events.CreateTransactionsEvent
 import im.paideia.common.transactions.RefundTransaction
 import special.collection.Coll
@@ -121,7 +121,7 @@ class ProtoDAOProxy(contractSignature: PaideiaContractSignature)
       "_IM_PAIDEIA_CONTRACTS_MINT",
       ConfKeys.im_paideia_contracts_mint.ergoValue.getValue()
     )
-    cons.put("_PAIDEIA_DAO_KEY", ErgoId.create(Env.paideiaDaoKey).getBytes())
+    cons.put("_PAIDEIA_DAO_KEY", ErgoId.create(Env.paideiaDaoKey).getBytes)
     cons.put(
       "_EMPTY_CONFIG_DIGEST",
       ErgoValue

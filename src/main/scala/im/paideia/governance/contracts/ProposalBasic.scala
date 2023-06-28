@@ -16,13 +16,13 @@ import im.paideia.util.Env
 import org.ergoplatform.appkit.InputBox
 import im.paideia.util.ConfKeys
 import java.util.HashMap
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 import im.paideia.common.boxes.PaideiaBox
 import org.ergoplatform.appkit.ContextVar
 import im.paideia.governance.VoteRecord
 import scorex.crypto.authds.ADDigest
 import im.paideia.common.events.CreateTransactionsEvent
-import io.getblok.getblok_plasma.collections.ProvenResult
+import work.lithos.plasma.collections.ProvenResult
 
 class ProposalBasic(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature)
@@ -117,9 +117,9 @@ class ProposalBasic(contractSignature: PaideiaContractSignature)
       "_IM_PAIDEIA_DAO_THRESHOLD",
       ConfKeys.im_paideia_dao_threshold.ergoValue.getValue()
     )
-    cons.put("_IM_PAIDEIA_DAO_KEY", ErgoId.create(contractSignature.daoKey).getBytes())
-    cons.put("_PAIDEIA_DAO_KEY", ErgoId.create(Env.paideiaDaoKey).getBytes())
-    cons.put("_PAIDEIA_TOKEN_ID", ErgoId.create(Env.paideiaTokenId).getBytes())
+    cons.put("_IM_PAIDEIA_DAO_KEY", ErgoId.create(contractSignature.daoKey).getBytes)
+    cons.put("_PAIDEIA_DAO_KEY", ErgoId.create(Env.paideiaDaoKey).getBytes)
+    cons.put("_PAIDEIA_TOKEN_ID", ErgoId.create(Env.paideiaTokenId).getBytes)
     cons
   }
 

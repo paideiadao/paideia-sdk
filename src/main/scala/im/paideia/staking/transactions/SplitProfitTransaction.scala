@@ -7,11 +7,11 @@ import special.sigma.AvlTree
 import org.ergoplatform.ErgoAddress
 import org.ergoplatform.appkit.Eip4Token
 import org.ergoplatform.appkit.OutBox
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 import org.ergoplatform.appkit.impl.ErgoTreeContract
 import im.paideia.DAOConfig
 import special.collection.Coll
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoToken
 import scala.collection.JavaConverters._
 import im.paideia.staking._
 import im.paideia.staking.boxes._
@@ -104,8 +104,8 @@ object SplitProfitTransaction {
           .getTokens()
           .asScala
           .foldLeft(0L)((x, et) =>
-            if (et.getId() == govToken)
-              x + et.getValue()
+            if (et.getId == govToken)
+              x + et.getValue
             else
               x
           )
@@ -117,7 +117,7 @@ object SplitProfitTransaction {
             .getTokens()
             .asScala
             .foldLeft(0L)((x, et) =>
-              if (et.getId() == whiteListedTokens(i)) x + et.getValue()
+              if (et.getId == whiteListedTokens(i)) x + et.getValue
               else x
             )
         ) * profitSharePct) / 100
@@ -128,12 +128,12 @@ object SplitProfitTransaction {
         .subList(2, stakeStateInput.getTokens().size)
         .asScala
         .map((token: ErgoToken) =>
-          whiteListedTokens.find(_ == token.getId()) match {
+          whiteListedTokens.find(_ == token.getId) match {
             case None => token
             case Some(value) =>
               new ErgoToken(
-                token.getId(),
-                token.getValue() + profitToShare(whiteListedTokens.indexOf(value) + 2)
+                token.getId,
+                token.getValue + profitToShare(whiteListedTokens.indexOf(value) + 2)
               )
           }
         )
@@ -143,7 +143,7 @@ object SplitProfitTransaction {
           stakeStateInput
             .getTokens()
             .asScala
-            .find((t: ErgoToken) => t.getId() == tokenId) match {
+            .find((t: ErgoToken) => t.getId == tokenId) match {
             case None        => profitToShare(2 + whiteListedTokens.indexOf(tokenId)) > 0L
             case Some(value) => false
           }

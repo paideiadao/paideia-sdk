@@ -14,7 +14,7 @@ import org.ergoplatform.appkit.InputBox
 import special.collection.Coll
 import im.paideia.governance.transactions.SendFundsBasicTransaction
 import java.util.HashMap
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 import im.paideia.util.ConfKeys
 import im.paideia.common.events.CreateTransactionsEvent
 import im.paideia.common.filtering.FilterLeaf
@@ -121,7 +121,7 @@ class ActionSendFundsBasic(contractSignature: PaideiaContractSignature)
 
   override lazy val constants: HashMap[String, Object] = {
     val cons = new HashMap[String, Object]()
-    cons.put("_IM_PAIDEIA_DAO_KEY", ErgoId.create(contractSignature.daoKey).getBytes())
+    cons.put("_IM_PAIDEIA_DAO_KEY", ErgoId.create(contractSignature.daoKey).getBytes)
     cons.put(
       "_IM_PAIDEIA_CONTRACTS_TREASURY",
       ConfKeys.im_paideia_contracts_treasury.ergoValue.getValue()

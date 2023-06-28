@@ -8,7 +8,7 @@ import org.ergoplatform.appkit.NetworkType
 import org.ergoplatform.appkit.BlockchainContext
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.staking._
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoToken
 import im.paideia.staking.transactions._
 import scala.collection.JavaConverters._
 import org.ergoplatform.appkit.InputBox
@@ -219,7 +219,7 @@ class UnstakeTransactionSuite extends PaideiaTestSuite {
             .getOutputs()
             .asScala
             .flatMap(_.getTokens().asScala)
-            .forall(!_.getId().toString().equals(testKey))
+            .forall(!_.getId.toString().equals(testKey))
         )
         ctx
           .newProverBuilder()

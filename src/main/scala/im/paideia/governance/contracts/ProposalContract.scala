@@ -6,7 +6,7 @@ import im.paideia.common.boxes.PaideiaBox
 import org.ergoplatform.appkit.InputBox
 import im.paideia.governance.VoteRecord
 import scorex.crypto.authds.ADDigest
-import io.getblok.getblok_plasma.collections.ProvenResult
+import work.lithos.plasma.collections.ProvenResult
 
 abstract trait ProposalContract {
 

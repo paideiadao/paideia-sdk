@@ -11,7 +11,7 @@ import im.paideia.common.filtering.FilterNode
 import org.ergoplatform.appkit.ErgoContract
 import org.ergoplatform.appkit.ErgoValue
 import org.ergoplatform.appkit.InputBox
-import org.ergoplatform.appkit.JavaHelpers
+import org.ergoplatform.sdk.JavaHelpers
 import org.ergoplatform.appkit.NetworkType
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import org.ergoplatform.appkit.impl.ErgoTreeContract
@@ -31,6 +31,7 @@ import scala.collection.mutable.Set
 import scala.io.Source
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 import scorex.crypto.authds.ADDigest
+import org.ergoplatform.appkit.AppkitHelpers
 
 /** Represents a smart contract on the Paideia platform.
   *
@@ -84,7 +85,7 @@ class PaideiaContract(_contractSignature: PaideiaContractSignature) {
   /** The Ergo tree root hash for the ErgoScript code associated with this contract.
     */
   lazy val ergoTree: Values.ErgoTree = {
-    JavaHelpers.compile(
+    AppkitHelpers.compile(
       constants,
       ergoScript,
       _contractSignature.networkType.networkPrefix

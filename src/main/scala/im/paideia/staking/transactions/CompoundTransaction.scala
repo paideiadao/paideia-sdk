@@ -15,8 +15,8 @@ import im.paideia.util.Env
 import org.ergoplatform.ErgoAddress
 import org.ergoplatform.appkit.ContextVar
 import org.ergoplatform.appkit.Eip4Token
-import org.ergoplatform.appkit.ErgoId
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoId
+import org.ergoplatform.sdk.ErgoToken
 import org.ergoplatform.appkit.InputBox
 import org.ergoplatform.appkit.OutBox
 import org.ergoplatform.appkit.impl.BlockchainContextImpl

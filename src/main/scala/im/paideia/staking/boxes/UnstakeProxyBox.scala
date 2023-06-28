@@ -4,7 +4,7 @@ import im.paideia.common.boxes.PaideiaBox
 import org.ergoplatform.appkit.ErgoValue
 import im.paideia.DAOConfig
 import org.ergoplatform.appkit.Address
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoToken
 import im.paideia.util.ConfKeys
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.staking.contracts.UnstakeProxy

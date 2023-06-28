@@ -4,7 +4,7 @@ import im.paideia.DAO
 import im.paideia.util.Util
 import im.paideia.DAOConfig
 import im.paideia.util.ConfKeys
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 import im.paideia.Paideia
 import im.paideia.common.contracts.Treasury
 import im.paideia.common.contracts.PaideiaContract
@@ -22,14 +22,14 @@ object StakingTest {
     config.set(ConfKeys.im_paideia_dao_name, "Test DAO")
     config.set(
       ConfKeys.im_paideia_staking_state_tokenid,
-      ErgoId.create(stakeStateTokenId).getBytes()
+      ErgoId.create(stakeStateTokenId).getBytes
     )
     config.set(ConfKeys.im_paideia_staking_profit_tokenids, Array[Array[Byte]]())
     config.set(ConfKeys.im_paideia_staking_emission_delay, 1L)
-    config.set(ConfKeys.im_paideia_dao_tokenid, ErgoId.create(daoTokenId).getBytes())
+    config.set(ConfKeys.im_paideia_dao_tokenid, ErgoId.create(daoTokenId).getBytes)
     config.set(
       ConfKeys.im_paideia_dao_action_tokenid,
-      ErgoId.create(Util.randomKey).getBytes()
+      ErgoId.create(Util.randomKey).getBytes
     )
     config.set(ConfKeys.im_paideia_staking_emission_amount, 1000000000L)
     config.set(ConfKeys.im_paideia_staking_cyclelength, 1000000L)

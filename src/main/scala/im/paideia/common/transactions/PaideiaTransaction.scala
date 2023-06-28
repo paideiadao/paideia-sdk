@@ -1,7 +1,7 @@
 package im.paideia.common.transactions
 
 import org.ergoplatform.ErgoAddress
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoToken
 import org.ergoplatform.appkit.InputBox
 import org.ergoplatform.appkit.OutBox
 import org.ergoplatform.appkit.ReducedTransaction

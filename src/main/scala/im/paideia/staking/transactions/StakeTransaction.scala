@@ -20,7 +20,7 @@ import im.paideia.common.contracts.PaideiaContractSignature
 import im.paideia.Paideia
 import im.paideia.common.filtering._
 import im.paideia.util.ConfKeys
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 import org.ergoplatform.appkit.ContextVar
 import scorex.crypto.authds.ADDigest
 

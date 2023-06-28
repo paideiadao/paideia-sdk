@@ -4,7 +4,7 @@ import special.collection.Coll
 import scorex.crypto.hash.Blake2b256
 import special.collection.CollOverArray
 import java.nio.charset.StandardCharsets
-import io.getblok.getblok_plasma.ByteConversion
+import work.lithos.plasma.ByteConversion
 import org.ergoplatform.appkit.ErgoValue
 import org.ergoplatform.settings.ErgoAlgos
 import scala.collection.mutable.HashMap

@@ -7,7 +7,7 @@ import im.paideia.util.Util
 import im.paideia.DAOConfig
 import im.paideia.Paideia
 import im.paideia.util.ConfKeys
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 import im.paideia.DAO
 import im.paideia.governance.contracts.ProtoDAO
 import im.paideia.common.contracts.PaideiaContractSignature
@@ -32,19 +32,19 @@ class CreateDAOTransactionSuite extends PaideiaTestSuite {
         val stakeStateTokenId = Util.randomKey
         config.set(ConfKeys.im_paideia_dao_name, "Test DAO")
         config
-          .set(ConfKeys.im_paideia_dao_tokenid, ErgoId.create(daoGovTokenId).getBytes())
+          .set(ConfKeys.im_paideia_dao_tokenid, ErgoId.create(daoGovTokenId).getBytes)
         config.set(
           ConfKeys.im_paideia_dao_proposal_tokenid,
-          ErgoId.create(proposalTokenId).getBytes()
+          ErgoId.create(proposalTokenId).getBytes
         )
         config.set(
           ConfKeys.im_paideia_dao_action_tokenid,
-          ErgoId.create(actionTokenId).getBytes()
+          ErgoId.create(actionTokenId).getBytes
         )
-        config.set(ConfKeys.im_paideia_dao_key, ErgoId.create(daoKey).getBytes())
+        config.set(ConfKeys.im_paideia_dao_key, ErgoId.create(daoKey).getBytes)
         config.set(
           ConfKeys.im_paideia_staking_state_tokenid,
-          ErgoId.create(stakeStateTokenId).getBytes()
+          ErgoId.create(stakeStateTokenId).getBytes
         )
         config.set(ConfKeys.im_paideia_staking_profit_tokenids, Array[Array[Byte]]())
         config.set(ConfKeys.im_paideia_staking_emission_delay, 4L)

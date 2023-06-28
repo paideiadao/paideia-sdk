@@ -1,24 +1,24 @@
 package im.paideia.util
 
-import io.getblok.getblok_plasma.collections.LocalPlasmaBase
+import work.lithos.plasma.collections.LocalPlasmaBase
 import scorex.crypto.authds.avltree.batch.VersionedAVLStorage
 import sigmastate.AvlTreeFlags
-import io.getblok.getblok_plasma.PlasmaParameters
-import io.getblok.getblok_plasma.ByteConversion
+import work.lithos.plasma.PlasmaParameters
+import work.lithos.plasma.ByteConversion
 import scorex.crypto.hash.Digest32
 import scala.collection.mutable.HashMap
 import scorex.crypto.authds.ADDigest
-import io.getblok.getblok_plasma.collections.PlasmaMap
-import io.getblok.getblok_plasma.collections.LocalPlasmaMap
+import work.lithos.plasma.collections.PlasmaMap
+import work.lithos.plasma.collections.LocalPlasmaMap
 import scorex.crypto.authds.avltree.batch.PersistentBatchAVLProver
 import scala.collection.mutable.Queue
 import scorex.crypto.hash.Blake2b256
-import io.getblok.getblok_plasma.collections.Operations._
-import io.getblok.getblok_plasma.collections.ProvenResult
-import io.getblok.getblok_plasma.collections.OpResult
+import work.lithos.plasma.collections.Operations._
+import work.lithos.plasma.collections.ProvenResult
+import work.lithos.plasma.collections.OpResult
 import scorex.crypto.authds.avltree.batch.Insert
 import scorex.crypto.authds.avltree.batch.BatchAVLProver
-import io.getblok.getblok_plasma.collections.Proof
+import work.lithos.plasma.collections.Proof
 import scorex.crypto.authds.avltree.batch.Update
 import scorex.crypto.authds.avltree.batch.Remove
 import scorex.crypto.authds.avltree.batch.Lookup
@@ -223,20 +223,20 @@ class MempoolPlasmaMap[K, V](
     }
   }
 
-  def delete(keys: K*): io.getblok.getblok_plasma.collections.ProvenResult[V] =
+  def delete(keys: K*): ProvenResult[V] =
     deleteWithDigest(keys: _*)(Right(0)).toProvenResult
 
-  def insert(keyVals: (K, V)*): io.getblok.getblok_plasma.collections.ProvenResult[V] =
+  def insert(keyVals: (K, V)*): ProvenResult[V] =
     insertWithDigest(keyVals: _*)(Right(0)).toProvenResult
 
-  def lookUp(keys: K*): io.getblok.getblok_plasma.collections.ProvenResult[V] =
+  def lookUp(keys: K*): ProvenResult[V] =
     lookUpWithDigest(keys: _*)(None)
   def persistentItems: Seq[(K, V)] = ???
 
   override val storage: VersionedAVLStorage[Digest32] = store
   def toMap: Map[K, V]                                = ???
 
-  def update(newKeyVals: (K, V)*): io.getblok.getblok_plasma.collections.ProvenResult[V] =
+  def update(newKeyVals: (K, V)*): ProvenResult[V] =
     updateWithDigest(newKeyVals: _*)(Right(0)).toProvenResult
 
   def copy(newStore: VersionedAVLStorage[Digest32]): MempoolPlasmaMap[K, V] = {

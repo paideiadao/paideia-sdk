@@ -40,7 +40,7 @@ class FilterLeaf[T: Ordering](
       case CompareField.ERGO_TREE => box.getErgoTree().bytesHex
       case CompareField.ASSET =>
         if (box.getTokens().size > listIndex)
-          box.getTokens().get(listIndex).getId().toString()
+          box.getTokens().get(listIndex).getId.toString()
         else ""
       case CompareField.REGISTER =>
         if (box.getRegisters().size > listIndex)

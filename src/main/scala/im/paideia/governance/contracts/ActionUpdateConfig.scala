@@ -13,7 +13,7 @@ import im.paideia.common.events.BlockEvent
 import org.ergoplatform.appkit.InputBox
 import special.collection.Coll
 import java.util.HashMap
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 import im.paideia.util.ConfKeys
 import im.paideia.governance.transactions.UpdateConfigTransaction
 import im.paideia.common.events.TransactionEvent
@@ -166,7 +166,7 @@ class ActionUpdateConfig(contractSignature: PaideiaContractSignature)
 
   override lazy val constants: HashMap[String, Object] = {
     val cons = new HashMap[String, Object]()
-    cons.put("_IM_PAIDEIA_DAO_KEY", ErgoId.create(contractSignature.daoKey).getBytes())
+    cons.put("_IM_PAIDEIA_DAO_KEY", ErgoId.create(contractSignature.daoKey).getBytes)
     cons.put(
       "_IM_PAIDEIA_CONTRACTS_CONFIG",
       ConfKeys.im_paideia_contracts_config.ergoValue.getValue()

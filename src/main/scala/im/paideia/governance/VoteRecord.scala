@@ -1,7 +1,7 @@
 package im.paideia.governance
 
 import com.google.common.primitives.Longs
-import io.getblok.getblok_plasma.ByteConversion
+import work.lithos.plasma.ByteConversion
 
 case class VoteRecord(votes: Array[Long]) {
   def voteCount: Long = votes.fold(0L)(_ + _)

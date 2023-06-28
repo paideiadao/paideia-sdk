@@ -14,7 +14,7 @@ import im.paideia.governance.transactions.CreateProposalTransaction
 import org.ergoplatform.appkit.impl.InputBoxImpl
 import im.paideia.util.Env
 import java.util.HashMap
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 import im.paideia.common.events.CreateTransactionsEvent
 import im.paideia.common.transactions.RefundTransaction
 import org.ergoplatform.appkit.NetworkType
@@ -76,7 +76,7 @@ class CreateProposal(contractSignature: PaideiaContractSignature)
 
   override lazy val constants: HashMap[String, Object] = {
     val cons = new HashMap[String, Object]()
-    cons.put("_IM_PAIDEIA_DAO_KEY", ErgoId.create(contractSignature.daoKey).getBytes())
+    cons.put("_IM_PAIDEIA_DAO_KEY", ErgoId.create(contractSignature.daoKey).getBytes)
     cons
   }
 }

@@ -8,7 +8,7 @@ import org.ergoplatform.ErgoAddress
 import org.ergoplatform.appkit.Eip4Token
 import org.ergoplatform.appkit.OutBox
 import org.ergoplatform.appkit.impl.ErgoTreeContract
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoToken
 import im.paideia.DAOConfig
 import org.ergoplatform.appkit.ContextVar
 import org.ergoplatform.appkit.ErgoValue
@@ -24,7 +24,7 @@ import im.paideia.Paideia
 import im.paideia.common.filtering.FilterLeaf
 import im.paideia.common.filtering.CompareField
 import im.paideia.util.ConfKeys
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 import im.paideia.common.contracts.PaideiaContractSignature
 import special.collection.Coll
 import scorex.crypto.authds.ADDigest
@@ -35,7 +35,7 @@ case class AddStakeTransaction(
   _changeAddress: ErgoAddress,
   daoKey: String
 ) extends PaideiaTransaction {
-  val stakingKey = addStakeProxyInput.getTokens().get(0).getId().toString()
+  val stakingKey = addStakeProxyInput.getTokens().get(0).getId.toString()
   val amount     = addStakeProxyInput.getRegisters().get(1).getValue().asInstanceOf[Long]
   val config     = Paideia.getConfig(daoKey)
 

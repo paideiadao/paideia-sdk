@@ -5,7 +5,7 @@ import im.paideia.DAOConfigKey
 import im.paideia.common.boxes.PaideiaBox
 import im.paideia.DAO
 import im.paideia.governance.contracts.ActionUpdateConfig
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoToken
 import im.paideia.util.ConfKeys
 import org.ergoplatform.appkit.ErgoValue
 import sigmastate.eval.Colls
