@@ -1,20 +1,28 @@
 package im.paideia
 
-import scalan.util.FileUtil
-import org.ergoplatform.appkit.JavaHelpers._
+import org.ergoplatform.sdk.JavaHelpers._
 import java.util.{List => JList}
 import java.lang.{String => JString}
+import org.apache.commons.io.FileUtils
+import java.io.File
+import java.nio.charset.Charset
 
 trait HttpClientTesting {
   val responsesDir = "src/test/resources"
   val addr1        = "9f4QF8AD1nQ3nJahQVkMj8hFSVVzVom77b52JU7EW71Zexg6N8v"
 
   def loadNodeResponse(name: String) = {
-    FileUtil.read(FileUtil.file(s"$responsesDir/node_responses/$name"))
+    FileUtils.readFileToString(
+      new File(s"$responsesDir/node_responses/$name"),
+      Charset.defaultCharset()
+    )
   }
 
   def loadExplorerResponse(name: String) = {
-    FileUtil.read(FileUtil.file(s"$responsesDir/explorer_responses/$name"))
+    FileUtils.readFileToString(
+      new File(s"$responsesDir/explorer_responses/$name"),
+      Charset.defaultCharset()
+    )
   }
 
   case class MockData(

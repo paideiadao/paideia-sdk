@@ -1,14 +1,14 @@
 package im.paideia.staking
 
 import scala.collection.mutable.Queue
-import io.getblok.getblok_plasma.collections.ProvenResult
-import io.getblok.getblok_plasma.collections.OpResult
-import io.getblok.getblok_plasma.ByteConversion
+import work.lithos.plasma.collections.ProvenResult
+import work.lithos.plasma.collections.OpResult
+import work.lithos.plasma.ByteConversion
 import scala.util.Failure
 import scala.util.Success
 import special.collection.Coll
 import special.collection.CollOverArrayBuilder
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 import special.collection.PairOfCols
 import special.collection.CollOverArray
 import org.ergoplatform.appkit.ContextVar

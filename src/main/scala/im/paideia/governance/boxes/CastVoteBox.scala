@@ -4,7 +4,7 @@ import im.paideia.common.boxes.PaideiaBox
 import im.paideia.governance.VoteRecord
 import im.paideia.governance.contracts.CastVote
 import org.ergoplatform.appkit.Address
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoToken
 import org.ergoplatform.appkit.ErgoValue
 import org.ergoplatform.appkit.InputBox
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
@@ -95,7 +95,7 @@ object CastVoteBox {
       .asInstanceOf[CastVote]
     CastVoteBox(
       ctx,
-      inp.getTokens().get(0).getId().toString(),
+      inp.getTokens().get(0).getId.toString(),
       inp.getRegisters().get(0).getValue().asInstanceOf[Int],
       VoteRecord.convertsVoteRecord.convertFromBytes(
         inp.getRegisters().get(1).getValue().asInstanceOf[Coll[Byte]].toArray

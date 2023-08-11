@@ -1,12 +1,12 @@
 package im.paideia.util
 
 import sigmastate.AvlTreeFlags
-import io.getblok.getblok_plasma.PlasmaParameters
+import work.lithos.plasma.PlasmaParameters
 import scorex.crypto.authds.avltree.batch.BatchAVLProver
-import io.getblok.getblok_plasma.ByteConversion
+import work.lithos.plasma.ByteConversion
 import scorex.crypto.hash.Digest32
 import scorex.crypto.hash.Blake2b256
-import io.getblok.getblok_plasma.collections.PlasmaMap
+import work.lithos.plasma.collections.PlasmaMap
 import scala.collection.mutable.HashMap
 import scala.collection.mutable
 import scorex.crypto.authds.avltree.batch.InternalProverNode
@@ -17,6 +17,7 @@ import org.ergoplatform.settings.ErgoAlgos.HF
 import scala.util.Try
 import scorex.crypto.authds.avltree.batch.serialization.BatchAVLProverManifest
 import scorex.crypto.authds.avltree.batch.ProverNodes
+import scorex.utils.Logger
 
 class PlasmaMapWithMap[K, V](
   override val flags: AvlTreeFlags,
@@ -28,14 +29,14 @@ class PlasmaMapWithMap[K, V](
   var cachedMap: Option[Map[K, V]] = None
 
   def toMap: Map[K, V] = {
+    implicit val logger: Logger = Logger.Default
     cachedMap match {
       case None => {
         implicit val hf: HF = Blake2b256
         val plamaSerializer = new BatchAVLProverSerializer[Digest32, Blake2b256.type]
 
-        val treeManifest
-          : Try[BatchAVLProverManifest[scorex.crypto.hash.Digest32, Blake2b256.type]] =
-          plamaSerializer.manifestFromBytes(getManifest().bytes)
+        val treeManifest: Try[BatchAVLProverManifest[Digest32]] =
+          plamaSerializer.manifestFromBytes(getManifest().bytes, params.keySize)
 
         def collectLeafs(
           node: ProverNodes[Digest32],
@@ -56,7 +57,7 @@ class PlasmaMapWithMap[K, V](
                 leafs
           }
         val result =
-          collectLeafs(treeManifest.get.rootAndHeight._1, mutable.ArrayBuffer[(K, V)]())
+          collectLeafs(treeManifest.get.root, mutable.ArrayBuffer[(K, V)]())
             .toMap[K, V]
         result
       }

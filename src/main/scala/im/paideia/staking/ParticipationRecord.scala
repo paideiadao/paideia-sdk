@@ -1,7 +1,7 @@
 package im.paideia.staking
 
 import com.google.common.primitives.Longs
-import io.getblok.getblok_plasma.ByteConversion
+import work.lithos.plasma.ByteConversion
 
 case class ParticipationRecord(
   var voted: Long,

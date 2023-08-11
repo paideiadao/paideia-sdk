@@ -8,7 +8,7 @@ import org.ergoplatform.appkit.NetworkType
 import org.ergoplatform.appkit.BlockchainContext
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.staking._
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoToken
 import im.paideia.staking.transactions._
 import scala.collection.JavaConverters._
 import org.ergoplatform.appkit.InputBox
@@ -26,7 +26,7 @@ import im.paideia.util.ConfKeys
 import org.ergoplatform.restapi.client.BlockTransactions
 import org.ergoplatform.restapi.client.Transactions
 import im.paideia.util.Util
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 import im.paideia.common.contracts.Treasury
 import im.paideia.util.Env
 import im.paideia.common.events.CreateTransactionsEvent
@@ -172,7 +172,7 @@ class EmitTransactionSuite extends PaideiaTestSuite {
         val sigUsd = Util.randomKey
         dao.config.set(
           ConfKeys.im_paideia_staking_profit_tokenids,
-          Array(ErgoId.create(sigUsd).getBytes())
+          Array(ErgoId.create(sigUsd).getBytes)
         )
 
         val stakingContract = StakeState(PaideiaContractSignature(daoKey = dao.key))
@@ -270,7 +270,7 @@ class EmitTransactionSuite extends PaideiaTestSuite {
         val sigUsd = Util.randomKey
         dao.config.set(
           ConfKeys.im_paideia_staking_profit_tokenids,
-          Array(ErgoId.create(sigUsd).getBytes())
+          Array(ErgoId.create(sigUsd).getBytes)
         )
 
         val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))

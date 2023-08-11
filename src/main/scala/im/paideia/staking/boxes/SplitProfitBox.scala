@@ -2,7 +2,7 @@ package im.paideia.staking.boxes
 
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.DAOConfig
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoToken
 import im.paideia.staking.contracts.SplitProfit
 import im.paideia.common.boxes.PaideiaBox
 import org.ergoplatform.appkit.ErgoValue

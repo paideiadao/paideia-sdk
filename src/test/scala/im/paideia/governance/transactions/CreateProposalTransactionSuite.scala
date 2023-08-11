@@ -6,7 +6,7 @@ import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.util.Util
 import im.paideia.DAOConfig
 import im.paideia.util.ConfKeys
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 import im.paideia.DAO
 import im.paideia.Paideia
 import im.paideia.common.contracts.PaideiaContractSignature
@@ -21,7 +21,7 @@ import im.paideia.governance.contracts.ProposalBasic
 import im.paideia.governance.contracts.ActionSendFundsBasic
 import sigmastate.eval.CostingBox
 import org.ergoplatform.appkit.impl.InputBoxImpl
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoToken
 import org.ergoplatform.restapi.client.ErgoTransaction
 import im.paideia.common.events.TransactionEvent
 import im.paideia.governance.Proposal
@@ -44,23 +44,23 @@ class CreateProposalTransactionSuite extends PaideiaTestSuite {
         val stakeStateTokenId = Util.randomKey
         config.set(ConfKeys.im_paideia_dao_name, "Test DAO")
         config
-          .set(ConfKeys.im_paideia_dao_tokenid, ErgoId.create(daoGovTokenId).getBytes())
+          .set(ConfKeys.im_paideia_dao_tokenid, ErgoId.create(daoGovTokenId).getBytes)
         config.set(
           ConfKeys.im_paideia_dao_proposal_tokenid,
-          ErgoId.create(proposalTokenId).getBytes()
+          ErgoId.create(proposalTokenId).getBytes
         )
         config.set(
           ConfKeys.im_paideia_dao_action_tokenid,
-          ErgoId.create(actionTokenId).getBytes()
+          ErgoId.create(actionTokenId).getBytes
         )
         config.set(
           ConfKeys.im_paideia_dao_vote_tokenid,
-          ErgoId.create(voteTokenId).getBytes()
+          ErgoId.create(voteTokenId).getBytes
         )
-        config.set(ConfKeys.im_paideia_dao_key, ErgoId.create(daoKey).getBytes())
+        config.set(ConfKeys.im_paideia_dao_key, ErgoId.create(daoKey).getBytes)
         config.set(
           ConfKeys.im_paideia_staking_state_tokenid,
-          ErgoId.create(stakeStateTokenId).getBytes()
+          ErgoId.create(stakeStateTokenId).getBytes
         )
         config.set(ConfKeys.im_paideia_dao_min_proposal_time, 3600000L)
         config.set(ConfKeys.im_paideia_staking_profit_tokenids, Array[Array[Byte]]())

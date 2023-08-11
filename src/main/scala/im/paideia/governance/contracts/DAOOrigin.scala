@@ -6,12 +6,12 @@ import im.paideia.common.contracts.PaideiaActor
 import im.paideia.governance.boxes.DAOOriginBox
 import im.paideia.DAOConfig
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoToken
 import im.paideia.util.Env
 import im.paideia.util.ConfKeys
 import im.paideia.DAO
 import java.util.HashMap
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 import org.ergoplatform.appkit.ErgoValue
 import java.nio.charset.StandardCharsets
 import sigmastate.eval.Colls
@@ -78,9 +78,9 @@ class DAOOrigin(contractSignature: PaideiaContractSignature)
       "_IM_PAIDEIA_STAKING_STATE_TOKENID",
       ConfKeys.im_paideia_staking_state_tokenid.ergoValue.getValue()
     )
-    cons.put("_IM_PAIDEIA_DAO_KEY", ErgoId.create(contractSignature.daoKey).getBytes())
-    cons.put("_PAIDEIA_DAO_KEY", ErgoId.create(Env.paideiaDaoKey).getBytes())
-    cons.put("_PAIDEIA_TOKENID", ErgoId.create(Env.paideiaTokenId).getBytes())
+    cons.put("_IM_PAIDEIA_DAO_KEY", ErgoId.create(contractSignature.daoKey).getBytes)
+    cons.put("_PAIDEIA_DAO_KEY", ErgoId.create(Env.paideiaDaoKey).getBytes)
+    cons.put("_PAIDEIA_TOKENID", ErgoId.create(Env.paideiaTokenId).getBytes)
     cons.put(
       "_IM_PAIDEIA_FEES_CREATEPROPOSAL_PAIDEIA",
       ConfKeys.im_paideia_fees_createproposal_paideia.ergoValue.getValue()

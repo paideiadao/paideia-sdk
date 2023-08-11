@@ -5,12 +5,12 @@ import org.ergoplatform.appkit.NetworkType
 import im.paideia.DAOConfig
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.governance.boxes.PaideiaOriginBox
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoToken
 import im.paideia.util.Env
 import java.util.HashMap
 import im.paideia.Paideia
 import im.paideia.DAOConfigKey
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 import org.ergoplatform.appkit.ErgoValue
 import im.paideia.util.ConfKeys
 
@@ -58,8 +58,8 @@ class PaideiaOrigin(contractSignature: PaideiaContractSignature)
       "_IM_PAIDEIA_CONTRACTS_SPLIT_PROFIT",
       ConfKeys.im_paideia_contracts_split_profit.ergoValue.getValue()
     )
-    cons.put("_PAIDEIA_TOKEN_ID", ErgoId.create(Env.paideiaTokenId).getBytes())
-    cons.put("_PAIDEIA_DAO_KEY", ErgoId.create(Env.paideiaDaoKey).getBytes())
+    cons.put("_PAIDEIA_TOKEN_ID", ErgoId.create(Env.paideiaTokenId).getBytes)
+    cons.put("_PAIDEIA_DAO_KEY", ErgoId.create(Env.paideiaDaoKey).getBytes)
     cons
   }
 }

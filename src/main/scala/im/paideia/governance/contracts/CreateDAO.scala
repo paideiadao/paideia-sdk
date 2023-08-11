@@ -8,7 +8,7 @@ import scorex.crypto.authds.ADDigest
 import im.paideia.util.ConfKeys
 import im.paideia.Paideia
 import java.util.HashMap
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 import im.paideia.util.Env
 import org.ergoplatform.appkit.ErgoValue
 import java.nio.charset.StandardCharsets
@@ -35,7 +35,7 @@ class CreateDAO(contractSignature: PaideiaContractSignature)
       ConfKeys.im_paideia_contracts_config.ergoValue.getValue()
     )
     cons.put("_IM_PAIDEIA_DAO_KEY", ConfKeys.im_paideia_dao_key.ergoValue.getValue())
-    cons.put("_PAIDEIA_DAO_KEY", ErgoId.create(Env.paideiaDaoKey).getBytes())
+    cons.put("_PAIDEIA_DAO_KEY", ErgoId.create(Env.paideiaDaoKey).getBytes)
     cons.put(
       "_IM_PAIDEIA_DAO_PROPOSAL_TOKENID",
       ConfKeys.im_paideia_dao_proposal_tokenid.ergoValue.getValue()

@@ -8,7 +8,7 @@ import org.ergoplatform.appkit.NetworkType
 import org.ergoplatform.appkit.BlockchainContext
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.staking._
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoToken
 import im.paideia.staking.boxes._
 import scala.collection.JavaConverters._
 import org.ergoplatform.appkit.InputBox
@@ -27,7 +27,7 @@ import org.ergoplatform.restapi.client.Transactions
 import im.paideia.Paideia
 import im.paideia.common.events.BlockEvent
 import im.paideia.util.Util
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 import im.paideia.common.contracts.Treasury
 import im.paideia.DAOConfigValueSerializer
 import im.paideia.DAOConfigValueDeserializer
@@ -61,7 +61,7 @@ class ProfitShareTransactionSuite extends PaideiaTestSuite {
         dao.config.set(ConfKeys.im_paideia_staking_profit_share_pct, 50.toByte)
         dao.config.set(
           ConfKeys.im_paideia_dao_action_tokenid,
-          ErgoId.create(Util.randomKey).getBytes()
+          ErgoId.create(Util.randomKey).getBytes
         )
         val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
         dao.config
@@ -130,7 +130,7 @@ class ProfitShareTransactionSuite extends PaideiaTestSuite {
         val sigUsd = Util.randomKey
         dao.config.set(
           ConfKeys.im_paideia_staking_profit_tokenids,
-          Array(ErgoId.create(sigUsd).getBytes())
+          Array(ErgoId.create(sigUsd).getBytes)
         )
 
         val profitShareContract =
@@ -202,7 +202,7 @@ class ProfitShareTransactionSuite extends PaideiaTestSuite {
         dao.config.set(ConfKeys.im_paideia_staking_profit_share_pct, 50.toByte)
         dao.config.set(
           ConfKeys.im_paideia_dao_action_tokenid,
-          ErgoId.create(Util.randomKey).getBytes()
+          ErgoId.create(Util.randomKey).getBytes
         )
         val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
         dao.config
@@ -210,7 +210,7 @@ class ProfitShareTransactionSuite extends PaideiaTestSuite {
         val sigUsd = Util.randomKey
         dao.config.set(
           ConfKeys.im_paideia_staking_profit_tokenids,
-          Array(ErgoId.create(sigUsd).getBytes())
+          Array(ErgoId.create(sigUsd).getBytes)
         )
 
         val profitShareContract =

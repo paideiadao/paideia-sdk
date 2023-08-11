@@ -8,14 +8,14 @@ import org.ergoplatform.appkit.NetworkType
 import org.ergoplatform.appkit.BlockchainContext
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.staking._
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoToken
 import im.paideia.staking.boxes._
 import scala.collection.JavaConverters._
 import org.ergoplatform.appkit.InputBox
 import im.paideia.DAOConfig
 import im.paideia.staking.transactions._
 import im.paideia.common.PaideiaTestSuite
-import sigmastate.lang.exceptions.InterpreterException
+import sigmastate.exceptions.InterpreterException
 import im.paideia.util.Util
 import im.paideia.common.contracts.PaideiaContractSignature
 import im.paideia.util.ConfKeys

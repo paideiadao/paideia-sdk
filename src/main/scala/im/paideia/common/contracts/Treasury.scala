@@ -1,6 +1,6 @@
 package im.paideia.common.contracts
 
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoToken
 import im.paideia.common.boxes.TreasuryBox
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.DAOConfig
@@ -9,7 +9,7 @@ import im.paideia.Paideia
 import im.paideia.util.ConfKeys
 import org.ergoplatform.appkit.InputBox
 import im.paideia.util.Env
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 
 /** Treasury class represents the main contract for the Paideia Treasury which manages and
   * holds assets and tokens of the Paideia DAO treasury on Ergo Blockchain.
@@ -59,8 +59,8 @@ class Treasury(contractSignature: PaideiaContractSignature)
         .getConfig(contractSignature.daoKey)
         .getArray[Byte](ConfKeys.im_paideia_dao_action_tokenid)
     )
-    cons.put("_IM_PAIDEIA_DAO_KEY", ErgoId.create(Env.paideiaDaoKey).getBytes())
-    cons.put("_IM_PAIDEIA_TOKEN_ID", ErgoId.create(Env.paideiaTokenId).getBytes())
+    cons.put("_IM_PAIDEIA_DAO_KEY", ErgoId.create(Env.paideiaDaoKey).getBytes)
+    cons.put("_IM_PAIDEIA_TOKEN_ID", ErgoId.create(Env.paideiaTokenId).getBytes)
     cons.put(
       "_IM_PAIDEIA_FEE_EMIT_PAIDEIA",
       ConfKeys.im_paideia_fees_emit_paideia.ergoValue.getValue()
@@ -120,13 +120,13 @@ class Treasury(contractSignature: PaideiaContractSignature)
             .getTokens()
             .forEach((token: ErgoToken) =>
               tokensFound.put(
-                token.getId().toString(),
-                token.getValue() + tokensFound.getOrDefault(token.getId().toString(), 0L)
+                token.getId.toString(),
+                token.getValue + tokensFound.getOrDefault(token.getId.toString(), 0L)
               )
             )
           assetsFound =
             nanoErgFound >= nanoErgNeeded && tokensNeeded.forall((token: ErgoToken) =>
-              token.getValue <= tokensFound.getOrDefault(token.getId().toString(), 0L)
+              token.getValue <= tokensFound.getOrDefault(token.getId.toString(), 0L)
             )
         } else Unit
       })

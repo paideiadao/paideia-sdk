@@ -8,7 +8,7 @@ import org.ergoplatform.appkit.NetworkType
 import org.ergoplatform.appkit.BlockchainContext
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.staking._
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoToken
 import im.paideia.staking.transactions._
 import scala.collection.JavaConverters._
 import org.ergoplatform.appkit.InputBox
@@ -25,6 +25,7 @@ import im.paideia.Paideia
 import im.paideia.common.events.TransactionEvent
 import im.paideia.common.events.CreateTransactionsEvent
 import im.paideia.common.transactions.RefundTransaction
+import sigmastate.exceptions.InterpreterException
 
 class UnstakeTransactionSuite extends PaideiaTestSuite {
   test("Sign partial unstake tx") {
@@ -85,10 +86,13 @@ class UnstakeTransactionSuite extends PaideiaTestSuite {
         eventResponse.exceptions.map(e => throw e)
         assert(eventResponse.unsignedTransactions.size === 1)
         assert(eventResponse.unsignedTransactions(0).isInstanceOf[UnstakeTransaction])
-        ctx
-          .newProverBuilder()
-          .build()
-          .sign(eventResponse.unsignedTransactions(0).unsigned)
+        val thrown = intercept[InterpreterException] {
+          ctx
+            .newProverBuilder()
+            .build()
+            .sign(eventResponse.unsignedTransactions(0).unsigned())
+        }
+        assert(thrown.getMessage === "Script reduced to false")
       }
     })
   }
@@ -219,7 +223,7 @@ class UnstakeTransactionSuite extends PaideiaTestSuite {
             .getOutputs()
             .asScala
             .flatMap(_.getTokens().asScala)
-            .forall(!_.getId().toString().equals(testKey))
+            .forall(!_.getId.toString().equals(testKey))
         )
         ctx
           .newProverBuilder()

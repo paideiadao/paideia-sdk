@@ -5,14 +5,14 @@ import im.paideia.common.contracts.PaideiaContractSignature
 import im.paideia.common.contracts.PaideiaContract
 import im.paideia.staking.boxes.SplitProfitBox
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoToken
 import im.paideia.common.events.BlockEvent
 import im.paideia.common.events.PaideiaEvent
 import im.paideia.common.events.PaideiaEventResponse
 import im.paideia.staking.transactions.SplitProfitTransaction
 import im.paideia.Paideia
 import java.util.HashMap
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 import im.paideia.util.ConfKeys
 import im.paideia.common.events.CreateTransactionsEvent
 import org.ergoplatform.appkit.InputBox
@@ -69,7 +69,7 @@ class SplitProfit(contractSig: PaideiaContractSignature)
 
   override lazy val constants: HashMap[String, Object] = {
     val cons = new HashMap[String, Object]()
-    cons.put("_IM_PAIDEIA_DAO_KEY", ErgoId.create(contractSig.daoKey).getBytes())
+    cons.put("_IM_PAIDEIA_DAO_KEY", ErgoId.create(contractSig.daoKey).getBytes)
     cons.put(
       "_IM_PAIDEIA_CONTRACTS_TREASURY",
       ConfKeys.im_paideia_contracts_treasury.ergoValue.getValue()

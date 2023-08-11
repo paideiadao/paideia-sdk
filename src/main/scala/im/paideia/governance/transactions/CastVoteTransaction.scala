@@ -4,13 +4,13 @@ import im.paideia.common.transactions.PaideiaTransaction
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import org.ergoplatform.appkit.Address
 import im.paideia.governance.boxes.CastVoteBox
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 import org.ergoplatform.appkit.InputBox
 import im.paideia.DAO
 import im.paideia.common.filtering._
 import im.paideia.Paideia
 import im.paideia.util.ConfKeys
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoToken
 import im.paideia.common.contracts.PaideiaContractSignature
 import special.collection.Coll
 import org.ergoplatform.appkit.ContextVar

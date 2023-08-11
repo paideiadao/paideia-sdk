@@ -9,7 +9,7 @@ import im.paideia.DAOConfig
 import im.paideia.DAO
 import im.paideia.util.ConfKeys
 import im.paideia.util.Util
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 
 class PaideiaSuite extends AnyFunSuite {
   test("Test PaideiaActor instantiation") {
@@ -17,7 +17,7 @@ class PaideiaSuite extends AnyFunSuite {
     val paideiaConfig = DAOConfig(Env.paideiaDaoKey)
     paideiaConfig.set(
       ConfKeys.im_paideia_dao_action_tokenid,
-      ErgoId.create(Util.randomKey).getBytes()
+      ErgoId.create(Util.randomKey).getBytes
     )
     Paideia.addDAO(DAO(Env.paideiaDaoKey, paideiaConfig))
     val contract    = Config(PaideiaContractSignature(daoKey = Env.paideiaDaoKey))

@@ -12,7 +12,7 @@ import im.paideia.common.transactions.PaideiaTransaction
 import im.paideia.governance.boxes.ActionUpdateConfigBox
 import im.paideia.util.ConfKeys
 import org.ergoplatform.appkit.ContextVar
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 import org.ergoplatform.appkit.InputBox
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder

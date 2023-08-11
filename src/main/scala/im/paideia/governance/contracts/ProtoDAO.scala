@@ -5,11 +5,11 @@ import org.ergoplatform.appkit.NetworkType
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.DAOConfig
 import im.paideia.governance.boxes.ProtoDAOBox
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoToken
 import im.paideia.util.Env
 import java.util.HashMap
 import im.paideia.DAOConfigKey
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 import org.ergoplatform.appkit.ErgoValue
 import java.nio.charset.StandardCharsets
 import im.paideia.common.events.PaideiaEvent
@@ -133,7 +133,7 @@ class ProtoDAO(contractSignature: PaideiaContractSignature)
       ConfKeys.im_paideia_contracts_config.ergoValue.getValue()
     )
     cons.put("_IM_PAIDEIA_DAO_KEY", ConfKeys.im_paideia_dao_key.ergoValue.getValue())
-    cons.put("_PAIDEIA_DAO_KEY", ErgoId.create(Env.paideiaDaoKey).getBytes())
+    cons.put("_PAIDEIA_DAO_KEY", ErgoId.create(Env.paideiaDaoKey).getBytes)
     cons.put("_IM_PAIDEIA_DAO_NAME", ConfKeys.im_paideia_dao_name.ergoValue.getValue())
     cons.put(
       "_IM_PAIDEIA_DAO_PROPOSAL_TOKENID",

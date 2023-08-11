@@ -3,7 +3,7 @@ package im.paideia.common
 import org.scalatest.funsuite.AnyFunSuite
 import im.paideia.DAOConfigValue
 import special.collection.Coll
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 import special.collection.CollOverArray
 import im.paideia.DAOConfigValueSerializer
 import im.paideia.DAOConfigValueDeserializer

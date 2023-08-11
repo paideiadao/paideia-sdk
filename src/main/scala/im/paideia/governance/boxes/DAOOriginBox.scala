@@ -2,8 +2,8 @@ package im.paideia.governance.boxes
 
 import im.paideia.common.boxes.PaideiaBox
 import org.ergoplatform.appkit.ErgoValue
-import org.ergoplatform.appkit.ErgoId
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoId
+import org.ergoplatform.sdk.ErgoToken
 import im.paideia.governance.contracts.DAOOrigin
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.common.contracts.PaideiaContractSignature
@@ -28,7 +28,7 @@ case class DAOOriginBox(
 
   override def registers: List[ErgoValue[_]] = {
     List(
-      ErgoValueBuilder.buildFor(Colls.fromArray(ErgoId.create(dao.key).getBytes()))
+      ErgoValueBuilder.buildFor(Colls.fromArray(ErgoId.create(dao.key).getBytes))
     )
   }
 
@@ -56,8 +56,8 @@ object DAOOriginBox {
         new ErgoId(inp.getRegisters().get(0).getValue().asInstanceOf[Coll[Byte]].toArray)
           .toString()
       ),
-      inp.getTokens().get(1).getValue(),
-      inp.getTokens().get(2).getValue(),
+      inp.getTokens().get(1).getValue,
+      inp.getTokens().get(2).getValue,
       contract
     )
   }

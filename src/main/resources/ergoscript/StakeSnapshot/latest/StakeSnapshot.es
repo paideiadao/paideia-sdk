@@ -127,8 +127,8 @@
     val newSnapshotsTrees: Coll[(AvlTree, AvlTree)] = 
         stakeStateO.R7[Coll[(AvlTree, AvlTree)]].get
 
-    val newSnapshotsProfit: Coll[Coll[Long]] = 
-        stakeStateO.R8[Coll[Coll[Long]]].get
+    val newSnapshotsProfit: Coll[Long] = 
+        stakeStateO.R8[Coll[Long]].get
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -242,21 +242,17 @@
             stakeStateTree.digest,
         newSnapshotsTrees(newSnapshotsTrees.size-1)._2.digest == 
             participationTree.digest,
-        newSnapshotsProfit(newSnapshotsProfit.size-1)(0) == 
+        newSnapshotsProfit(0) == 
         min(
             emissionAmount,
             stakeState.tokens(1)._2-totalStaked-profit(0)-1
         ) + (if (emissionDelay == 1) profit(0) else 0L)
     ))
 
-    val correctProfitAddedToSnapshot: Boolean = allOf(Coll(
-        newSnapshotsProfit(0).slice(1,profit.size).indices.forall{
-            (i: Int) => newSnapshotsProfit(0)(i+1) == profit(i+1)},
-        if (emissionDelay > 1) 
-            newSnapshotsProfit(0)(0) == snapshotsProfit(1)(0) + profit(0)
-        else
-            true
-    ))
+    val correctProfitAddedToSnapshot: Boolean = 
+        newSnapshotsProfit.slice(1,profit.size).indices.forall{
+            (i: Int) => newSnapshotsProfit(i+1) == profit(i+1)}
+        
 
     // When a staker gets rewarded for the staking period his entry gets 
     // removed from the snapshot. An empty snapshot is proof of having handled 
@@ -277,12 +273,11 @@
             snapshotsStaked.slice(1,emissionDelay)
     ))
 
-    val profitReset: Boolean = outputProfit.forall{(p: Long) => p==0L}
+    val profitReset: Boolean = outputProfit.indices.forall{(p: Int) => outputProfit(p) == newSnapshotsProfit(p)}
 
     val correctSize: Boolean = allOf(Coll(
         newSnapshotsTrees.size == emissionDelay,
         newSnapshotsStaked.size == emissionDelay,
-        newSnapshotsProfit.size == emissionDelay,
         newSnapshotsPPWeight.size == emissionDelay,
         newSnapshotsPWeight.size == emissionDelay,
         newSnapshotsVoted.size == emissionDelay,

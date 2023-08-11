@@ -3,7 +3,7 @@ package im.paideia.governance.boxes
 import im.paideia.common.boxes.PaideiaBox
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.DAO
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoToken
 import im.paideia.util.ConfKeys
 import org.ergoplatform.appkit.ErgoValue
 import org.ergoplatform.appkit.ErgoType

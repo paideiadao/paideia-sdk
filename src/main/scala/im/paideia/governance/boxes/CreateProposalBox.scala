@@ -7,7 +7,7 @@ import im.paideia.governance.contracts.CreateProposal
 import im.paideia.util.ConfKeys
 import im.paideia.util.Env
 import org.ergoplatform.appkit.Address
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoToken
 import org.ergoplatform.appkit.ErgoValue
 import org.ergoplatform.appkit.InputBox
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
@@ -118,7 +118,7 @@ object CreateProposalBox {
       StandardCharsets.UTF_8
     )
     val boxes   = inp.getRegisters().get(1).getValue().asInstanceOf[Coll[Box]]
-    val voteKey = inp.getTokens().get(0).getId().toString()
+    val voteKey = inp.getTokens().get(0).getId.toString()
     CreateProposalBox(
       ctx,
       boxes(0),

@@ -12,7 +12,7 @@ import org.ergoplatform.restapi.client.ErgoTransaction
 import im.paideia.common.events.TransactionEvent
 import im.paideia.DAOConfig
 import im.paideia.DAO
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 import im.paideia.util.ConfKeys
 import im.paideia.common.events.CreateTransactionsEvent
 
@@ -27,7 +27,7 @@ class MintTokenTransactionSuite extends PaideiaTestSuite {
         val config     = DAOConfig(daoKey)
         val daoTokenId = Util.randomKey
         config.set(ConfKeys.im_paideia_dao_name, "Test DAO")
-        config.set(ConfKeys.im_paideia_dao_tokenid, ErgoId.create(daoTokenId).getBytes())
+        config.set(ConfKeys.im_paideia_dao_tokenid, ErgoId.create(daoTokenId).getBytes)
         Paideia.addDAO(new DAO(daoKey, config))
         val protoDAOContract =
           ProtoDAO(PaideiaContractSignature(daoKey = Env.paideiaDaoKey))
@@ -56,10 +56,10 @@ class MintTokenTransactionSuite extends PaideiaTestSuite {
         val config     = DAOConfig(daoKey)
         val daoTokenId = Util.randomKey
         config.set(ConfKeys.im_paideia_dao_name, "Test DAO")
-        config.set(ConfKeys.im_paideia_dao_tokenid, ErgoId.create(daoTokenId).getBytes())
+        config.set(ConfKeys.im_paideia_dao_tokenid, ErgoId.create(daoTokenId).getBytes)
         config.set(
           ConfKeys.im_paideia_dao_vote_tokenid,
-          ErgoId.create(Util.randomKey).getBytes()
+          ErgoId.create(Util.randomKey).getBytes
         )
         Paideia.addDAO(new DAO(daoKey, config))
         val protoDAOContract =

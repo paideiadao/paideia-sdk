@@ -1,10 +1,10 @@
 package im.paideia.governance
 
-import io.getblok.getblok_plasma.collections.PlasmaMap
-import org.ergoplatform.appkit.ErgoId
+import work.lithos.plasma.collections.PlasmaMap
+import org.ergoplatform.sdk.ErgoId
 import sigmastate.AvlTreeFlags
-import io.getblok.getblok_plasma.PlasmaParameters
-import io.getblok.getblok_plasma.collections.ProxyPlasmaMap
+import work.lithos.plasma.PlasmaParameters
+import work.lithos.plasma.collections.ProxyPlasmaMap
 import java.io.File
 import scorex.db.LDBVersionedStore
 import scorex.crypto.authds.avltree.batch.VersionedLDBAVLStorage

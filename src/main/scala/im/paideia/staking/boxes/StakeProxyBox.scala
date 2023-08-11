@@ -2,11 +2,11 @@ package im.paideia.staking.boxes
 
 import im.paideia.common.boxes.PaideiaBox
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoToken
 import im.paideia.DAOConfig
 import org.ergoplatform.appkit.ErgoValue
 import org.ergoplatform.appkit.Address
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 import im.paideia.staking.contracts.StakeProxy
 import im.paideia.util.ConfKeys
 import sigmastate.eval.Colls

@@ -4,7 +4,7 @@ import im.paideia.common.contracts._
 import org.ergoplatform.appkit.NetworkType
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.DAOConfig
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoToken
 import im.paideia.util.Env
 import org.ergoplatform.restapi.client.ErgoTransactionOutput
 import im.paideia.common.events.PaideiaEventResponse
@@ -17,7 +17,7 @@ import org.ergoplatform.appkit.Address
 import java.util.HashMap
 import org.ergoplatform.appkit.ErgoValue
 import im.paideia.DAOConfigKey
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 import java.nio.charset.StandardCharsets
 import im.paideia.staking.boxes.AddStakeProxyBox
 import im.paideia.Paideia
@@ -90,7 +90,7 @@ class AddStakeProxy(contractSignature: PaideiaContractSignature)
 
   override lazy val constants: HashMap[String, Object] = {
     val cons = new HashMap[String, Object]()
-    cons.put("_IM_PAIDEIA_DAO_KEY", ErgoId.create(contractSignature.daoKey).getBytes())
+    cons.put("_IM_PAIDEIA_DAO_KEY", ErgoId.create(contractSignature.daoKey).getBytes)
     cons.put(
       "_IM_PAIDEIA_STAKING_STATE_TOKENID",
       ConfKeys.im_paideia_staking_state_tokenid.ergoValue.getValue()

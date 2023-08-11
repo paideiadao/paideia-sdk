@@ -15,9 +15,9 @@ import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import org.ergoplatform.appkit.impl.ErgoTreeContract
 import org.ergoplatform.appkit.ContextVar
 import im.paideia.staking.contracts.StakeState
-import org.ergoplatform.appkit.ErgoToken
+import org.ergoplatform.sdk.ErgoToken
 import im.paideia.DAOConfig
-import org.ergoplatform.appkit.ErgoId
+import org.ergoplatform.sdk.ErgoId
 import sigmastate.utils.Helpers
 import sigmastate.Values
 import im.paideia.staking._
@@ -29,12 +29,12 @@ import scorex.crypto.hash.Blake2b256
 import im.paideia.Paideia
 import scorex.crypto.authds.ADDigest
 import special.sigma.AvlTree
-import io.getblok.getblok_plasma.collections.OpResult
+import work.lithos.plasma.collections.OpResult
 import im.paideia.DAO
 import im.paideia.governance.VoteRecord
 import sigmastate.AvlTreeData
 import im.paideia.governance.Proposal
-import io.getblok.getblok_plasma.collections.ProvenResult
+import work.lithos.plasma.collections.ProvenResult
 
 case class StakeStateBox(
   _ctx: BlockchainContextImpl,
@@ -46,6 +46,7 @@ case class StakeStateBox(
   var stakedTokenTotal: Long,
   var nextEmission: Long,
   var profit: Array[Long],
+  var snapshotProfit: Array[Long],
   var stateDigest: ADDigest,
   var participationDigest: ADDigest,
   var snapshots: Array[StakingSnapshot],
@@ -104,7 +105,7 @@ case class StakeStateBox(
     ),
     ErgoValueBuilder.buildFor(
       Colls.fromArray(
-        snapshots.toArray.map(kv => Colls.fromArray(kv.profit.toArray))
+        snapshotProfit
       )
     )
   )
@@ -214,6 +215,7 @@ case class StakeStateBox(
   ): StakingContextVars = {
     if (snapshots.size < dao.config[Long](ConfKeys.im_paideia_staking_emission_delay))
       throw new Exception("Not enough snapshots gathered yet")
+    var distributedProfit: Array[Long] = new Array[Long](snapshotProfit.length)
     val snapshot = state.firstMatchingSnapshot(
       snapshots(0).stakeDigest,
       snapshots(0).participationDigest
@@ -303,25 +305,29 @@ case class StakeStateBox(
               snapshot.getStake(kv._1._1, Some(snapshots(0).stakeDigest)).stake
             val snapshotP  = if (kv._2.isDefined) kv._2.get.votedTotal else 0L
             val snapshotPP = if (kv._2.isDefined) kv._2.get.voted else 0L
+            val reward = calcReward(
+              snapshotProfit(0),
+              snapshotStake,
+              snapshotP,
+              snapshotPP
+            )
+            distributedProfit(0) += reward
             (
               kv._1._1,
               StakeRecord(
-                kv._1._2.stake + calcReward(
-                  snapshots(0).profit(0),
-                  snapshotStake,
-                  snapshotP,
-                  snapshotPP
-                ),
+                kv._1._2.stake + reward,
                 kv._1._2.lockedUntil,
                 kv._1._2.rewards.indices
-                  .map((i: Int) =>
-                    kv._1._2.rewards(i) + calcReward(
-                      snapshots(0).profit(i + 1),
+                  .map((i: Int) => {
+                    val extraReward = calcReward(
+                      snapshotProfit(i + 1),
                       snapshotStake,
                       snapshotP,
                       snapshotPP
                     )
-                  )
+                    distributedProfit(i) += extraReward
+                    kv._1._2.rewards(i) + extraReward
+                  })
                   .toList
               )
             )
@@ -335,6 +341,7 @@ case class StakeStateBox(
         Left(stateDigest)
       )
     stateDigest = result.digest
+    profit      = profit.zip(distributedProfit).map(pp => pp._1 - pp._2)
     val removeProof = snapshot.unstake(keys, Left(snapshots(0).stakeDigest))
     snapshots(0) = StakingSnapshot(
       snapshots(0).totalStaked,
@@ -342,7 +349,6 @@ case class StakeStateBox(
       snapshots(0).votedTotal,
       removeProof.digest,
       snapshots(0).participationDigest,
-      snapshots(0).profit,
       snapshots(0).pureParticipationWeight,
       snapshots(0).participationWeight
     )
@@ -363,8 +369,7 @@ case class StakeStateBox(
   def emit(currentTime: Long, tokensInPool: Long): StakingContextVars = {
     if (currentTime < nextEmission) throw new Exception("Not time for new emission yet")
     nextEmission = newNextEmission
-    val snapshotProfit = profit.map { p => 0L }
-    snapshotProfit(0) = Math.min(
+    profit(0) += Math.min(
       dao.config[Long](ConfKeys.im_paideia_staking_emission_amount),
       tokensInPool - profit(0)
     )
@@ -382,14 +387,13 @@ case class StakeStateBox(
         votedTotal,
         stateDigest,
         participationDigest,
-        snapshotProfit.toList,
         pureParticipationWeight,
         participationWeight
       )
     )
     voted                         = 0L
     votedTotal                    = 0L
-    snapshots(0)                  = snapshots(0).addProfit(profit)
+    snapshotProfit                = profit
     state.snapshots(nextEmission) = state.currentStakingState.clone(dao.key, nextEmission)
     val currentParticipation =
       state.currentStakingState.participationRecords.getMap(Some(participationDigest)).get
@@ -398,9 +402,6 @@ case class StakeStateBox(
         Left(participationDigest)
       )
     participationDigest = participationResult.digest
-    profit = Array.fill(
-      dao.config.getArray[Object](ConfKeys.im_paideia_staking_profit_tokenids).size + 2
-    )(0L)
     StakingContextVars.emit
   }
 
@@ -504,7 +505,7 @@ object StakeStateBox {
     val snapshotTrees =
       inp.getRegisters().get(3).getValue().asInstanceOf[Coll[(AvlTree, AvlTree)]].toArray
     val snapshotProfit =
-      inp.getRegisters().get(4).getValue().asInstanceOf[Coll[Coll[Long]]].toArray
+      inp.getRegisters().get(4).getValue().asInstanceOf[Coll[Long]].toArray
 
     StakeStateBox(
       ctx,
@@ -513,9 +514,10 @@ object StakeStateBox {
       inp.getValue(),
       inp.getTokens().subList(2, inp.getTokens().size()).asScala.toList,
       dao,
-      inp.getTokens().get(1).getValue() - 1L,
+      inp.getTokens().get(1).getValue - 1L,
       longValues(0),
       longValues.slice(5, longValues.size),
+      snapshotProfit,
       ADDigest @@ stateTrees(0),
       ADDigest @@ stateTrees(1),
       snapshotStakedTotals.indices
@@ -526,7 +528,6 @@ object StakeStateBox {
             snapshotVotedTotals(i),
             ADDigest @@ snapshotTrees(i)._1.digest.toArray,
             ADDigest @@ snapshotTrees(i)._2.digest.toArray,
-            snapshotProfit(i).toArray.toList,
             snapshotPPWeight(i),
             snapshotPWeight(i)
           )
