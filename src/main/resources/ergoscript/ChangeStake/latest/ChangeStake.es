@@ -76,7 +76,7 @@
     val stakeStateR7: Coll[(AvlTree,AvlTree)] = 
         stakeState.R7[Coll[(AvlTree,AvlTree)]].get
 
-    val stakeStateR8: Coll[Coll[Long]] = stakeState.R8[Coll[Coll[Long]]].get
+    val stakeStateR8: Coll[Long] = stakeState.R8[Coll[Long]].get
     val participationTree: AvlTree     = stakeState.R4[Coll[AvlTree]].get(1)
 
     val stakeStateTreeO: AvlTree  = stakeStateO.R4[Coll[AvlTree]].get(0)
@@ -93,7 +93,7 @@
     val stakeStateOR7: Coll[(AvlTree,AvlTree)] = 
         stakeStateO.R7[Coll[(AvlTree,AvlTree)]].get
 
-    val stakeStateOR8: Coll[Coll[Long]] = stakeStateO.R8[Coll[Coll[Long]]].get
+    val stakeStateOR8: Coll[Long] = stakeStateO.R8[Coll[Long]].get
     val participationTreeO: AvlTree     = stakeStateO.R4[Coll[AvlTree]].get(1)
 
     ///////////////////////////////////////////////////////////////////////////
@@ -194,6 +194,8 @@
         newStakeAmount - currentStakeAmount == 
         totalStakedO - totalStaked
 
+    val noPartialUnstake: Boolean = newStakeAmount >= currentStakeAmount
+
     val singleStakeOp: Boolean = stakeOperations.size == 1
 
     val correctNewState: Boolean = 
@@ -249,6 +251,7 @@
         correctErgProfit,
         correctTokenProfit,
         selfOutput,
-        unchangedRegisters
+        unchangedRegisters,
+        noPartialUnstake
     )))
 }

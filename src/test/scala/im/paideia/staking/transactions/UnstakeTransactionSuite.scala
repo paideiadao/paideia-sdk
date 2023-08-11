@@ -25,6 +25,7 @@ import im.paideia.Paideia
 import im.paideia.common.events.TransactionEvent
 import im.paideia.common.events.CreateTransactionsEvent
 import im.paideia.common.transactions.RefundTransaction
+import sigmastate.exceptions.InterpreterException
 
 class UnstakeTransactionSuite extends PaideiaTestSuite {
   test("Sign partial unstake tx") {
@@ -85,10 +86,13 @@ class UnstakeTransactionSuite extends PaideiaTestSuite {
         eventResponse.exceptions.map(e => throw e)
         assert(eventResponse.unsignedTransactions.size === 1)
         assert(eventResponse.unsignedTransactions(0).isInstanceOf[UnstakeTransaction])
-        ctx
-          .newProverBuilder()
-          .build()
-          .sign(eventResponse.unsignedTransactions(0).unsigned)
+        val thrown = intercept[InterpreterException] {
+          ctx
+            .newProverBuilder()
+            .build()
+            .sign(eventResponse.unsignedTransactions(0).unsigned())
+        }
+        assert(thrown.getMessage === "Script reduced to false")
       }
     })
   }

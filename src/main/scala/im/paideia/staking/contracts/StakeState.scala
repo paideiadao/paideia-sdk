@@ -47,6 +47,7 @@ class StakeState(contractSignature: PaideiaContractSignature)
     stakedTokenTotal: Long,
     nextEmission: Long,
     profit: Array[Long],
+    snapshotProfit: Array[Long],
     extraTokens: List[ErgoToken] = List[ErgoToken](),
     snapshots: Array[StakingSnapshot],
     voted: Long,
@@ -64,6 +65,7 @@ class StakeState(contractSignature: PaideiaContractSignature)
       stakedTokenTotal,
       nextEmission,
       profit,
+      snapshotProfit,
       state.currentStakingState.stakeRecords.digest,
       state.currentStakingState.participationRecords.digest,
       snapshots,
@@ -95,6 +97,7 @@ class StakeState(contractSignature: PaideiaContractSignature)
       stakePoolSize,
       state.currentStakingState.emissionTime,
       emptyProfit.toArray,
+      emptyProfit.toArray,
       List[ErgoToken](),
       Range(0, emissionDelay.toInt)
         .map(i =>
@@ -104,7 +107,6 @@ class StakeState(contractSignature: PaideiaContractSignature)
             0L,
             state.currentStakingState.stakeRecords.digest,
             state.currentStakingState.participationRecords.digest,
-            emptyProfit,
             pureParticipationWeight,
             participationWeight
           )

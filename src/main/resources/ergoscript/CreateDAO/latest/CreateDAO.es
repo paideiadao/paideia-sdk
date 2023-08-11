@@ -168,7 +168,7 @@
     val restR5O: Coll[Long] = stakeStateOR5.slice(1, stakeStateOR5.size)
     val stakeStateOR6: Coll[Coll[Long]] = stakeStateO.R6[Coll[Coll[Long]]].get
     val stakeStateOR7: Coll[(AvlTree, AvlTree)] = stakeStateO.R7[Coll[(AvlTree, AvlTree)]].get
-    val stakeStateOR8: Coll[Coll[Long]] = stakeStateO.R8[Coll[Coll[Long]]].get
+    val stakeStateOR8: Coll[Long] = stakeStateO.R8[Coll[Long]].get
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -421,7 +421,7 @@
     val correctStakingCompoundContract: Coll[Byte] = blake2b256(
         substConstants(
             defaultStakingCompoundContract,
-            Coll(64),
+            Coll(70),
             Coll(daoKey)
         )
     )
@@ -437,7 +437,7 @@
     val correctStakingSnapshotContract: Coll[Byte] = blake2b256(
         substConstants(
             defaultStakingSnapshotContract,
-            Coll(145),
+            Coll(137),
             Coll(daoKey)
         )
     )
@@ -507,7 +507,7 @@
         restR5O.forall{(l: Long) => l == 0L},
         stakeStateOR6.flatMap{(cl: Coll[Long]) => cl}.forall{(l: Long) => l == 0L},
         stakeStateOR7.forall{(tt: (AvlTree, AvlTree)) => (tt._1.digest == emptyDigest && tt._2.digest == emptyDigest)},
-        stakeStateOR8.flatMap{(cl: Coll[Long]) => cl}.forall{(l: Long) => l == 0L}
+        stakeStateOR8.forall{(l: Long) => l == 0L}
     ))
 
     val correctContracts: Boolean = allOf(Coll(

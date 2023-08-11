@@ -64,13 +64,13 @@
     val stakeStateR5: Coll[Long] = stakeState.R5[Coll[Long]].get
     val stakeStateR6: Coll[Coll[Long]]  = stakeState.R6[Coll[Coll[Long]]].get
     val stakeStateR7: Coll[(AvlTree, AvlTree)]  = stakeState.R7[Coll[(AvlTree, AvlTree)]].get
-    val stakeStateR8: Coll[Coll[Long]]  = stakeState.R8[Coll[Coll[Long]]].get
+    val stakeStateR8: Coll[Long]  = stakeState.R8[Coll[Long]].get
 
     val stakeStateOR4: Coll[AvlTree]  = stakeStateO.R4[Coll[AvlTree]].get
     val stakeStateOR5: Coll[Long] = stakeStateO.R5[Coll[Long]].get
     val stakeStateOR6: Coll[Coll[Long]]  = stakeStateO.R6[Coll[Coll[Long]]].get
     val stakeStateOR7: Coll[(AvlTree, AvlTree)]  = stakeStateO.R7[Coll[(AvlTree, AvlTree)]].get
-    val stakeStateOR8: Coll[Coll[Long]]  = stakeStateO.R8[Coll[Coll[Long]]].get
+    val stakeStateOR8: Coll[Long]  = stakeStateO.R8[Coll[Long]].get
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
