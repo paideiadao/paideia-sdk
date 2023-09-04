@@ -1,7 +1,6 @@
 package im.paideia.common.contracts
 
 import im.paideia.DAOConfig
-import im.paideia.DAOConfigValue
 import im.paideia.common.events.BlockEvent
 import im.paideia.common.events.PaideiaEvent
 import im.paideia.common.events.PaideiaEventResponse

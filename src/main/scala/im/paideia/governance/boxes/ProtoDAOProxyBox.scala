@@ -9,7 +9,6 @@ import im.paideia.common.boxes.ConfigBox
 import im.paideia.DAOConfig
 import org.ergoplatform.appkit.ErgoValue
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
-import im.paideia.DAOConfigValue
 import im.paideia.DAOConfigValueSerializer
 import org.ergoplatform.sdk.ErgoId
 import special.collection.Coll
