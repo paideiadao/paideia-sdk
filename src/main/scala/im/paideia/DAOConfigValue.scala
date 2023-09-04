@@ -170,7 +170,6 @@ object DAOConfigValueSerializer {
 class DAOConfigValueDeserializer(ba: Array[Byte]) {
 
   private var readerIndex: Int = 0
-  private var peekIndex: Int   = 0
 
   def readValue: Any = readValueTyped(readByte)
 
@@ -300,13 +299,16 @@ class DAOConfigValueDeserializer(ba: Array[Byte]) {
     }
 
   def readCollType: String = {
-    val innerTpe: Byte = readByte
-    val collSize: Int  = readInt
+    if (readerIndex >= ba.length) "?"
+    else {
+      val innerTpe: Byte = readByte
+      val collSize: Int  = readInt
 
-    Range(0, collSize)
-      .map { (i: Int) => readTypeTyped(innerTpe) }
-      .toArray
-      .applyOrElse(0, (i: Int) => readTypeTyped(innerTpe, false))
+      Range(0, collSize)
+        .map { (i: Int) => readTypeTyped(innerTpe) }
+        .toArray
+        .applyOrElse(0, (i: Int) => readTypeTyped(innerTpe, false))
+    }
 
   }
 
