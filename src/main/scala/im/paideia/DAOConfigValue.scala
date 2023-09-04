@@ -13,7 +13,7 @@ import im.paideia.common.contracts.PaideiaContractSignature
 import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.appkit.NetworkType
 
-class DAOConfigValue(val value: Any, val enc: DAOConfigValueSerializer[_])
+case class DAOConfigValue[T](val valueType: Byte, val value: T)
 
 object DAOConfigValue {
   val byteTypeCode: Byte              = 0
@@ -27,9 +27,9 @@ object DAOConfigValue {
   val collTypeCode: Byte              = 10
   val tupleTypeCode: Byte             = 20
 
-  def apply[T](value: T)(implicit
-    enc: Lazy[DAOConfigValueSerializer[T]]
-  ): DAOConfigValue = new DAOConfigValue(value, enc.value)
+  // def apply[T](value: T)(implicit
+  //   enc: Lazy[DAOConfigValueSerializer[T]]
+  // ): DAOConfigValue = new DAOConfigValue(value, enc.value)
 }
 
 trait DAOConfigValueSerializer[A] {
@@ -258,6 +258,64 @@ class DAOConfigValueDeserializer(ba: Array[Byte]) {
     (left, right)
   }
 
+  def readType: String = readTypeTyped(readByte)
+
+  def readTypeTyped(tpe: Byte, moveIndex: Boolean = true): String =
+    tpe match {
+      case DAOConfigValue.byteTypeCode => {
+        if (moveIndex) readByte
+        "Byte"
+      }
+      case DAOConfigValue.shortTypeCode => {
+        if (moveIndex) readShort
+        "Short"
+      }
+      case DAOConfigValue.intTypeCode => {
+        if (moveIndex) readInt
+        "Int"
+      }
+      case DAOConfigValue.longTypeCode => {
+        if (moveIndex) readLong
+        "Long"
+      }
+      case DAOConfigValue.bigIntTypeCode => {
+        if (moveIndex) readBigInt
+        "BigInt"
+      }
+      case DAOConfigValue.booleanTypeCode => {
+        if (moveIndex) readBoolean
+        "Boolean"
+      }
+      case DAOConfigValue.stringTypeCode => {
+        if (moveIndex) readString
+        "String"
+      }
+      case DAOConfigValue.contractSignatureTypeCode => {
+        if (moveIndex) readPaideiaContractSignature
+        "PaideiaContractSignature"
+      }
+      case DAOConfigValue.collTypeCode  => "Coll[" + readCollType + "]"
+      case DAOConfigValue.tupleTypeCode => readTupleType
+      case _ => throw new Exception("Unknown type code: " + tpe.toString)
+    }
+
+  def readCollType: String = {
+    val innerTpe: Byte = readByte
+    val collSize: Int  = readInt
+
+    Range(0, collSize)
+      .map { (i: Int) => readTypeTyped(innerTpe) }
+      .toArray
+      .applyOrElse(0, (i: Int) => readTypeTyped(innerTpe, false))
+
+  }
+
+  def readTupleType: String = {
+    val left  = readType
+    val right = readType
+    "(" + left + "," + right + ")"
+  }
+
 }
 
 object DAOConfigValueDeserializer {
@@ -266,5 +324,9 @@ object DAOConfigValueDeserializer {
 
   def deserialize(ba: Array[Byte]): Any = {
     new DAOConfigValueDeserializer(ba).readValue
+  }
+
+  def getType(ba: Array[Byte]): String = {
+    new DAOConfigValueDeserializer(ba).readType
   }
 }
