@@ -246,7 +246,7 @@
         min(
             emissionAmount,
             stakeState.tokens(1)._2-totalStaked-profit(0)-1
-        ) + (if (emissionDelay == 1) profit(0) else 0L)
+        ) + profit(0)
     ))
 
     val correctProfitAddedToSnapshot: Boolean = 
