@@ -84,6 +84,8 @@ case class CompoundTransaction(
 
   val paideiaConfig = Paideia.getConfig(Env.paideiaDaoKey)
 
+  val maxMinerOperatorErg: Long = paideiaConfig(ConfKeys.im_paideia_fees_operator_max_erg)
+
   val coveringTreasuryBoxes = treasuryContract
     .findBoxes(
       paideiaConfig[Long](ConfKeys.im_paideia_fees_operator_max_erg) + 1000000L,
@@ -126,7 +128,7 @@ case class CompoundTransaction(
     .newTxBuilder()
     .outBoxBuilder()
     .contract(new ErgoTreeContract(operatorAddress.script, ctx.getNetworkType()))
-    .value(500000L)
+    .value(150000L)
     .tokens(
       new ErgoToken(
         Env.paideiaTokenId,
@@ -153,7 +155,7 @@ case class CompoundTransaction(
   )
 
   changeAddress = treasuryAddress.getErgoAddress()
-  fee           = 1500000L
+  fee           = maxMinerOperatorErg - 150000L
   inputs = List[InputBox](
     stakeStateInput.withContextVars(contextVars: _*),
     compoundInput.withContextVars(compoundContextVars: _*)

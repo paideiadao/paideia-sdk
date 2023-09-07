@@ -82,6 +82,8 @@ case class EmitTransaction(
 
   val treasuryContract = Treasury(PaideiaContractSignature(daoKey = daoKey))
 
+  val maxMinerOperatorErg: Long = paideiaConfig(ConfKeys.im_paideia_fees_operator_max_erg)
+
   val treasuryAddress = treasuryContract.contract.toAddress()
 
   val coveringTreasuryBoxes = treasuryContract
@@ -139,7 +141,7 @@ case class EmitTransaction(
     .newTxBuilder()
     .outBoxBuilder()
     .contract(new ErgoTreeContract(operatorAddress.script, ctx.getNetworkType()))
-    .value(500000L)
+    .value(150000L)
     .tokens(
       new ErgoToken(
         Env.paideiaTokenId,
@@ -192,7 +194,7 @@ case class EmitTransaction(
   )
 
   changeAddress = treasuryAddress.getErgoAddress()
-  fee           = 1500000L
+  fee           = maxMinerOperatorErg - 150000L - 1000000L
   inputs = List[InputBox](
     stakeStateInput.withContextVars(contextVars: _*),
     snapshotInput.withContextVars(snapshotContextVars: _*)

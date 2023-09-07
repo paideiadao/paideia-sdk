@@ -437,7 +437,7 @@
     val correctStakingSnapshotContract: Coll[Byte] = blake2b256(
         substConstants(
             defaultStakingSnapshotContract,
-            Coll(137),
+            Coll(135),
             Coll(daoKey)
         )
     )
