@@ -64,7 +64,7 @@ class ProposalBasic(contractSignature: PaideiaContractSignature)
             .toList
             .map((b: InputBox) => {
               if (
-                (b.getRegisters().get(0).getValue().asInstanceOf[Coll[Int]](1) < 0)
+                (b.getRegisters().get(0).getValue().asInstanceOf[Coll[Int]](1) == -1)
                 && (cte.currentTime > b
                   .getRegisters()
                   .get(1)
