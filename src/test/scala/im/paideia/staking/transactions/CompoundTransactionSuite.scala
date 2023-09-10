@@ -324,4 +324,76 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
       }
     })
   }
+
+  test("Sign compound tx on 1 staker with profit") {
+    val ergoClient = createMockedErgoClient(MockData(Nil, Nil))
+    ergoClient.execute(new java.util.function.Function[BlockchainContext, Unit] {
+      override def apply(_ctx: BlockchainContext): Unit = {
+        val ctx = _ctx.asInstanceOf[BlockchainContextImpl]
+        PaideiaTestSuite.init(ctx)
+        val dao   = StakingTest.testDAO
+        val state = TotalStakingState(dao.key, 0L)
+
+        val stakingContract = StakeState(PaideiaContractSignature(daoKey = dao.key))
+        dao.config
+          .set(
+            ConfKeys.im_paideia_contracts_staking_state,
+            stakingContract.contractSignature
+          )
+
+        val stakingState = stakingContract
+          .emptyBox(
+            ctx,
+            dao,
+            100000000L
+          )
+
+        stakingState.stake(Util.randomKey, 1000000000000L)
+
+        Range(0, dao.config[Long](ConfKeys.im_paideia_staking_emission_delay).toInt - 1)
+          .foreach(_ => stakingState.emit(9999999999999999L, 99999999999L))
+
+        stakingState.profitShare(List(10000L, 10000L), List())
+        stakingState.emit(9999999999999999L, 99999999999L)
+        val dummyAddress = Address.create("4MQyML64GnzMxZgm")
+
+        val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
+        treasuryContract.clearBoxes()
+        treasuryContract.newBox(
+          treasuryContract
+            .box(
+              ctx,
+              dao.config,
+              1000000000L,
+              List(new ErgoToken(Env.paideiaTokenId, 10000000L))
+            )
+            .inputBox(),
+          false
+        )
+
+        val compoundContract = StakeCompound(PaideiaContractSignature(daoKey = dao.key))
+        compoundContract.newBox(compoundContract.box(ctx).inputBox(), false)
+
+        val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
+
+        val configBox = Config(configContract.contractSignature).box(ctx, dao).inputBox()
+        configContract.clearBoxes()
+        configContract.newBox(configBox, false)
+
+        val stakingStateBox = stakingState
+          .ergoTransactionOutput()
+        stakingContract.clearBoxes()
+
+        val dummyTx = (new ErgoTransaction()).addOutputsItem(stakingStateBox)
+        Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
+        val eventResponse = Paideia.handleEvent(CreateTransactionsEvent(ctx, 0L, 0L))
+        eventResponse.exceptions.map(e => throw e)
+        assert(eventResponse.unsignedTransactions.size === 1)
+        ctx
+          .newProverBuilder()
+          .build()
+          .sign(eventResponse.unsignedTransactions(0).unsigned)
+      }
+    })
+  }
 }
