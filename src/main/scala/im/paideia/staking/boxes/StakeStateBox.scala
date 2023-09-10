@@ -325,7 +325,7 @@ case class StakeStateBox(
                       snapshotP,
                       snapshotPP
                     )
-                    distributedProfit(i) += extraReward
+                    distributedProfit(i + 1) += extraReward
                     kv._1._2.rewards(i) + extraReward
                   })
                   .toList
