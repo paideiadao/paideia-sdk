@@ -78,7 +78,7 @@ class ProposalBasic(contractSignature: PaideiaContractSignature)
                       cte.ctx,
                       Paideia.getDAO(contractSignature.daoKey),
                       b,
-                      Address.create(Env.operatorAddress).getErgoAddress
+                      Address.create(Env.operatorAddress)
                     )
                   )
                 )

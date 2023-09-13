@@ -18,8 +18,9 @@ final case class RefundTransaction(
     .value(refundBox.getValue() - 1000000L)
     .tokens(refundBox.getTokens().asScala: _*)
     .build()
-  ctx     = _ctx
-  fee     = 1000000L
-  inputs  = List(refundBox)
-  outputs = List(refundedBox)
+  ctx           = _ctx
+  fee           = 1000000L
+  inputs        = List(refundBox)
+  outputs       = List(refundedBox)
+  changeAddress = refundAddress
 }

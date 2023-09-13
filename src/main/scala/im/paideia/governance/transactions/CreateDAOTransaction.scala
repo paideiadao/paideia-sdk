@@ -41,12 +41,13 @@ import im.paideia.staking.contracts.StakeSnapshot
 import im.paideia.staking.contracts.StakeVote
 import im.paideia.staking.contracts.Unstake
 import im.paideia.governance.contracts.CreateDAO
+import org.ergoplatform.appkit.Address
 
 case class CreateDAOTransaction(
   _ctx: BlockchainContextImpl,
   protoDAOInput: InputBox,
   dao: DAO,
-  _changeAddress: ErgoAddress
+  _changeAddress: Address
 ) extends PaideiaTransaction {
   val protoDAOInputBox = ProtoDAOBox.fromInputBox(_ctx, protoDAOInput)
 

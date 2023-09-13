@@ -75,7 +75,7 @@ class UnstakeProxy(contractSignature: PaideiaContractSignature)
                       UnstakeTransaction(
                         cte.ctx,
                         boxes(b),
-                        Address.create(Env.operatorAddress).getErgoAddress,
+                        Address.create(Env.operatorAddress),
                         contractSignature.daoKey
                       )
                     }

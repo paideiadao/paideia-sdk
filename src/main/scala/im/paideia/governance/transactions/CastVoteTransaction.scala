@@ -30,7 +30,7 @@ final case class CastVoteTransaction(
 ) extends PaideiaTransaction {
   ctx           = _ctx
   fee           = 1000000L
-  changeAddress = _changeAddress.getErgoAddress()
+  changeAddress = _changeAddress
 
   val castVoteBox = CastVoteBox.fromInputBox(ctx, castVoteInput)
 

@@ -32,7 +32,7 @@ import scorex.crypto.authds.ADDigest
 case class AddStakeTransaction(
   _ctx: BlockchainContextImpl,
   addStakeProxyInput: InputBox,
-  _changeAddress: ErgoAddress,
+  _changeAddress: Address,
   daoKey: String
 ) extends PaideiaTransaction {
   val stakingKey = addStakeProxyInput.getTokens().get(0).getId.toString()

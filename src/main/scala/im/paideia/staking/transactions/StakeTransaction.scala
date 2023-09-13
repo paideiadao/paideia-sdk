@@ -27,7 +27,7 @@ import scorex.crypto.authds.ADDigest
 case class StakeTransaction(
   _ctx: BlockchainContextImpl,
   stakeProxyInput: InputBox,
-  _changeAddress: ErgoAddress,
+  _changeAddress: Address,
   daoKey: String
 ) extends PaideiaTransaction {
 

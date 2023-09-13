@@ -21,6 +21,7 @@ import special.collection.Coll
 import im.paideia.staking.contracts.SplitProfit
 import scorex.crypto.authds.ADDigest
 import special.sigma.AvlTree
+import org.ergoplatform.appkit.Address
 
 /** This class represents an implementation of a `PaideiaTransaction` used to evaluate the
   * proposal basic transaction.
@@ -41,7 +42,7 @@ final case class EvaluateProposalBasicTransaction(
   _ctx: BlockchainContextImpl,
   dao: DAO,
   proposalInput: InputBox,
-  _changeAddress: ErgoAddress
+  _changeAddress: Address
 ) extends PaideiaTransaction {
 
   ctx           = _ctx
