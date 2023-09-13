@@ -125,7 +125,7 @@ trait PaideiaTransaction {
             .value(inputBalance - outputBalance)
             .build()
       if (minimizeChangeBox) {
-        val minChangeValue = changeOutput.getBytesWithNoRef().size * 360
+        val minChangeValue = (changeOutput.getBytesWithNoRef().size + 33) * 360
         fee = fee + changeOutput.getValue() - minChangeValue
         changeOutput =
           if (changeTokens.size > 0)
