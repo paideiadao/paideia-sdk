@@ -28,7 +28,9 @@ import org.ergoplatform.appkit.commands.ErgoIdPType
 import org.ergoplatform.appkit.ContextVar
 import scorex.crypto.authds.ADDigest
 
-case class SplitProfitTransaction() extends PaideiaTransaction {}
+case class SplitProfitTransaction() extends PaideiaTransaction {
+  minimizeChangeBox = false
+}
 
 object SplitProfitTransaction {
 
