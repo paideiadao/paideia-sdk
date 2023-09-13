@@ -127,5 +127,5 @@ final case class SendFundsBasicTransaction(
     )
   }.toList ++ selfOutput
 
-  changeAddress = treasuryAddress.getErgoAddress()
+  changeAddress = treasuryAddress
 }

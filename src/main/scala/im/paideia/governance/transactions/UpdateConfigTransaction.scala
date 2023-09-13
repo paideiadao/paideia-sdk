@@ -145,5 +145,5 @@ final case class UpdateConfigTransaction(
   dataInputs = List(proposalInput)
   outputs    = List(configContract.box(ctx, dao, resultingDigest).outBox)
 
-  changeAddress = treasuryAddress.getErgoAddress()
+  changeAddress = treasuryAddress
 }

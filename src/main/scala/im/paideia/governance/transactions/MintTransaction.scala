@@ -20,13 +20,14 @@ import im.paideia.DAO
 import im.paideia.governance.boxes.ProtoDAOBox
 import scorex.crypto.authds.ADDigest
 import special.sigma.AvlTree
+import org.ergoplatform.appkit.Address
 
 final case class MintTransaction(
   _ctx: BlockchainContextImpl,
   protoDAOInput: InputBox,
   dao: DAO,
   tokenToMint: DAOConfigKey,
-  _changeAddress: ErgoAddress
+  _changeAddress: Address
 ) extends PaideiaTransaction {
   val protoDAOInputBox = ProtoDAOBox.fromInputBox(_ctx, protoDAOInput)
 

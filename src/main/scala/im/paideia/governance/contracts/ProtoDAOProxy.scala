@@ -96,7 +96,7 @@ class ProtoDAOProxy(contractSignature: PaideiaContractSignature)
                   CreateProtoDAOTransaction(
                     cte.ctx,
                     boxes(b),
-                    Address.create(Env.operatorAddress).getErgoAddress
+                    Address.create(Env.operatorAddress)
                   )
                 }
               )

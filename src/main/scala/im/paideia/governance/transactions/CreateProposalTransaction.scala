@@ -28,8 +28,8 @@ final case class CreateProposalTransaction(
   _changeAddress: Address
 ) extends PaideiaTransaction {
   ctx           = _ctx
-  changeAddress = _changeAddress.getErgoAddress()
-  fee           = 1000000L
+  changeAddress = _changeAddress
+  fee           = 1850000L
 
   val createProposalInputBox = CreateProposalBox.fromInputBox(ctx, createProposalInput)
 

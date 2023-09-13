@@ -31,7 +31,7 @@ import sigmastate.eval.Colls
 case class UnstakeTransaction(
   _ctx: BlockchainContextImpl,
   unstakeProxyInput: InputBox,
-  _changeAddress: ErgoAddress,
+  _changeAddress: Address,
   daoKey: String
 ) extends PaideiaTransaction {
 
@@ -240,7 +240,7 @@ case class UnstakeTransaction(
     .build()
 
   changeAddress = _changeAddress
-  fee           = 1500000L
+  fee           = 2350000L
   inputs = List[InputBox](
     stakeStateInput.withContextVars(contextVars: _*),
     unstakeInput.withContextVars(unstakeContextVars: _*),

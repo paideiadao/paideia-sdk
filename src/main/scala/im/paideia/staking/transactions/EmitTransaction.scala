@@ -193,7 +193,7 @@ case class EmitTransaction(
     )
   )
 
-  changeAddress = treasuryAddress.getErgoAddress()
+  changeAddress = treasuryAddress
   fee           = maxMinerOperatorErg - 150000L - 1000000L
   inputs = List[InputBox](
     stakeStateInput.withContextVars(contextVars: _*),

@@ -82,7 +82,7 @@ class ProtoDAO(contractSignature: PaideiaContractSignature)
                           iBox,
                           dao,
                           value,
-                          Address.create(Env.operatorAddress).getErgoAddress()
+                          Address.create(Env.operatorAddress)
                         )
                       )
                     )
@@ -91,7 +91,7 @@ class ProtoDAO(contractSignature: PaideiaContractSignature)
                       cte.ctx,
                       iBox,
                       dao,
-                      Address.create(Env.operatorAddress).getErgoAddress()
+                      Address.create(Env.operatorAddress)
                     )
                     PaideiaEventResponse(2, List(newTx))
                   }
