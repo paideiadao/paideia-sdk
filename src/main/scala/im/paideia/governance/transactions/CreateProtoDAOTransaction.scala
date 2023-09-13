@@ -32,11 +32,12 @@ import work.lithos.plasma.PlasmaParameters
 import im.paideia.DAOConfigKey
 import scorex.crypto.authds.ADDigest
 import special.sigma.AvlTree
+import org.ergoplatform.appkit.Address
 
 case class CreateProtoDAOTransaction(
   _ctx: BlockchainContextImpl,
   protoDAOProxyInput: InputBox,
-  _changeAddress: ErgoAddress
+  _changeAddress: Address
 ) extends PaideiaTransaction {
   val protoDAOProxyInputBox = ProtoDAOProxyBox.fromInputBox(_ctx, protoDAOProxyInput)
   val paideiaConfig         = Paideia.getConfig(Env.paideiaDaoKey)

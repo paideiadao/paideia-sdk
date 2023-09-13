@@ -29,8 +29,8 @@ final case class CastVoteTransaction(
   _changeAddress: Address
 ) extends PaideiaTransaction {
   ctx           = _ctx
-  fee           = 1000000L
-  changeAddress = _changeAddress.getErgoAddress()
+  fee           = 1850000L
+  changeAddress = _changeAddress
 
   val castVoteBox = CastVoteBox.fromInputBox(ctx, castVoteInput)
 

@@ -154,7 +154,7 @@ case class CompoundTransaction(
     )
   )
 
-  changeAddress = treasuryAddress.getErgoAddress()
+  changeAddress = treasuryAddress
   fee           = maxMinerOperatorErg - 150000L
   inputs = List[InputBox](
     stakeStateInput.withContextVars(contextVars: _*),
