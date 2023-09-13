@@ -137,7 +137,7 @@ case class StakeTransaction(
     )
     .build()
 
-  fee = 1500000L
+  fee = 2350000L
   inputs = List[InputBox](
     stakeStateInput.withContextVars(contextVars: _*),
     stakeInput.withContextVars(stakeContextVars: _*),

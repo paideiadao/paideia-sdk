@@ -134,7 +134,7 @@ case class AddStakeTransaction(
     .build()
 
   ctx           = _ctx
-  fee           = 1500000
+  fee           = 2350000
   changeAddress = _changeAddress
   inputs = List[InputBox](
     stakeStateInput.withContextVars(contextVars: _*),

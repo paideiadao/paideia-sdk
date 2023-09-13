@@ -169,5 +169,5 @@ final case class EvaluateProposalBasicTransaction(
   dataInputs = List(configInput, stakeStateInput, paideiaConfigInput)
   outputs    = List(proposalBasicOut.outBox, splitProfitOut.outBox)
 
-  fee = 1000000L
+  fee = 2000000L
 }
