@@ -32,6 +32,8 @@ import org.ergoplatform.UnsignedErgoLikeTransaction
   */
 trait PaideiaTransaction {
 
+  var minimizeChangeBox: Boolean = true
+
   /** The list of input boxes for this transaction
     */
   var inputs: List[InputBox] = _
@@ -106,26 +108,43 @@ trait PaideiaTransaction {
     if (inputBalance > outputBalance) {
       AssetUtils.subtractAssetsMut(inputAssets, outputAssetsNoMinted)
       val changeTokens = inputAssets.map(t => new ErgoToken(t._1, t._2)).toList
-      outputs =
+      var changeOutput =
         if (changeTokens.size > 0)
-          outputs ++ List(
+          ctx
+            .newTxBuilder()
+            .outBoxBuilder()
+            .contract(changeAddress.toErgoContract())
+            .value(inputBalance - outputBalance)
+            .tokens(changeTokens: _*)
+            .build()
+        else
+          ctx
+            .newTxBuilder()
+            .outBoxBuilder()
+            .contract(changeAddress.toErgoContract())
+            .value(inputBalance - outputBalance)
+            .build()
+      if (minimizeChangeBox) {
+        val minChangeValue = changeOutput.getBytesWithNoRef().size * 360
+        fee = fee + changeOutput.getValue() - minChangeValue
+        changeOutput =
+          if (changeTokens.size > 0)
             ctx
               .newTxBuilder()
               .outBoxBuilder()
               .contract(changeAddress.toErgoContract())
-              .value(inputBalance - outputBalance)
+              .value(minChangeValue)
               .tokens(changeTokens: _*)
               .build()
-          )
-        else
-          outputs ++ List(
+          else
             ctx
               .newTxBuilder()
               .outBoxBuilder()
               .contract(changeAddress.toErgoContract())
-              .value(inputBalance - outputBalance)
+              .value(minChangeValue)
               .build()
-          )
+      }
+      outputs = outputs ++ List(changeOutput)
     }
 
     val unsignedTx = this.ctx

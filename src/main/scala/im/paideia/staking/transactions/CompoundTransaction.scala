@@ -33,6 +33,8 @@ case class CompoundTransaction(
 ) extends PaideiaTransaction {
   ctx = _ctx
 
+  minimizeChangeBox = false
+
   val config = Paideia.getConfig(daoKey)
 
   val state = TotalStakingState(daoKey)
