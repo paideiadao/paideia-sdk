@@ -49,6 +49,7 @@ libraryDependencies ++= Seq(
     //"org.scala-lang.modules" %% "scala-parser-combinators" % "2.1.1",
     "io.github.k-singh" %% "plasma-toolkit" % "1.0.2",
     "com.typesafe" % "config" % "1.4.0",
+    "com.github.tototoshi" %% "scala-csv" % "1.3.10",
     "org.scalatest" %% "scalatest-funsuite" % "3.2.13" % Test,
     "com.squareup.okhttp3" % "mockwebserver" % "3.12.0" % Test
 )
