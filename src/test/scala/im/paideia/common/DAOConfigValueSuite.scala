@@ -147,6 +147,22 @@ class DAOConfigValueSuite extends AnyFunSuite {
     assert(valueType === "Coll[Byte]")
   }
 
+  test("Array[Byte] -> Bytes -> String") {
+    val b: Array[Byte] = ErgoId
+      .create("1fd6e032e8476c4aa54c18c1a308dce83940e8f4a28f576440513ed7326ad489")
+      .getBytes
+    val serialized: Array[Byte] = DAOConfigValueSerializer(b)
+    val string                  = DAOConfigValueDeserializer.toString(serialized)
+    assert("1fd6e032e8476c4aa54c18c1a308dce83940e8f4a28f576440513ed7326ad489" === string)
+  }
+
+  test("Array[Long] -> Bytes -> String") {
+    val b: Array[Long]          = Array(10L, 20L, 30L)
+    val serialized: Array[Byte] = DAOConfigValueSerializer(b)
+    val string                  = DAOConfigValueDeserializer.toString(serialized)
+    assert("[10,20,30]" === string)
+  }
+
   test("Empty Array[Byte] -> Bytes -> Array[Byte]") {
     val b: Array[Byte]          = new Array(0)
     val serialized: Array[Byte] = DAOConfigValueSerializer(b)
@@ -154,6 +170,25 @@ class DAOConfigValueSuite extends AnyFunSuite {
     assert(b === deserialized)
     val valueType = DAOConfigValueDeserializer.getType(serialized)
     assert(valueType === "Coll[Byte]")
+  }
+
+  test("Array[Array[Byte]] -> Bytes -> String") {
+    val b: Array[Array[Byte]] = Array(
+      ErgoId
+        .create("1fd6e032e8476c4aa54c18c1a308dce83940e8f4a28f576440513ed7326ad489")
+        .getBytes,
+      ErgoId
+        .create("1fd6e032e8476c4aa54c18c1a308dce83940e8f4a28f576440513ed7326ad479")
+        .getBytes,
+      ErgoId
+        .create("1fd6e032e8476c4aa54c18c1a308dce83940e8f4a28f576440513ed7326ad469")
+        .getBytes
+    )
+    val serialized: Array[Byte] = DAOConfigValueSerializer(b)
+    val string                  = DAOConfigValueDeserializer.toString(serialized)
+    assert(
+      """["1fd6e032e8476c4aa54c18c1a308dce83940e8f4a28f576440513ed7326ad489","1fd6e032e8476c4aa54c18c1a308dce83940e8f4a28f576440513ed7326ad479","1fd6e032e8476c4aa54c18c1a308dce83940e8f4a28f576440513ed7326ad469"]""" === string
+    )
   }
 
   test("Array[Array[Byte]] -> Bytes -> Array[Array[Byte]]") {
@@ -188,5 +223,15 @@ class DAOConfigValueSuite extends AnyFunSuite {
     assert(t === deserialized)
     val valueType = DAOConfigValueDeserializer.getType(serialized)
     assert(valueType === "(Int,String)")
+  }
+
+  test("(Int,String) -> Bytes -> String") {
+    val s: String =
+      """ăѣ𝔠ծềſģȟᎥ𝒋ǩľḿꞑȯ𝘱𝑞𝗋𝘴ȶ𝞄𝜈ψ𝒙𝘆𝚣1234567890!@#$%^&*()-_=+[{]};:'",<.>/?~𝘈Ḇ𝖢𝕯٤ḞԍНǏ𝙅ƘԸⲘ𝙉০Ρ𝗤Ɍ𝓢ȚЦ𝒱Ѡ𝓧ƳȤѧᖯć𝗱ễ𝑓𝙜Ⴙ𝞲𝑗𝒌ļṃŉо𝞎𝒒ᵲꜱ𝙩ừ𝗏ŵ𝒙𝒚ź1234567890!@#$%^&*()-_=+[{]};:'",<.>/?~АḂⲤ𝗗𝖤𝗙ꞠꓧȊ𝐉𝜥ꓡ𝑀𝑵Ǭ𝙿𝑄Ŗ𝑆𝒯𝖴𝘝𝘞ꓫŸ𝜡ả𝘢ƀ𝖼ḋếᵮℊ𝙝Ꭵ𝕛кιṃդⱺ𝓅𝘲𝕣𝖘ŧ𝑢ṽẉ𝘅ყž1234567890!@#$%^&*()-_=+[{]};:'",<.>/?~Ѧ𝙱ƇᗞΣℱԍҤ١𝔍К𝓛𝓜ƝȎ𝚸𝑄Ṛ𝓢ṮṺƲᏔꓫ𝚈𝚭𝜶Ꮟçძ𝑒𝖿𝗀ḧ𝗂𝐣ҝɭḿ𝕟𝐨𝝔𝕢ṛ𝓼тú𝔳ẃ⤬𝝲𝗓1234567890!@#$%^&*()-_=+[{]};:'",<.>/?~𝖠Β𝒞𝘋𝙴𝓕ĢȞỈ𝕵ꓗʟ𝙼ℕ০𝚸𝗤ՀꓢṰǓⅤ𝔚Ⲭ𝑌𝙕𝘢𝕤"""
+    val i: Int                  = 10
+    val t                       = (i, s)
+    val serialized: Array[Byte] = DAOConfigValueSerializer(t)
+    val string                  = DAOConfigValueDeserializer.toString(serialized)
+    assert("(" + i.toString + ""","""" + s + """")""" === string)
   }
 }
