@@ -12,6 +12,11 @@ import com.google.j2objc.annotations.Weak
 import im.paideia.common.contracts.PaideiaContractSignature
 import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.appkit.NetworkType
+import com.github.tototoshi.csv.DefaultCSVFormat
+import java.io.StringWriter
+import com.github.tototoshi.csv.CSVWriter
+import com.github.tototoshi.csv.Quoting
+import com.github.tototoshi.csv.QUOTE_NONNUMERIC
 
 case class DAOConfigValue[T](val valueType: Byte, val value: T)
 
@@ -324,8 +329,57 @@ class DAOConfigValueDeserializer(ba: Array[Byte]) {
     "(" + left + "," + right + ")"
   }
 
+  implicit object MyFormat extends DefaultCSVFormat {
+    override val lineTerminator   = ""
+    override val quoting: Quoting = QUOTE_NONNUMERIC
+  }
+
+  def collToString: String = {
+    val innerTpe: Byte = readByte
+    val collSize: Int  = readInt
+
+    innerTpe match {
+      case DAOConfigValue.byteTypeCode =>
+        Range(0, collSize)
+          .map { (i: Int) => readValueTyped(innerTpe) }
+          .toArray
+          .map("%02x" format _)
+          .mkString
+      case _ => {
+        val sw        = new StringWriter()
+        val csvWriter = CSVWriter.open(sw)
+
+        csvWriter.writeRow(
+          Range(0, collSize)
+            .map { (i: Int) => toStringTyped(innerTpe) }
+        )
+
+        "[" + sw.toString + "]"
+      }
+    }
+  }
+
+  def tupleToString: String = {
+    val leftTpe = readByte
+    val left = leftTpe match {
+      case DAOConfigValue.stringTypeCode => """"""" + toStringTyped(leftTpe) + """""""
+      case _                             => toStringTyped(leftTpe)
+    }
+    val rightTpe = readByte
+    val right = rightTpe match {
+      case DAOConfigValue.stringTypeCode => """"""" + toStringTyped(rightTpe) + """""""
+      case _                             => toStringTyped(rightTpe)
+    }
+
+    "(" + left + "," + right + ")"
+  }
+
   def toStringTyped(tpe: Byte) = {
-    readValueTyped(tpe).toString()
+    tpe match {
+      case DAOConfigValue.collTypeCode  => collToString
+      case DAOConfigValue.tupleTypeCode => tupleToString
+      case _                            => readValueTyped(tpe).toString()
+    }
   }
 
   override def toString(): String = {
