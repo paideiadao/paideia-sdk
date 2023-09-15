@@ -17,6 +17,10 @@ import java.io.StringWriter
 import com.github.tototoshi.csv.CSVWriter
 import com.github.tototoshi.csv.Quoting
 import com.github.tototoshi.csv.QUOTE_NONNUMERIC
+import org.ergoplatform.sdk.ErgoId
+import org.ergoplatform.sdk.JavaHelpers
+import com.github.tototoshi.csv.CSVReader
+import java.io.StringReader
 
 case class DAOConfigValue[T](val valueType: Byte, val value: T)
 
@@ -43,6 +47,11 @@ trait DAOConfigValueSerializer[A] {
 }
 
 object DAOConfigValueSerializer {
+
+  implicit object MyFormat extends DefaultCSVFormat {
+    override val lineTerminator   = ""
+    override val quoting: Quoting = QUOTE_NONNUMERIC
+  }
 
   def apply[A](value: A, includeType: Boolean = true)(implicit
     enc: Lazy[DAOConfigValueSerializer[A]]
@@ -170,9 +179,107 @@ object DAOConfigValueSerializer {
       }
     )
   }
+
+  def stringType(stringType: String): Byte = {
+    val collTypePattern  = """Coll\[(.*)\]""".r
+    val tupleTypePattern = """\((.*)\)""".r
+
+    stringType match {
+      case "Byte"                     => DAOConfigValue.byteTypeCode
+      case "Short"                    => DAOConfigValue.shortTypeCode
+      case "Int"                      => DAOConfigValue.intTypeCode
+      case "Long"                     => DAOConfigValue.longTypeCode
+      case "BigInt"                   => DAOConfigValue.bigIntTypeCode
+      case "Boolean"                  => DAOConfigValue.booleanTypeCode
+      case "String"                   => DAOConfigValue.stringTypeCode
+      case collTypePattern(_)         => DAOConfigValue.collTypeCode
+      case tupleTypePattern(_)        => DAOConfigValue.tupleTypeCode
+      case "PaideiaContractSignature" => DAOConfigValue.contractSignatureTypeCode
+    }
+  }
+
+  def fromString(
+    tpe: String,
+    value: String,
+    includeType: Boolean = true,
+    stripQuotes: Boolean = false
+  ): Array[Byte] = {
+    val collTypePattern = """Coll\[(.*)\]""".r
+    val collPattern     = """\[(.*)\]""".r
+
+    val tupleTypePattern = """\((.*),(.*)\)""".r
+    val tuplePattern     = """\((.*)\)""".r
+
+    val contractSigPattern = """PaideiaContractSignature\((.*),(.*),(.*),(.*)\)""".r
+
+    tpe match {
+      case "Byte"    => DAOConfigValueSerializer(value.toByte, includeType)
+      case "Short"   => DAOConfigValueSerializer(value.toShort, includeType)
+      case "Int"     => DAOConfigValueSerializer(value.toInt, includeType)
+      case "Long"    => DAOConfigValueSerializer(value.toLong, includeType)
+      case "BigInt"  => DAOConfigValueSerializer(BigInt(value), includeType)
+      case "Boolean" => DAOConfigValueSerializer(value.toBoolean, includeType)
+      case "String" =>
+        if (stripQuotes)
+          DAOConfigValueSerializer(value.substring(1, value.size - 1), includeType)
+        else DAOConfigValueSerializer(value, includeType)
+      case "Coll[Byte]" =>
+        DAOConfigValueSerializer(JavaHelpers.decodeStringToBytes(value), includeType)
+      case "PaideiaContractSignature" =>
+        value match {
+          case contractSigPattern(className, version, network, contractHashHex) =>
+            DAOConfigValueSerializer(
+              PaideiaContractSignature(
+                className,
+                version,
+                NetworkType.fromValue(network),
+                JavaHelpers.decodeStringToBytes(contractHashHex).toList
+              )
+            )
+        }
+      case tupleTypePattern(leftType, rightType) =>
+        (if (includeType) Array(DAOConfigValue.tupleTypeCode)
+         else new Array[Byte](0)) ++ (value match {
+          case tuplePattern(tupleValues) => {
+            val csvReader = CSVReader.open(new StringReader(tupleValues))
+            csvReader.readNext() match {
+              case None => new Array[Byte](0)
+              case Some(tupleValueList) =>
+                fromString(leftType, tupleValueList(0)) ++ fromString(
+                  rightType,
+                  tupleValueList(1)
+                )
+            }
+          }
+        })
+      case collTypePattern(innerType) => {
+        value match {
+          case collPattern(collValues) =>
+            val csvReader = CSVReader.open(new StringReader(collValues))
+            csvReader.readNext() match {
+              case None => new Array[Byte](0)
+              case Some(collValueList) =>
+                (if (includeType) Array[Byte](DAOConfigValue.collTypeCode)
+                 else new Array[Byte](0)) ++
+                Array(stringType(innerType)) ++
+                Ints.toByteArray(collValueList.size) ++
+                collValueList
+                  .flatMap(cv => fromString(innerType, cv, false))
+            }
+          case _ => new Array[Byte](0)
+        }
+
+      }
+    }
+  }
 }
 
 class DAOConfigValueDeserializer(ba: Array[Byte]) {
+
+  implicit object MyFormat extends DefaultCSVFormat {
+    override val lineTerminator   = ""
+    override val quoting: Quoting = QUOTE_NONNUMERIC
+  }
 
   private var readerIndex: Int = 0
 
@@ -329,11 +436,6 @@ class DAOConfigValueDeserializer(ba: Array[Byte]) {
     "(" + left + "," + right + ")"
   }
 
-  implicit object MyFormat extends DefaultCSVFormat {
-    override val lineTerminator   = ""
-    override val quoting: Quoting = QUOTE_NONNUMERIC
-  }
-
   def collToString: String = {
     val innerTpe: Byte = readByte
     val collSize: Int  = readInt
@@ -360,18 +462,17 @@ class DAOConfigValueDeserializer(ba: Array[Byte]) {
   }
 
   def tupleToString: String = {
-    val leftTpe = readByte
-    val left = leftTpe match {
-      case DAOConfigValue.stringTypeCode => """"""" + toStringTyped(leftTpe) + """""""
-      case _                             => toStringTyped(leftTpe)
-    }
+    val leftTpe  = readByte
+    val left     = toStringTyped(leftTpe)
     val rightTpe = readByte
-    val right = rightTpe match {
-      case DAOConfigValue.stringTypeCode => """"""" + toStringTyped(rightTpe) + """""""
-      case _                             => toStringTyped(rightTpe)
-    }
+    val right    = toStringTyped(rightTpe)
 
-    "(" + left + "," + right + ")"
+    val sw        = new StringWriter()
+    val csvWriter = CSVWriter.open(sw)
+
+    csvWriter.writeRow(List(left, right))
+
+    "(" + sw.toString + ")"
   }
 
   def toStringTyped(tpe: Byte) = {

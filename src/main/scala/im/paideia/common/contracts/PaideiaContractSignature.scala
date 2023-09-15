@@ -26,4 +26,13 @@ case class PaideiaContractSignature(
 
   def withDaoKey(_daoKey: String): PaideiaContractSignature =
     PaideiaContractSignature(className, version, networkType, contractHash, _daoKey)
+
+  override def toString() = {
+    "PaideiaContractSignature(%s,%s,%s,%s)".format(
+      className,
+      version,
+      networkType.toString(),
+      contractHash.map("%02x" format _).mkString
+    )
+  }
 }
