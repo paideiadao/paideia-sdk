@@ -24,6 +24,8 @@ import java.io.StringReader
 
 case class DAOConfigValue[T](val valueType: Byte, val value: T)
 
+//(using T <:< (Byte | Short | Int | Long | BigInt | Boolean | String | PaideiaContractSignature | Array))
+
 object DAOConfigValue {
   val byteTypeCode: Byte              = 0
   val shortTypeCode: Byte             = 1
@@ -283,9 +285,11 @@ class DAOConfigValueDeserializer(ba: Array[Byte]) {
 
   private var readerIndex: Int = 0
 
-  def readValue(setReaderIndex: Int = 0): Any = {
+  def readValue[T](
+    setReaderIndex: Int = 0
+  ): T = {
     readerIndex = setReaderIndex
-    readValueTyped(readByte)
+    readValueTyped(readByte).asInstanceOf[T]
   }
 
   def readValueTyped(tpe: Byte): Any =
@@ -367,8 +371,8 @@ class DAOConfigValueDeserializer(ba: Array[Byte]) {
   }
 
   def readTuple: (_, _) = {
-    val left  = readValue(readerIndex)
-    val right = readValue(readerIndex)
+    val left: Any  = readValue(readerIndex)
+    val right: Any = readValue(readerIndex)
     (left, right)
   }
 
@@ -492,9 +496,9 @@ class DAOConfigValueDeserializer(ba: Array[Byte]) {
 
 object DAOConfigValueDeserializer {
   def apply[T](ba: Array[Byte]): T =
-    DAOConfigValueDeserializer.deserialize(ba).asInstanceOf[T]
+    DAOConfigValueDeserializer.deserialize(ba)
 
-  def deserialize(ba: Array[Byte]): Any = {
+  def deserialize[T](ba: Array[Byte]): T = {
     new DAOConfigValueDeserializer(ba).readValue()
   }
 

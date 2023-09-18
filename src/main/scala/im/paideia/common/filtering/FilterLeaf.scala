@@ -46,7 +46,7 @@ class FilterLeaf[T: Ordering](
         if (box.getRegisters().size > listIndex)
           box.getRegisters().get(listIndex).getValue() match {
             case c: Coll[_] => c.toArray.toIterable
-            case v: T       => v
+            case v          => v
           }
         else None
       case CompareField.VALUE => box.getValue()
