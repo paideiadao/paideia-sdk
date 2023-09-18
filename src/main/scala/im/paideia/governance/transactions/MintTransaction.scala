@@ -67,6 +67,8 @@ final case class MintTransaction(
     case ConfKeys.im_paideia_dao_vote_tokenid   => (daoName ++ " Vote", Long.MaxValue)
     case ConfKeys.im_paideia_dao_action_tokenid => (daoName ++ " Action", Long.MaxValue)
     case ConfKeys.im_paideia_staking_state_tokenid => (daoName ++ " Stake State", 1L)
+    case _ =>
+      throw new Exception("Unknown token to mint: %s".format(tokenToMint))
   }
 
   val mintOutput = Mint(
