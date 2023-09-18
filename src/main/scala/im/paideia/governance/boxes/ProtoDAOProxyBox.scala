@@ -106,7 +106,7 @@ object ProtoDAOProxyBox {
       inp.getRegisters().get(0).getValue().asInstanceOf[Coll[Coll[Byte]]].map(_.toArray)
     val longRegister  = inp.getRegisters().get(1).getValue().asInstanceOf[Coll[Long]]
     val stakePoolSize = longRegister(0)
-    val daoName =
+    val daoName: String =
       DAOConfigValueDeserializer.deserialize(byteRegister(0).toArray).asInstanceOf[String]
     val daoTokenId = new ErgoId(
       DAOConfigValueDeserializer

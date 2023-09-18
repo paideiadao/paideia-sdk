@@ -13,7 +13,7 @@ class DAOConfigValueSuite extends AnyFunSuite {
   test("Byte -> Bytes -> Byte") {
     val b: Byte                 = 10
     val serialized: Array[Byte] = DAOConfigValueSerializer(b)
-    val deserialized            = DAOConfigValueDeserializer.deserialize(serialized)
+    val deserialized: Byte      = DAOConfigValueDeserializer.deserialize(serialized)
     assert(b === deserialized)
     val valueType = DAOConfigValueDeserializer.getType(serialized)
     assert(valueType === "Byte")
@@ -34,7 +34,7 @@ class DAOConfigValueSuite extends AnyFunSuite {
   test("Short -> Bytes -> Short") {
     val s: Short                = 10
     val serialized: Array[Byte] = DAOConfigValueSerializer(s)
-    val deserialized            = DAOConfigValueDeserializer.deserialize(serialized)
+    val deserialized: Short     = DAOConfigValueDeserializer.deserialize(serialized)
     assert(s === deserialized)
     val valueType = DAOConfigValueDeserializer.getType(serialized)
     assert(valueType === "Short")
@@ -55,7 +55,7 @@ class DAOConfigValueSuite extends AnyFunSuite {
   test("Int -> Bytes -> Int") {
     val i: Int                  = 10
     val serialized: Array[Byte] = DAOConfigValueSerializer(i)
-    val deserialized            = DAOConfigValueDeserializer.deserialize(serialized)
+    val deserialized: Int       = DAOConfigValueDeserializer.deserialize(serialized)
     assert(i === deserialized)
     val valueType = DAOConfigValueDeserializer.getType(serialized)
     assert(valueType === "Int")
@@ -76,7 +76,7 @@ class DAOConfigValueSuite extends AnyFunSuite {
   test("Long -> Bytes -> Long") {
     val l: Long                 = 10
     val serialized: Array[Byte] = DAOConfigValueSerializer(l)
-    val deserialized            = DAOConfigValueDeserializer.deserialize(serialized)
+    val deserialized: Long      = DAOConfigValueDeserializer.deserialize(serialized)
     assert(l === deserialized)
     val valueType = DAOConfigValueDeserializer.getType(serialized)
     assert(valueType === "Long")
@@ -97,7 +97,7 @@ class DAOConfigValueSuite extends AnyFunSuite {
   test("BigInt -> Bytes -> BigInt") {
     val bi: BigInt              = BigInt(10)
     val serialized: Array[Byte] = DAOConfigValueSerializer(bi)
-    val deserialized            = DAOConfigValueDeserializer.deserialize(serialized)
+    val deserialized: BigInt    = DAOConfigValueDeserializer.deserialize(serialized)
     assert(bi === deserialized)
     val valueType = DAOConfigValueDeserializer.getType(serialized)
     assert(valueType === "BigInt")
@@ -118,7 +118,7 @@ class DAOConfigValueSuite extends AnyFunSuite {
   test("true -> Bytes -> true") {
     val b: Boolean              = true
     val serialized: Array[Byte] = DAOConfigValueSerializer(b)
-    val deserialized            = DAOConfigValueDeserializer.deserialize(serialized)
+    val deserialized: Boolean   = DAOConfigValueDeserializer.deserialize(serialized)
     assert(b === deserialized)
     val valueType = DAOConfigValueDeserializer.getType(serialized)
     assert(valueType === "Boolean")
@@ -139,7 +139,7 @@ class DAOConfigValueSuite extends AnyFunSuite {
   test("false -> Bytes -> false") {
     val b: Boolean              = false
     val serialized: Array[Byte] = DAOConfigValueSerializer(b)
-    val deserialized            = DAOConfigValueDeserializer.deserialize(serialized)
+    val deserialized: Boolean   = DAOConfigValueDeserializer.deserialize(serialized)
     assert(b === deserialized)
     val valueType = DAOConfigValueDeserializer.getType(serialized)
     assert(valueType === "Boolean")
@@ -161,7 +161,7 @@ class DAOConfigValueSuite extends AnyFunSuite {
     val s: String =
       """ăѣ𝔠ծềſģȟᎥ𝒋ǩľḿꞑȯ𝘱𝑞𝗋𝘴ȶ𝞄𝜈ψ𝒙𝘆𝚣1234567890!@#$%^&*()-_=+[{]};:'",<.>/?~𝘈Ḇ𝖢𝕯٤ḞԍНǏ𝙅ƘԸⲘ𝙉০Ρ𝗤Ɍ𝓢ȚЦ𝒱Ѡ𝓧ƳȤѧᖯć𝗱ễ𝑓𝙜Ⴙ𝞲𝑗𝒌ļṃŉо𝞎𝒒ᵲꜱ𝙩ừ𝗏ŵ𝒙𝒚ź1234567890!@#$%^&*()-_=+[{]};:'",<.>/?~АḂⲤ𝗗𝖤𝗙ꞠꓧȊ𝐉𝜥ꓡ𝑀𝑵Ǭ𝙿𝑄Ŗ𝑆𝒯𝖴𝘝𝘞ꓫŸ𝜡ả𝘢ƀ𝖼ḋếᵮℊ𝙝Ꭵ𝕛кιṃդⱺ𝓅𝘲𝕣𝖘ŧ𝑢ṽẉ𝘅ყž1234567890!@#$%^&*()-_=+[{]};:'",<.>/?~Ѧ𝙱ƇᗞΣℱԍҤ١𝔍К𝓛𝓜ƝȎ𝚸𝑄Ṛ𝓢ṮṺƲᏔꓫ𝚈𝚭𝜶Ꮟçძ𝑒𝖿𝗀ḧ𝗂𝐣ҝɭḿ𝕟𝐨𝝔𝕢ṛ𝓼тú𝔳ẃ⤬𝝲𝗓1234567890!@#$%^&*()-_=+[{]};:'",<.>/?~𝖠Β𝒞𝘋𝙴𝓕ĢȞỈ𝕵ꓗʟ𝙼ℕ০𝚸𝗤ՀꓢṰǓⅤ𝔚Ⲭ𝑌𝙕𝘢𝕤"""
     val serialized: Array[Byte] = DAOConfigValueSerializer(s)
-    val deserialized            = DAOConfigValueDeserializer.deserialize(serialized)
+    val deserialized: String    = DAOConfigValueDeserializer.deserialize(serialized)
     assert(s === deserialized)
     val valueType = DAOConfigValueDeserializer.getType(serialized)
     assert(valueType === "String")
@@ -181,9 +181,9 @@ class DAOConfigValueSuite extends AnyFunSuite {
   }
 
   test("Array[Byte] -> Bytes -> Array[Byte]") {
-    val b: Array[Byte]          = Array(10.toByte, 20.toByte, 30.toByte)
-    val serialized: Array[Byte] = DAOConfigValueSerializer(b)
-    val deserialized            = DAOConfigValueDeserializer.deserialize(serialized)
+    val b: Array[Byte]              = Array(10.toByte, 20.toByte, 30.toByte)
+    val serialized: Array[Byte]     = DAOConfigValueSerializer(b)
+    val deserialized: Array[Object] = DAOConfigValueDeserializer.deserialize(serialized)
     assert(b === deserialized)
     val valueType = DAOConfigValueDeserializer.getType(serialized)
     assert(valueType === "Coll[Byte]")
@@ -216,9 +216,9 @@ class DAOConfigValueSuite extends AnyFunSuite {
   }
 
   test("Empty Array[Byte] -> Bytes -> Array[Byte]") {
-    val b: Array[Byte]          = new Array(0)
-    val serialized: Array[Byte] = DAOConfigValueSerializer(b)
-    val deserialized            = DAOConfigValueDeserializer.deserialize(serialized)
+    val b: Array[Byte]              = new Array(0)
+    val serialized: Array[Byte]     = DAOConfigValueSerializer(b)
+    val deserialized: Array[Object] = DAOConfigValueDeserializer.deserialize(serialized)
     assert(b === deserialized)
     val valueType = DAOConfigValueDeserializer.getType(serialized)
     assert(valueType === "Coll[Byte]")
@@ -255,7 +255,8 @@ class DAOConfigValueSuite extends AnyFunSuite {
       Array(10.toByte, 20.toByte, 30.toByte)
     )
     val serialized: Array[Byte] = DAOConfigValueSerializer(b)
-    val deserialized            = DAOConfigValueDeserializer.deserialize(serialized)
+    val deserialized: Array[Object] =
+      DAOConfigValueDeserializer.deserialize(serialized)
     assert(b === deserialized)
     val valueType = DAOConfigValueDeserializer.getType(serialized)
     assert(valueType === "Coll[Coll[Byte]]")
@@ -264,7 +265,8 @@ class DAOConfigValueSuite extends AnyFunSuite {
   test("Empty Array[Array[Byte]] -> Bytes -> Array[Array[?]]") {
     val b: Array[Array[Byte]]   = new Array(0)
     val serialized: Array[Byte] = DAOConfigValueSerializer(b)
-    val deserialized            = DAOConfigValueDeserializer.deserialize(serialized)
+    val deserialized: Array[Object] =
+      DAOConfigValueDeserializer.deserialize(serialized)
     assert(b === deserialized)
     val valueType = DAOConfigValueDeserializer.getType(serialized)
     assert(valueType === "Coll[Coll[?]]")
@@ -274,9 +276,10 @@ class DAOConfigValueSuite extends AnyFunSuite {
     val s: String =
       """ăѣ𝔠ծềſģȟᎥ𝒋ǩľḿꞑȯ𝘱𝑞𝗋𝘴ȶ𝞄𝜈ψ𝒙𝘆𝚣1234567890!@#$%^&*()-_=+[{]};:'",<.>/?~𝘈Ḇ𝖢𝕯٤ḞԍНǏ𝙅ƘԸⲘ𝙉০Ρ𝗤Ɍ𝓢ȚЦ𝒱Ѡ𝓧ƳȤѧᖯć𝗱ễ𝑓𝙜Ⴙ𝞲𝑗𝒌ļṃŉо𝞎𝒒ᵲꜱ𝙩ừ𝗏ŵ𝒙𝒚ź1234567890!@#$%^&*()-_=+[{]};:'",<.>/?~АḂⲤ𝗗𝖤𝗙ꞠꓧȊ𝐉𝜥ꓡ𝑀𝑵Ǭ𝙿𝑄Ŗ𝑆𝒯𝖴𝘝𝘞ꓫŸ𝜡ả𝘢ƀ𝖼ḋếᵮℊ𝙝Ꭵ𝕛кιṃդⱺ𝓅𝘲𝕣𝖘ŧ𝑢ṽẉ𝘅ყž1234567890!@#$%^&*()-_=+[{]};:'",<.>/?~Ѧ𝙱ƇᗞΣℱԍҤ١𝔍К𝓛𝓜ƝȎ𝚸𝑄Ṛ𝓢ṮṺƲᏔꓫ𝚈𝚭𝜶Ꮟçძ𝑒𝖿𝗀ḧ𝗂𝐣ҝɭḿ𝕟𝐨𝝔𝕢ṛ𝓼тú𝔳ẃ⤬𝝲𝗓1234567890!@#$%^&*()-_=+[{]};:'",<.>/?~𝖠Β𝒞𝘋𝙴𝓕ĢȞỈ𝕵ꓗʟ𝙼ℕ০𝚸𝗤ՀꓢṰǓⅤ𝔚Ⲭ𝑌𝙕𝘢𝕤"""
     val i: Int                  = 10
-    val t                       = (i, s)
+    val t: (Int, String)        = (i, s)
     val serialized: Array[Byte] = DAOConfigValueSerializer(t)
-    val deserialized            = DAOConfigValueDeserializer.deserialize(serialized)
+    val deserialized: Any =
+      DAOConfigValueDeserializer.deserialize(serialized)
     assert(t === deserialized)
     val valueType = DAOConfigValueDeserializer.getType(serialized)
     assert(valueType === "(Int,String)")
@@ -339,8 +342,9 @@ class DAOConfigValueSuite extends AnyFunSuite {
         7.toByte
       )
     )
-    val serialized   = DAOConfigValueSerializer(pcs)
-    val deserialized = DAOConfigValueDeserializer.deserialize(serialized)
+    val serialized = DAOConfigValueSerializer(pcs)
+    val deserialized: PaideiaContractSignature =
+      DAOConfigValueDeserializer.deserialize(serialized)
     assert(pcs === deserialized)
     val valueType = DAOConfigValueDeserializer.getType(serialized)
     assert(valueType === "PaideiaContractSignature")
