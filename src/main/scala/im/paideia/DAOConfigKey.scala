@@ -22,7 +22,11 @@ class DAOConfigKey(_hashedKey: Array[Byte], _originalKey: Option[String] = None)
   def ergoValue: ErgoValue[Coll[java.lang.Byte]] = ErgoValue.of(hashedKey)
 
   override def equals(x: Any): Boolean =
-    x.isInstanceOf[DAOConfigKey] && x.asInstanceOf[DAOConfigKey].hashedKey == hashedKey
+    x.isInstanceOf[DAOConfigKey] && x
+      .asInstanceOf[DAOConfigKey]
+      .hashedKey
+      .toList
+      .equals(hashedKey.toList)
 }
 
 object DAOConfigKey {
