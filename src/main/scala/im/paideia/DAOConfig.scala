@@ -44,8 +44,7 @@ case class DAOConfig(
 
   def apply[T](key: DAOConfigKey, digestOpt: Option[ADDigest] = None): T = {
     val check = _config.lookUpWithDigest(key)(digestOpt).response.head.tryOp.get.get
-    val deserialized = DAOConfigValueDeserializer.deserialize(check)
-    deserialized.asInstanceOf[T]
+    DAOConfigValueDeserializer.deserialize(check)
   }
 
   def withDefault[T](
@@ -55,8 +54,7 @@ case class DAOConfig(
   ): T = {
     val check = _config.lookUpWithDigest(key)(digestOpt).response.head.tryOp.get
     if (check.isDefined) {
-      val deserialized = DAOConfigValueDeserializer.deserialize(check.get)
-      deserialized.asInstanceOf[T]
+      DAOConfigValueDeserializer.deserialize(check.get)
     } else {
       default
     }
