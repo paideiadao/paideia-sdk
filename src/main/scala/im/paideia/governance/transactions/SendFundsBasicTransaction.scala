@@ -30,9 +30,9 @@ final case class SendFundsBasicTransaction(
   dao: DAO,
   actionInput: InputBox
 ) extends PaideiaTransaction {
-  ctx = _ctx
-
-  fee = 1000000L
+  ctx               = _ctx
+  minimizeChangeBox = false
+  fee               = 1000000L
 
   val actionInputBox = ActionSendFundsBasicBox.fromInputBox(ctx, actionInput)
 
