@@ -80,12 +80,16 @@ final case class EvaluateProposalBasicTransaction(
 
   val totalStaked =
     stakeStateInput.getRegisters().get(1).getValue().asInstanceOf[Coll[Long]](2)
-  val quorumNeeded = dao.config[Long](ConfKeys.im_paideia_dao_quorum)
+  val quorumNeeded    = dao.config[Long](ConfKeys.im_paideia_dao_quorum)
+  val thresholdNeeded = dao.config[Long](ConfKeys.im_paideia_dao_threshold)
 
   val quorumMet = proposalInputBox.totalVotes > (totalStaked * quorumNeeded / 1000)
 
   val winningVoteAmount = proposalInputBox.voteCount.max
   val winningVoteIndex  = proposalInputBox.voteCount.indexOf(winningVoteAmount)
+
+  val thresholdMet =
+    winningVoteAmount > (proposalInputBox.totalVotes * thresholdNeeded / 1000)
 
   /** Computes the output for the proposal basic transaction.
     *
@@ -99,7 +103,7 @@ final case class EvaluateProposalBasicTransaction(
     proposalInputBox.voteCount,
     proposalInputBox.totalVotes,
     proposalInputBox.endTime,
-    if (quorumMet)
+    if (quorumMet && thresholdMet)
       winningVoteIndex
     else
       -2
