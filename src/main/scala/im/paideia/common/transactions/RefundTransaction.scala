@@ -10,7 +10,7 @@ final case class RefundTransaction(
   refundBox: InputBox,
   refundAddress: Address
 ) extends PaideiaTransaction {
-
+  minimizeChangeBox = false
   val refundedBox = _ctx
     .newTxBuilder()
     .outBoxBuilder()
