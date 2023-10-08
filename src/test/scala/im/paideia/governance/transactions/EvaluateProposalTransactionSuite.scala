@@ -186,14 +186,10 @@ class EvaluateProposalTransactionSuite extends PaideiaTestSuite {
           CreateTransactionsEvent(ctx, proposalBox.endTime + 1000L, 0L)
         )
         assert(eventResponse.unsignedTransactions.size === 1)
-        val thrown = intercept[InterpreterException] {
-          ctx
-            .newProverBuilder()
-            .build()
-            .sign(eventResponse.unsignedTransactions(0).unsigned)
-        }
-        assert(thrown.getMessage === "Script reduced to false")
-
+        ctx
+          .newProverBuilder()
+          .build()
+          .sign(eventResponse.unsignedTransactions(0).unsigned)
       }
     })
   }

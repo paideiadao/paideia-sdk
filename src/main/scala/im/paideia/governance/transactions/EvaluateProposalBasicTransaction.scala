@@ -79,7 +79,7 @@ final case class EvaluateProposalBasicTransaction(
   )(0)
 
   val totalStaked =
-    stakeStateInput.getRegisters().get(1).getValue().asInstanceOf[Coll[Long]](2)
+    stakeStateInput.getRegisters().get(1).getValue().asInstanceOf[Coll[Long]](1)
   val quorumNeeded    = dao.config[Long](ConfKeys.im_paideia_dao_quorum)
   val thresholdNeeded = dao.config[Long](ConfKeys.im_paideia_dao_threshold)
 
