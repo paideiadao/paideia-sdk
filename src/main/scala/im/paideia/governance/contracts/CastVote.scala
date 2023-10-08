@@ -89,7 +89,7 @@ class CastVote(contractSignature: PaideiaContractSignature)
             .getInputs()
             .asScala
             .map(eti =>
-              if (boxSet.contains(eti.getBoxId())) {
+              if (te.tx.getInputs().size() > 1 && boxSet.contains(eti.getBoxId())) {
                 val castVoteBox = CastVoteBox.fromInputBox(te.ctx, boxes(eti.getBoxId()))
                 val proposalContract = Paideia
                   .getProposalContract(
