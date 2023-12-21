@@ -180,6 +180,42 @@ case class CreateProtoDAOTransaction(
             (
               ConfKeys.im_paideia_staking_weight_participation,
               DAOConfigValueSerializer[Byte](protoDAOProxyInputBox.participationWeight)
+            ),
+            (
+              ConfKeys.im_paideia_dao_url,
+              DAOConfigValueSerializer(protoDAOProxyInputBox.url)
+            ),
+            (
+              ConfKeys.im_paideia_dao_description,
+              DAOConfigValueSerializer(protoDAOProxyInputBox.description)
+            ),
+            (
+              ConfKeys.im_paideia_dao_logo,
+              DAOConfigValueSerializer(protoDAOProxyInputBox.logo)
+            ),
+            (
+              ConfKeys.im_paideia_dao_min_proposal_time,
+              DAOConfigValueSerializer(protoDAOProxyInputBox.minProposalTime)
+            ),
+            (
+              ConfKeys.im_paideia_dao_banner,
+              DAOConfigValueSerializer(protoDAOProxyInputBox.banner)
+            ),
+            (
+              ConfKeys.im_paideia_dao_banner_enabled,
+              DAOConfigValueSerializer(protoDAOProxyInputBox.bannerEnabled)
+            ),
+            (
+              ConfKeys.im_paideia_dao_footer,
+              DAOConfigValueSerializer(protoDAOProxyInputBox.footer)
+            ),
+            (
+              ConfKeys.im_paideia_dao_footer_enabled,
+              DAOConfigValueSerializer(protoDAOProxyInputBox.footerEnabled)
+            ),
+            (
+              ConfKeys.im_paideia_dao_theme,
+              DAOConfigValueSerializer(protoDAOProxyInputBox.theme)
             )
           )(Left(newDAOConfig._config.digest))
         resultingDigest = Some(result._2)

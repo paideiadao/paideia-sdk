@@ -40,7 +40,16 @@ case class ProtoDAOProxyBox(
   stakingProfitSharePct: Byte,
   userAddress: Address,
   pureParticipationWeight: Byte,
-  participationWeight: Byte
+  participationWeight: Byte,
+  url: String,
+  description: String,
+  logo: String,
+  minProposalTime: Long,
+  banner: String,
+  bannerEnabled: Boolean,
+  footer: String,
+  footerEnabled: Boolean,
+  theme: String
 ) extends PaideiaBox {
 
   ctx = _ctx
@@ -68,7 +77,16 @@ case class ProtoDAOProxyBox(
             Colls.fromArray(DAOConfigValueSerializer(stakingCycleLength)),
             Colls.fromArray(DAOConfigValueSerializer(stakingProfitSharePct)),
             Colls.fromArray(DAOConfigValueSerializer(pureParticipationWeight)),
-            Colls.fromArray(DAOConfigValueSerializer(participationWeight))
+            Colls.fromArray(DAOConfigValueSerializer(participationWeight)),
+            Colls.fromArray(DAOConfigValueSerializer(url)),
+            Colls.fromArray(DAOConfigValueSerializer(description)),
+            Colls.fromArray(DAOConfigValueSerializer(logo)),
+            Colls.fromArray(DAOConfigValueSerializer(minProposalTime)),
+            Colls.fromArray(DAOConfigValueSerializer(banner)),
+            Colls.fromArray(DAOConfigValueSerializer(bannerEnabled)),
+            Colls.fromArray(DAOConfigValueSerializer(footer)),
+            Colls.fromArray(DAOConfigValueSerializer(footerEnabled)),
+            Colls.fromArray(DAOConfigValueSerializer(theme))
           )
         )
       ),
@@ -123,6 +141,15 @@ object ProtoDAOProxyBox {
     val stakingProfitSharePct: Byte   = DAOConfigValueDeserializer(byteRegister(8))
     val pureParticipationWeight: Byte = DAOConfigValueDeserializer(byteRegister(9))
     val participationWeight: Byte     = DAOConfigValueDeserializer(byteRegister(10))
+    val url: String                   = DAOConfigValueDeserializer(byteRegister(11))
+    val description: String           = DAOConfigValueDeserializer(byteRegister(12))
+    val logo: String                  = DAOConfigValueDeserializer(byteRegister(13))
+    val minProposalTime: Long         = DAOConfigValueDeserializer(byteRegister(14))
+    val banner: String                = DAOConfigValueDeserializer(byteRegister(15))
+    val bannerEnabled: Boolean        = DAOConfigValueDeserializer(byteRegister(16))
+    val footer: String                = DAOConfigValueDeserializer(byteRegister(17))
+    val footerEnabled: Boolean        = DAOConfigValueDeserializer(byteRegister(18))
+    val theme: String                 = DAOConfigValueDeserializer(byteRegister(19))
 
     ProtoDAOProxyBox(
       ctx,
@@ -149,7 +176,16 @@ object ProtoDAOProxyBox {
         inp.getRegisters().get(2).getValue().asInstanceOf[Coll[Byte]].toArray
       ),
       pureParticipationWeight,
-      participationWeight
+      participationWeight,
+      url,
+      description,
+      logo,
+      minProposalTime,
+      banner,
+      bannerEnabled,
+      footer,
+      footerEnabled,
+      theme
     )
   }
 }

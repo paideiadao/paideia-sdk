@@ -29,21 +29,30 @@ class CreateProtoDAOTransactionSuite extends PaideiaTestSuite {
           ProtoDAOProxy(PaideiaContractSignature(daoKey = Env.paideiaDaoKey))
         val protoDAOProxyBox = protoDAOProxyContract
           .box(
-            ctx                   = ctx,
-            paideiaDaoConfig      = Paideia.getConfig(Env.paideiaDaoKey),
-            daoName               = "Test DAO",
-            daoGovernanceTokenId  = Util.randomKey,
-            stakePoolSize         = 0L,
-            governanceType        = GovernanceType.DEFAULT,
-            quorum                = 20,
-            threshold             = 20,
-            stakingEmissionAmount = 0L,
-            stakingEmissionDelay  = 1,
-            stakingCycleLength    = 3600000L,
-            stakingProfitSharePct = 50,
-            dummyAddress,
-            0.toByte,
-            20.toByte
+            ctx                     = ctx,
+            paideiaDaoConfig        = Paideia.getConfig(Env.paideiaDaoKey),
+            daoName                 = "Test DAO",
+            daoGovernanceTokenId    = Util.randomKey,
+            stakePoolSize           = 0L,
+            governanceType          = GovernanceType.DEFAULT,
+            quorum                  = 20,
+            threshold               = 20,
+            stakingEmissionAmount   = 0L,
+            stakingEmissionDelay    = 1,
+            stakingCycleLength      = 3600000L,
+            stakingProfitSharePct   = 50,
+            userAddress             = dummyAddress,
+            pureParticipationWeight = 0.toByte,
+            participationWeight     = 20.toByte,
+            url                     = "test_dao",
+            description             = "Test DAO is the best",
+            logo                    = "http://logo.com",
+            minProposalTime         = 86400000,
+            banner                  = "http://banner.com",
+            bannerEnabled           = true,
+            footer                  = "",
+            footerEnabled           = false,
+            theme                   = "default"
           )
           .ergoTransactionOutput()
         val dummyTx = (new ErgoTransaction()).addOutputsItem(protoDAOProxyBox)
@@ -73,21 +82,30 @@ class CreateProtoDAOTransactionSuite extends PaideiaTestSuite {
           ProtoDAOProxy(PaideiaContractSignature(daoKey = Env.paideiaDaoKey))
         val protoDAOProxyBox = protoDAOProxyContract
           .box(
-            ctx                   = ctx,
-            paideiaDaoConfig      = Paideia.getConfig(Env.paideiaDaoKey),
-            daoName               = "Test DAO",
-            daoGovernanceTokenId  = Util.randomKey,
-            stakePoolSize         = 0L,
-            governanceType        = GovernanceType.DEFAULT,
-            quorum                = 20,
-            threshold             = 20,
-            stakingEmissionAmount = 0L,
-            stakingEmissionDelay  = 1,
-            stakingCycleLength    = 3600000L,
-            stakingProfitSharePct = 50,
-            dummyAddress,
-            0.toByte,
-            20.toByte
+            ctx                     = ctx,
+            paideiaDaoConfig        = Paideia.getConfig(Env.paideiaDaoKey),
+            daoName                 = "Test DAO",
+            daoGovernanceTokenId    = Util.randomKey,
+            stakePoolSize           = 0L,
+            governanceType          = GovernanceType.DEFAULT,
+            quorum                  = 20,
+            threshold               = 20,
+            stakingEmissionAmount   = 0L,
+            stakingEmissionDelay    = 1,
+            stakingCycleLength      = 3600000L,
+            stakingProfitSharePct   = 50,
+            userAddress             = dummyAddress,
+            pureParticipationWeight = 0.toByte,
+            participationWeight     = 20.toByte,
+            url                     = "test_dao",
+            description             = "Test DAO is the best",
+            logo                    = "http://logo.com",
+            minProposalTime         = 86400000,
+            banner                  = "http://banner.com",
+            bannerEnabled           = true,
+            footer                  = "",
+            footerEnabled           = false,
+            theme                   = "default"
           )
           .ergoTransactionOutput()
           .creationHeight(0)
