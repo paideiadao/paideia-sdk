@@ -149,11 +149,11 @@ case class CreateProtoDAOTransaction(
             ),
             (
               ConfKeys.im_paideia_dao_quorum,
-              DAOConfigValueSerializer[Byte](protoDAOProxyInputBox.quorum)
+              DAOConfigValueSerializer(protoDAOProxyInputBox.quorum)
             ),
             (
               ConfKeys.im_paideia_dao_threshold,
-              DAOConfigValueSerializer[Byte](protoDAOProxyInputBox.threshold)
+              DAOConfigValueSerializer(protoDAOProxyInputBox.threshold)
             ),
             (
               ConfKeys.im_paideia_staking_emission_amount,
@@ -161,7 +161,7 @@ case class CreateProtoDAOTransaction(
             ),
             (
               ConfKeys.im_paideia_staking_emission_delay,
-              DAOConfigValueSerializer[Byte](protoDAOProxyInputBox.stakingEmissionDelay)
+              DAOConfigValueSerializer(protoDAOProxyInputBox.stakingEmissionDelay)
             ),
             (
               ConfKeys.im_paideia_staking_cyclelength,

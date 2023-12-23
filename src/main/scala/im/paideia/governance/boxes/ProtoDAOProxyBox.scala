@@ -32,10 +32,10 @@ case class ProtoDAOProxyBox(
   daoGovernanceTokenId: String,
   stakePoolSize: Long,
   governanceType: GovernanceType.Value,
-  quorum: Byte,
-  threshold: Byte,
+  quorum: Long,
+  threshold: Long,
   stakingEmissionAmount: Long,
-  stakingEmissionDelay: Byte,
+  stakingEmissionDelay: Long,
   stakingCycleLength: Long,
   stakingProfitSharePct: Byte,
   userAddress: Address,
@@ -133,10 +133,10 @@ object ProtoDAOProxyBox {
         .map(_.asInstanceOf[Byte])
     )
     val daoGovernanceType: Byte       = DAOConfigValueDeserializer(byteRegister(2))
-    val quorum: Byte                  = DAOConfigValueDeserializer(byteRegister(3))
-    val threshold: Byte               = DAOConfigValueDeserializer(byteRegister(4))
+    val quorum: Long                  = DAOConfigValueDeserializer(byteRegister(3))
+    val threshold: Long               = DAOConfigValueDeserializer(byteRegister(4))
     val stakingEmissionAmount: Long   = DAOConfigValueDeserializer(byteRegister(5))
-    val stakingEmissionDelay: Byte    = DAOConfigValueDeserializer(byteRegister(6))
+    val stakingEmissionDelay: Long    = DAOConfigValueDeserializer(byteRegister(6))
     val stakingCycleLength: Long      = DAOConfigValueDeserializer(byteRegister(7))
     val stakingProfitSharePct: Byte   = DAOConfigValueDeserializer(byteRegister(8))
     val pureParticipationWeight: Byte = DAOConfigValueDeserializer(byteRegister(9))
