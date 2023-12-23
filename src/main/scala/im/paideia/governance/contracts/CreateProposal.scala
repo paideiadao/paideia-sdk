@@ -70,8 +70,7 @@ class CreateProposal(contractSignature: PaideiaContractSignature)
       }
       case _ => PaideiaEventResponse(0)
     }
-    val superResponse = super.handleEvent(event)
-    response
+    PaideiaEventResponse.merge(List(super.handleEvent(event), response))
   }
 
   override lazy val constants: HashMap[String, Object] = {
