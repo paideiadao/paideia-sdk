@@ -15,6 +15,8 @@ import im.paideia.governance.GovernanceType
 import im.paideia.common.events.CreateTransactionsEvent
 import im.paideia.common.transactions.RefundTransaction
 import org.ergoplatform.appkit.Address
+import im.paideia.util.ConfKeys
+import im.paideia.common.contracts.Config
 
 class CreateProtoDAOTransactionSuite extends PaideiaTestSuite {
   test("Create proto DAO") {
@@ -114,6 +116,74 @@ class CreateProtoDAOTransactionSuite extends PaideiaTestSuite {
         val eventResponse = Paideia.handleEvent(CreateTransactionsEvent(ctx, 0L, 50L))
         assert(eventResponse.unsignedTransactions.size === 1)
         assert(eventResponse.unsignedTransactions(0).isInstanceOf[RefundTransaction])
+        ctx
+          .newProverBuilder()
+          .build()
+          .sign(eventResponse.unsignedTransactions(0).unsigned)
+      }
+    })
+  }
+
+  test("Create proto DAO - 1.1.1") {
+    val ergoClient = createMockedErgoClient(MockData(Nil, Nil))
+    ergoClient.execute(new java.util.function.Function[BlockchainContext, Unit] {
+      override def apply(_ctx: BlockchainContext): Unit = {
+        val ctx = _ctx.asInstanceOf[BlockchainContextImpl]
+        PaideiaTestSuite.init(ctx)
+        val dummyAddress =
+          Address.create("9h7L7sUHZk43VQC3PHtSp5ujAWcZtYmWATBH746wi75C5XHi68b")
+        val protoDAOProxyContract =
+          ProtoDAOProxy(
+            PaideiaContractSignature(daoKey = Env.paideiaDaoKey, version = "1.1.1")
+          )
+        Paideia
+          .getConfig(Env.paideiaDaoKey)
+          .set(
+            ConfKeys.im_paideia_contracts_protodaoproxy,
+            protoDAOProxyContract.contractSignature
+          )
+
+        val configContract = Config(PaideiaContractSignature(daoKey = Env.paideiaDaoKey))
+        configContract.clearBoxes()
+        configContract.newBox(
+          configContract.box(ctx, Paideia.getDAO(Env.paideiaDaoKey)).inputBox(),
+          false
+        )
+        val protoDAOProxyBox = protoDAOProxyContract
+          .box(
+            ctx                     = ctx,
+            paideiaDaoConfig        = Paideia.getConfig(Env.paideiaDaoKey),
+            daoName                 = "Test DAO",
+            daoGovernanceTokenId    = Util.randomKey,
+            stakePoolSize           = 0L,
+            governanceType          = GovernanceType.DEFAULT,
+            quorum                  = 20L,
+            threshold               = 20L,
+            stakingEmissionAmount   = 0L,
+            stakingEmissionDelay    = 1L,
+            stakingCycleLength      = 3600000L,
+            stakingProfitSharePct   = 50,
+            userAddress             = dummyAddress,
+            pureParticipationWeight = 0.toByte,
+            participationWeight     = 20.toByte,
+            url                     = "test_dao",
+            description             = "Test DAO is the best",
+            logo                    = "http://logo.com",
+            minProposalTime         = 86400000,
+            banner                  = "http://banner.com",
+            bannerEnabled           = true,
+            footer                  = "",
+            footerEnabled           = false,
+            theme                   = "default"
+          )
+          .ergoTransactionOutput()
+        val dummyTx = (new ErgoTransaction()).addOutputsItem(protoDAOProxyBox)
+        Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
+        val eventResponse = Paideia.handleEvent(CreateTransactionsEvent(ctx, 0L, 0L))
+        assert(eventResponse.unsignedTransactions.size === 1)
+        assert(
+          eventResponse.unsignedTransactions(0).isInstanceOf[CreateProtoDAOTransaction]
+        )
         ctx
           .newProverBuilder()
           .build()

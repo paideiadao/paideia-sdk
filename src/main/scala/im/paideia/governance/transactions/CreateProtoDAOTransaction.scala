@@ -52,6 +52,7 @@ case class CreateProtoDAOTransaction(
       0
     )
   )(0)
+
   val newDAOConfig = DAOConfig(protoDAOProxyInput.getId().toString())
   val newDAO       = new DAO(protoDAOProxyInput.getId().toString(), newDAOConfig)
   Paideia.addDAO(newDAO)
@@ -114,73 +115,63 @@ case class CreateProtoDAOTransaction(
 
   var resultingDigest: Option[ADDigest] = None
 
-  val contextVarsProtoDAOProxy = List(
-    ContextVar.of(
-      0.toByte,
-      paideiaConfig.getProof(
-        "im.paideia.contracts.protodao",
-        "im.paideia.contracts.mint"
-      )(Some(paideiaConfigDigest))
+  val insertOperations = Array(
+    (
+      ConfKeys.im_paideia_dao_name,
+      DAOConfigValueSerializer(protoDAOProxyInputBox.daoName)
     ),
-    ContextVar.of(1.toByte, newDAOConfig._config.ergoValue()),
-    ContextVar.of(
-      2.toByte, {
-        val result = newDAOConfig
-          .insertProof(
-            (
-              ConfKeys.im_paideia_dao_name,
-              DAOConfigValueSerializer(protoDAOProxyInputBox.daoName)
-            ),
-            (
-              ConfKeys.im_paideia_dao_tokenid,
-              DAOConfigValueSerializer(
-                ErgoId.create(protoDAOProxyInputBox.daoGovernanceTokenId).getBytes
-              )
-            ),
-            (
-              ConfKeys.im_paideia_dao_key,
-              DAOConfigValueSerializer[Array[Byte]](protoDAOProxyInput.getId().getBytes)
-            ),
-            (
-              ConfKeys.im_paideia_dao_governance_type,
-              DAOConfigValueSerializer[Byte](
-                protoDAOProxyInputBox.governanceType.id.toByte
-              )
-            ),
-            (
-              ConfKeys.im_paideia_dao_quorum,
-              DAOConfigValueSerializer(protoDAOProxyInputBox.quorum)
-            ),
-            (
-              ConfKeys.im_paideia_dao_threshold,
-              DAOConfigValueSerializer(protoDAOProxyInputBox.threshold)
-            ),
-            (
-              ConfKeys.im_paideia_staking_emission_amount,
-              DAOConfigValueSerializer[Long](protoDAOProxyInputBox.stakingEmissionAmount)
-            ),
-            (
-              ConfKeys.im_paideia_staking_emission_delay,
-              DAOConfigValueSerializer(protoDAOProxyInputBox.stakingEmissionDelay)
-            ),
-            (
-              ConfKeys.im_paideia_staking_cyclelength,
-              DAOConfigValueSerializer[Long](protoDAOProxyInputBox.stakingCycleLength)
-            ),
-            (
-              ConfKeys.im_paideia_staking_profit_share_pct,
-              DAOConfigValueSerializer[Byte](protoDAOProxyInputBox.stakingProfitSharePct)
-            ),
-            (
-              ConfKeys.im_paideia_staking_weight_pureparticipation,
-              DAOConfigValueSerializer[Byte](
-                protoDAOProxyInputBox.pureParticipationWeight
-              )
-            ),
-            (
-              ConfKeys.im_paideia_staking_weight_participation,
-              DAOConfigValueSerializer[Byte](protoDAOProxyInputBox.participationWeight)
-            ),
+    (
+      ConfKeys.im_paideia_dao_tokenid,
+      DAOConfigValueSerializer(
+        ErgoId.create(protoDAOProxyInputBox.daoGovernanceTokenId).getBytes
+      )
+    ),
+    (
+      ConfKeys.im_paideia_dao_key,
+      DAOConfigValueSerializer[Array[Byte]](protoDAOProxyInput.getId().getBytes)
+    ),
+    (
+      ConfKeys.im_paideia_dao_governance_type,
+      DAOConfigValueSerializer[Byte](
+        protoDAOProxyInputBox.governanceType.id.toByte
+      )
+    ),
+    (
+      ConfKeys.im_paideia_dao_quorum,
+      DAOConfigValueSerializer(protoDAOProxyInputBox.quorum)
+    ),
+    (
+      ConfKeys.im_paideia_dao_threshold,
+      DAOConfigValueSerializer(protoDAOProxyInputBox.threshold)
+    ),
+    (
+      ConfKeys.im_paideia_staking_emission_amount,
+      DAOConfigValueSerializer[Long](protoDAOProxyInputBox.stakingEmissionAmount)
+    ),
+    (
+      ConfKeys.im_paideia_staking_emission_delay,
+      DAOConfigValueSerializer(protoDAOProxyInputBox.stakingEmissionDelay)
+    ),
+    (
+      ConfKeys.im_paideia_staking_cyclelength,
+      DAOConfigValueSerializer[Long](protoDAOProxyInputBox.stakingCycleLength)
+    ),
+    (
+      ConfKeys.im_paideia_staking_profit_share_pct,
+      DAOConfigValueSerializer[Byte](protoDAOProxyInputBox.stakingProfitSharePct)
+    ),
+    (
+      ConfKeys.im_paideia_staking_weight_pureparticipation,
+      DAOConfigValueSerializer[Byte](
+        protoDAOProxyInputBox.pureParticipationWeight
+      )
+    ),
+    (
+      ConfKeys.im_paideia_staking_weight_participation,
+      DAOConfigValueSerializer[Byte](protoDAOProxyInputBox.participationWeight)
+    )
+  ) ++ (if (protoDAOProxyInputBox.useContract.contractSignature.version.equals("1.1.1"))
+          Array(
             (
               ConfKeys.im_paideia_dao_url,
               DAOConfigValueSerializer(protoDAOProxyInputBox.url)
@@ -217,6 +208,23 @@ case class CreateProtoDAOTransaction(
               ConfKeys.im_paideia_dao_theme,
               DAOConfigValueSerializer(protoDAOProxyInputBox.theme)
             )
+          )
+        else Array[(DAOConfigKey, Array[Byte])]())
+
+  val contextVarsProtoDAOProxy = List(
+    ContextVar.of(
+      0.toByte,
+      paideiaConfig.getProof(
+        "im.paideia.contracts.protodao",
+        "im.paideia.contracts.mint"
+      )(Some(paideiaConfigDigest))
+    ),
+    ContextVar.of(1.toByte, newDAOConfig._config.ergoValue()),
+    ContextVar.of(
+      2.toByte, {
+        val result = newDAOConfig
+          .insertProof(
+            insertOperations: _*
           )(Left(newDAOConfig._config.digest))
         resultingDigest = Some(result._2)
         result._1
@@ -240,5 +248,4 @@ case class CreateProtoDAOTransaction(
     paideiaSplitProfitOutput.outBox,
     mintOutput.outBox
   )
-  val bla = "meh"
 }

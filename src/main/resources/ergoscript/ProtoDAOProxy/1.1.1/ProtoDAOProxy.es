@@ -53,6 +53,33 @@
     val imPaideiaStakingEmissionAmount: Coll[Byte] = 
         _IM_PAIDEIA_STAKING_EMISSION_AMOUNT
 
+    val imPaideiaDaoUrl: Coll[Byte] = 
+      _IM_PAIDEIA_DAO_URL
+
+    val imPaideiaDaoDescription: Coll[Byte] =
+      _IM_PAIDEIA_DAO_DESCRIPTION
+
+    val imPaideiaDaoLogo: Coll[Byte] =
+      _IM_PAIDEIA_DAO_LOGO
+
+    val imPaideiaDaoMinProposaltime: Coll[Byte] =
+      _IM_PAIDEIA_DAO_MIN_PROPOSAL_TIME
+
+    val imPaideiaDaoBanner: Coll[Byte] =
+      _IM_PAIDEIA_DAO_BANNER
+
+    val imPaideiaDaoBannerEnabled: Coll[Byte] =
+      _IM_PAIDEIA_DAO_BANNER_ENABLED
+
+    val imPaideiaDaoFooter: Coll[Byte] =
+      _IM_PAIDEIA_DAO_FOOTER
+
+    val imPaideiaDaoFooterEnabled: Coll[Byte] =
+      _IM_PAIDEIA_DAO_FOOTER_ENABLED
+
+    val imPaideiaDaoTheme: Coll[Byte] =
+      _IM_PAIDEIA_DAO_THEME
+
     val collBPrefix: Coll[Byte] = 
         Coll(10.toByte,0.toByte,0.toByte,0.toByte,0.toByte,32.toByte)
 
@@ -153,7 +180,16 @@
         (imPaideiaStakingCycleLength,configValues(7)),
         (imPaideiaStakingProfitSharePct,configValues(8)),
         (imPaideiaStakingPureParticipationWeight,configValues(9)),
-        (imPaideiaStakingParticipationWeight,configValues(10))
+        (imPaideiaStakingParticipationWeight,configValues(10)),
+        (imPaideiaDaoUrl,configValues(11)),
+        (imPaideiaDaoDescription,configValues(12)),
+        (imPaideiaDaoLogo,configValues(13)),
+        (imPaideiaDaoMinProposaltime,configValues(14)),
+        (imPaideiaDaoBanner,configValues(15)),
+        (imPaideiaDaoBannerEnabled,configValues(16)),
+        (imPaideiaDaoFooter,configValues(17)),
+        (imPaideiaDaoFooterEnabled,configValues(18)),
+        (imPaideiaDaoTheme,configValues(19))
     ),configInsertProof).get
 
     val daoName: Coll[Byte] = configValues(0).slice(5,configValues(0).size)
