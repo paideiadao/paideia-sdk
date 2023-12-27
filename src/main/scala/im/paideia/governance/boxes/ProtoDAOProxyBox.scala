@@ -59,35 +59,40 @@ case class ProtoDAOProxyBox(
   contract = useContract.contract
 
   override def registers: List[ErgoValue[_]] = {
+    val configValues = Array(
+      Colls.fromArray(DAOConfigValueSerializer(daoName)),
+      Colls.fromArray(
+        DAOConfigValueSerializer(
+          ErgoId.create(daoGovernanceTokenId).getBytes.asInstanceOf[Array[Byte]]
+        )
+      ),
+      Colls.fromArray(DAOConfigValueSerializer(governanceType.id.toByte)),
+      Colls.fromArray(DAOConfigValueSerializer(quorum)),
+      Colls.fromArray(DAOConfigValueSerializer(threshold)),
+      Colls.fromArray(DAOConfigValueSerializer(stakingEmissionAmount)),
+      Colls.fromArray(DAOConfigValueSerializer(stakingEmissionDelay)),
+      Colls.fromArray(DAOConfigValueSerializer(stakingCycleLength)),
+      Colls.fromArray(DAOConfigValueSerializer(stakingProfitSharePct)),
+      Colls.fromArray(DAOConfigValueSerializer(pureParticipationWeight)),
+      Colls.fromArray(DAOConfigValueSerializer(participationWeight))
+    ) ++
+      (if (useContract.contractSignature.version.equals("1.1.1"))
+         Array(
+           Colls.fromArray(DAOConfigValueSerializer(url)),
+           Colls.fromArray(DAOConfigValueSerializer(description)),
+           Colls.fromArray(DAOConfigValueSerializer(logo)),
+           Colls.fromArray(DAOConfigValueSerializer(minProposalTime)),
+           Colls.fromArray(DAOConfigValueSerializer(banner)),
+           Colls.fromArray(DAOConfigValueSerializer(bannerEnabled)),
+           Colls.fromArray(DAOConfigValueSerializer(footer)),
+           Colls.fromArray(DAOConfigValueSerializer(footerEnabled)),
+           Colls.fromArray(DAOConfigValueSerializer(theme))
+         )
+       else Array[Coll[Byte]]())
     List(
       ErgoValueBuilder.buildFor(
         Colls.fromArray(
-          Array(
-            Colls.fromArray(DAOConfigValueSerializer(daoName)),
-            Colls.fromArray(
-              DAOConfigValueSerializer(
-                ErgoId.create(daoGovernanceTokenId).getBytes.asInstanceOf[Array[Byte]]
-              )
-            ),
-            Colls.fromArray(DAOConfigValueSerializer(governanceType.id.toByte)),
-            Colls.fromArray(DAOConfigValueSerializer(quorum)),
-            Colls.fromArray(DAOConfigValueSerializer(threshold)),
-            Colls.fromArray(DAOConfigValueSerializer(stakingEmissionAmount)),
-            Colls.fromArray(DAOConfigValueSerializer(stakingEmissionDelay)),
-            Colls.fromArray(DAOConfigValueSerializer(stakingCycleLength)),
-            Colls.fromArray(DAOConfigValueSerializer(stakingProfitSharePct)),
-            Colls.fromArray(DAOConfigValueSerializer(pureParticipationWeight)),
-            Colls.fromArray(DAOConfigValueSerializer(participationWeight)),
-            Colls.fromArray(DAOConfigValueSerializer(url)),
-            Colls.fromArray(DAOConfigValueSerializer(description)),
-            Colls.fromArray(DAOConfigValueSerializer(logo)),
-            Colls.fromArray(DAOConfigValueSerializer(minProposalTime)),
-            Colls.fromArray(DAOConfigValueSerializer(banner)),
-            Colls.fromArray(DAOConfigValueSerializer(bannerEnabled)),
-            Colls.fromArray(DAOConfigValueSerializer(footer)),
-            Colls.fromArray(DAOConfigValueSerializer(footerEnabled)),
-            Colls.fromArray(DAOConfigValueSerializer(theme))
-          )
+          configValues
         )
       ),
       ErgoValueBuilder.buildFor(
@@ -132,6 +137,9 @@ object ProtoDAOProxyBox {
         .asInstanceOf[Array[Any]]
         .map(_.asInstanceOf[Byte])
     )
+    val boxContract = ProtoDAOProxy
+      .contractInstances(Blake2b256(inp.getErgoTree.bytes).array.toList)
+      .asInstanceOf[ProtoDAOProxy]
     val daoGovernanceType: Byte       = DAOConfigValueDeserializer(byteRegister(2))
     val quorum: Long                  = DAOConfigValueDeserializer(byteRegister(3))
     val threshold: Long               = DAOConfigValueDeserializer(byteRegister(4))
@@ -141,22 +149,25 @@ object ProtoDAOProxyBox {
     val stakingProfitSharePct: Byte   = DAOConfigValueDeserializer(byteRegister(8))
     val pureParticipationWeight: Byte = DAOConfigValueDeserializer(byteRegister(9))
     val participationWeight: Byte     = DAOConfigValueDeserializer(byteRegister(10))
-    val url: String                   = DAOConfigValueDeserializer(byteRegister(11))
-    val description: String           = DAOConfigValueDeserializer(byteRegister(12))
-    val logo: String                  = DAOConfigValueDeserializer(byteRegister(13))
-    val minProposalTime: Long         = DAOConfigValueDeserializer(byteRegister(14))
-    val banner: String                = DAOConfigValueDeserializer(byteRegister(15))
-    val bannerEnabled: Boolean        = DAOConfigValueDeserializer(byteRegister(16))
-    val footer: String                = DAOConfigValueDeserializer(byteRegister(17))
-    val footerEnabled: Boolean        = DAOConfigValueDeserializer(byteRegister(18))
-    val theme: String                 = DAOConfigValueDeserializer(byteRegister(19))
+    val v111        = boxContract.contractSignature.version.equals("1.1.1")
+    val url: String = if (v111) DAOConfigValueDeserializer(byteRegister(11)) else ""
+    val description: String =
+      if (v111) DAOConfigValueDeserializer(byteRegister(12)) else ""
+    val logo: String = if (v111) DAOConfigValueDeserializer(byteRegister(13)) else ""
+    val minProposalTime: Long =
+      if (v111) DAOConfigValueDeserializer(byteRegister(14)) else 0L
+    val banner: String = if (v111) DAOConfigValueDeserializer(byteRegister(15)) else ""
+    val bannerEnabled: Boolean =
+      if (v111) DAOConfigValueDeserializer(byteRegister(16)) else false
+    val footer: String = if (v111) DAOConfigValueDeserializer(byteRegister(17)) else ""
+    val footerEnabled: Boolean =
+      if (v111) DAOConfigValueDeserializer(byteRegister(18)) else false
+    val theme: String = if (v111) DAOConfigValueDeserializer(byteRegister(19)) else ""
 
     ProtoDAOProxyBox(
       ctx,
       Paideia.getConfig(Env.paideiaDaoKey),
-      ProtoDAOProxy
-        .contractInstances(Blake2b256(inp.getErgoTree.bytes).array.toList)
-        .asInstanceOf[ProtoDAOProxy],
+      boxContract,
       daoName,
       daoTokenId.toString(),
       inp.getTokens().toArray.foldLeft[Long](0L) { (z: Long, token) =>

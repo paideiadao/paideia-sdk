@@ -202,42 +202,44 @@ class ProtoDAOProxy(contractSignature: PaideiaContractSignature)
       "_IM_PAIDEIA_STAKING_PARTICIPATION_WEIGHT",
       ConfKeys.im_paideia_staking_weight_participation.ergoValue.getValue()
     )
-    cons.put(
-      "_IM_PAIDEIA_DAO_URL",
-      ConfKeys.im_paideia_dao_url.ergoValue.getValue()
-    )
-    cons.put(
-      "_IM_PAIDEIA_DAO_DESCRIPTION",
-      ConfKeys.im_paideia_dao_description.ergoValue.getValue()
-    )
-    cons.put(
-      "_IM_PAIDEIA_DAO_LOGO",
-      ConfKeys.im_paideia_dao_logo.ergoValue.getValue()
-    )
-    cons.put(
-      "_IM_PAIDEIA_DAO_MIN_PROPOSAL_TIME",
-      ConfKeys.im_paideia_dao_min_proposal_time.ergoValue.getValue()
-    )
-    cons.put(
-      "_IM_PAIDEIA_DAO_BANNER",
-      ConfKeys.im_paideia_dao_banner.ergoValue.getValue()
-    )
-    cons.put(
-      "_IM_PAIDEIA_DAO_BANNER_ENABLED",
-      ConfKeys.im_paideia_dao_banner_enabled.ergoValue.getValue()
-    )
-    cons.put(
-      "_IM_PAIDEIA_DAO_FOOTER",
-      ConfKeys.im_paideia_dao_footer.ergoValue.getValue()
-    )
-    cons.put(
-      "_IM_PAIDEIA_DAO_FOOTER_ENABLED",
-      ConfKeys.im_paideia_dao_footer_enabled.ergoValue.getValue()
-    )
-    cons.put(
-      "_IM_PAIDEIA_DAO_THEME",
-      ConfKeys.im_paideia_dao_theme.ergoValue.getValue()
-    )
+    if (contractSignature.version.equals("1.1.1")) {
+      cons.put(
+        "_IM_PAIDEIA_DAO_URL",
+        ConfKeys.im_paideia_dao_url.ergoValue.getValue()
+      )
+      cons.put(
+        "_IM_PAIDEIA_DAO_DESCRIPTION",
+        ConfKeys.im_paideia_dao_description.ergoValue.getValue()
+      )
+      cons.put(
+        "_IM_PAIDEIA_DAO_LOGO",
+        ConfKeys.im_paideia_dao_logo.ergoValue.getValue()
+      )
+      cons.put(
+        "_IM_PAIDEIA_DAO_MIN_PROPOSAL_TIME",
+        ConfKeys.im_paideia_dao_min_proposal_time.ergoValue.getValue()
+      )
+      cons.put(
+        "_IM_PAIDEIA_DAO_BANNER",
+        ConfKeys.im_paideia_dao_banner.ergoValue.getValue()
+      )
+      cons.put(
+        "_IM_PAIDEIA_DAO_BANNER_ENABLED",
+        ConfKeys.im_paideia_dao_banner_enabled.ergoValue.getValue()
+      )
+      cons.put(
+        "_IM_PAIDEIA_DAO_FOOTER",
+        ConfKeys.im_paideia_dao_footer.ergoValue.getValue()
+      )
+      cons.put(
+        "_IM_PAIDEIA_DAO_FOOTER_ENABLED",
+        ConfKeys.im_paideia_dao_footer_enabled.ergoValue.getValue()
+      )
+      cons.put(
+        "_IM_PAIDEIA_DAO_THEME",
+        ConfKeys.im_paideia_dao_theme.ergoValue.getValue()
+      )
+    }
     cons
   }
 }
