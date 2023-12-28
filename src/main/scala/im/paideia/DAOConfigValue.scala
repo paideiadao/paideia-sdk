@@ -234,7 +234,7 @@ object DAOConfigValueSerializer {
               PaideiaContractSignature(
                 className,
                 version,
-                NetworkType.fromValue(network),
+                NetworkType.fromValue(network.toLowerCase()),
                 JavaHelpers.decodeStringToBytes(contractHashHex).toList
               )
             )
