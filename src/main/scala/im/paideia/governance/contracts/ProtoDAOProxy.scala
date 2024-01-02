@@ -146,6 +146,13 @@ class ProtoDAOProxy(contractSignature: PaideiaContractSignature)
             Paideia.addDAO(new DAO(newDaoKey, newDAOConfig))
           }
 
+          val context = protoDAOProxyInput
+            .getSpendingProof()
+            .getExtension()
+            .asScala
+            .map((kv: (String, String)) => (kv._1.toByte, ErgoValue.fromHex(kv._2)))
+            .toMap[Byte, ErgoValue[_]]
+
           Paideia
             .getConfig(newDaoKey)
             .handleUpdateEvent(
@@ -160,8 +167,7 @@ class ProtoDAOProxy(contractSignature: PaideiaContractSignature)
                   Right(te.height),
                 Array[DAOConfigKey](),
                 Array[(DAOConfigKey, Array[Byte])](),
-                ErgoValue
-                  .fromHex(protoDAOProxyInput.getSpendingProof().getExtension().get("2"))
+                context(2.toByte)
                   .getValue()
                   .asInstanceOf[Coll[(Coll[Byte], Coll[Byte])]]
                   .toArray
