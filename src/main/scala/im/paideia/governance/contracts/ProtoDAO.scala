@@ -117,6 +117,13 @@ class ProtoDAO(contractSignature: PaideiaContractSignature)
           val protoDAOBox =
             ProtoDAOBox.fromInputBox(te.ctx, boxes(protoDAOInput.getBoxId()))
 
+          val context = protoDAOInput
+            .getSpendingProof()
+            .getExtension()
+            .asScala
+            .map((kv: (String, String)) => (kv._1.toByte, ErgoValue.fromHex(kv._2)))
+            .toMap[Byte, ErgoValue[_]]
+
           Paideia
             .getConfig(protoDAOBox.dao.key)
             .handleUpdateEvent(
@@ -134,8 +141,7 @@ class ProtoDAO(contractSignature: PaideiaContractSignature)
                 Array(
                   (
                     DAOConfigKey.convertsDAOConfigKey.convertFromBytes(
-                      ErgoValue
-                        .fromHex(protoDAOInput.getSpendingProof().getExtension().get("3"))
+                      context(3.toByte)
                         .getValue()
                         .asInstanceOf[Coll[Byte]]
                         .toArray
