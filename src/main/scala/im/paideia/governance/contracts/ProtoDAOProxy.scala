@@ -135,7 +135,12 @@ class ProtoDAOProxy(contractSignature: PaideiaContractSignature)
 
         if (
           te.tx.getInputs().size() > 0 && getUtxoSet.contains(
-            te.tx.getInputs().get(0).getBoxId()
+            te.tx.getInputs().get(0).getBoxId() && te.tx
+              .getInputs()
+              .get(0)
+              .getSpendingProof()
+              .getExtension()
+              .containsKey("2")
           )
         ) {
           val protoDAOProxyInput    = te.tx.getInputs().get(0)
