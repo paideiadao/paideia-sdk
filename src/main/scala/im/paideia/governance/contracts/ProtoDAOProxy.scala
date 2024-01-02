@@ -29,6 +29,14 @@ import work.lithos.plasma.PlasmaParameters
 import im.paideia.common.events.CreateTransactionsEvent
 import im.paideia.common.transactions.RefundTransaction
 import special.collection.Coll
+import im.paideia.Paideia
+import im.paideia.DAO
+import im.paideia.common.events.UpdateConfigEvent
+import scorex.crypto.authds.ADDigest
+import special.sigma.AvlTree
+import im.paideia.DAOConfigValue
+import work.lithos.plasma.ByteConversion
+import im.paideia.DAOConfigValueDeserializer
 
 class ProtoDAOProxy(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -122,6 +130,54 @@ class ProtoDAOProxy(contractSignature: PaideiaContractSignature)
 
           }.toList
         )
+      }
+      case te: TransactionEvent => {
+
+        if (
+          te.tx.getInputs().size() > 0 && getUtxoSet.contains(
+            te.tx.getInputs().get(0).getBoxId()
+          )
+        ) {
+          val protoDAOProxyInput    = te.tx.getInputs().get(0)
+          val newDaoKey             = protoDAOProxyInput.getBoxId()
+          val protoDAOProxyInputBox = boxes(newDaoKey)
+          if (!Paideia._daoMap.contains(newDaoKey)) {
+            val newDAOConfig = DAOConfig(newDaoKey)
+            Paideia.addDAO(new DAO(newDaoKey, newDAOConfig))
+          }
+
+          Paideia
+            .getConfig(newDaoKey)
+            .handleUpdateEvent(
+              UpdateConfigEvent(
+                te.ctx,
+                newDaoKey,
+                if (te.mempool)
+                  Left(
+                    Paideia.getConfig(newDaoKey)._config.digest
+                  )
+                else
+                  Right(te.height),
+                Array[DAOConfigKey](),
+                Array[(DAOConfigKey, Array[Byte])](),
+                ErgoValue
+                  .fromHex(protoDAOProxyInput.getSpendingProof().getExtension().get("2"))
+                  .getValue()
+                  .asInstanceOf[Coll[(Coll[Byte], Coll[Byte])]]
+                  .toArray
+                  .map((kv: (Coll[Byte], Coll[Byte])) =>
+                    (
+                      DAOConfigKey.convertsDAOConfigKey.convertFromBytes(kv._1.toArray),
+                      kv._2.toArray
+                    )
+                  )
+              )
+            )
+          PaideiaEventResponse(1)
+        } else {
+          PaideiaEventResponse(0)
+        }
+
       }
       case _ => PaideiaEventResponse(0)
     }

@@ -31,6 +31,7 @@ import im.paideia.governance.boxes.ActionUpdateConfigBox
 import org.ergoplatform.appkit.impl.InputBoxImpl
 import org.ergoplatform.restapi.client.ErgoTransactionOutput
 import im.paideia.common.events.UpdateConfigEvent
+import im.paideia.common.contracts.PaideiaContractSignature
 
 case class DAOConfig(
   val _config: MempoolPlasmaMap[DAOConfigKey, Array[Byte]],
@@ -78,6 +79,19 @@ case class DAOConfig(
   }
 
   def handleUpdateEvent(event: UpdateConfigEvent) = {
+    (event.insertEntries ++ event.updatedEntries).foreach(
+      (kv: (DAOConfigKey, Array[Byte])) => {
+        DAOConfigValueDeserializer.getType(kv._2) match {
+          case "PaideiaContractSignature" =>
+            Paideia.instantiateContractInstance(
+              DAOConfigValueDeserializer[PaideiaContractSignature](kv._2).withDaoKey(
+                event.daoKey
+              )
+            )
+          case _: Any =>
+        }
+      }
+    )
     event.digestOrHeight match {
       case Left(value) =>
         val digestAfterRemove =
