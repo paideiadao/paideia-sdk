@@ -140,7 +140,13 @@ case class CreateProtoDAOTransaction(
   )
 
   val protoDAOOutput = ProtoDAO(PaideiaContractSignature(daoKey = Env.paideiaDaoKey))
-    .box(_ctx, newDAO, protoDAOProxyInputBox.stakePoolSize, resultingDigest)
+    .box(
+      _ctx,
+      newDAO,
+      protoDAOProxyInputBox.stakePoolSize,
+      resultingDigest,
+      protoDAOProxyInputBox.value - 2000000L
+    )
   ctx           = _ctx
   fee           = 1000000
   changeAddress = _changeAddress
