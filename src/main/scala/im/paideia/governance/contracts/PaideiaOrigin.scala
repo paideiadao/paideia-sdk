@@ -13,6 +13,10 @@ import im.paideia.DAOConfigKey
 import org.ergoplatform.sdk.ErgoId
 import org.ergoplatform.appkit.ErgoValue
 import im.paideia.util.ConfKeys
+import im.paideia.common.events.{PaideiaEvent, PaideiaEventResponse}
+import im.paideia.common.events.TransactionEvent
+import im.paideia.DAO
+import im.paideia.common.events.UpdateConfigEvent
 
 class PaideiaOrigin(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
