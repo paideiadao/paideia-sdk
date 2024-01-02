@@ -143,20 +143,16 @@ class ProtoDAOProxy(contractSignature: PaideiaContractSignature)
             .getExtension()
             .containsKey("2")
         ) {
-          val protoDAOProxyInput    = te.tx.getInputs().get(0)
+          val protoDAOProxyInput = te.tx.getInputs().get(0)
+
           val newDaoKey             = protoDAOProxyInput.getBoxId()
           val protoDAOProxyInputBox = boxes(newDaoKey)
+          val protoDAOProxyBox =
+            ProtoDAOProxyBox.fromInputBox(te.ctx, protoDAOProxyInputBox)
           if (!Paideia._daoMap.contains(newDaoKey)) {
             val newDAOConfig = DAOConfig(newDaoKey)
             Paideia.addDAO(new DAO(newDaoKey, newDAOConfig))
           }
-
-          val context = protoDAOProxyInput
-            .getSpendingProof()
-            .getExtension()
-            .asScala
-            .map((kv: (String, String)) => (kv._1.toByte, ErgoValue.fromHex(kv._2)))
-            .toMap[Byte, ErgoValue[_]]
 
           Paideia
             .getConfig(newDaoKey)
@@ -172,16 +168,7 @@ class ProtoDAOProxy(contractSignature: PaideiaContractSignature)
                   Right(te.height),
                 Array[DAOConfigKey](),
                 Array[(DAOConfigKey, Array[Byte])](),
-                context(2.toByte)
-                  .getValue()
-                  .asInstanceOf[Coll[(Coll[Byte], Coll[Byte])]]
-                  .toArray
-                  .map((kv: (Coll[Byte], Coll[Byte])) =>
-                    (
-                      DAOConfigKey.convertsDAOConfigKey.convertFromBytes(kv._1.toArray),
-                      kv._2.toArray
-                    )
-                  )
+                protoDAOProxyBox.insertOperations(protoDAOProxyInputBox.getId().getBytes)
               )
             )
           PaideiaEventResponse(1)

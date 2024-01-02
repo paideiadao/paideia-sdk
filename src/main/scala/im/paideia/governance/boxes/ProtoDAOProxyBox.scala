@@ -23,6 +23,7 @@ import im.paideia.util.ConfKeys
 import sigmastate.eval.Colls
 import im.paideia.governance.GovernanceType
 import org.ergoplatform.appkit.Address
+import im.paideia.DAOConfigKey
 
 case class ProtoDAOProxyBox(
   _ctx: BlockchainContextImpl,
@@ -119,6 +120,104 @@ case class ProtoDAOProxyBox(
         List[ErgoToken]()
     } ++
     List(new ErgoToken(daoGovernanceTokenId, stakePoolSize + 1L))
+  }
+
+  def insertOperations(newDaoKey: Array[Byte]): Array[(DAOConfigKey, Array[Byte])] = {
+    Array(
+      (
+        ConfKeys.im_paideia_dao_name,
+        DAOConfigValueSerializer(daoName)
+      ),
+      (
+        ConfKeys.im_paideia_dao_tokenid,
+        DAOConfigValueSerializer(
+          ErgoId.create(daoGovernanceTokenId).getBytes
+        )
+      ),
+      (
+        ConfKeys.im_paideia_dao_key,
+        DAOConfigValueSerializer[Array[Byte]](newDaoKey)
+      ),
+      (
+        ConfKeys.im_paideia_dao_governance_type,
+        DAOConfigValueSerializer[Byte](
+          governanceType.id.toByte
+        )
+      ),
+      (
+        ConfKeys.im_paideia_dao_quorum,
+        DAOConfigValueSerializer(quorum)
+      ),
+      (
+        ConfKeys.im_paideia_dao_threshold,
+        DAOConfigValueSerializer(threshold)
+      ),
+      (
+        ConfKeys.im_paideia_staking_emission_amount,
+        DAOConfigValueSerializer[Long](stakingEmissionAmount)
+      ),
+      (
+        ConfKeys.im_paideia_staking_emission_delay,
+        DAOConfigValueSerializer(stakingEmissionDelay)
+      ),
+      (
+        ConfKeys.im_paideia_staking_cyclelength,
+        DAOConfigValueSerializer[Long](stakingCycleLength)
+      ),
+      (
+        ConfKeys.im_paideia_staking_profit_share_pct,
+        DAOConfigValueSerializer[Byte](stakingProfitSharePct)
+      ),
+      (
+        ConfKeys.im_paideia_staking_weight_pureparticipation,
+        DAOConfigValueSerializer[Byte](
+          pureParticipationWeight
+        )
+      ),
+      (
+        ConfKeys.im_paideia_staking_weight_participation,
+        DAOConfigValueSerializer[Byte](participationWeight)
+      )
+    ) ++ (if (useContract.contractSignature.version.equals("1.1.1"))
+            Array(
+              (
+                ConfKeys.im_paideia_dao_url,
+                DAOConfigValueSerializer(url)
+              ),
+              (
+                ConfKeys.im_paideia_dao_description,
+                DAOConfigValueSerializer(description)
+              ),
+              (
+                ConfKeys.im_paideia_dao_logo,
+                DAOConfigValueSerializer(logo)
+              ),
+              (
+                ConfKeys.im_paideia_dao_min_proposal_time,
+                DAOConfigValueSerializer(minProposalTime)
+              ),
+              (
+                ConfKeys.im_paideia_dao_banner,
+                DAOConfigValueSerializer(banner)
+              ),
+              (
+                ConfKeys.im_paideia_dao_banner_enabled,
+                DAOConfigValueSerializer(bannerEnabled)
+              ),
+              (
+                ConfKeys.im_paideia_dao_footer,
+                DAOConfigValueSerializer(footer)
+              ),
+              (
+                ConfKeys.im_paideia_dao_footer_enabled,
+                DAOConfigValueSerializer(footerEnabled)
+              ),
+              (
+                ConfKeys.im_paideia_dao_theme,
+                DAOConfigValueSerializer(theme)
+              )
+            )
+          else Array[(DAOConfigKey, Array[Byte])]())
   }
 }
 
