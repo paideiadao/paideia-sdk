@@ -28,6 +28,8 @@ import im.paideia.DAO
 import special.collection.Coll
 import scorex.crypto.authds.ADDigest
 import im.paideia.common.events.CreateTransactionsEvent
+import im.paideia.common.events.UpdateConfigEvent
+import im.paideia.DAOConfigValueSerializer
 
 class ProtoDAO(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -103,6 +105,53 @@ class ProtoDAO(contractSignature: PaideiaContractSignature)
             }
           }.toList
         )
+      }
+      case te: TransactionEvent => {
+
+        if (
+          te.tx.getInputs().size() > 0 && getUtxoSet.contains(
+            te.tx.getInputs().get(0).getBoxId()
+          )
+        ) {
+          val protoDAOInput = te.tx.getInputs().get(0)
+          val protoDAOBox =
+            ProtoDAOBox.fromInputBox(te.ctx, boxes(protoDAOInput.getBoxId()))
+
+          Paideia
+            .getConfig(protoDAOBox.dao.key)
+            .handleUpdateEvent(
+              UpdateConfigEvent(
+                te.ctx,
+                protoDAOBox.dao.key,
+                if (te.mempool)
+                  Left(
+                    protoDAOBox.digestOpt.get
+                  )
+                else
+                  Right(te.height),
+                Array[DAOConfigKey](),
+                Array[(DAOConfigKey, Array[Byte])](),
+                Array(
+                  (
+                    DAOConfigKey.convertsDAOConfigKey.convertFromBytes(
+                      ErgoValue
+                        .fromHex(protoDAOInput.getSpendingProof().getExtension().get("3"))
+                        .getValue()
+                        .asInstanceOf[Coll[Byte]]
+                        .toArray
+                    ),
+                    DAOConfigValueSerializer[Array[Byte]](
+                      ErgoId.create(protoDAOInput.getBoxId()).getBytes
+                    )
+                  )
+                )
+              )
+            )
+          PaideiaEventResponse(1)
+        } else {
+          PaideiaEventResponse(0)
+        }
+
       }
       case _ => PaideiaEventResponse(0)
     }
