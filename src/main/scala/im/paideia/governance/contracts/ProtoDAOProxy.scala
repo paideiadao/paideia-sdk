@@ -256,7 +256,7 @@ class ProtoDAOProxy(contractSignature: PaideiaContractSignature)
       "_IM_PAIDEIA_STAKING_PARTICIPATION_WEIGHT",
       ConfKeys.im_paideia_staking_weight_participation.ergoValue.getValue()
     )
-    if (contractSignature.version.equals("1.1.1")) {
+    if (contractSignature.version.startsWith("1.1.")) {
       cons.put(
         "_IM_PAIDEIA_DAO_URL",
         ConfKeys.im_paideia_dao_url.ergoValue.getValue()
@@ -292,6 +292,16 @@ class ProtoDAOProxy(contractSignature: PaideiaContractSignature)
       cons.put(
         "_IM_PAIDEIA_DAO_THEME",
         ConfKeys.im_paideia_dao_theme.ergoValue.getValue()
+      )
+    }
+    if (contractSignature.version.equals("1.1.2")) {
+      cons.put(
+        "_IM_PAIDEIA_STAKING_PROFIT_TOKENS",
+        ConfKeys.im_paideia_staking_profit_tokenids.ergoValue.getValue()
+      )
+      cons.put(
+        "_IM_PAIDEIA_STAKING_PROFIT_THRESHOLD",
+        ConfKeys.im_paideia_staking_profit_thresholds.ergoValue.getValue()
       )
     }
     cons

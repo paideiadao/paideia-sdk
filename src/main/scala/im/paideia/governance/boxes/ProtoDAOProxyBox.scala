@@ -77,7 +77,7 @@ case class ProtoDAOProxyBox(
       Colls.fromArray(DAOConfigValueSerializer(pureParticipationWeight)),
       Colls.fromArray(DAOConfigValueSerializer(participationWeight))
     ) ++
-      (if (useContract.contractSignature.version.equals("1.1.1"))
+      (if (useContract.contractSignature.version.startsWith("1.1."))
          Array(
            Colls.fromArray(DAOConfigValueSerializer(url)),
            Colls.fromArray(DAOConfigValueSerializer(description)),
@@ -88,6 +88,16 @@ case class ProtoDAOProxyBox(
            Colls.fromArray(DAOConfigValueSerializer(footer)),
            Colls.fromArray(DAOConfigValueSerializer(footerEnabled)),
            Colls.fromArray(DAOConfigValueSerializer(theme))
+         )
+       else Array[Coll[Byte]]()) ++
+      (if (useContract.contractSignature.version.equals("1.1.2"))
+         Array(
+           Colls.fromArray(
+             DAOConfigValueSerializer(Array[Array[Byte]]())
+           ),
+           Colls.fromArray(
+             DAOConfigValueSerializer(Array(0L, 0L))
+           )
          )
        else Array[Coll[Byte]]())
     List(
@@ -178,7 +188,7 @@ case class ProtoDAOProxyBox(
         ConfKeys.im_paideia_staking_weight_participation,
         DAOConfigValueSerializer[Byte](participationWeight)
       )
-    ) ++ (if (useContract.contractSignature.version.equals("1.1.1"))
+    ) ++ (if (useContract.contractSignature.version.startsWith("1.1."))
             Array(
               (
                 ConfKeys.im_paideia_dao_url,
@@ -217,7 +227,27 @@ case class ProtoDAOProxyBox(
                 DAOConfigValueSerializer(theme)
               )
             )
-          else Array[(DAOConfigKey, Array[Byte])]())
+          else
+            Array[(DAOConfigKey, Array[Byte])]()) ++
+    (if (useContract.contractSignature.version.equals("1.1.2"))
+       Array(
+         (
+           ConfKeys.im_paideia_staking_profit_tokenids,
+           DAOConfigValueSerializer(
+             Array[Array[Byte]]()
+           )
+         ),
+         (
+           ConfKeys.im_paideia_staking_profit_thresholds,
+           DAOConfigValueSerializer(
+             Array(0L, 0L)
+           )
+         )
+       )
+     else
+       Array[
+         (DAOConfigKey, Array[Byte])
+       ]())
   }
 }
 
@@ -248,7 +278,7 @@ object ProtoDAOProxyBox {
     val stakingProfitSharePct: Byte   = DAOConfigValueDeserializer(byteRegister(8))
     val pureParticipationWeight: Byte = DAOConfigValueDeserializer(byteRegister(9))
     val participationWeight: Byte     = DAOConfigValueDeserializer(byteRegister(10))
-    val v111        = boxContract.contractSignature.version.equals("1.1.1")
+    val v111        = boxContract.contractSignature.version.startsWith("1.1.")
     val url: String = if (v111) DAOConfigValueDeserializer(byteRegister(11)) else ""
     val description: String =
       if (v111) DAOConfigValueDeserializer(byteRegister(12)) else ""
