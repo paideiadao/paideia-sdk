@@ -145,7 +145,7 @@ case class CreateProtoDAOTransaction(
       newDAO,
       protoDAOProxyInputBox.stakePoolSize,
       resultingDigest,
-      protoDAOProxyInputBox.value - 2000000L
+      protoDAOProxyInputBox.value - (3000000L + ergFee)
     )
   ctx           = _ctx
   fee           = 1000000
