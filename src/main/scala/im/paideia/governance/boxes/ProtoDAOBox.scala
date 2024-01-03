@@ -16,6 +16,8 @@ import org.ergoplatform.appkit.InputBox
 import sigmastate.eval.Colls
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 import scorex.crypto.authds.ADDigest
+import special.sigma.AvlTree
+import special.collection.Coll
 
 case class ProtoDAOBox(
   _ctx: BlockchainContextImpl,
@@ -54,12 +56,24 @@ object ProtoDAOBox {
     val contract = ProtoDAO
       .contractInstances(Blake2b256(inp.getErgoTree.bytes).array.toList)
       .asInstanceOf[ProtoDAO]
+    val digest =
+      ADDigest @@ inp
+        .getRegisters()
+        .get(0)
+        .getValue()
+        .asInstanceOf[AvlTree]
+        .digest
+        .toArray
+    val daoKey = new ErgoId(
+      inp.getRegisters().get(1).getValue().asInstanceOf[Coll[Byte]].toArray
+    ).toString()
     ProtoDAOBox(
       ctx,
-      Paideia.getDAO(contract.contractSignature.daoKey),
+      Paideia.getDAO(daoKey),
       if (inp.getTokens().size > 1) inp.getTokens().get(1).getValue - 1L else 0L,
       contract,
-      inp.getValue()
+      inp.getValue(),
+      Some(digest)
     )
   }
 }
