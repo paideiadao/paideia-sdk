@@ -30,6 +30,7 @@ import scorex.crypto.authds.ADDigest
 import im.paideia.common.events.CreateTransactionsEvent
 import im.paideia.common.events.UpdateConfigEvent
 import im.paideia.DAOConfigValueSerializer
+import im.paideia.common.transactions.PaideiaTransaction
 
 class ProtoDAO(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -50,58 +51,63 @@ class ProtoDAO(contractSignature: PaideiaContractSignature)
         PaideiaEventResponse.merge(
           getUtxoSet.toList.map { b =>
             {
+              try {
 
-              val iBox = boxes(b)
-              val dao = Paideia.getDAO(
-                new ErgoId(
-                  iBox
-                    .getRegisters()
-                    .get(1)
-                    .getValue()
-                    .asInstanceOf[Coll[Byte]]
-                    .toArray
-                ).toString()
-              )
-              val config = dao.config
-              if (
-                config._config.ergoAVLTree().digest == iBox
-                  .getRegisters()
-                  .get(0)
-                  .getValue()
-                  .asInstanceOf[AvlTree]
-                  .digest
-              ) {
-                val nextTokenToMint = ProtoDAO.tokensToMint.find((s: DAOConfigKey) =>
-                  config._config.lookUp(s).response(0).tryOp.get == None
+                val iBox = boxes(b)
+                val dao = Paideia.getDAO(
+                  new ErgoId(
+                    iBox
+                      .getRegisters()
+                      .get(1)
+                      .getValue()
+                      .asInstanceOf[Coll[Byte]]
+                      .toArray
+                  ).toString()
                 )
-                nextTokenToMint match {
-                  case Some(value) =>
-                    PaideiaEventResponse(
-                      2,
-                      List(
-                        MintTransaction(
-                          cte.ctx,
-                          iBox,
-                          dao,
-                          value,
-                          Address.create(Env.operatorAddress)
+                val config = dao.config
+                if (
+                  config._config.ergoAVLTree().digest == iBox
+                    .getRegisters()
+                    .get(0)
+                    .getValue()
+                    .asInstanceOf[AvlTree]
+                    .digest
+                ) {
+                  val nextTokenToMint = ProtoDAO.tokensToMint.find((s: DAOConfigKey) =>
+                    config._config.lookUp(s).response(0).tryOp.get == None
+                  )
+                  nextTokenToMint match {
+                    case Some(value) =>
+                      PaideiaEventResponse(
+                        2,
+                        List(
+                          MintTransaction(
+                            cte.ctx,
+                            iBox,
+                            dao,
+                            value,
+                            Address.create(Env.operatorAddress)
+                          )
                         )
                       )
-                    )
-                  case None => {
-                    val newTx = CreateDAOTransaction(
-                      cte.ctx,
-                      iBox,
-                      dao,
-                      Address.create(Env.operatorAddress)
-                    )
-                    PaideiaEventResponse(2, List(newTx))
+                    case None => {
+                      val newTx = CreateDAOTransaction(
+                        cte.ctx,
+                        iBox,
+                        dao,
+                        Address.create(Env.operatorAddress)
+                      )
+                      PaideiaEventResponse(2, List(newTx))
+                    }
                   }
+                } else {
+                  PaideiaEventResponse(0)
                 }
-              } else {
-                PaideiaEventResponse(0)
-              }
 
+              } catch {
+                case e: Exception =>
+                  PaideiaEventResponse(-1, List[PaideiaTransaction](), List(e))
+              }
             }
           }.toList
         )
