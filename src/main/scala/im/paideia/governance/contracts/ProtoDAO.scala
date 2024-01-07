@@ -31,6 +31,7 @@ import im.paideia.common.events.CreateTransactionsEvent
 import im.paideia.common.events.UpdateConfigEvent
 import im.paideia.DAOConfigValueSerializer
 import im.paideia.common.transactions.PaideiaTransaction
+import im.paideia.staking.TotalStakingState
 
 class ProtoDAO(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -188,6 +189,17 @@ class ProtoDAO(contractSignature: PaideiaContractSignature)
                     .getInsertOperations(protoDAOBox.dao)
                 )
               )
+
+            if (!TotalStakingState._stakingStates.contains(protoDAOBox.dao.key)) {
+              val stakeStateBox = te.tx.getOutputs().get(2)
+              val _state = TotalStakingState(
+                protoDAOBox.dao.key,
+                ErgoValue
+                  .fromHex(stakeStateBox.getAdditionalRegisters().get("R5"))
+                  .getValue()
+                  .asInstanceOf[Coll[Long]](0)
+              )
+            }
             PaideiaEventResponse(1)
           } else {
             PaideiaEventResponse(0)
