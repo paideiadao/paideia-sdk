@@ -18,7 +18,7 @@ import org.ergoplatform.appkit.impl.BlockchainContextImpl
 class CreateDAO(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
 
-  def box(ctx: BlockchainContextImpl) = CreateDAOBox(ctx, this)
+  def box(ctx: BlockchainContextImpl, value: Long) = CreateDAOBox(ctx, this, value)
 
   override lazy val constants: HashMap[String, Object] = {
     val cons = new HashMap[String, Object]()

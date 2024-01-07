@@ -49,6 +49,7 @@ case class CreateDAOTransaction(
   dao: DAO,
   _changeAddress: Address
 ) extends PaideiaTransaction {
+  ctx = _ctx
   val protoDAOInputBox = ProtoDAOBox.fromInputBox(_ctx, protoDAOInput)
 
   val paideiaConfigBox = Paideia.getBox(
@@ -371,9 +372,7 @@ case class CreateDAOTransaction(
   val stakeSnapshotO    = stakingSnapshotContract.box(_ctx).outBox
   val stakeVoteO        = stakingVoteContract.box(_ctx).outBox
   val stakeProfitShareO = stakingProfitShareContract.box(_ctx).outBox
-  val createDaoO        = createDaoContract.box(_ctx).outBox
-
-  ctx           = _ctx
+  val createDaoO        = createDaoContract.box(_ctx, createDaoInput.getValue()).outBox
   fee           = 1000000
   changeAddress = _changeAddress
   inputs = List[InputBox](
