@@ -115,6 +115,7 @@ class ProtoDAO(contractSignature: PaideiaContractSignature)
       case te: TransactionEvent => {
 
         if (
+          te.tx.getInputs().size() > 0 &&
           te.tx.getInputs().size() < 4 && getUtxoSet.contains(
             te.tx.getInputs().get(0).getBoxId()
           )
