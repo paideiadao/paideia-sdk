@@ -114,7 +114,6 @@ case class CreateDAOTransaction(
   val configContract = Config(
     PaideiaContractSignature(networkType = _ctx.getNetworkType(), daoKey = dao.key)
   )
-  val configContractSignature = configContract.contractSignature
 
   val emissionTime = _ctx.createPreHeader().build().getTimestamp() + dao.config[Long](
     ConfKeys.im_paideia_staking_cyclelength
@@ -128,36 +127,25 @@ case class CreateDAOTransaction(
   val stakeStateOutput = StakeState(PaideiaContractSignature(daoKey = dao.key))
     .emptyBox(_ctx, dao, protoDAOInputBox.stakePool)
 
-  val treasuryContract          = Treasury(PaideiaContractSignature(daoKey = dao.key))
-  val treasuryContractSignature = treasuryContract.contractSignature
+  val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
   val actionSendFundsContract = ActionSendFundsBasic(
     PaideiaContractSignature(daoKey = dao.key)
   )
-  val actionSendFundsContractSignature = actionSendFundsContract.contractSignature
   val actionUpdateConfigContract = ActionUpdateConfig(
     PaideiaContractSignature(daoKey = dao.key)
   )
-  val actionUpdateConfigContractSignature = actionUpdateConfigContract.contractSignature
   val proposalBasicContract = ProposalBasic(
     PaideiaContractSignature(daoKey = dao.key)
   )
-  val proposalBasicContractSignature = proposalBasicContract.contractSignature
-  val stakingChangeContract = ChangeStake(PaideiaContractSignature(daoKey = dao.key))
-  val stakingChangeContractSignature = stakingChangeContract.contractSignature
-  val stakingStakeContract           = Stake(PaideiaContractSignature(daoKey = dao.key))
-  val stakingStakeContractSignature  = stakingStakeContract.contractSignature
+  val stakingChangeContract   = ChangeStake(PaideiaContractSignature(daoKey = dao.key))
+  val stakingStakeContract    = Stake(PaideiaContractSignature(daoKey = dao.key))
   val stakingCompoundContract = StakeCompound(PaideiaContractSignature(daoKey = dao.key))
-  val stakingCompoundContractSignature = stakingCompoundContract.contractSignature
   val stakingProfitShareContract = StakeProfitShare(
     PaideiaContractSignature(daoKey = dao.key)
   )
-  val stakingProfitShareContractSignature = stakingProfitShareContract.contractSignature
   val stakingSnapshotContract = StakeSnapshot(PaideiaContractSignature(daoKey = dao.key))
-  val stakingSnapshotContractSignature = stakingSnapshotContract.contractSignature
-  val stakingVoteContract          = StakeVote(PaideiaContractSignature(daoKey = dao.key))
-  val stakingVoteContractSignature = stakingVoteContract.contractSignature
-  val stakingUnstakeContract       = Unstake(PaideiaContractSignature(daoKey = dao.key))
-  val stakingUnstakeContractSignature = stakingUnstakeContract.contractSignature
+  val stakingVoteContract     = StakeVote(PaideiaContractSignature(daoKey = dao.key))
+  val stakingUnstakeContract  = Unstake(PaideiaContractSignature(daoKey = dao.key))
 
   val createDaoContract = CreateDAO(
     paideiaConfig[PaideiaContractSignature](
@@ -246,64 +234,7 @@ case class CreateDAOTransaction(
       2.toByte, {
         var result = dao.config
           .insertProof(
-            (
-              ConfKeys.im_paideia_contracts_treasury,
-              DAOConfigValueSerializer(treasuryContractSignature)
-            ),
-            (
-              ConfKeys.im_paideia_contracts_config,
-              DAOConfigValueSerializer(configContractSignature)
-            ),
-            (
-              ConfKeys.im_paideia_contracts_action(
-                actionSendFundsContract.ergoTree.bytes
-              ),
-              DAOConfigValueSerializer(actionSendFundsContractSignature)
-            ),
-            (
-              ConfKeys.im_paideia_contracts_action(
-                actionUpdateConfigContract.ergoTree.bytes
-              ),
-              DAOConfigValueSerializer(actionUpdateConfigContractSignature)
-            ),
-            (
-              ConfKeys.im_paideia_contracts_proposal(
-                proposalBasicContract.ergoTree.bytes
-              ),
-              DAOConfigValueSerializer(proposalBasicContractSignature)
-            ),
-            (
-              ConfKeys.im_paideia_contracts_staking_changestake,
-              DAOConfigValueSerializer(stakingChangeContractSignature)
-            ),
-            (
-              ConfKeys.im_paideia_contracts_staking_stake,
-              DAOConfigValueSerializer(stakingStakeContractSignature)
-            ),
-            (
-              ConfKeys.im_paideia_contracts_staking_compound,
-              DAOConfigValueSerializer(stakingCompoundContractSignature)
-            ),
-            (
-              ConfKeys.im_paideia_contracts_staking_profitshare,
-              DAOConfigValueSerializer(stakingProfitShareContractSignature)
-            ),
-            (
-              ConfKeys.im_paideia_contracts_staking_snapshot,
-              DAOConfigValueSerializer(stakingSnapshotContractSignature)
-            ),
-            (
-              ConfKeys.im_paideia_contracts_staking_state,
-              DAOConfigValueSerializer(stakeStateOutput.useContract.contractSignature)
-            ),
-            (
-              ConfKeys.im_paideia_contracts_staking_vote,
-              DAOConfigValueSerializer(stakingVoteContractSignature)
-            ),
-            (
-              ConfKeys.im_paideia_contracts_staking_unstake,
-              DAOConfigValueSerializer(stakingUnstakeContractSignature)
-            )
+            createDaoContract.getInsertOperations(dao): _*
           )(Left(configDigest))
         resultingDigest = Some(result._2)
         result._1
@@ -314,25 +245,41 @@ case class CreateDAOTransaction(
       ErgoValueBuilder.buildFor(
         Colls.fromArray(
           Array(
-            Colls.fromArray(DAOConfigValueSerializer(treasuryContractSignature)),
-            Colls.fromArray(DAOConfigValueSerializer(configContractSignature)),
-            Colls.fromArray(DAOConfigValueSerializer(actionSendFundsContractSignature)),
+            Colls.fromArray(DAOConfigValueSerializer(treasuryContract.contractSignature)),
+            Colls.fromArray(DAOConfigValueSerializer(configContract.contractSignature)),
             Colls.fromArray(
-              DAOConfigValueSerializer(actionUpdateConfigContractSignature)
+              DAOConfigValueSerializer(actionSendFundsContract.contractSignature)
             ),
-            Colls.fromArray(DAOConfigValueSerializer(proposalBasicContractSignature)),
-            Colls.fromArray(DAOConfigValueSerializer(stakingChangeContractSignature)),
-            Colls.fromArray(DAOConfigValueSerializer(stakingStakeContractSignature)),
-            Colls.fromArray(DAOConfigValueSerializer(stakingCompoundContractSignature)),
             Colls.fromArray(
-              DAOConfigValueSerializer(stakingProfitShareContractSignature)
+              DAOConfigValueSerializer(actionUpdateConfigContract.contractSignature)
             ),
-            Colls.fromArray(DAOConfigValueSerializer(stakingSnapshotContractSignature)),
+            Colls.fromArray(
+              DAOConfigValueSerializer(proposalBasicContract.contractSignature)
+            ),
+            Colls.fromArray(
+              DAOConfigValueSerializer(stakingChangeContract.contractSignature)
+            ),
+            Colls.fromArray(
+              DAOConfigValueSerializer(stakingStakeContract.contractSignature)
+            ),
+            Colls.fromArray(
+              DAOConfigValueSerializer(stakingCompoundContract.contractSignature)
+            ),
+            Colls.fromArray(
+              DAOConfigValueSerializer(stakingProfitShareContract.contractSignature)
+            ),
+            Colls.fromArray(
+              DAOConfigValueSerializer(stakingSnapshotContract.contractSignature)
+            ),
             Colls.fromArray(
               DAOConfigValueSerializer(stakeStateOutput.useContract.contractSignature)
             ),
-            Colls.fromArray(DAOConfigValueSerializer(stakingVoteContractSignature)),
-            Colls.fromArray(DAOConfigValueSerializer(stakingUnstakeContractSignature))
+            Colls.fromArray(
+              DAOConfigValueSerializer(stakingVoteContract.contractSignature)
+            ),
+            Colls.fromArray(
+              DAOConfigValueSerializer(stakingUnstakeContract.contractSignature)
+            )
           )
         )
       )

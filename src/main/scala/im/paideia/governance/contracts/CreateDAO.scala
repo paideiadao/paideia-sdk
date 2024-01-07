@@ -14,6 +14,18 @@ import org.ergoplatform.appkit.ErgoValue
 import java.nio.charset.StandardCharsets
 import im.paideia.governance.boxes.CreateDAOBox
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
+import im.paideia.DAOConfigValueSerializer
+import im.paideia.common.contracts.Treasury
+import im.paideia.DAO
+import im.paideia.staking.contracts.ChangeStake
+import im.paideia.staking.contracts.Stake
+import im.paideia.staking.contracts.StakeCompound
+import im.paideia.staking.contracts.StakeProfitShare
+import im.paideia.staking.contracts.StakeSnapshot
+import im.paideia.staking.contracts.StakeVote
+import im.paideia.staking.contracts.Unstake
+import im.paideia.common.contracts.Config
+import im.paideia.staking.contracts.StakeState
 
 class CreateDAO(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -197,6 +209,96 @@ class CreateDAO(contractSignature: PaideiaContractSignature)
       ConfKeys.im_paideia_staking_cyclelength.ergoValue.getValue()
     )
     cons
+  }
+
+  def getInsertOperations(dao: DAO) = {
+    val configContract = Config(
+      PaideiaContractSignature(daoKey = dao.key)
+    )
+    val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
+    val actionSendFundsContract = ActionSendFundsBasic(
+      PaideiaContractSignature(daoKey = dao.key)
+    )
+    val actionUpdateConfigContract = ActionUpdateConfig(
+      PaideiaContractSignature(daoKey = dao.key)
+    )
+    val proposalBasicContract = ProposalBasic(
+      PaideiaContractSignature(daoKey = dao.key)
+    )
+    val stakingChangeContract = ChangeStake(PaideiaContractSignature(daoKey = dao.key))
+    val stakingStakeContract  = Stake(PaideiaContractSignature(daoKey = dao.key))
+    val stakingCompoundContract = StakeCompound(
+      PaideiaContractSignature(daoKey = dao.key)
+    )
+    val stakingProfitShareContract = StakeProfitShare(
+      PaideiaContractSignature(daoKey = dao.key)
+    )
+    val stakingSnapshotContract = StakeSnapshot(
+      PaideiaContractSignature(daoKey = dao.key)
+    )
+    val stakingVoteContract    = StakeVote(PaideiaContractSignature(daoKey = dao.key))
+    val stakingUnstakeContract = Unstake(PaideiaContractSignature(daoKey = dao.key))
+    val stakeStateContract     = StakeState(PaideiaContractSignature(daoKey = dao.key))
+    Array(
+      (
+        ConfKeys.im_paideia_contracts_treasury,
+        DAOConfigValueSerializer(treasuryContract.contractSignature)
+      ),
+      (
+        ConfKeys.im_paideia_contracts_config,
+        DAOConfigValueSerializer(configContract.contractSignature)
+      ),
+      (
+        ConfKeys.im_paideia_contracts_action(
+          actionSendFundsContract.ergoTree.bytes
+        ),
+        DAOConfigValueSerializer(actionSendFundsContract.contractSignature)
+      ),
+      (
+        ConfKeys.im_paideia_contracts_action(
+          actionUpdateConfigContract.ergoTree.bytes
+        ),
+        DAOConfigValueSerializer(actionUpdateConfigContract.contractSignature)
+      ),
+      (
+        ConfKeys.im_paideia_contracts_proposal(
+          proposalBasicContract.ergoTree.bytes
+        ),
+        DAOConfigValueSerializer(proposalBasicContract.contractSignature)
+      ),
+      (
+        ConfKeys.im_paideia_contracts_staking_changestake,
+        DAOConfigValueSerializer(stakingChangeContract.contractSignature)
+      ),
+      (
+        ConfKeys.im_paideia_contracts_staking_stake,
+        DAOConfigValueSerializer(stakingStakeContract.contractSignature)
+      ),
+      (
+        ConfKeys.im_paideia_contracts_staking_compound,
+        DAOConfigValueSerializer(stakingCompoundContract.contractSignature)
+      ),
+      (
+        ConfKeys.im_paideia_contracts_staking_profitshare,
+        DAOConfigValueSerializer(stakingProfitShareContract.contractSignature)
+      ),
+      (
+        ConfKeys.im_paideia_contracts_staking_snapshot,
+        DAOConfigValueSerializer(stakingSnapshotContract.contractSignature)
+      ),
+      (
+        ConfKeys.im_paideia_contracts_staking_state,
+        DAOConfigValueSerializer(stakeStateContract.contractSignature)
+      ),
+      (
+        ConfKeys.im_paideia_contracts_staking_vote,
+        DAOConfigValueSerializer(stakingVoteContract.contractSignature)
+      ),
+      (
+        ConfKeys.im_paideia_contracts_staking_unstake,
+        DAOConfigValueSerializer(stakingUnstakeContract.contractSignature)
+      )
+    )
   }
 
   override def getConfigContext(configDigest: Option[ADDigest]) = Paideia
