@@ -118,7 +118,7 @@ case class CreateDAOTransaction(
 
   val emissionTime = _ctx.createPreHeader().build().getTimestamp() + dao.config[Long](
     ConfKeys.im_paideia_staking_cyclelength
-  )
+  ) - 600000L
 
   val state = TotalStakingState(
     dao.key,
