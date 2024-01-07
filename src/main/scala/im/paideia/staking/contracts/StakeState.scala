@@ -81,14 +81,6 @@ class StakeState(contractSignature: PaideiaContractSignature)
 
     val emptyProfit = new Array[Long](whiteListedTokens.size + 2).toList
 
-    val participationWeight =
-      dao.config
-        .withDefault[Byte](ConfKeys.im_paideia_staking_weight_participation, 0.toByte)
-        .toLong
-    val pureParticipationWeight = dao.config
-      .withDefault[Byte](ConfKeys.im_paideia_staking_weight_pureparticipation, 0.toByte)
-      .toLong
-
     val emissionDelay = dao.config[Long](ConfKeys.im_paideia_staking_emission_delay)
     box(
       ctx,
@@ -107,8 +99,8 @@ class StakeState(contractSignature: PaideiaContractSignature)
             0L,
             state.currentStakingState.stakeRecords.digest,
             state.currentStakingState.participationRecords.digest,
-            pureParticipationWeight,
-            participationWeight
+            0L,
+            0L
           )
         )
         .toArray,
