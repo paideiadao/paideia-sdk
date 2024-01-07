@@ -49,6 +49,7 @@ case class CreateDAOTransaction(
   dao: DAO,
   _changeAddress: Address
 ) extends PaideiaTransaction {
+  ctx = _ctx
   val protoDAOInputBox = ProtoDAOBox.fromInputBox(_ctx, protoDAOInput)
 
   val paideiaConfigBox = Paideia.getBox(
