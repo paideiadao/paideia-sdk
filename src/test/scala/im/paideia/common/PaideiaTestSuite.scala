@@ -257,7 +257,7 @@ object PaideiaTestSuite {
         paideiaOriginContract.box(ctx, paideiaConfig, 1000000L).inputBox(),
         false
       )
-      createDaoContract.newBox(createDaoContract.box(ctx).inputBox(), false)
+      createDaoContract.newBox(createDaoContract.box(ctx, 2000000L).inputBox(), false)
       // initializedPaideia = true
     }
   }
