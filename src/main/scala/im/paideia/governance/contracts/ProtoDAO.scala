@@ -160,35 +160,37 @@ class ProtoDAO(contractSignature: PaideiaContractSignature)
               )
             )
           PaideiaEventResponse(1)
-        } else if (
-          te.tx.getInputs().size() > 4 && getUtxoSet.contains(
-            te.tx.getInputs().get(0).getBoxId()
-          )
-        ) {
-          val protoDAOInput = te.tx.getInputs().get(0)
-          val protoDAOBox =
-            ProtoDAOBox.fromInputBox(te.ctx, boxes(protoDAOInput.getBoxId()))
-          Paideia
-            .getConfig(protoDAOBox.dao.key)
-            .handleUpdateEvent(
-              UpdateConfigEvent(
-                te.ctx,
-                protoDAOBox.dao.key,
-                if (te.mempool)
-                  Left(
-                    protoDAOBox.digestOpt.get
-                  )
-                else
-                  Right(te.height),
-                Array[DAOConfigKey](),
-                Array[(DAOConfigKey, Array[Byte])](),
-                CreateDAO(PaideiaContractSignature(daoKey = Env.paideiaDaoKey))
-                  .getInsertOperations(protoDAOBox.dao)
-              )
-            )
-          PaideiaEventResponse(1)
         } else {
-          PaideiaEventResponse(0)
+          if (
+            te.tx.getInputs().size() > 4 && getUtxoSet.contains(
+              te.tx.getInputs().get(0).getBoxId()
+            )
+          ) {
+            val protoDAOInput = te.tx.getInputs().get(0)
+            val protoDAOBox =
+              ProtoDAOBox.fromInputBox(te.ctx, boxes(protoDAOInput.getBoxId()))
+            Paideia
+              .getConfig(protoDAOBox.dao.key)
+              .handleUpdateEvent(
+                UpdateConfigEvent(
+                  te.ctx,
+                  protoDAOBox.dao.key,
+                  if (te.mempool)
+                    Left(
+                      protoDAOBox.digestOpt.get
+                    )
+                  else
+                    Right(te.height),
+                  Array[DAOConfigKey](),
+                  Array[(DAOConfigKey, Array[Byte])](),
+                  CreateDAO(PaideiaContractSignature(daoKey = Env.paideiaDaoKey))
+                    .getInsertOperations(protoDAOBox.dao)
+                )
+              )
+            PaideiaEventResponse(1)
+          } else {
+            PaideiaEventResponse(0)
+          }
         }
 
       }
