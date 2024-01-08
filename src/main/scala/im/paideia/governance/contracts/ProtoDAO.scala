@@ -201,7 +201,9 @@ class ProtoDAO(contractSignature: PaideiaContractSignature)
                     .getInsertOperations(protoDAOBox.dao)
                 )
               )
-
+            val castVoteContract = CastVote(
+              PaideiaContractSignature(daoKey = protoDAOBox.dao.key)
+            )
             // If the staking state does not exist we need to initiate it and any contractinstances in the output
             if (!TotalStakingState._stakingStates.contains(protoDAOBox.dao.key)) {
               val stakeStateBox = te.tx.getOutputs().get(2)
