@@ -32,6 +32,14 @@ import im.paideia.common.events.UpdateConfigEvent
 import im.paideia.DAOConfigValueSerializer
 import im.paideia.common.transactions.PaideiaTransaction
 import im.paideia.staking.TotalStakingState
+import im.paideia.staking.contracts.StakeState
+import im.paideia.staking.contracts.ChangeStake
+import im.paideia.staking.contracts.Stake
+import im.paideia.staking.contracts.Unstake
+import im.paideia.staking.contracts.StakeCompound
+import im.paideia.staking.contracts.StakeSnapshot
+import im.paideia.staking.contracts.StakeVote
+import im.paideia.staking.contracts.StakeProfitShare
 
 class ProtoDAO(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -190,6 +198,7 @@ class ProtoDAO(contractSignature: PaideiaContractSignature)
                 )
               )
 
+            // If the staking state does not exist we need to initiate it and any contractinstances in the output
             if (!TotalStakingState._stakingStates.contains(protoDAOBox.dao.key)) {
               val stakeStateBox = te.tx.getOutputs().get(2)
               val _state = TotalStakingState(
@@ -199,6 +208,26 @@ class ProtoDAO(contractSignature: PaideiaContractSignature)
                   .getValue()
                   .asInstanceOf[Coll[Long]](0)
               )
+              DAOOrigin(PaideiaContractSignature(daoKey = protoDAOBox.dao.key))
+                .handleEvent(te)
+              Config(PaideiaContractSignature(daoKey = protoDAOBox.dao.key))
+                .handleEvent(te)
+              StakeState(PaideiaContractSignature(daoKey = protoDAOBox.dao.key))
+                .handleEvent(te)
+              ChangeStake(PaideiaContractSignature(daoKey = protoDAOBox.dao.key))
+                .handleEvent(te)
+              Stake(PaideiaContractSignature(daoKey = protoDAOBox.dao.key))
+                .handleEvent(te)
+              Unstake(PaideiaContractSignature(daoKey = protoDAOBox.dao.key))
+                .handleEvent(te)
+              StakeCompound(PaideiaContractSignature(daoKey = protoDAOBox.dao.key))
+                .handleEvent(te)
+              StakeSnapshot(PaideiaContractSignature(daoKey = protoDAOBox.dao.key))
+                .handleEvent(te)
+              StakeVote(PaideiaContractSignature(daoKey = protoDAOBox.dao.key))
+                .handleEvent(te)
+              StakeProfitShare(PaideiaContractSignature(daoKey = protoDAOBox.dao.key))
+                .handleEvent(te)
             }
             PaideiaEventResponse(1)
           } else {
