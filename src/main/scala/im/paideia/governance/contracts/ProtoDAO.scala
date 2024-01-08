@@ -100,13 +100,17 @@ class ProtoDAO(contractSignature: PaideiaContractSignature)
                         )
                       )
                     case None => {
-                      val newTx = CreateDAOTransaction(
-                        cte.ctx,
-                        iBox,
-                        dao,
-                        Address.create(Env.operatorAddress)
-                      )
-                      PaideiaEventResponse(2, List(newTx))
+                      try {
+                        val newTx = CreateDAOTransaction(
+                          cte.ctx,
+                          iBox,
+                          dao,
+                          Address.create(Env.operatorAddress)
+                        )
+                        PaideiaEventResponse(2, List(newTx))
+                      } catch {
+                        case _: Exception => PaideiaEventResponse(0)
+                      }
                     }
                   }
                 } else {
