@@ -213,25 +213,65 @@ class ProtoDAO(contractSignature: PaideiaContractSignature)
                   .asInstanceOf[Coll[Long]](0)
               )
               DAOOrigin(PaideiaContractSignature(daoKey = protoDAOBox.dao.key))
-                .handleEvent(te)
+                .newBox(
+                  new InputBoxImpl(te.tx.getOutputs().get(0)),
+                  te.mempool,
+                  te.rollback
+                )
               Config(PaideiaContractSignature(daoKey = protoDAOBox.dao.key))
-                .handleEvent(te)
+                .newBox(
+                  new InputBoxImpl(te.tx.getOutputs().get(1)),
+                  te.mempool,
+                  te.rollback
+                )
               StakeState(PaideiaContractSignature(daoKey = protoDAOBox.dao.key))
-                .handleEvent(te)
+                .newBox(
+                  new InputBoxImpl(te.tx.getOutputs().get(2)),
+                  te.mempool,
+                  te.rollback
+                )
               ChangeStake(PaideiaContractSignature(daoKey = protoDAOBox.dao.key))
-                .handleEvent(te)
+                .newBox(
+                  new InputBoxImpl(te.tx.getOutputs().get(3)),
+                  te.mempool,
+                  te.rollback
+                )
               Stake(PaideiaContractSignature(daoKey = protoDAOBox.dao.key))
-                .handleEvent(te)
+                .newBox(
+                  new InputBoxImpl(te.tx.getOutputs().get(4)),
+                  te.mempool,
+                  te.rollback
+                )
               Unstake(PaideiaContractSignature(daoKey = protoDAOBox.dao.key))
-                .handleEvent(te)
+                .newBox(
+                  new InputBoxImpl(te.tx.getOutputs().get(5)),
+                  te.mempool,
+                  te.rollback
+                )
               StakeCompound(PaideiaContractSignature(daoKey = protoDAOBox.dao.key))
-                .handleEvent(te)
+                .newBox(
+                  new InputBoxImpl(te.tx.getOutputs().get(6)),
+                  te.mempool,
+                  te.rollback
+                )
               StakeSnapshot(PaideiaContractSignature(daoKey = protoDAOBox.dao.key))
-                .handleEvent(te)
+                .newBox(
+                  new InputBoxImpl(te.tx.getOutputs().get(7)),
+                  te.mempool,
+                  te.rollback
+                )
               StakeVote(PaideiaContractSignature(daoKey = protoDAOBox.dao.key))
-                .handleEvent(te)
+                .newBox(
+                  new InputBoxImpl(te.tx.getOutputs().get(8)),
+                  te.mempool,
+                  te.rollback
+                )
               StakeProfitShare(PaideiaContractSignature(daoKey = protoDAOBox.dao.key))
-                .handleEvent(te)
+                .newBox(
+                  new InputBoxImpl(te.tx.getOutputs().get(9)),
+                  te.mempool,
+                  te.rollback
+                )
             }
             PaideiaEventResponse(1)
           } else {
