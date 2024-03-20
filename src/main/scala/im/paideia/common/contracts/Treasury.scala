@@ -10,6 +10,10 @@ import im.paideia.util.ConfKeys
 import org.ergoplatform.appkit.InputBox
 import im.paideia.util.Env
 import org.ergoplatform.sdk.ErgoId
+import org.ergoplatform.wallet.boxes.DefaultBoxSelector
+import org.ergoplatform.appkit.InputBoxesSelectionException.NotEnoughTokensException
+import org.ergoplatform.appkit.InputBoxesSelectionException.NotEnoughErgsException
+import scala.collection.JavaConverters._
 
 /** Treasury class represents the main contract for the Paideia Treasury which manages and
   * holds assets and tokens of the Paideia DAO treasury on Ergo Blockchain.
@@ -89,6 +93,14 @@ class Treasury(contractSignature: PaideiaContractSignature)
       "_IM_PAIDEIA_CONTRACTS_STAKING_SNAPSHOT",
       ConfKeys.im_paideia_contracts_staking_snapshot.ergoValue.getValue()
     )
+    cons.put(
+      "_IM_PAIDEIA_STAKING_EMISSION",
+      ConfKeys.im_paideia_staking_emission_amount.ergoValue.getValue()
+    )
+    cons.put(
+      "_IM_PAIDEIA_DAO_GOVERNANCE_TOKEN_ID",
+      ConfKeys.im_paideia_dao_tokenid.ergoValue.getValue()
+    )
     cons
   }
 
@@ -130,9 +142,19 @@ class Treasury(contractSignature: PaideiaContractSignature)
             )
         } else Unit
       })
-    if (result.length > 0) {
+    if (result.length > 0 && assetsFound) {
       Some(result.toArray)
     } else {
+      if (nanoErgFound < nanoErgNeeded)
+        throw new NotEnoughErgsException(
+          f"Not enough erg in treasury to cover ${nanoErgNeeded} nanoerg",
+          nanoErgFound
+        )
+      else if (result.length > 0)
+        throw new NotEnoughTokensException(
+          f"Not enough tokens founds to cover ${tokensNeeded}",
+          tokensFound.asScala.map((t: (String, Long)) => (t._1, long2Long(t._2))).asJava
+        )
       None
     }
   }

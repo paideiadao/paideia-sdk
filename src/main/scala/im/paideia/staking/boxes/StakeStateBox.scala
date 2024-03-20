@@ -364,15 +364,17 @@ case class StakeStateBox(
   }
 
   def newNextEmission: Long =
-    nextEmission + dao.config[Long](ConfKeys.im_paideia_staking_cyclelength)
+    nextEmission + dao
+      .config[Long](ConfKeys.im_paideia_staking_cyclelength)
+      .max(3600000L)
+      .min(999999999999999L)
 
   def emit(currentTime: Long, tokensInPool: Long): StakingContextVars = {
     if (currentTime < nextEmission) throw new Exception("Not time for new emission yet")
     nextEmission = newNextEmission
-    profit(0) += Math.min(
-      dao.config[Long](ConfKeys.im_paideia_staking_emission_amount),
-      tokensInPool - profit(0)
-    )
+    val emissionAmount = dao.config[Long](ConfKeys.im_paideia_staking_emission_amount)
+    profit(0) += emissionAmount
+    stakedTokenTotal += emissionAmount
     val participationWeight =
       dao.config
         .withDefault[Byte](ConfKeys.im_paideia_staking_weight_participation, 0.toByte)

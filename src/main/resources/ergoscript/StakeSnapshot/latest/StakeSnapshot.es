@@ -1,4 +1,5 @@
 {
+    #import lib/bytearrayToLongClamped/1.0.0/bytearrayToLongClamped.es;
 
     /**
      *
@@ -41,12 +42,13 @@
     val imPaideiaStakingParticipationWeight: Coll[Byte] =
         _IM_PAIDEIA_STAKING_WEIGHT_PARTICIPATION
 
+    val imPaideiaDaoTokenId: Coll[Byte] = _IM_PAIDEIA_DAO_TOKEN_ID
+
     val emptyDigest: Coll[Byte] = 
         Coll(78,-58,31,72,91,-104,-21,-121,21,63,124,87,-37,79,94,-51,117,
             85,111,-35,-68,64,59,65,-84,-8,68,31,-34,-114,22,9,0).map{
                 (i: Int) => i.toByte
             }
-
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -153,7 +155,8 @@
             imPaideiaStakingCycleLength,
             imPaideiaStakingProfitTokenIds,
             imPaideiaStakingPureParticipationWeight,
-            imPaideiaStakingParticipationWeight
+            imPaideiaStakingParticipationWeight,
+            imPaideiaDaoTokenId
         ),
         configProof
     )
@@ -161,12 +164,12 @@
     val stakeStateTokenId: Coll[Byte]    = configValues(0).get.slice(6,38)
     val snapshotContractHash: Coll[Byte] = configValues(1).get.slice(1,33)
 
-    val emissionAmount: Long = byteArrayToLong(configValues(2).get.slice(1,9))
+    val emissionAmount: Long = bytearrayToLongClamped((configValues(2),(1L,(999999999999999L,1L))))
 
     val emissionDelay: Int = 
-        byteArrayToLong(configValues(3).get.slice(1,9)).toInt
+        bytearrayToLongClamped((configValues(3),(1L,(10L,2L)))).toInt
 
-    val cycleLength: Long = byteArrayToLong(configValues(4).get.slice(1,9))
+    val cycleLength: Long = bytearrayToLongClamped((configValues(4),(3600000L,(999999999999999L,86400000L))))
 
     val profitTokenIds: Coll[Byte] = configValues(5).get
 
@@ -181,6 +184,8 @@
             configValues(7).get(1)
         else
             0.toByte
+
+    val daoTokenId: Coll[Byte] = configValues(8).get.slice(6,38)
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -221,9 +226,17 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
+    val correctStakeStateTokens: Boolean = stakeState.tokens.zip(stakeStateO.tokens).forall{
+        (tt: ((Coll[Byte], Long), (Coll[Byte], Long))) => 
+            if (tt._1._1 == daoTokenId) 
+                tt._2._1 == tt._1._1 && tt._1._2 + emissionAmount == tt._2._2 
+            else 
+                tt._2._1 == tt._1._1 && tt._1._2 == tt._2._2
+    }
+
     val correctStakeState: Boolean = allOf(Coll(
         stakeState.tokens(0)._1 == stakeStateTokenId,
-        stakeStateO.tokens == stakeState.tokens,
+        correctStakeStateTokens,
         totalStakedO == totalStaked,
         stakersO == stakers,
         votedO == 0L,
@@ -242,11 +255,7 @@
             stakeStateTree.digest,
         newSnapshotsTrees(newSnapshotsTrees.size-1)._2.digest == 
             participationTree.digest,
-        newSnapshotsProfit(0) == 
-        min(
-            emissionAmount,
-            stakeState.tokens(1)._2-totalStaked-profit(0)-1
-        ) + profit(0)
+        newSnapshotsProfit(0) == emissionAmount + profit(0)
     ))
 
     val correctProfitAddedToSnapshot: Boolean = 

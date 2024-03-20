@@ -1,4 +1,6 @@
 {
+    #import lib/tokensInBoxes/1.0.0/tokensInBoxes.es;
+
     /**
      *
      *  Treasury
@@ -36,6 +38,12 @@
 
     val imPaideiaContractsStakingSnapshot: Coll[Byte] =
         _IM_PAIDEIA_CONTRACTS_STAKING_SNAPSHOT
+
+    val imPaideiaStakingEmission: Coll[Byte] =
+        _IM_PAIDEIA_STAKING_EMISSION
+
+    val imPaideiaGovernanceTokenId: Coll[Byte] =
+        _IM_PAIDEIA_DAO_GOVERNANCE_TOKEN_ID
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -119,11 +127,15 @@
 
         val configValues: Coll[Option[Coll[Byte]]] = configTree.getMany(Coll(
             imPaideiaContractsStakingCompound,
-            imPaideiaContractsStakingSnapshot
+            imPaideiaContractsStakingSnapshot,
+            imPaideiaStakingEmission,
+            imPaideiaGovernanceTokenId
         ), configProof)
 
         val compoundContractHash: Coll[Byte] = configValues(0).get.slice(1,33)
         val snapshotContractHash: Coll[Byte] = configValues(1).get.slice(1,33)
+        val stakingEmission: Long = byteArrayToLong(configValues(2).get.slice(1,9))
+        val daoTokenId: Coll[Byte] = configValues(3).get.slice(6,38)
 
         ///////////////////////////////////////////////////////////////////////
         // Intermediate calculations                                         //
@@ -138,14 +150,9 @@
             (z: Long, b: Box) => z + b.value
         })
 
-        def tokensInBoxes(tokenId: Coll[Byte]): Long = 
-            treasuryInInput.flatMap{(b: Box) => b.tokens}
-                .fold(0L, {
-                    (z: Long, token: (Coll[Byte], Long)) => 
-                    z + (if (token._1 == tokenId) token._2 else 0L)
-                })
+        val treasuryPaideia: Long = tokensInBoxes((treasuryInInput, paideiaTokenId))
 
-        val treasuryPaideia: Long = tokensInBoxes(paideiaTokenId)
+        val treasuryDao: Long = tokensInBoxes((treasuryInInput, daoTokenId))
 
         val snapshotTx: Boolean = nextSnapshotO > nextSnapshot
 
@@ -166,13 +173,17 @@
             }
         }
 
-        val correctTokens: Boolean = treasuryO.tokens.filter{
+        val correctOtherTokens: Boolean = treasuryO.tokens.filter{
             (t: (Coll[Byte], Long)) => 
-            t._1 != paideiaTokenId
+            t._1 != paideiaTokenId && t._1 != daoTokenId
         }.forall{
             (t: (Coll[Byte], Long)) =>
-            t._2 == tokensInBoxes(t._1)
+            t._2 >= tokensInBoxes((treasuryInInput, t._1))
         }
+
+        val treasuryPaideiaO: Long = tokensInBoxes((Coll(treasuryO), paideiaTokenId))
+
+        val treasuryDaoO: Long = tokensInBoxes((Coll(treasuryO), daoTokenId))
 
         ///////////////////////////////////////////////////////////////////////
         // Transaction validity                                              //
@@ -215,21 +226,35 @@
             val correctErg: Boolean = 
                 treasuryO.value >= treasuryNerg - maxErgOperator
 
-            val correctPaideia: Boolean = treasuryO.tokens.fold(0L, {
-                    (z: Long, t: (Coll[Byte], Long)) => 
-                    z + (if (t._1 == paideiaTokenId) t._2 else 0L)
-                }) >= treasuryPaideia - paideiaFee - paideiaOperator
+            val paideiaSpent: Long = paideiaFee + paideiaOperator + (
+                if (paideiaTokenId == daoTokenId) 
+                    stakingEmission 
+                else 
+                    0L
+                )
+
+            val correctPaideiaLeft: Boolean = treasuryPaideiaO >= 
+                treasuryPaideia - paideiaSpent
+
+            val correctDaoLeft: Boolean = 
+                if (paideiaTokenId == daoTokenId) 
+                    true 
+                else 
+                    treasuryDaoO >= (treasuryDao - stakingEmission)
                     
             allOf(Coll(
                 correctErg,
-                correctPaideia,
-                correctTokens,
+                correctPaideiaLeft,
+                correctDaoLeft,
+                correctOtherTokens,
                 noMissingTokens,
                 splitProfitOutput.tokens(0)._1 == paideiaTokenId,
                 splitProfitOutput.tokens(0)._2 >= paideiaFee,
                 snapshotContractPresent
             ))
         } else {
+            
+            
             val paideiaConfigValues = paideiaConfigTree.getMany(Coll(
                 imPaideiaFeeCompoundOperatorPaideia,
                 imPaideiaFeeOperatorMaxErg
@@ -246,11 +271,13 @@
             val correctErg: Boolean = 
                 treasuryO.value >= treasuryNerg - maxErgOperator
 
-            val correctPaideia: Boolean = treasuryO.tokens.fold(0L, {
-                (z: Long, t: (Coll[Byte], Long)) => 
-                z + (if (t._1 == paideiaTokenId) t._2 else 0L)
-            }) >= treasuryPaideia - paideiaOperator
+            val correctPaideiaLeft: Boolean = treasuryPaideiaO >= 
+                treasuryPaideia - paideiaOperator
                 
+            val correctDaoLeft: Boolean = if (paideiaTokenId == daoTokenId) 
+                    true
+                else
+                    treasuryDaoO >= treasuryDao
 
             val compoundContractPresent: Boolean = 
                 blake2b256(INPUTS(1).propositionBytes) == compoundContractHash
@@ -260,8 +287,9 @@
 
             allOf(Coll(
                 correctErg,
-                correctPaideia,
-                correctTokens,
+                correctPaideiaLeft,
+                correctDaoLeft,
+                correctOtherTokens,
                 noMissingTokens,
                 compoundContractPresent,
                 govTokensSame

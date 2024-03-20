@@ -41,6 +41,8 @@ case class EmitTransaction(
 
   val stakeStateInputBox = StakeStateBox.fromInputBox(ctx, stakeStateInput)
 
+  val daoTokenId: ErgoId = new ErgoId(config.getArray(ConfKeys.im_paideia_dao_tokenid))
+
   val configInput = Paideia.getBox(
     new FilterLeaf[String](
       FilterType.FTEQ,
@@ -88,19 +90,40 @@ case class EmitTransaction(
 
   val treasuryAddress = treasuryContract.contract.toAddress()
 
+  val emissionAmount: Long = config(ConfKeys.im_paideia_staking_emission_amount)
+
+  val ergFee = paideiaConfig[Long](ConfKeys.im_paideia_fees_operator_max_erg) + 1000000L
+
+  val paiFee = paideiaConfig[Long](ConfKeys.im_paideia_fees_emit_operator_paideia) +
+    (paideiaConfig[Long](
+      ConfKeys.im_paideia_fees_emit_paideia
+    ) * stakeStateInputBox.state.currentStakingState
+      .size(Some(stakeStateInputBox.stateDigest)) + 1)
+
+  val treasuryTokens = if (Env.paideiaTokenId.equals(daoTokenId.toString())) {
+    Array(
+      new ErgoToken(
+        Env.paideiaTokenId,
+        paiFee + emissionAmount
+      )
+    )
+  } else {
+    Array(
+      new ErgoToken(
+        Env.paideiaTokenId,
+        paiFee
+      ),
+      new ErgoToken(
+        daoTokenId.toString(),
+        emissionAmount
+      )
+    )
+  }
+
   val coveringTreasuryBoxes = treasuryContract
     .findBoxes(
-      paideiaConfig[Long](ConfKeys.im_paideia_fees_operator_max_erg) + 1000000L,
-      Array(
-        new ErgoToken(
-          Env.paideiaTokenId,
-          paideiaConfig[Long](ConfKeys.im_paideia_fees_emit_operator_paideia) +
-            (paideiaConfig[Long](
-              ConfKeys.im_paideia_fees_emit_paideia
-            ) * stakeStateInputBox.state.currentStakingState
-              .size(Some(stakeStateInputBox.stateDigest)) + 1)
-        )
-      )
+      ergFee,
+      treasuryTokens
     )
     .get
 
@@ -190,7 +213,9 @@ case class EmitTransaction(
       1.toByte,
       config.getProof(
         ConfKeys.im_paideia_contracts_staking_compound,
-        ConfKeys.im_paideia_contracts_staking_snapshot
+        ConfKeys.im_paideia_contracts_staking_snapshot,
+        ConfKeys.im_paideia_staking_emission_amount,
+        ConfKeys.im_paideia_dao_tokenid
       )(Some(configDigest))
     )
   )

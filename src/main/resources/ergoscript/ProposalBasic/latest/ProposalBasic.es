@@ -1,4 +1,5 @@
 {
+    #import lib/bytearrayToLongClamped/1.0.0/bytearrayToLongClamped.es;
 
     /**
      *
@@ -91,8 +92,8 @@
         configProof
     )
 
-    val quorumNeeded: Long    = byteArrayToLong(configValues(0).get.slice(1,9))
-    val thresholdNeeded: Long = byteArrayToLong(configValues(1).get.slice(1,9))
+    val quorumNeeded: Long    = bytearrayToLongClamped((configValues(0),(1L,(999L,500L))))
+    val thresholdNeeded: Long = bytearrayToLongClamped((configValues(1),(1L,(999L,500L))))
 
     val stakeStateTokenId: Coll[Byte] = configValues(2).get.slice(6,38)
 

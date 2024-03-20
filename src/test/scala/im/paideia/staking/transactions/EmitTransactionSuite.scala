@@ -39,8 +39,9 @@ class EmitTransactionSuite extends PaideiaTestSuite {
       override def apply(_ctx: BlockchainContext): Unit = {
         val ctx = _ctx.asInstanceOf[BlockchainContextImpl]
         PaideiaTestSuite.init(ctx)
-        val dao   = StakingTest.testDAO
-        val state = TotalStakingState(dao.key, 0L, true)
+        val dao        = StakingTest.testDAO
+        val state      = TotalStakingState(dao.key, 0L, true)
+        val daoTokenId = new ErgoId(dao.config.getArray(ConfKeys.im_paideia_dao_tokenid))
 
         val stakingContract = StakeState(PaideiaContractSignature(daoKey = dao.key))
         dao.config
@@ -78,6 +79,17 @@ class EmitTransactionSuite extends PaideiaTestSuite {
             .inputBox(),
           false
         )
+        treasuryContract.newBox(
+          treasuryContract
+            .box(
+              ctx,
+              dao.config,
+              10000000L,
+              List(new ErgoToken(daoTokenId, 100000000000L))
+            )
+            .inputBox(),
+          false
+        )
 
         val stakingStateBox = stakingState
           .inputBox()
@@ -85,9 +97,10 @@ class EmitTransactionSuite extends PaideiaTestSuite {
         stakingContract.newBox(stakingStateBox, false)
 
         val eventResponse = Paideia.handleEvent(
-          CreateTransactionsEvent(ctx, stakingState.nextEmission + 1000L, 0L)
+          CreateTransactionsEvent(ctx, stakingState.nextEmission + 3600000L, 0L)
         )
         assert(eventResponse.unsignedTransactions.size === 1)
+        val testunsigned = eventResponse.unsignedTransactions(0).unsigned
         ctx
           .newProverBuilder()
           .build()
@@ -150,7 +163,7 @@ class EmitTransactionSuite extends PaideiaTestSuite {
         stakingContract.newBox(stakingStateBox, false)
 
         val eventResponse = Paideia.handleEvent(
-          CreateTransactionsEvent(ctx, stakingState.nextEmission + 1000L, 0L)
+          CreateTransactionsEvent(ctx, stakingState.nextEmission + 3600000L, 0L)
         )
         assert(eventResponse.unsignedTransactions.size === 1)
         ctx
@@ -305,7 +318,7 @@ class EmitTransactionSuite extends PaideiaTestSuite {
         stakingContract.newBox(stakingStateBox, false)
 
         val eventResponse = Paideia.handleEvent(
-          CreateTransactionsEvent(ctx, stakingState.nextEmission + 1000L, 0L)
+          CreateTransactionsEvent(ctx, stakingState.nextEmission + 3600000L, 0L)
         )
         assert(eventResponse.unsignedTransactions.size === 1)
         ctx
@@ -389,7 +402,7 @@ class EmitTransactionSuite extends PaideiaTestSuite {
         stakingContract.newBox(stakingStateBox, false)
 
         val eventResponse = Paideia.handleEvent(
-          CreateTransactionsEvent(ctx, stakingState.nextEmission + 1000L, 0L)
+          CreateTransactionsEvent(ctx, stakingState.nextEmission + 3600000L, 0L)
         )
         assert(eventResponse.unsignedTransactions.size === 1)
         ctx
@@ -476,7 +489,7 @@ class EmitTransactionSuite extends PaideiaTestSuite {
         stakingContract.newBox(stakingStateBox, false)
 
         val eventResponse = Paideia.handleEvent(
-          CreateTransactionsEvent(ctx, stakingState.nextEmission + 1000L, 0L)
+          CreateTransactionsEvent(ctx, stakingState.nextEmission + 3600000L, 0L)
         )
         assert(eventResponse.unsignedTransactions.size === 1)
         ctx

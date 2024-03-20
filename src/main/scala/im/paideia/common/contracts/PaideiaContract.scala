@@ -31,6 +31,7 @@ import scala.io.Source
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 import scorex.crypto.authds.ADDigest
 import org.ergoplatform.appkit.AppkitHelpers
+import scala.util.matching.Regex
 
 /** Represents a smart contract on the Paideia platform.
   *
@@ -73,13 +74,39 @@ class PaideiaContract(_contractSignature: PaideiaContractSignature) {
     * Reads from file "ergoscript/{Simple Class Name of this contract}/{The version
     * specified in the contract signature}.
     */
-  lazy val ergoScript: String = Source
-    .fromResource(
-      "ergoscript/" + getClass
-        .getSimpleName() + "/" + _contractSignature.version + "/" + getClass
-        .getSimpleName() + ".es"
-    )
-    .mkString
+  lazy val ergoScript: String = {
+
+    val baseScript = Source
+      .fromResource(
+        "ergoscript/" + getClass
+          .getSimpleName() + "/" + _contractSignature.version + "/" + getClass
+          .getSimpleName() + ".es"
+      )
+      .mkString
+    resolveDependencies(baseScript)
+  }
+
+  def resolveDependencies(sourceScript: String): String = {
+    val importPattern: Regex = "#import ([0-9a-zA-Z\\./]+);".r
+    importPattern.findFirstMatchIn(sourceScript) match {
+      case None => sourceScript
+      case Some(importMatch) => {
+        val matched = importMatch.subgroups(0)
+        val importScript = Source
+          .fromResource(
+            "ergoscript/" + matched
+          )
+          .mkString
+        val resolvedImportScript = resolveDependencies(importScript)
+        resolveDependencies(
+          sourceScript.replaceFirst(
+            importMatch.matched,
+            resolvedImportScript
+          )
+        )
+      }
+    }
+  }
 
   /** The Ergo tree root hash for the ErgoScript code associated with this contract.
     */
