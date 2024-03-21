@@ -1,4 +1,7 @@
 {
+    #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
+    #import lib/bytearrayToTokenId/1.0.0/bytearrayToTokenId.es;
+    #import lib/tokensInBoxes/1.0.0/tokensInBoxes.es;
 
     /**
      *
@@ -122,8 +125,8 @@
         configProof
     )
 
-    val stakeStateTokenId: Coll[Byte]   = configValues(0).get.slice(6,38)
-    val unstakeContractHash: Coll[Byte] = configValues(1).get.slice(1,33)
+    val stakeStateTokenId: Coll[Byte]   = bytearrayToTokenId(configValues(0))
+    val unstakeContractHash: Coll[Byte] = bytearrayToContractHash(configValues(1))
     val profitTokenIds: Coll[Byte]      = configValues(2).get
 
     ///////////////////////////////////////////////////////////////////////////
@@ -194,10 +197,7 @@
         .slice(2,stakeState.tokens.size).forall{
                 (token: (Coll[Byte], Long)) =>
                 val profitIndex: Int = whiteListedTokenIds.indexOf(token._1,-3)
-                val tokenAmountInOutput: Long = stakeStateO.tokens.fold(0L, {
-                    (z: Long, outputToken: (Coll[Byte], Long)) => 
-                    if (outputToken._1 == token._1) z + outputToken._2 else z
-                })
+                val tokenAmountInOutput: Long = tokensInBoxes((Coll(stakeStateO), token._1))
                 token._2 - tokenAmountInOutput == currentProfits(profitIndex+2)
             }
 

@@ -1,13 +1,12 @@
 {
+    #import lib/validRefund/1.0.0/validRefund.es;
+    #import lib/bytearrayToTokenId/1.0.0/bytearrayToTokenId.es;
+    #import lib/tokensInBoxes/1.0.0/tokensInBoxes.es;
+
     // Refund logic
     sigmaProp(
     if (INPUTS(0).id == SELF.id) {
-        allOf(Coll(
-            OUTPUTS(0).value >= SELF.value - 1000000L,
-            OUTPUTS(0).tokens == SELF.tokens,
-            OUTPUTS(0).propositionBytes == SELF.R4[Coll[Byte]].get,
-            CONTEXT.preHeader.height >= SELF.creationInfo._1 + 30
-        ))
+        validRefund((SELF, (OUTPUTS(0), (SELF.R4[Coll[Byte]].get, 15))))
     } else {
     /**
      *
@@ -98,7 +97,7 @@
         configProof
     )
 
-    val stakeStateTokenId: Coll[Byte] = configValues(0).get.slice(6,38)
+    val stakeStateTokenId: Coll[Byte] = bytearrayToTokenId(configValues(0))
     val profitTokenIds: Coll[Byte]    = configValues(1).get
 
     ///////////////////////////////////////////////////////////////////////////
@@ -163,13 +162,7 @@
         stakeState.tokens(0)._1 == stakeStateTokenId
 
     val tokensUnstaked: Boolean = 
-        currentStakeAmount - newStakeAmount == userO.tokens.fold(0L, {
-            (z: Long, token: (Coll[Byte], Long)) => 
-            if (token._1 == stakeState.tokens(1)._1) 
-                z + token._2 
-            else 
-                z
-        })
+        currentStakeAmount - newStakeAmount == tokensInBoxes((Coll(userO), stakeState.tokens(1)._1))
 
     val correctErgProfit: Boolean = 
         currentProfits(1) - newProfits(1) == userO.value-1000000L
@@ -178,10 +171,7 @@
         stakeState.tokens.slice(2,stakeState.tokens.size).forall{
             (token: (Coll[Byte], Long)) =>
             val profitIndex: Int = whiteListedTokenIds.indexOf(token._1,-3)
-            val tokenAmountInOutput: Long = userO.tokens.fold(0L, {
-                (z: Long, outputToken: (Coll[Byte], Long)) => 
-                if (outputToken._1 == token._1) z + outputToken._2 else z
-            })
+            val tokenAmountInOutput: Long = tokensInBoxes((Coll(userO), token._1))
             tokenAmountInOutput == 
                 currentProfits(profitIndex+2) - newProfits(profitIndex+2)
         }

@@ -1,5 +1,8 @@
 {
     #import lib/bytearrayToLongClamped/1.0.0/bytearrayToLongClamped.es;
+    #import lib/emptyDigest/1.0.0/emptyDigest.es;
+    #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
+    #import lib/bytearrayToTokenId/1.0.0/bytearrayToTokenId.es;
 
     /**
      *
@@ -43,12 +46,6 @@
         _IM_PAIDEIA_STAKING_WEIGHT_PARTICIPATION
 
     val imPaideiaDaoTokenId: Coll[Byte] = _IM_PAIDEIA_DAO_TOKEN_ID
-
-    val emptyDigest: Coll[Byte] = 
-        Coll(78,-58,31,72,91,-104,-21,-121,21,63,124,87,-37,79,94,-51,117,
-            85,111,-35,-68,64,59,65,-84,-8,68,31,-34,-114,22,9,0).map{
-                (i: Int) => i.toByte
-            }
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -161,8 +158,8 @@
         configProof
     )
 
-    val stakeStateTokenId: Coll[Byte]    = configValues(0).get.slice(6,38)
-    val snapshotContractHash: Coll[Byte] = configValues(1).get.slice(1,33)
+    val stakeStateTokenId: Coll[Byte]    = bytearrayToTokenId(configValues(0))
+    val snapshotContractHash: Coll[Byte] = bytearrayToContractHash(configValues(1))
 
     val emissionAmount: Long = bytearrayToLongClamped((configValues(2),(1L,(999999999999999L,1L))))
 
@@ -185,7 +182,7 @@
         else
             0.toByte
 
-    val daoTokenId: Coll[Byte] = configValues(8).get.slice(6,38)
+    val daoTokenId: Coll[Byte] = bytearrayToTokenId(configValues(8))
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //

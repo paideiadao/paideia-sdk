@@ -1,13 +1,11 @@
 {
+    #import lib/validRefund/1.0.0/validRefund.es;
+    #import lib/bytearrayToTokenId/1.0.0/bytearrayToTokenId.es;
+    
     // Refund logic
     sigmaProp(
     if (INPUTS(0).id == SELF.id) {
-        allOf(Coll(
-            OUTPUTS(0).value >= SELF.value - 1000000L,
-            OUTPUTS(0).tokens == SELF.tokens,
-            OUTPUTS(0).propositionBytes == SELF.R4[Coll[Byte]].get,
-            CONTEXT.preHeader.height >= SELF.creationInfo._1 + 30
-        ))
+        validRefund((SELF, (OUTPUTS(0), (SELF.R4[Coll[Byte]].get, 15))))
     } else {
     /**
      *
@@ -96,7 +94,7 @@
         configProof
     )
 
-    val stakeStateTokenId: Coll[Byte] = configValues(0).get.slice(6,38)
+    val stakeStateTokenId: Coll[Byte] = bytearrayToTokenId(configValues(0))
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //

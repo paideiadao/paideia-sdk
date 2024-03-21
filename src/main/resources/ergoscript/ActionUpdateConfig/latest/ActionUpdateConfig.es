@@ -1,5 +1,7 @@
 {
-
+    #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
+    #import lib/tokensInBoxesAll/1.0.0/tokensInBoxesAll.es;
+    #import lib/tokenExists/1.0.0/tokenExists.es;
     /**
      *
      *  ActionUpdateConfig
@@ -91,19 +93,7 @@
         configProof
     )
 
-    val configContractHash = configValues(0).get.slice(1,33)
-
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
-    // Count number of tokens in a collection of boxes                       //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
-
-    def countTokens(boxes: Coll[Box]): Long = 
-        boxes.flatMap{(b: Box) => b.tokens}.fold(0L, {
-            (z: Long, token: (Coll[Byte], Long)) =>
-            z + token._2
-        })
+    val configContractHash = bytearrayToContractHash(configValues(0))
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -111,9 +101,21 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val configAfterDelete = if (deleteActions.size > 0) originalConfig.remove(deleteActions, deleteProof).get else originalConfig
-    val configAfterUpdate = if (updateActions.size > 0) configAfterDelete.update(updateActions, updateProof).get else configAfterDelete
-    val configAfterInsert = if (insertActions.size > 0) configAfterUpdate.insert(insertActions, insertProof).get else configAfterUpdate
+    val configAfterDelete = 
+        if (deleteActions.size > 0) 
+            originalConfig.remove(deleteActions, deleteProof).get 
+        else 
+            originalConfig
+    val configAfterUpdate = 
+        if (updateActions.size > 0) 
+            configAfterDelete.update(updateActions, updateProof).get 
+        else 
+            configAfterDelete
+    val configAfterInsert = 
+        if (insertActions.size > 0) 
+            configAfterUpdate.insert(insertActions, insertProof).get 
+        else 
+            configAfterUpdate
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -131,17 +133,11 @@
 
     val activationTimePassed = CONTEXT.preHeader.timestamp >= actionUpdateConfigActivationTime
 
-    val burnActionToken = !(OUTPUTS.exists{
-            (b: Box) =>
-            b.tokens.exists{
-                (token: (Coll[Byte],Long)) =>
-                token._1 == SELF.tokens(0)._1
-            }
-        })
+    val burnActionToken = !(tokenExists((OUTPUTS, SELF.tokens(0)._1)))
 
     val correctOutputNumber = OUTPUTS.size == 2
 
-    val noExtraBurn = countTokens(INPUTS) == countTokens(OUTPUTS) + 1L
+    val noExtraBurn = tokensInBoxesAll(INPUTS) == tokensInBoxesAll(OUTPUTS) + 1L
 
     val correctConfigOutput = allOf(Coll(
         blake2b256(configOutput.propositionBytes) == configContractHash,

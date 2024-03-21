@@ -1,13 +1,13 @@
 {
+    #import lib/validRefund/1.0.0/validRefund.es;
+    #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
+    #import lib/bytearrayToTokenId/1.0.0/bytearrayToTokenId.es;
+    #import lib/bytearrayToString/1.0.0/bytearrayToString.es;
+
     // Refund logic
     sigmaProp(
     if (OUTPUTS.size == 2) {
-        allOf(Coll(
-            OUTPUTS(0).value >= SELF.value - 1000000L,
-            OUTPUTS(0).tokens == SELF.tokens,
-            OUTPUTS(0).propositionBytes == SELF.R6[Coll[Byte]].get,
-            CONTEXT.preHeader.height >= SELF.creationInfo._1 + 30
-        ))
+      validRefund((SELF, (OUTPUTS(0), (SELF.R6[Coll[Byte]].get, 15))))
     } else {
     /**
      *
@@ -162,9 +162,10 @@
         )
 
     val protoDaoContractHash: Coll[Byte] = 
-        paideiaConfigValues(0).get.slice(1,33)
+      bytearrayToContractHash(paideiaConfigValues(0))
 
-    val mintContractHash: Coll[Byte] = paideiaConfigValues(1).get.slice(1,33)
+    val mintContractHash: Coll[Byte] = 
+      bytearrayToContractHash(paideiaConfigValues(1))
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -200,7 +201,7 @@
         (imPaideiaDaoStakingProfitThreshold,configValues(21))
     ),configInsertProof).get
 
-    val daoName: Coll[Byte] = configValues(0).slice(5,configValues(0).size)
+    val daoName: Coll[Byte] = configValues(0).slice(5, configValues(0).size)
     val daoGovernanceTokenId: Coll[Byte] = configValues(1).slice(6,38)
 
     ///////////////////////////////////////////////////////////////////////////

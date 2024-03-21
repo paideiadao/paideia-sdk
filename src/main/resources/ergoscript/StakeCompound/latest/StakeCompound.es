@@ -1,4 +1,7 @@
 {
+    #import lib/emptyDigest/1.0.0/emptyDigest.es;
+    #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
+    #import lib/bytearrayToTokenId/1.0.0/bytearrayToTokenId.es;
 
     /**
      *
@@ -25,13 +28,6 @@
 
     val imPaideiaStakeStateTokenId: Coll[Byte] = 
         _IM_PAIDEIA_STAKING_STATE_TOKEN_ID
-
-    val emptyDigest: Coll[Byte] = Coll(78.toByte,-58.toByte,31.toByte,
-        72.toByte,91.toByte,-104.toByte,-21.toByte,-121.toByte,21.toByte,
-        63.toByte,124.toByte,87.toByte,-37.toByte,79.toByte,94.toByte,
-        -51.toByte,117.toByte,85.toByte,111.toByte,-35.toByte,-68.toByte,
-        64.toByte,59.toByte,65.toByte,-84.toByte,-8.toByte,68.toByte,31.toByte,
-        -34.toByte,-114.toByte,22.toByte,9.toByte,0.toByte)
 
     val stakeInfoOffset: Int = 8
 
@@ -134,8 +130,8 @@
         configProof
     )
 
-    val stakeStateTokenId: Coll[Byte]    = configValues(0).get.slice(6,38)
-    val compoundContractHash: Coll[Byte] = configValues(1).get.slice(1,33)
+    val stakeStateTokenId: Coll[Byte]    = bytearrayToTokenId(configValues(0))
+    val compoundContractHash: Coll[Byte] = bytearrayToContractHash(configValues(1))
     val profitTokenIds: Coll[Byte]       = configValues(2).get
 
     ///////////////////////////////////////////////////////////////////////////

@@ -1,5 +1,7 @@
 {
     #import lib/bytearrayToLongClamped/1.0.0/bytearrayToLongClamped.es;
+    #import lib/bytearrayToTokenId/1.0.0/bytearrayToTokenId.es;
+    #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
 
     /**
      *
@@ -95,7 +97,7 @@
     val quorumNeeded: Long    = bytearrayToLongClamped((configValues(0),(1L,(999L,500L))))
     val thresholdNeeded: Long = bytearrayToLongClamped((configValues(1),(1L,(999L,500L))))
 
-    val stakeStateTokenId: Coll[Byte] = configValues(2).get.slice(6,38)
+    val stakeStateTokenId: Coll[Byte] = bytearrayToTokenId(configValues(2))
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -169,8 +171,7 @@
 
         val padFee: Long = byteArrayToLong(paideiaConfigValues(0).get.slice(1,9))
 
-        val splitProfitContractHash: Coll[Byte] = 
-            paideiaConfigValues(1).get.slice(1,33)
+        val splitProfitContractHash: Coll[Byte] = bytearrayToContractHash(paideiaConfigValues(1))
 
         ///////////////////////////////////////////////////////////////////////
         // Intermediate calculations                                         //
@@ -307,7 +308,7 @@
             (z: Long, v: Long) => z+v
         })
 
-        val currentStakeState: Option[Coll[Byte]] = 
+        val currentStakeState: Coll[Byte] = 
             stakeStateTree.get(voteKey, stakeProof).get
 
         val currentStakeAmount: Long = 

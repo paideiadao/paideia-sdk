@@ -1,5 +1,8 @@
 {
-
+    #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
+    #import lib/bytearrayToTokenId/1.0.0/bytearrayToTokenId.es;
+    #import lib/tokensInBoxesAll/1.0.0/tokensInBoxesAll.es;
+    #import lib/tokensInBoxes/1.0.0/tokensInBoxes.es;
     /**
      *
      *  SplitProfit
@@ -87,10 +90,10 @@
         configProof
     )
 
-    val treasuryContractHash: Coll[Byte]     = configValues(0).get.slice(1,33)
-    val stakingStateContractHash: Coll[Byte] = configValues(1).get.slice(1,33)
+    val treasuryContractHash: Coll[Byte]     = bytearrayToContractHash(configValues(0))
+    val stakingStateContractHash: Coll[Byte] = bytearrayToContractHash(configValues(1))
     val profitSharingPct: Byte               = configValues(2).get(1)
-    val governanceTokenId: Coll[Byte]        = configValues(3).get.slice(6,38)
+    val governanceTokenId: Coll[Byte]        = bytearrayToTokenId(configValues(3))
 
     val profitTokenIds: Coll[Coll[Byte]] = 
         configValues(4).get.slice(0,(configValues(4).get.size-6)/37).indices
@@ -116,12 +119,8 @@
         blake2b256(b.propositionBytes) != stakingStateContractHash
     }(0)
 
-    def countTokens(boxes: Coll[Box]): Long = {
-        boxes.flatMap{(b: Box) => b.tokens}.fold(0L, {(x: Long, t: (Coll[Byte], Long)) => x + t._2})
-    }
-
-    val tokensIn: Long  = countTokens(INPUTS)
-    val tokensOut: Long = countTokens(OUTPUTS)
+    val tokensIn: Long  = tokensInBoxesAll(INPUTS)
+    val tokensOut: Long = tokensInBoxesAll(OUTPUTS)
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -146,33 +145,9 @@
         val tokenSplits: Boolean = Coll(governanceTokenId).append(profitTokenIds)
         .forall{
             (tokenId: Coll[Byte]) => {
-                val stakingInputTokens: Long = stakingState.tokens.fold(0L, {
-                    (z: Long, t: (Coll[Byte], Long)) => 
-                    z + (if (t._1 == tokenId) 
-                            t._2 
-                        else 
-                            0L
-                        )
-                    }
-                )
-                val stakingOutputTokens: Long = stakingStateO.tokens.fold(0L, {
-                    (z: Long, t: (Coll[Byte], Long)) => 
-                    z + (if (t._1 == tokenId) 
-                            t._2 
-                        else 
-                            0L
-                        )
-                    }
-                )
-                val treasuryTokens: Long = treasuryO.tokens.fold(0L, {
-                    (z: Long, t: (Coll[Byte], Long)) => 
-                    z + (if (t._1 == tokenId) 
-                            t._2 
-                        else 
-                            0L
-                        )
-                    }
-                )
+                val stakingInputTokens: Long = tokensInBoxes((Coll(stakingState), tokenId))
+                val stakingOutputTokens: Long = tokensInBoxes((Coll(stakingStateO), tokenId))
+                val treasuryTokens: Long = tokensInBoxes((Coll(treasuryO), tokenId))
 
                 (stakingOutputTokens - stakingInputTokens + 
                 treasuryTokens)*profitSharingPct/100 == 

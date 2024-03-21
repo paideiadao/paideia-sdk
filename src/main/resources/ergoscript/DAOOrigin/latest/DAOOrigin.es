@@ -1,5 +1,7 @@
 {
     #import lib/bytearrayToLongClamped/1.0.0/bytearrayToLongClamped.es;
+    #import lib/maxLong/1.0.0/maxLong.es;
+    #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
 
     /**
      *
@@ -27,9 +29,6 @@
 
     val imPaideiaDaoMinProposalTime: Coll[Byte] = 
         _IM_PAIDEIA_DAO_MIN_PROPOSAL_TIME
-
-    val maxLong: Long = 9223372036854775807L
-
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -105,7 +104,7 @@
             paideiaConfigProof
         )
 
-    val daoOriginContractHash: Coll[Byte] = paideiaConfigValues(0).get.slice(1,33)
+    val daoOriginContractHash: Coll[Byte] = bytearrayToContractHash(paideiaConfigValues(0))
     val createProposalFee: Long = bytearrayToLongClamped((paideiaConfigValues(1),(0L,(100000000000L, 1000L))))
 
     val configValues: Coll[Option[Coll[Byte]]] = configTree.getMany(
@@ -121,11 +120,11 @@
 
     //Min 12 hours, max 1 month, default 24 hours
     val minProposalTime: Long = bytearrayToLongClamped((configValues(0),(43200000L,(2626560000L,86400000L))))
-    val proposalContractHash: Coll[Byte] = configValues(1).get.slice(1,33)
+    val proposalContractHash: Coll[Byte] = bytearrayToContractHash(configValues(1))
     val actionContractHashes: Coll[Coll[Byte]] = 
         configValues.slice(2,configValues.size).map{
             (cv: Option[Coll[Byte]]) =>
-            cv.get.slice(1,33)
+            bytearrayToContractHash(cv)
         }
 
     ///////////////////////////////////////////////////////////////////////////

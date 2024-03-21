@@ -1,4 +1,6 @@
 {
+    #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
+    #import lib/bytearrayToTokenId/1.0.0/bytearrayToTokenId.es;
 
     /**
      *
@@ -79,8 +81,8 @@
             paideiaConfigProof
         )
 
-    val protoDaoContracctHash: Coll[Byte] = paideiaConfigValues(0).get.slice(1,33)
-    val daoOriginContractHash: Coll[Byte] = paideiaConfigValues(1).get.slice(1,33)
+    val protoDaoContracctHash: Coll[Byte] = bytearrayToContractHash(paideiaConfigValues(0))
+    val daoOriginContractHash: Coll[Byte] = bytearrayToContractHash(paideiaConfigValues(1))
 
     val configValues: Coll[Option[Coll[Byte]]] = configTree.getMany(
         Coll(
@@ -89,7 +91,7 @@
         configProof
     )
 
-    val mintedTokenId: Coll[Byte] = configValues(0).get.slice(6,38)
+    val mintedTokenId: Coll[Byte] = bytearrayToTokenId(configValues(0))
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //

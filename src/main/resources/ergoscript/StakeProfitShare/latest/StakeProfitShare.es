@@ -1,4 +1,6 @@
 {
+    #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
+    #import lib/bytearrayToTokenId/1.0.0/bytearrayToTokenId.es;
 
     /**
      *
@@ -95,8 +97,8 @@
         configProof
     )
 
-    val stakeStateTokenId: Coll[Byte]       = configValues(0).get.slice(6,38)
-    val profitShareContractHash: Coll[Byte] = configValues(1).get.slice(1,33)
+    val stakeStateTokenId: Coll[Byte]       = bytearrayToTokenId(configValues(0))
+    val profitShareContractHash: Coll[Byte] = bytearrayToContractHash(configValues(1))
     val profitTokenIds: Coll[Byte]          = configValues(2).get
 
     ///////////////////////////////////////////////////////////////////////////

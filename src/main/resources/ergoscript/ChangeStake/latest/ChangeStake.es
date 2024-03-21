@@ -1,5 +1,7 @@
 {
-
+    #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
+    #import lib/bytearrayToTokenId/1.0.0/bytearrayToTokenId.es;
+    
     /**
      *
      *  ChangeStake
@@ -124,8 +126,8 @@
         configProof
     )
 
-    val changeStakeContractSignature: Coll[Byte] = configValues(0).get.slice(1,33)
-    val stakingStakeTokenId: Coll[Byte]          = configValues(1).get.slice(6,38)
+    val changeStakeContractSignature: Coll[Byte] = bytearrayToContractHash(configValues(0))
+    val stakingStakeTokenId: Coll[Byte]          = bytearrayToTokenId(configValues(1))
     val profitTokenIds: Coll[Byte]               = configValues(2).get
 
     ///////////////////////////////////////////////////////////////////////////

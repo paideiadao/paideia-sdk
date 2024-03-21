@@ -1,5 +1,6 @@
 {
-
+    #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
+    
     /**
      *
      *  CastVote
@@ -92,9 +93,9 @@
     val createDAOFeePaideia: Long = 
         byteArrayToLong(configValues(1).get.slice(1,9))
 
-    val protoDAOContractHash: Coll[Byte]      = configValues(2).get.slice(1,33)
-    val protoDAOProxyContractHash: Coll[Byte] = configValues(3).get.slice(1,33)
-    val profitShareContractHash: Coll[Byte]   = configValues(4).get.slice(1,33)
+    val protoDAOContractHash: Coll[Byte]      = bytearrayToContractHash(configValues(2))
+    val protoDAOProxyContractHash: Coll[Byte] = bytearrayToContractHash(configValues(3))
+    val profitShareContractHash: Coll[Byte]   = bytearrayToContractHash(configValues(4))
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //

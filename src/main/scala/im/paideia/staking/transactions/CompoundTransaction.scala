@@ -151,7 +151,9 @@ case class CompoundTransaction(
       1.toByte,
       config.getProof(
         ConfKeys.im_paideia_contracts_staking_compound,
-        ConfKeys.im_paideia_contracts_staking_snapshot
+        ConfKeys.im_paideia_contracts_staking_snapshot,
+        ConfKeys.im_paideia_staking_emission_amount,
+        ConfKeys.im_paideia_dao_tokenid
       )(Some(configDigest))
     )
   )

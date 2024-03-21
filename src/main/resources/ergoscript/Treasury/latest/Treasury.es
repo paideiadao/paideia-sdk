@@ -1,5 +1,7 @@
 {
     #import lib/tokensInBoxes/1.0.0/tokensInBoxes.es;
+    #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
+    #import lib/bytearrayToTokenId/1.0.0/bytearrayToTokenId.es;
 
     /**
      *
@@ -132,10 +134,10 @@
             imPaideiaGovernanceTokenId
         ), configProof)
 
-        val compoundContractHash: Coll[Byte] = configValues(0).get.slice(1,33)
-        val snapshotContractHash: Coll[Byte] = configValues(1).get.slice(1,33)
+        val compoundContractHash: Coll[Byte] = bytearrayToContractHash(configValues(0))
+        val snapshotContractHash: Coll[Byte] = bytearrayToContractHash(configValues(1))
         val stakingEmission: Long = byteArrayToLong(configValues(2).get.slice(1,9))
-        val daoTokenId: Coll[Byte] = configValues(3).get.slice(6,38)
+        val daoTokenId: Coll[Byte] = bytearrayToTokenId(configValues(3))
 
         ///////////////////////////////////////////////////////////////////////
         // Intermediate calculations                                         //

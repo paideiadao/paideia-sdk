@@ -1,5 +1,7 @@
 {
-
+    #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
+    #import lib/bytesWithoutCreationInfo/1.0.0/bytesWithoutCreationInfo.es;
+    #import lib/tokensInBoxesAll/1.0.0/tokensInBoxesAll.es;
     /**
      *
      *  ActionSendFundsBasic
@@ -81,7 +83,7 @@
         configProof
     )
 
-    val treasuryContractHash = configValues(0).get.slice(1,33)
+    val treasuryContractHash = bytearrayToContractHash(configValues(0))
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -127,30 +129,6 @@
         OUTPUTS(OUTPUTS.size-1)
     }
 
-    def vlqByteSize(l: Long): Int = {
-        if(l < 128L) 1
-        else if(l < 16384L) 2
-        else if(l < 2097152L) 3
-        else if(l < 268435456L) 4
-        else if(l < 34359738368L) 5
-        else if(l < 4398046511104L) 6
-        else if(l < 562949953421312L) 7
-        else if(l < 72057594037927936L) 8
-        else 9
-    }
-
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
-    // Count number of tokens in a collection of boxes                       //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
-
-    def countTokens(boxes: Coll[Box]): Long = 
-        boxes.flatMap{(b: Box) => b.tokens}.fold(0L, {
-            (z: Long, token: (Coll[Byte], Long)) =>
-            z + token._2
-        })
-
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
     // Simple conditions                                                     //
@@ -169,11 +147,7 @@
 
     val correctOutput = sendFundsActionOutputs.zip(OUTPUTS.slice(0,sendFundsActionOutputs.size)).forall{
         (boxes: (Box,Box)) =>
-        val valueByteSize = vlqByteSize(boxes._1.value)
-        val creationByteSize1 = vlqByteSize(boxes._1.creationInfo._1.toLong)
-        val creationByteSize2 = vlqByteSize(boxes._2.creationInfo._1.toLong)
-        boxes._1.bytesWithoutRef.slice(0,valueByteSize+boxes._1.propositionBytes.size) == boxes._2.bytesWithoutRef.slice(0,valueByteSize+boxes._1.propositionBytes.size) &&
-        boxes._1.bytesWithoutRef.slice(valueByteSize+boxes._1.propositionBytes.size+creationByteSize1, boxes._1.bytesWithoutRef.size) == boxes._2.bytesWithoutRef.slice(valueByteSize+boxes._1.propositionBytes.size+creationByteSize2, boxes._2.bytesWithoutRef.size)
+        bytesWithoutCreationInfo(boxes._1) == bytesWithoutCreationInfo(boxes._2)
     }
 
     val correctOutputNumber = OUTPUTS.size == 
@@ -181,7 +155,7 @@
         (if (repeatedAction) 1 else 0) +
         (if (changeBoxPresent) 2 else 1)
 
-    val noExtraBurn = countTokens(INPUTS) == countTokens(OUTPUTS) + (if (repeatedAction) 0L else 1L)
+    val noExtraBurn = tokensInBoxesAll(INPUTS) == tokensInBoxesAll(OUTPUTS) + (if (repeatedAction) 0L else 1L)
 
     val correctMinerOut: Boolean = allOf(Coll(
         minerO.value <= 5000000L,

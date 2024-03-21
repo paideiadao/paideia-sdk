@@ -1,4 +1,6 @@
 {
+    #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
+    #import lib/tokenExists/1.0.0/tokenExists.es;
 
     /**
      *
@@ -64,7 +66,7 @@
         configProof
     )
 
-    val configContractHash: Coll[Byte] = configValues(0).get.slice(1,33)
+    val configContractHash: Coll[Byte] = bytearrayToContractHash(configValues(0))
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -78,14 +80,7 @@
     val contractIntact: Boolean = blake2b256(configO.propositionBytes) == 
         configContractHash
 
-    val validAction: Boolean = INPUTS.exists{
-        (box: Box) =>
-        if (box.tokens.size > 0) {
-            box.tokens(0)._1 == imPaideiaDaoActionTokenId
-        } else {
-            false
-        }
-    }
+    val validAction: Boolean = tokenExists((INPUTS, imPaideiaDaoActionTokenId))
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //

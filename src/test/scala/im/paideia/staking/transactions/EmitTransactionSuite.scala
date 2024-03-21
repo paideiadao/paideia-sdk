@@ -39,9 +39,8 @@ class EmitTransactionSuite extends PaideiaTestSuite {
       override def apply(_ctx: BlockchainContext): Unit = {
         val ctx = _ctx.asInstanceOf[BlockchainContextImpl]
         PaideiaTestSuite.init(ctx)
-        val dao        = StakingTest.testDAO
-        val state      = TotalStakingState(dao.key, 0L, true)
-        val daoTokenId = new ErgoId(dao.config.getArray(ConfKeys.im_paideia_dao_tokenid))
+        val dao   = StakingTest.testDAO
+        val state = TotalStakingState(dao.key, 0L, true)
 
         val stakingContract = StakeState(PaideiaContractSignature(daoKey = dao.key))
         dao.config
@@ -79,6 +78,7 @@ class EmitTransactionSuite extends PaideiaTestSuite {
             .inputBox(),
           false
         )
+        val daoTokenId = new ErgoId(dao.config.getArray(ConfKeys.im_paideia_dao_tokenid))
         treasuryContract.newBox(
           treasuryContract
             .box(
@@ -143,6 +143,18 @@ class EmitTransactionSuite extends PaideiaTestSuite {
               dao.config,
               1000000000L,
               List(new ErgoToken(Env.paideiaTokenId, 10000000L))
+            )
+            .inputBox(),
+          false
+        )
+        val daoTokenId = new ErgoId(dao.config.getArray(ConfKeys.im_paideia_dao_tokenid))
+        treasuryContract.newBox(
+          treasuryContract
+            .box(
+              ctx,
+              dao.config,
+              10000000L,
+              List(new ErgoToken(daoTokenId, 100000000000L))
             )
             .inputBox(),
           false
@@ -213,6 +225,18 @@ class EmitTransactionSuite extends PaideiaTestSuite {
               dao.config,
               1000000000L,
               List(new ErgoToken(Env.paideiaTokenId, 10000000L))
+            )
+            .inputBox(),
+          false
+        )
+        val daoTokenId = new ErgoId(dao.config.getArray(ConfKeys.im_paideia_dao_tokenid))
+        treasuryContract.newBox(
+          treasuryContract
+            .box(
+              ctx,
+              dao.config,
+              10000000L,
+              List(new ErgoToken(daoTokenId, 100000000000L))
             )
             .inputBox(),
           false
@@ -295,6 +319,18 @@ class EmitTransactionSuite extends PaideiaTestSuite {
               dao.config,
               1000000000L,
               List(new ErgoToken(Env.paideiaTokenId, 10000000L))
+            )
+            .inputBox(),
+          false
+        )
+        val daoTokenId = new ErgoId(dao.config.getArray(ConfKeys.im_paideia_dao_tokenid))
+        treasuryContract.newBox(
+          treasuryContract
+            .box(
+              ctx,
+              dao.config,
+              10000000L,
+              List(new ErgoToken(daoTokenId, 100000000000L))
             )
             .inputBox(),
           false
@@ -383,6 +419,18 @@ class EmitTransactionSuite extends PaideiaTestSuite {
             .inputBox(),
           false
         )
+        val daoTokenId = new ErgoId(dao.config.getArray(ConfKeys.im_paideia_dao_tokenid))
+        treasuryContract.newBox(
+          treasuryContract
+            .box(
+              ctx,
+              dao.config,
+              10000000L,
+              List(new ErgoToken(daoTokenId, 100000000000L))
+            )
+            .inputBox(),
+          false
+        )
 
         stakingState
           .profitShare(List(1000L, 1000L, 1000L), List(new ErgoToken(sigUsd, 1000L)))
@@ -461,6 +509,18 @@ class EmitTransactionSuite extends PaideiaTestSuite {
               dao.config,
               1000000000L,
               List(new ErgoToken(Env.paideiaTokenId, 10000000L))
+            )
+            .inputBox(),
+          false
+        )
+        val daoTokenId = new ErgoId(dao.config.getArray(ConfKeys.im_paideia_dao_tokenid))
+        treasuryContract.newBox(
+          treasuryContract
+            .box(
+              ctx,
+              dao.config,
+              10000000L,
+              List(new ErgoToken(daoTokenId, 100000000000L))
             )
             .inputBox(),
           false

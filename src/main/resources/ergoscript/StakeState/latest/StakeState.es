@@ -1,4 +1,6 @@
 {
+    #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
+
     /**
      *
      *  StakeState
@@ -110,14 +112,14 @@
         configProof
     )
 
-    val stakingStateContractHash: Coll[Byte] = configValues(0).get.slice(1,33)
-    val stakeContractHash: Coll[Byte]        = configValues(1).get.slice(1,33)
-    val changeStakeContractHash: Coll[Byte]  = configValues(2).get.slice(1,33)
-    val unstakeContractHash: Coll[Byte]      = configValues(3).get.slice(1,33)
-    val snapshotContractHash: Coll[Byte]     = configValues(4).get.slice(1,33)
-    val compoundContractHash: Coll[Byte]     = configValues(5).get.slice(1,33)
-    val profitShareContractHash: Coll[Byte]  = configValues(6).get.slice(1,33)
-    val voteContractHash: Coll[Byte]         = configValues(7).get.slice(1,33)
+    val stakingStateContractHash: Coll[Byte] = bytearrayToContractHash(configValues(0))
+    val stakeContractHash: Coll[Byte]        = bytearrayToContractHash(configValues(1))
+    val changeStakeContractHash: Coll[Byte]  = bytearrayToContractHash(configValues(2))
+    val unstakeContractHash: Coll[Byte]      = bytearrayToContractHash(configValues(3))
+    val snapshotContractHash: Coll[Byte]     = bytearrayToContractHash(configValues(4))
+    val compoundContractHash: Coll[Byte]     = bytearrayToContractHash(configValues(5))
+    val profitShareContractHash: Coll[Byte]  = bytearrayToContractHash(configValues(6))
+    val voteContractHash: Coll[Byte]         = bytearrayToContractHash(configValues(7))
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //

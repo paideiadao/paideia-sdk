@@ -1,5 +1,9 @@
 {
     #import lib/validRefund/1.0.0/validRefund.es;
+    #import lib/bytearrayToTokenId/1.0.0/bytearrayToTokenId.es;
+    #import lib/bytearrayToString/1.0.0/bytearrayToString.es;
+    #import lib/tokensInBoxes/1.0.0/tokensInBoxes.es;
+    
     // Refund logic
     sigmaProp(
     if (INPUTS(0).id == SELF.id) {
@@ -105,10 +109,8 @@
         configProof
     )
 
-    val stakeStateTokenId: Coll[Byte] = configValues(0).get.slice(6,38)
-
-    val daoName: Coll[Byte] = 
-        configValues(1).get.slice(5,configValues(1).get.size)
+    val stakeStateTokenId: Coll[Byte] = bytearrayToTokenId(configValues(0))
+    val daoName: Coll[Byte]           = bytearrayToString(configValues(1))
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -151,11 +153,7 @@
         mintDecimals == decimals0
     ))
 
-    val correctAmountMinted: Boolean = OUTPUTS.flatMap{(b: Box) => b.tokens}
-        .fold(0L, {
-            (z: Long, token: (Coll[Byte], Long)) => 
-            if (token._1==stakeState.id) z + token._2 else z
-        }) == 1L
+    val correctAmountMinted: Boolean = tokensInBoxes((OUTPUTS, stakeState.id)) == 1L
 
     val tokensStaked: Boolean = allOf(Coll(
         stakeAmount == (stakeStateO.tokens(1)._2 - stakeState.tokens(1)._2),
