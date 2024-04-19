@@ -54,35 +54,43 @@ class CastVote(contractSignature: PaideiaContractSignature)
     val boxSet = getUtxoSet
     val response: PaideiaEventResponse = event match {
       case cte: CreateTransactionsEvent =>
-        PaideiaEventResponse.merge(boxSet.toList.map { b =>
-          PaideiaEventResponse(
-            1,
-            List(
-              if (boxes(b).getCreationHeight() < cte.height - 30) {
-                RefundTransaction(
-                  cte.ctx,
-                  boxes(b),
-                  Address.fromPropositionBytes(
-                    NetworkType.MAINNET,
-                    boxes(b)
-                      .getRegisters()
-                      .get(2)
-                      .getValue()
-                      .asInstanceOf[Coll[Byte]]
-                      .toArray
-                  )
+        PaideiaEventResponse.merge(
+          boxSet.toList
+            .filter { b =>
+              boxes(b)
+                .getRegisters()
+                .size() > 2
+            }
+            .map { b =>
+              PaideiaEventResponse(
+                1,
+                List(
+                  if (boxes(b).getCreationHeight() < cte.height - 30) {
+                    RefundTransaction(
+                      cte.ctx,
+                      boxes(b),
+                      Address.fromPropositionBytes(
+                        NetworkType.MAINNET,
+                        boxes(b)
+                          .getRegisters()
+                          .get(2)
+                          .getValue()
+                          .asInstanceOf[Coll[Byte]]
+                          .toArray
+                      )
+                    )
+                  } else {
+                    CastVoteTransaction(
+                      cte.ctx,
+                      boxes(b),
+                      Paideia.getDAO(contractSignature.daoKey),
+                      Address.create(Env.operatorAddress)
+                    )
+                  }
                 )
-              } else {
-                CastVoteTransaction(
-                  cte.ctx,
-                  boxes(b),
-                  Paideia.getDAO(contractSignature.daoKey),
-                  Address.create(Env.operatorAddress)
-                )
-              }
-            )
-          )
-        })
+              )
+            }
+        )
       case te: TransactionEvent =>
         PaideiaEventResponse.merge(
           te.tx
