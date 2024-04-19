@@ -9,7 +9,11 @@ import org.ergoplatform.appkit.ErgoValue
 import org.ergoplatform.settings.ErgoAlgos
 import scala.collection.mutable.HashMap
 
-class DAOConfigKey(_hashedKey: Array[Byte], _originalKey: Option[String] = None) {
+class DAOConfigKey(
+  _hashedKey: Array[Byte],
+  _originalKey: Option[String] = None,
+  _readOnly: Boolean           = false
+) {
   val originalKey: Option[String] = _originalKey match {
     case None => DAOConfigKey.knownKeys.getOrElse(_hashedKey, None)
     case Some(value) =>
@@ -17,6 +21,8 @@ class DAOConfigKey(_hashedKey: Array[Byte], _originalKey: Option[String] = None)
       _originalKey
   }
   val hashedKey: Array[Byte] = _hashedKey
+
+  val readOnly: Boolean = _readOnly
 
   def originalKeyBytes: Array[Byte] = originalKey.get.getBytes(StandardCharsets.UTF_8)
   def ergoValue: ErgoValue[Coll[java.lang.Byte]] = ErgoValue.of(hashedKey)

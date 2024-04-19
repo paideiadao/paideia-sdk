@@ -3,14 +3,13 @@ package im.paideia
 import im.paideia.util.Util
 import scala.collection.mutable.HashMap
 import scala.collection.mutable.Map
-import special.collection.Coll
+import sigma.Coll
 import org.ergoplatform.sdk.ErgoId
 import im.paideia.common.contracts._
 import org.ergoplatform.appkit.ErgoValue
 import org.ergoplatform.appkit.NetworkType
 import im.paideia.staking.contracts._
 import work.lithos.plasma.collections.PlasmaMap
-import sigmastate.AvlTreeFlags
 import work.lithos.plasma.PlasmaParameters
 import work.lithos.plasma.ByteConversion
 import shapeless.Lazy
@@ -71,10 +70,14 @@ case class DAOConfig(
     enc: DAOConfigValueSerializer[T]
   ) = {
     if (keys.contains(key.originalKey.getOrElse(""))) {
-      _config.updateWithDigest((key, enc.serialize(value, true).toArray))(Right(height))
+      _config.updateWithDigest((key, enc.serialize(value, true, key.readOnly).toArray))(
+        Right(height)
+      )
     } else {
       keys.add(key.originalKey.getOrElse(""))
-      _config.insertWithDigest((key, enc.serialize(value, true).toArray))(Right(height))
+      _config.insertWithDigest((key, enc.serialize(value, true, key.readOnly).toArray))(
+        Right(height)
+      )
     }
   }
 

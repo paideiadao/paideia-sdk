@@ -12,9 +12,8 @@ import org.ergoplatform.appkit.impl.ErgoTreeContract
 import org.ergoplatform.appkit.impl.InputBoxImpl
 import org.ergoplatform.appkit.impl.ScalaBridge
 import org.ergoplatform.restapi.client.ErgoTransactionOutput
-import sigmastate.Values
-import sigmastate.eval.CostingBox
-import special.sigma.Box
+import sigma.Box
+import sigma.data.CBox
 
 /** This trait represents a blockchain transaction output.
   */
@@ -168,6 +167,6 @@ trait PaideiaBox {
     *   a CostingBox initialized as false and representing the input box of this output
     *   box.
     */
-  def box(): Box = CostingBox(inputBox().getErgoBox())
+  def box(): Box = CBox(inputBox().getErgoBox())
 
 }

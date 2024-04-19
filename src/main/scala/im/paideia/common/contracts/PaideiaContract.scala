@@ -19,9 +19,6 @@ import org.ergoplatform.restapi.client.ErgoTransaction
 import org.ergoplatform.restapi.client.ErgoTransactionInput
 import org.ergoplatform.restapi.client.ErgoTransactionOutput
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Values
-import special.collection.Coll
-import sigmastate.eval.Colls
 
 import java.lang.{Byte => JByte}
 import scala.collection.JavaConverters._
@@ -32,6 +29,9 @@ import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 import scorex.crypto.authds.ADDigest
 import org.ergoplatform.appkit.AppkitHelpers
 import scala.util.matching.Regex
+import sigma.ast.ErgoTree
+import sigma.Coll
+import sigma.Colls
 
 /** Represents a smart contract on the Paideia platform.
   *
@@ -110,7 +110,7 @@ class PaideiaContract(_contractSignature: PaideiaContractSignature) {
 
   /** The Ergo tree root hash for the ErgoScript code associated with this contract.
     */
-  lazy val ergoTree: Values.ErgoTree = {
+  lazy val ergoTree: ErgoTree = {
     AppkitHelpers.compile(
       constants,
       ergoScript,

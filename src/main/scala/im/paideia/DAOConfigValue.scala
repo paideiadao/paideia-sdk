@@ -38,13 +38,15 @@ object DAOConfigValue {
   val collTypeCode: Byte              = 10
   val tupleTypeCode: Byte             = 20
 
+  val readOnlyCode: Byte = -128
+
   // def apply[T](value: T)(implicit
   //   enc: Lazy[DAOConfigValueSerializer[T]]
   // ): DAOConfigValue = new DAOConfigValue(value, enc.value)
 }
 
 trait DAOConfigValueSerializer[A] {
-  def serialize(value: Any, includeType: Boolean): Array[Byte]
+  def serialize(value: Any, includeType: Boolean, readOnly: Boolean): Array[Byte]
   val typeCode: Byte
 }
 
@@ -55,26 +57,32 @@ object DAOConfigValueSerializer {
     override val quoting: Quoting = QUOTE_NONNUMERIC
   }
 
-  def apply[A](value: A, includeType: Boolean = true)(implicit
+  def apply[A](value: A, includeType: Boolean = true, readOnly: Boolean = false)(implicit
     enc: Lazy[DAOConfigValueSerializer[A]]
   ): Array[Byte] =
-    enc.value.serialize(value, includeType)
+    enc.value.serialize(value, includeType, readOnly)
 
   def instance[A](
     _typeCode: Byte,
-    func: (A, Boolean) => Array[Byte]
+    func: (A, Boolean, Boolean) => Array[Byte]
   ): DAOConfigValueSerializer[A] =
     new DAOConfigValueSerializer[A] {
-      def serialize(value: Any, includeType: Boolean): Array[Byte] =
-        func(value.asInstanceOf[A], includeType)
+      def serialize(value: Any, includeType: Boolean, readOnly: Boolean): Array[Byte] =
+        func(value.asInstanceOf[A], includeType, readOnly)
       val typeCode = _typeCode
     }
 
   implicit lazy val byteSerializer: DAOConfigValueSerializer[Byte] = {
     instance(
       DAOConfigValue.byteTypeCode,
-      (b: Byte, includeType: Boolean) =>
-        if (includeType) Array(DAOConfigValue.byteTypeCode, b)
+      (b: Byte, includeType: Boolean, readOnly: Boolean) =>
+        if (includeType)
+          Array(
+            if (readOnly)
+              (DAOConfigValue.byteTypeCode | DAOConfigValue.readOnlyCode).toByte
+            else DAOConfigValue.byteTypeCode,
+            b
+          )
         else Array(b)
     )
   }
@@ -82,8 +90,13 @@ object DAOConfigValueSerializer {
   implicit lazy val shortSerializer: DAOConfigValueSerializer[Short] = {
     instance(
       DAOConfigValue.shortTypeCode,
-      (s: Short, includeType: Boolean) =>
-        if (includeType) Array(DAOConfigValue.shortTypeCode) ++ Shorts.toByteArray(s)
+      (s: Short, includeType: Boolean, readOnly: Boolean) =>
+        if (includeType)
+          Array(
+            if (readOnly)
+              (DAOConfigValue.shortTypeCode | DAOConfigValue.readOnlyCode).toByte
+            else DAOConfigValue.shortTypeCode
+          ) ++ Shorts.toByteArray(s)
         else Shorts.toByteArray(s)
     )
   }
@@ -91,8 +104,13 @@ object DAOConfigValueSerializer {
   implicit lazy val intSerializer: DAOConfigValueSerializer[Int] = {
     instance(
       DAOConfigValue.intTypeCode,
-      (i: Int, includeType: Boolean) =>
-        if (includeType) Array(DAOConfigValue.intTypeCode) ++ Ints.toByteArray(i)
+      (i: Int, includeType: Boolean, readOnly: Boolean) =>
+        if (includeType)
+          Array(
+            if (readOnly)
+              (DAOConfigValue.intTypeCode | DAOConfigValue.readOnlyCode).toByte
+            else DAOConfigValue.intTypeCode
+          ) ++ Ints.toByteArray(i)
         else Ints.toByteArray(i)
     )
   }
@@ -100,8 +118,13 @@ object DAOConfigValueSerializer {
   implicit lazy val longSerializer: DAOConfigValueSerializer[Long] = {
     instance(
       DAOConfigValue.longTypeCode,
-      (l: Long, includeType: Boolean) =>
-        if (includeType) Array(DAOConfigValue.longTypeCode) ++ Longs.toByteArray(l)
+      (l: Long, includeType: Boolean, readOnly: Boolean) =>
+        if (includeType)
+          Array(
+            if (readOnly)
+              (DAOConfigValue.longTypeCode | DAOConfigValue.readOnlyCode).toByte
+            else DAOConfigValue.longTypeCode
+          ) ++ Longs.toByteArray(l)
         else Longs.toByteArray(l)
     )
   }
@@ -109,8 +132,13 @@ object DAOConfigValueSerializer {
   implicit lazy val bigIntSerializer: DAOConfigValueSerializer[BigInt] = {
     instance(
       DAOConfigValue.bigIntTypeCode,
-      (bi: BigInt, includeType: Boolean) =>
-        if (includeType) Array(DAOConfigValue.bigIntTypeCode) ++ bi.toByteArray
+      (bi: BigInt, includeType: Boolean, readOnly: Boolean) =>
+        if (includeType)
+          Array(
+            if (readOnly)
+              (DAOConfigValue.bigIntTypeCode | DAOConfigValue.readOnlyCode).toByte
+            else DAOConfigValue.bigIntTypeCode
+          ) ++ bi.toByteArray
         else bi.toByteArray
     )
   }
@@ -118,10 +146,15 @@ object DAOConfigValueSerializer {
   implicit lazy val stringSerializer: DAOConfigValueSerializer[String] = {
     instance(
       DAOConfigValue.stringTypeCode,
-      (s: String, includeType: Boolean) => {
+      (s: String, includeType: Boolean, readOnly: Boolean) => {
         val stringData = s.getBytes(StandardCharsets.UTF_8)
         val data       = Ints.toByteArray(stringData.size) ++ stringData
-        if (includeType) Array(DAOConfigValue.stringTypeCode) ++ data
+        if (includeType)
+          Array(
+            if (readOnly)
+              (DAOConfigValue.stringTypeCode | DAOConfigValue.readOnlyCode).toByte
+            else DAOConfigValue.stringTypeCode
+          ) ++ data
         else data
       }
     )
@@ -131,12 +164,17 @@ object DAOConfigValueSerializer {
     : DAOConfigValueSerializer[PaideiaContractSignature] = {
     instance(
       DAOConfigValue.contractSignatureTypeCode,
-      (pcs: PaideiaContractSignature, includeType: Boolean) => {
+      (pcs: PaideiaContractSignature, includeType: Boolean, readOnly: Boolean) => {
         val className   = DAOConfigValueSerializer(pcs.className, false)
         val networkType = pcs.networkType.networkPrefix
         val version     = DAOConfigValueSerializer(pcs.version, false)
         val data = pcs.contractHash.toArray ++ className ++ version ++ Array(networkType)
-        if (includeType) Array(DAOConfigValue.contractSignatureTypeCode) ++ data
+        if (includeType)
+          Array(
+            if (readOnly)
+              (DAOConfigValue.contractSignatureTypeCode | DAOConfigValue.readOnlyCode).toByte
+            else DAOConfigValue.contractSignatureTypeCode
+          ) ++ data
         else data
       }
     )
@@ -145,9 +183,14 @@ object DAOConfigValueSerializer {
   implicit lazy val booleanSerializer: DAOConfigValueSerializer[Boolean] = {
     instance(
       DAOConfigValue.booleanTypeCode,
-      (b: Boolean, includeType: Boolean) =>
+      (b: Boolean, includeType: Boolean, readOnly: Boolean) =>
         if (includeType)
-          Array(DAOConfigValue.booleanTypeCode, (if (b) 1.toByte else 0.toByte))
+          Array(
+            if (readOnly)
+              (DAOConfigValue.booleanTypeCode | DAOConfigValue.readOnlyCode).toByte
+            else DAOConfigValue.booleanTypeCode,
+            (if (b) 1.toByte else 0.toByte)
+          )
         else Array((if (b) 1.toByte else 0.toByte))
     )
   }
@@ -157,11 +200,16 @@ object DAOConfigValueSerializer {
   ): DAOConfigValueSerializer[Array[T]] = {
     instance(
       DAOConfigValue.collTypeCode,
-      (c: Array[T], includeType: Boolean) => {
+      (c: Array[T], includeType: Boolean, readOnly: Boolean) => {
         val data = Array(enc.value.typeCode) ++ (Ints.toByteArray(c.size)) ++ (c.flatMap {
-          enc.value.serialize(_, false)
+          enc.value.serialize(_, false, false)
         })
-        if (includeType) Array(DAOConfigValue.collTypeCode) ++ (data)
+        if (includeType)
+          Array(
+            if (readOnly)
+              (DAOConfigValue.collTypeCode | DAOConfigValue.readOnlyCode).toByte
+            else DAOConfigValue.collTypeCode
+          ) ++ (data)
         else data
       }
     )
@@ -173,10 +221,15 @@ object DAOConfigValueSerializer {
   ): DAOConfigValueSerializer[(T1, T2)] = {
     instance(
       DAOConfigValue.tupleTypeCode,
-      (t: (T1, T2), includeType: Boolean) => {
-        val dataLeft  = enc1.value.serialize(t._1, true)
-        val dataRight = enc2.value.serialize(t._2, true)
-        if (includeType) Array(DAOConfigValue.tupleTypeCode) ++ dataLeft ++ dataRight
+      (t: (T1, T2), includeType: Boolean, readOnly: Boolean) => {
+        val dataLeft  = enc1.value.serialize(t._1, true, false)
+        val dataRight = enc2.value.serialize(t._2, true, false)
+        if (includeType)
+          Array(
+            if (readOnly)
+              (DAOConfigValue.tupleTypeCode | DAOConfigValue.readOnlyCode).toByte
+            else DAOConfigValue.tupleTypeCode
+          ) ++ dataLeft ++ dataRight
         else dataLeft ++ dataRight
       }
     )
