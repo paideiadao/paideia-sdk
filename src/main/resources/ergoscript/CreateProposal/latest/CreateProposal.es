@@ -1,4 +1,9 @@
-{
+/** This is my contracts description.
+ * Here is another line describing what it does in more detail.
+ *
+ * @return
+ */
+@contract def createProposal(imPaideiaDaoKey: Coll[Byte]) = {
     #import lib/validRefund/1.0.0/validRefund.es;
     #import lib/tokenExists/1.0.0/tokenExists.es;
     #import lib/bytesWithoutCreationInfo/1.0.0/bytesWithoutCreationInfo.es;
@@ -16,13 +21,6 @@
      *
      */
 
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
-    // Constants                                                             //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
-
-    val imPaideiaDaoKey: Coll[Byte] = _IM_PAIDEIA_DAO_KEY
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //

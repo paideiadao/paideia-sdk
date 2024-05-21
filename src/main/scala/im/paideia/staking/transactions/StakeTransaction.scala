@@ -3,15 +3,14 @@ package im.paideia.staking.transactions
 import im.paideia.common.transactions._
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import org.ergoplatform.appkit.InputBox
-import special.sigma.AvlTree
+import sigma.AvlTree
 import org.ergoplatform.ErgoAddress
 import org.ergoplatform.appkit.Eip4Token
 import org.ergoplatform.appkit.OutBox
 import org.ergoplatform.appkit.impl.ErgoTreeContract
 import im.paideia.DAOConfig
-import sigmastate.Values
 import org.ergoplatform.appkit.Address
-import special.collection.Coll
+import sigma.Coll
 import im.paideia.staking._
 import im.paideia.staking.boxes._
 import im.paideia.staking.contracts.Stake

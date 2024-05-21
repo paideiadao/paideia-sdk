@@ -19,7 +19,6 @@ import im.paideia.staking.contracts.StakeState
 import im.paideia.governance.contracts.CreateProposal
 import im.paideia.governance.contracts.ProposalBasic
 import im.paideia.governance.contracts.ActionSendFundsBasic
-import sigmastate.eval.CostingBox
 import org.ergoplatform.appkit.impl.InputBoxImpl
 import org.ergoplatform.sdk.ErgoToken
 import org.ergoplatform.restapi.client.ErgoTransaction
@@ -27,6 +26,7 @@ import im.paideia.common.events.TransactionEvent
 import im.paideia.governance.Proposal
 import java.nio.charset.StandardCharsets
 import im.paideia.common.events.CreateTransactionsEvent
+import sigma.data.CBox
 
 class CreateProposalTransactionSuite extends PaideiaTestSuite {
   test("Create proposal") {
@@ -131,7 +131,7 @@ class CreateProposalTransactionSuite extends PaideiaTestSuite {
           1,
           ctx.createPreHeader().build().getTimestamp() - 86400000L,
           Array(
-            CostingBox(
+            CBox(
               ctx
                 .newTxBuilder()
                 .outBoxBuilder()

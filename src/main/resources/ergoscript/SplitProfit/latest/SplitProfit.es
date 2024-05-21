@@ -1,4 +1,9 @@
-{
+/** This is my contracts description.
+ * Here is another line describing what it does in more detail.
+ *
+ * @return
+ */
+@contract def splitProfit(imPaideiaDaoKey: Coll[Byte]) = {
     #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
     #import lib/bytearrayToTokenId/1.0.0/bytearrayToTokenId.es;
     #import lib/tokensInBoxesAll/1.0.0/tokensInBoxesAll.es;
@@ -18,7 +23,6 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val daoKey: Coll[Byte] = _IM_PAIDEIA_DAO_KEY 
     val imPaideiaContractsTreasury: Coll[Byte] = _IM_PAIDEIA_CONTRACTS_TREASURY
     val imPaideiaProfitSharingPct: Coll[Byte]  = _IM_PAIDEIA_PROFIT_SHARING_PCT
 
@@ -128,7 +132,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val correctConfigTokenId: Boolean = config.tokens(0)._1 == daoKey
+    val correctConfigTokenId: Boolean = config.tokens(0)._1 == imPaideiaDaoKey
 
     val generalConditions: Boolean = allOf(
         Coll(

@@ -1,16 +1,16 @@
-{
+/**
+ * Holds the dao token verifying it as a genuine Paideia DAO and hands
+ * controls the proposal/action creation process.
+ *
+ * @param paideiaDaoKey Token ID of the paideia dao key
+ * @param paideiaTokenId Token ID of the paideia token
+ *
+ * @return
+ */
+@contract def daoOrigin(paideiaDaoKey: Coll[Byte], paideiaTokenId: Coll[Byte]) = {
     #import lib/bytearrayToLongClamped/1.0.0/bytearrayToLongClamped.es;
     #import lib/maxLong/1.0.0/maxLong.es;
     #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
-
-    /**
-     *
-     *  DAOOrigin
-     *
-     *  Holds the dao token verifying it as a genuine Paideia DAO and hands
-     *  controls the proposal/action creation process.
-     *
-     */
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -18,11 +18,9 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val paideiaDaoKey: Coll[Byte]              = _PAIDEIA_DAO_KEY
     val imPaideiaContractsDao: Coll[Byte]      = _IM_PAIDEIA_CONTRACTS_DAO
     val imPaideiaContractsProposal: Coll[Byte] = _IM_PAIDEIA_CONTRACTS_PROPOSAL
     val imPaideiaContractsAction: Coll[Byte]   = _IM_PAIDEIA_CONTRACTS_ACTION
-    val paideiaTokenId: Coll[Byte]             = _PAIDEIA_TOKENID
 
     val imPaideiaFeesCreateProposalPaideia: Coll[Byte] =  
         _IM_PAIDEIA_FEES_CREATEPROPOSAL_PAIDEIA

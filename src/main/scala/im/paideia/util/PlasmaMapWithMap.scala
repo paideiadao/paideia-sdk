@@ -1,6 +1,6 @@
 package im.paideia.util
 
-import sigmastate.AvlTreeFlags
+import sigma.data.AvlTreeFlags
 import work.lithos.plasma.PlasmaParameters
 import scorex.crypto.authds.avltree.batch.BatchAVLProver
 import work.lithos.plasma.ByteConversion

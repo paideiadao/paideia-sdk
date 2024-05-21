@@ -4,13 +4,20 @@ import scorex.crypto.authds.ADDigest
 import im.paideia.common.contracts.PaideiaContractSignature
 import im.paideia.common.contracts.PaideiaContract
 import im.paideia.common.contracts.PaideiaActor
-import java.util.HashMap
+import scala.collection.mutable.HashMap
 import org.ergoplatform.sdk.ErgoId
 import im.paideia.util.ConfKeys
 import scorex.crypto.authds.ADDigest
 import im.paideia.Paideia
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.staking.boxes.ChangeStakeBox
+import sigma.ast.ConstantPlaceholder
+import sigma.ast.SCollection
+import sigma.ast.SByte
+import sigma.ast.Constant
+import sigma.ast.SType
+import sigma.ast.ByteArrayConstant
+import sigma.Colls
 
 class ChangeStake(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -19,7 +26,6 @@ class ChangeStake(contractSignature: PaideiaContractSignature)
 
   override lazy val constants: HashMap[String, Object] = {
     val cons = new HashMap[String, Object]()
-    cons.put("_IM_PAIDEIA_DAO_KEY", ErgoId.create(contractSignature.daoKey).getBytes)
     cons.put(
       "_IM_PAIDEIA_STAKING_STATE_TOKEN_ID",
       ConfKeys.im_paideia_staking_state_tokenid.ergoValue.getValue()
@@ -33,6 +39,19 @@ class ChangeStake(contractSignature: PaideiaContractSignature)
       ConfKeys.im_paideia_staking_profit_tokenids.ergoValue.getValue()
     )
     cons
+  }
+
+  override lazy val parameters: Map[String, Constant[SType]] = {
+    val params = new scala.collection.mutable.HashMap[String, Constant[SType]]()
+    params.put(
+      "imPaideiaDaoKey",
+      ByteArrayConstant(
+        Colls.fromArray(
+          ErgoId.create(contractSignature.daoKey).getBytes
+        )
+      )
+    )
+    params.toMap
   }
 
   override def getConfigContext(configDigest: Option[ADDigest]) = Paideia

@@ -8,12 +8,12 @@ import im.paideia.governance.contracts.ActionUpdateConfig
 import org.ergoplatform.sdk.ErgoToken
 import im.paideia.util.ConfKeys
 import org.ergoplatform.appkit.ErgoValue
-import sigmastate.eval.Colls
+import sigma.Colls
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 import im.paideia.DAOConfigValueSerializer
 import org.ergoplatform.appkit.InputBox
 import scorex.crypto.hash.Blake2b256
-import special.collection.Coll
+import sigma.Coll
 import im.paideia.Paideia
 import scala.collection.JavaConverters._
 

@@ -1,16 +1,15 @@
-{
+/**
+ * This contract holds the configuration of the dao. It is usually used
+ * as a data input and will only be updated if the dao votes on it in a
+ * proposal
+ *
+ * @param imPaideiaDaoActionTokenId Token ID of the dao action token
+ *
+ * @return
+ */
+@contract def config(imPaideiaDaoActionTokenId: Coll[Byte]) = {
     #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
     #import lib/tokenExists/1.0.0/tokenExists.es;
-
-    /**
-     *
-     *  Config
-     *
-     *  This contract holds the configuration of the dao. It is usually used
-     *  as a data input and will only be updated if the dao votes on it in a
-     *  proposal
-     *
-     */
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -18,7 +17,6 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val imPaideiaDaoActionTokenId: Coll[Byte] = _IM_PAIDEIA_DAO_ACTION_TOKENID
     val imPaideiaContractsConfig: Coll[Byte]  = _IM_PAIDEIA_CONTRACTS_CONFIG
 
     ///////////////////////////////////////////////////////////////////////////

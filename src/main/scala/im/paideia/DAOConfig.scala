@@ -31,6 +31,7 @@ import org.ergoplatform.appkit.impl.InputBoxImpl
 import org.ergoplatform.restapi.client.ErgoTransactionOutput
 import im.paideia.common.events.UpdateConfigEvent
 import im.paideia.common.contracts.PaideiaContractSignature
+import sigma.data.AvlTreeFlags
 
 case class DAOConfig(
   val _config: MempoolPlasmaMap[DAOConfigKey, Array[Byte]],

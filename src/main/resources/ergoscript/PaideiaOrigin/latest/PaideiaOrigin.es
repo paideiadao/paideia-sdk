@@ -1,14 +1,13 @@
-{
+/**
+ * Ensures newly created DAOs are paying the correct fees to the paideia DAO
+ *
+ * @param paideiaDaoKey Token ID of the paideia dao key
+ * @param paideiaTokenId Token ID of the paideia token
+ *
+ * @return
+ */
+@contract def paideiaOrigin(paideiaDaoKey: Coll[Byte], paideiaTokenId: Coll[Byte]) = {
     #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
-    
-    /**
-     *
-     *  CastVote
-     *
-     *  This contract ensures the is added correctly to the proposal tally and
-     *  the stake key is returned to the user.
-     *
-     */
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -16,8 +15,6 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val paideiaDaoKey: Coll[Byte]              = _PAIDEIA_DAO_KEY
-    val paideiaTokenId: Coll[Byte]             = _PAIDEIA_TOKEN_ID
     val imPaideiaFeesCreateDaoErg: Coll[Byte]  = _IM_PAIDEIA_FEES_CREATEDAO_ERG
     val imPaideiaFeesCreateDaoPai: Coll[Byte]  = _IM_PAIDEIA_FEES_CREATEDAO_PAIDEIA
     val imPaideiaContractsProtoDao: Coll[Byte] = _IM_PAIDEIA_CONTRACTS_PROTODAO

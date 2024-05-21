@@ -1,4 +1,9 @@
-{
+/** This is my contracts description.
+ * Here is another line describing what it does in more detail.
+ *
+ * @return
+ */
+@contract def stakeProxy(imPaideiaDaoKey: Coll[Byte]) = {
     #import lib/validRefund/1.0.0/validRefund.es;
     #import lib/bytearrayToTokenId/1.0.0/bytearrayToTokenId.es;
     #import lib/bytearrayToString/1.0.0/bytearrayToString.es;
@@ -24,7 +29,6 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val daoKey: Coll[Byte]               = _IM_PAIDEIA_DAO_KEY
     val imPaideiaDaoName: Coll[Byte]     = _IM_PAIDEIA_DAO_NAME
     val stakeKeyText: Coll[Byte]         = _STAKE_KEY
     val poweredByPaideiaText: Coll[Byte] = _POWERED_BY_PAIDEIA
@@ -137,7 +141,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val correctConfig: Boolean = config.tokens(0)._1 == daoKey
+    val correctConfig: Boolean = config.tokens(0)._1 == imPaideiaDaoKey
 
     val correctStakeState: Boolean = 
         stakeState.tokens(0)._1 == stakeStateTokenId

@@ -10,8 +10,8 @@ import im.paideia.common.contracts.PaideiaContractSignature
 import im.paideia.util._
 import im.paideia._
 import org.ergoplatform.appkit.InputBox
-import special.collection.Coll
-import sigmastate.eval.Colls
+import sigma.Coll
+import sigma.Colls
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 
 case class DAOOriginBox(

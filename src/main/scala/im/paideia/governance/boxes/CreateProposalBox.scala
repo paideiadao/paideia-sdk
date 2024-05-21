@@ -13,9 +13,9 @@ import org.ergoplatform.appkit.InputBox
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 import scorex.crypto.hash.Blake2b256
-import sigmastate.eval.Colls
-import special.collection.Coll
-import special.sigma.Box
+import sigma.Colls
+import sigma.Coll
+import sigma.Box
 import java.nio.charset.StandardCharsets
 
 /** Represents a CreateProposalBox with essential information like context, action boxes

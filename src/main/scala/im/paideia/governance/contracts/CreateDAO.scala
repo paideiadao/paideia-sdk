@@ -7,7 +7,7 @@ import im.paideia.DAOConfig
 import scorex.crypto.authds.ADDigest
 import im.paideia.util.ConfKeys
 import im.paideia.Paideia
-import java.util.HashMap
+import scala.collection.mutable.HashMap
 import org.ergoplatform.sdk.ErgoId
 import im.paideia.util.Env
 import org.ergoplatform.appkit.ErgoValue
@@ -26,11 +26,23 @@ import im.paideia.staking.contracts.StakeVote
 import im.paideia.staking.contracts.Unstake
 import im.paideia.common.contracts.Config
 import im.paideia.staking.contracts.StakeState
+import sigma.ast.Constant
+import sigma.ast.SType
+import sigma.ast.ByteArrayConstant
 
 class CreateDAO(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
 
   def box(ctx: BlockchainContextImpl, value: Long) = CreateDAOBox(ctx, this, value)
+
+  override lazy val parameters: Map[String, Constant[SType]] = {
+    val cons = new HashMap[String, Constant[SType]]()
+    cons.put(
+      "paideiaDaoKey",
+      ByteArrayConstant(ErgoId.create(Env.paideiaDaoKey).getBytes)
+    )
+    cons.toMap
+  }
 
   override lazy val constants: HashMap[String, Object] = {
     val cons = new HashMap[String, Object]()
@@ -47,7 +59,6 @@ class CreateDAO(contractSignature: PaideiaContractSignature)
       ConfKeys.im_paideia_contracts_config.ergoValue.getValue()
     )
     cons.put("_IM_PAIDEIA_DAO_KEY", ConfKeys.im_paideia_dao_key.ergoValue.getValue())
-    cons.put("_PAIDEIA_DAO_KEY", ErgoId.create(Env.paideiaDaoKey).getBytes)
     cons.put(
       "_IM_PAIDEIA_DAO_PROPOSAL_TOKENID",
       ConfKeys.im_paideia_dao_proposal_tokenid.ergoValue.getValue()

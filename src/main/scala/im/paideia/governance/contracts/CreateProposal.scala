@@ -3,7 +3,7 @@ package im.paideia.governance.contracts
 import im.paideia.common.contracts._
 import im.paideia.governance.boxes.CreateProposalBox
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
-import special.sigma.Box
+import sigma.Box
 import org.ergoplatform.appkit.Address
 import im.paideia.common.events.PaideiaEventResponse
 import im.paideia.common.events.PaideiaEvent
@@ -13,12 +13,15 @@ import org.ergoplatform.restapi.client.ErgoTransactionOutput
 import im.paideia.governance.transactions.CreateProposalTransaction
 import org.ergoplatform.appkit.impl.InputBoxImpl
 import im.paideia.util.Env
-import java.util.HashMap
+import scala.collection.mutable.HashMap
 import org.ergoplatform.sdk.ErgoId
 import im.paideia.common.events.CreateTransactionsEvent
 import im.paideia.common.transactions.RefundTransaction
 import org.ergoplatform.appkit.NetworkType
-import special.collection.Coll
+import sigma.Coll
+import sigma.ast.Constant
+import sigma.ast.SType
+import sigma.ast.ByteArrayConstant
 
 class CreateProposal(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -73,10 +76,13 @@ class CreateProposal(contractSignature: PaideiaContractSignature)
     PaideiaEventResponse.merge(List(super.handleEvent(event), response))
   }
 
-  override lazy val constants: HashMap[String, Object] = {
-    val cons = new HashMap[String, Object]()
-    cons.put("_IM_PAIDEIA_DAO_KEY", ErgoId.create(contractSignature.daoKey).getBytes)
-    cons
+  override lazy val parameters: Map[String, Constant[SType]] = {
+    val cons = new HashMap[String, Constant[SType]]()
+    cons.put(
+      "imPaideiaDaoKey",
+      ByteArrayConstant(ErgoId.create(contractSignature.daoKey).getBytes)
+    )
+    cons.toMap
   }
 }
 

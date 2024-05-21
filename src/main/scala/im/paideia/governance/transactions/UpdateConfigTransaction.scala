@@ -16,12 +16,12 @@ import org.ergoplatform.sdk.ErgoId
 import org.ergoplatform.appkit.InputBox
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
-import sigmastate.eval.Colls
-import special.collection.Coll
+import sigma.Colls
+import sigma.Coll
 
 import scala.collection.JavaConverters._
 import scorex.crypto.authds.ADDigest
-import special.sigma.AvlTree
+import sigma.AvlTree
 
 /** A transaction that updates configuration of the Paideia DAO and creates a new Config
   * box while consuming an existing `configInput` box and an `actionInput` box which

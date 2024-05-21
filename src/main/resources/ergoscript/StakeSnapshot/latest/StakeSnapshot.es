@@ -1,4 +1,9 @@
-{
+/** This is my contracts description.
+ * Here is another line describing what it does in more detail.
+ *
+ * @return
+ */
+@contract def stakeSnapshot(imPaideiaDaoKey: Coll[Byte]) = {
     #import lib/bytearrayToLongClamped/1.0.0/bytearrayToLongClamped.es;
     #import lib/emptyDigest/1.0.0/emptyDigest.es;
     #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
@@ -18,8 +23,6 @@
     // Constants                                                             //
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
-
-    val daoKey: Coll[Byte] = _IM_PAIDEIA_DAO_KEY
 
     val imPaideiaStakeStateTokenId: Coll[Byte] = 
         _IM_PAIDEIA_STAKING_STATE_TOKEN_ID
@@ -295,7 +298,7 @@
 
     val correctTime: Boolean = nextSnapshot <= CONTEXT.preHeader.timestamp
 
-    val correctConfig: Boolean = config.tokens(0)._1 == daoKey
+    val correctConfig: Boolean = config.tokens(0)._1 == imPaideiaDaoKey
 
     val selfOutput: Boolean = allOf(Coll(
         blake2b256(snapshotO.propositionBytes) == snapshotContractHash,

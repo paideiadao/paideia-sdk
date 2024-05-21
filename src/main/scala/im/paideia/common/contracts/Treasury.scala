@@ -4,7 +4,7 @@ import org.ergoplatform.sdk.ErgoToken
 import im.paideia.common.boxes.TreasuryBox
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.DAOConfig
-import java.util.HashMap
+import scala.collection.mutable.HashMap
 import im.paideia.Paideia
 import im.paideia.util.ConfKeys
 import org.ergoplatform.appkit.InputBox
@@ -14,6 +14,13 @@ import org.ergoplatform.wallet.boxes.DefaultBoxSelector
 import org.ergoplatform.appkit.InputBoxesSelectionException.NotEnoughTokensException
 import org.ergoplatform.appkit.InputBoxesSelectionException.NotEnoughErgsException
 import scala.collection.JavaConverters._
+import sigma.ast.Constant
+import sigma.ast.SType
+import sigma.ast.ByteArrayConstant
+import sigma.Colls
+import sigma.ast.ConstantPlaceholder
+import sigma.ast.SCollection
+import sigma.ast.SByte
 
 /** Treasury class represents the main contract for the Paideia Treasury which manages and
   * holds assets and tokens of the Paideia DAO treasury on Ergo Blockchain.
@@ -58,14 +65,6 @@ class Treasury(contractSignature: PaideiaContractSignature)
   override lazy val constants: HashMap[String, Object] = {
     val cons = new HashMap[String, Object]()
     cons.put(
-      "_IM_PAIDEIA_DAO_ACTION_TOKENID",
-      Paideia
-        .getConfig(contractSignature.daoKey)
-        .getArray[Byte](ConfKeys.im_paideia_dao_action_tokenid)
-    )
-    cons.put("_IM_PAIDEIA_DAO_KEY", ErgoId.create(Env.paideiaDaoKey).getBytes)
-    cons.put("_IM_PAIDEIA_TOKEN_ID", ErgoId.create(Env.paideiaTokenId).getBytes)
-    cons.put(
       "_IM_PAIDEIA_FEE_EMIT_PAIDEIA",
       ConfKeys.im_paideia_fees_emit_paideia.ergoValue.getValue()
     )
@@ -104,6 +103,29 @@ class Treasury(contractSignature: PaideiaContractSignature)
     cons
   }
 
+  override lazy val parameters: Map[String, Constant[SType]] = {
+    val cons = new scala.collection.mutable.HashMap[String, Constant[SType]]()
+    cons.put(
+      "daoActionTokenId",
+      ByteArrayConstant(
+        Colls.fromArray(
+          Paideia
+            .getConfig(contractSignature.daoKey)
+            .getArray[Byte](ConfKeys.im_paideia_dao_action_tokenid)
+        )
+      )
+    )
+    cons.put(
+      "imPaideiaDaoKey",
+      ByteArrayConstant(Colls.fromArray(ErgoId.create(Env.paideiaDaoKey).getBytes))
+    )
+    cons.put(
+      "paideiaTokenId",
+      ByteArrayConstant(Colls.fromArray(ErgoId.create(Env.paideiaTokenId).getBytes))
+    )
+    cons.toMap
+  }
+
   /** It searches through all the boxes in the blockchain and matches the conditions to
     * find required number of boxes to fetch nanoERG and the provided array of ErgoTokens.
     *
@@ -120,7 +142,7 @@ class Treasury(contractSignature: PaideiaContractSignature)
   ): Option[Array[InputBox]] = {
     var assetsFound  = false
     var nanoErgFound = 0L
-    var tokensFound  = new HashMap[String, Long]()
+    var tokensFound  = new java.util.HashMap[String, Long]()
     var result       = List[InputBox]()
     getUtxoSet
       .map(b => (b, boxes(b)))

@@ -6,9 +6,8 @@ import org.ergoplatform.appkit.ErgoValue
 import org.ergoplatform.appkit.ErgoType
 import org.ergoplatform.appkit.InputBox
 import org.ergoplatform.appkit.OutBox
-import special.collection.Coll
-import special.collection.CollBuilder
-import special.collection.CollOverArray
+import sigma.Coll
+import sigma.CollBuilder
 import scala.collection.JavaConverters._
 import scala.collection.mutable.Buffer
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
@@ -19,20 +18,19 @@ import org.ergoplatform.sdk.ErgoToken
 import im.paideia.DAOConfig
 import org.ergoplatform.sdk.ErgoId
 import sigmastate.utils.Helpers
-import sigmastate.Values
 import im.paideia.staking._
 import im.paideia.common.boxes._
-import sigmastate.eval.Colls
+import sigma.Colls
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 import im.paideia.util.ConfKeys
 import scorex.crypto.hash.Blake2b256
 import im.paideia.Paideia
 import scorex.crypto.authds.ADDigest
-import special.sigma.AvlTree
+import sigma.AvlTree
 import work.lithos.plasma.collections.OpResult
 import im.paideia.DAO
 import im.paideia.governance.VoteRecord
-import sigmastate.AvlTreeData
+import sigma.data.AvlTreeData
 import im.paideia.governance.Proposal
 import work.lithos.plasma.collections.ProvenResult
 

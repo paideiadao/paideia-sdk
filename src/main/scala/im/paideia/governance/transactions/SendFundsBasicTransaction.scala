@@ -12,8 +12,7 @@ import scala.collection.JavaConverters._
 import org.ergoplatform.appkit.OutBox
 import org.ergoplatform.appkit.impl.OutBoxImpl
 import org.ergoplatform.ErgoBoxCandidate
-import special.sigma.Box
-import sigmastate.eval.CostingSigmaDslBuilder
+import sigma.Box
 import org.ergoplatform.sdk.ErgoToken
 import scala.collection.JavaConverters._
 import im.paideia.common.contracts.PaideiaContractSignature
@@ -21,9 +20,10 @@ import org.ergoplatform.appkit.ContextVar
 import im.paideia.Paideia
 import im.paideia.common.filtering._
 import org.ergoplatform.sdk.ErgoId
-import special.collection.Coll
+import sigma.Coll
 import scorex.crypto.authds.ADDigest
-import special.sigma.AvlTree
+import sigma.AvlTree
+import sigma.data.CBox
 
 final case class SendFundsBasicTransaction(
   _ctx: BlockchainContextImpl,
@@ -115,7 +115,7 @@ final case class SendFundsBasicTransaction(
   inputs     = List(actionInput.withContextVars(context: _*)) ++ coveringTreasuryBoxes
   dataInputs = List(configInput, proposalInput)
   outputs = actionInputBox.outputs.map { (b: Box) =>
-    val ergoBox = (new CostingSigmaDslBuilder()).toErgoBox(b)
+    val ergoBox = b.asInstanceOf[CBox].ebox
     new OutBoxImpl(
       new ErgoBoxCandidate(
         ergoBox.value,

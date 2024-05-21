@@ -1,11 +1,11 @@
-{
-    /**
-     *
-     *  CreateDAO
-     *
-     *  Ensures the DAO is created correctly
-     *
-     */
+/**
+ * Ensures the DAO is created correctly
+ *
+ * @param paideiaDaoKey Token ID of the paideia dao key
+ *
+ * @return
+ */
+@contract def createDAO(paideiaDaoKey: Coll[Byte]) = {
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -13,7 +13,6 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val paideiaDaoKey: Coll[Byte]              = _PAIDEIA_DAO_KEY
     val imPaideiaDaoActionTokenId: Coll[Byte]  = _IM_PAIDEIA_DAO_ACTION_TOKENID
     val imPaideiaContractsDao: Coll[Byte]      = _IM_PAIDEIA_CONTRACTS_DAO
     val imPaideiaDefaultConfig: Coll[Byte]     = _IM_PAIDEIA_DEFAULT_CONFIG
@@ -365,7 +364,7 @@
     val correctConfigContract: Coll[Byte] = blake2b256(
         substConstants(
             defaultConfigContract,
-            Coll(7),
+            Coll(0),
             Coll(actionTokenId)
         )
     )
@@ -373,7 +372,7 @@
     val correctTreasuryContract: Coll[Byte] = blake2b256(
         substConstants(
             defaultTreasuryContract,
-            Coll(2),
+            Coll(0),
             Coll(actionTokenId)
         )
     )
@@ -381,7 +380,7 @@
     val correctActionSendFundsContract: Coll[Byte] = blake2b256(
         substConstants(
             defaultActionSendFundsContract,
-            Coll(33,35),
+            Coll(0,1),
             Coll(daoKey,proposalTokenId)
         )
     )
@@ -389,7 +388,7 @@
     val correctActionUpdateConfigContract: Coll[Byte] = blake2b256(
         substConstants(
             defaultActionUpdateConfigContract,
-            Coll(7,9),
+            Coll(0,1),
             Coll(daoKey,proposalTokenId)
         )
     )
@@ -397,7 +396,7 @@
     val correctProposalBasicContract: Coll[Byte] = blake2b256(
         substConstants(
             defaultProposalBasicContract,
-            Coll(11),
+            Coll(0),
             Coll(daoKey)
         )
     )
@@ -405,7 +404,7 @@
     val correctStakingChangeContract: Coll[Byte] = blake2b256(
         substConstants(
             defaultStakingChangeContract,
-            Coll(31),
+            Coll(0),
             Coll(daoKey)
         )
     )
@@ -413,7 +412,7 @@
     val correctStakingStakeContract: Coll[Byte] = blake2b256(
         substConstants(
             defaultStakingStakeContract,
-            Coll(28),
+            Coll(0),
             Coll(daoKey)
         )
     )
@@ -421,7 +420,7 @@
     val correctStakingCompoundContract: Coll[Byte] = blake2b256(
         substConstants(
             defaultStakingCompoundContract,
-            Coll(70),
+            Coll(0),
             Coll(daoKey)
         )
     )
@@ -429,7 +428,7 @@
     val correctStakingProfitShareContract: Coll[Byte] = blake2b256(
         substConstants(
             defaultStakingProfitShareContract,
-            Coll(24),
+            Coll(0),
             Coll(daoKey)
         )
     )
@@ -437,7 +436,7 @@
     val correctStakingSnapshotContract: Coll[Byte] = blake2b256(
         substConstants(
             defaultStakingSnapshotContract,
-            Coll(135),
+            Coll(0),
             Coll(daoKey)
         )
     )
@@ -445,7 +444,7 @@
     val correctStakingStateContract: Coll[Byte] = blake2b256(
         substConstants(
             defaultStakingStateContract,
-            Coll(12),
+            Coll(0),
             Coll(daoKey)
         )
     )
@@ -453,7 +452,7 @@
     val correctStakingVoteContract: Coll[Byte] = blake2b256(
         substConstants(
             defaultStakingVoteContract,
-            Coll(63),
+            Coll(0),
             Coll(daoKey)
         )
     )
@@ -461,7 +460,7 @@
     val correctStakingUnstakeContract: Coll[Byte] = blake2b256(
         substConstants(
             defaultStakingUnstakeContract,
-            Coll(27),
+            Coll(0),
             Coll(daoKey)
         )
     )
@@ -512,9 +511,9 @@
 
     val correctContracts: Boolean = allOf(Coll(
         defaultConfigContractSig.patch(1,correctConfigContract,32) 
-            == configContractSignature,
+           == configContractSignature,
         defaultTreasuryContractSig.patch(1,correctTreasuryContract,32) 
-            == treasuryContractSignature,
+           == treasuryContractSignature,
         defaultActionSendFundsSig.patch(1,correctActionSendFundsContract,32)
             == actionSendFundsSignature,
         defaultActionUpdateConfigSig.patch(1,correctActionUpdateConfigContract,32)
@@ -535,8 +534,8 @@
             == stakingStateSignature,
         defaultStakingUnstakeSig.patch(1,correctStakingUnstakeContract,32)
             == stakingUnstakeSignature,
-        defaultStakingVoteSig.patch(1,correctStakingVoteContract,32)
-            == stakingVoteSignature,
+         defaultStakingVoteSig.patch(1,correctStakingVoteContract,32)
+             == stakingVoteSignature,
     ))
 
     val correctConfig: Boolean = paideiaConfig.tokens(0)._1 == paideiaDaoKey

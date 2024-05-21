@@ -1,4 +1,9 @@
-{
+/** 
+ * 
+ *
+ * @return
+ */
+@contract def addStakeProxy(imPaideiaDaoKey: Coll[Byte]) = {
     #import lib/validRefund/1.0.0/validRefund.es;
     #import lib/bytearrayToTokenId/1.0.0/bytearrayToTokenId.es;
     
@@ -22,7 +27,6 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val imPaideiaDaoKey: Coll[Byte]              = _IM_PAIDEIA_DAO_KEY
     val imPaideiaStakingStateTokenId: Coll[Byte] = _IM_PAIDEIA_STAKING_STATE_TOKENID
 
     val stakeInfoOffset: Int = 8

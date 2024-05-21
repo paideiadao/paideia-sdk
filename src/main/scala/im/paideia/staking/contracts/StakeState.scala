@@ -3,13 +3,12 @@ package im.paideia.staking.contracts
 import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.appkit.NetworkType
 import im.paideia.common.contracts._
-import sigmastate.Values
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.DAOConfig
 import im.paideia.staking.TotalStakingState
 import org.ergoplatform.sdk.ErgoToken
 import im.paideia.staking.boxes.StakeStateBox
-import java.util.HashMap
+import scala.collection.mutable.HashMap
 import org.ergoplatform.sdk.ErgoId
 import im.paideia.util.ConfKeys
 import im.paideia.DAO
@@ -29,13 +28,16 @@ import scorex.crypto.authds.ADDigest
 import im.paideia.staking.StakingSnapshot
 import org.ergoplatform.appkit.ErgoValue
 import im.paideia.staking.StakingContextVars
-import special.sigma.AvlTree
-import special.collection.Coll
+import sigma.AvlTree
+import sigma.Coll
 import work.lithos.plasma.ByteConversion
 import im.paideia.staking.StakeRecord
 import im.paideia.common.events.CreateTransactionsEvent
 import java.lang
 import im.paideia.staking.ParticipationRecord
+import sigma.ast.Constant
+import sigma.ast.SType
+import sigma.ast.ByteArrayConstant
 
 class StakeState(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -376,9 +378,17 @@ class StakeState(contractSignature: PaideiaContractSignature)
       )(configDigest)
   }
 
+  override lazy val parameters: Map[String, Constant[SType]] = {
+    val cons = new HashMap[String, Constant[SType]]()
+    cons.put(
+      "imPaideiaDaoKey",
+      ByteArrayConstant(ErgoId.create(contractSignature.daoKey).getBytes)
+    )
+    cons.toMap
+  }
+
   override lazy val constants: HashMap[String, Object] = {
     val cons = new HashMap[String, Object]()
-    cons.put("_IM_PAIDEIA_DAO_KEY", ErgoId.create(contractSignature.daoKey).getBytes)
     cons.put(
       "_IM_PAIDEIA_CONTRACTS_STAKING_STATE",
       ConfKeys.im_paideia_contracts_staking_state.ergoValue.getValue()

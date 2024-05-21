@@ -1,15 +1,16 @@
-{
+/**
+ * This action ensures that if the related proposal passes that the
+ * dao config gets updated accordingly
+ *
+ * @param imPaideiaDaoKey Token ID of the dao key
+ * @param imPaideiaDaoProposalTokenId Token ID of the dao proposal token
+ *
+ * @return
+ */
+@contract def actionUpdateConfig(imPaideiaDaoKey: Coll[Byte], imPaideiaDaoProposalTokenId: Coll[Byte]) = {
     #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
     #import lib/tokensInBoxesAll/1.0.0/tokensInBoxesAll.es;
     #import lib/tokenExists/1.0.0/tokenExists.es;
-    /**
-     *
-     *  ActionUpdateConfig
-     *
-     *  This action ensures that if the related proposal passes that the
-     *  dao config gets updated accordingly
-     *
-     */
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -17,8 +18,6 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val imPaideiaDaoKey             = _IM_PAIDEIA_DAO_KEY
-    val imPaideiaDaoProposalTokenId = _IM_PAIDEIA_DAO_PROPOSAL_TOKENID
     val imPaideiaContractsConfig    = _IM_PAIDEIA_CONTRACTS_CONFIG
 
     ///////////////////////////////////////////////////////////////////////////

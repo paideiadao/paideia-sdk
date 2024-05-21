@@ -1,8 +1,7 @@
 package im.paideia
 
-import special.collection.Coll
+import sigma.Coll
 import scorex.crypto.hash.Blake2b256
-import special.collection.CollOverArray
 import java.nio.charset.StandardCharsets
 import work.lithos.plasma.ByteConversion
 import org.ergoplatform.appkit.ErgoValue

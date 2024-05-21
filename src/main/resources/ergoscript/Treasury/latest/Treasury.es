@@ -1,4 +1,9 @@
-{
+/** This is my contracts description.
+ * Here is another line describing what it does in more detail.
+ * 
+ * @return
+ */
+@contract def treasury(daoActionTokenId: Coll[Byte], imPaideiaDaoKey: Coll[Byte], paideiaTokenId: Coll[Byte]) = {
     #import lib/tokensInBoxes/1.0.0/tokensInBoxes.es;
     #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
     #import lib/bytearrayToTokenId/1.0.0/bytearrayToTokenId.es;
@@ -18,9 +23,6 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val daoActionTokenId: Coll[Byte]        = _IM_PAIDEIA_DAO_ACTION_TOKENID
-    val imPaideiaDaoKey: Coll[Byte]         = _IM_PAIDEIA_DAO_KEY
-    val paideiaTokenId: Coll[Byte]          = _IM_PAIDEIA_TOKEN_ID
     val imPaideiaFeeEmitPaideia: Coll[Byte] = _IM_PAIDEIA_FEE_EMIT_PAIDEIA
 
     val imPaideiaFeeOperatorMaxErg: Coll[Byte] = 

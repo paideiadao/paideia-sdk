@@ -1,4 +1,9 @@
-{
+/** This is my contracts description.
+ * Here is another line describing what it does in more detail.
+ *
+ * @return
+ */
+@contract def proposalBasic(imPaideiaDaoKey: Coll[Byte], paideiaDaoKey: Coll[Byte], paideiaTokenId: Coll[Byte]) = {
     #import lib/bytearrayToLongClamped/1.0.0/bytearrayToLongClamped.es;
     #import lib/bytearrayToTokenId/1.0.0/bytearrayToTokenId.es;
     #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
@@ -18,11 +23,8 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val imPaideiaDaoKey: Coll[Byte]       = _IM_PAIDEIA_DAO_KEY
     val imPaideiaDaoQuorum: Coll[Byte]    = _IM_PAIDEIA_DAO_QUORUM
     val imPaideiaDaoThreshold: Coll[Byte] = _IM_PAIDEIA_DAO_THRESHOLD
-    val paideiaDaoKey: Coll[Byte]         = _PAIDEIA_DAO_KEY
-    val paideiaTokenId: Coll[Byte]        = _PAIDEIA_TOKEN_ID
 
     val imPaideiaContractsSplitProfit: Coll[Byte] = 
         _IM_PAIDEIA_CONTRACTS_SPLIT_PROFIT

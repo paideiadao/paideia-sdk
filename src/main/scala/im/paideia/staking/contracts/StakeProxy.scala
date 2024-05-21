@@ -18,12 +18,15 @@ import org.ergoplatform.appkit.impl.InputBoxImpl
 import im.paideia.util.Env
 import im.paideia.util.ConfKeys
 import java.nio.charset.StandardCharsets
-import java.util.HashMap
+import scala.collection.mutable.HashMap
 import org.ergoplatform.sdk.ErgoId
-import sigmastate.eval.Colls
+import sigma.Colls
 import im.paideia.common.events.CreateTransactionsEvent
 import im.paideia.common.transactions.RefundTransaction
-import special.collection.Coll
+import sigma.Coll
+import sigma.ast.Constant
+import sigma.ast.SType
+import sigma.ast.ByteArrayConstant
 
 class StakeProxy(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -83,9 +86,17 @@ class StakeProxy(contractSignature: PaideiaContractSignature)
     PaideiaEventResponse.merge(List(super.handleEvent(event), response))
   }
 
+  override lazy val parameters: Map[String, Constant[SType]] = {
+    val cons = new HashMap[String, Constant[SType]]()
+    cons.put(
+      "imPaideiaDaoKey",
+      ByteArrayConstant(ErgoId.create(contractSignature.daoKey).getBytes)
+    )
+    cons.toMap
+  }
+
   override lazy val constants: HashMap[String, Object] = {
     val cons = new HashMap[String, Object]()
-    cons.put("_IM_PAIDEIA_DAO_KEY", ErgoId.create(contractSignature.daoKey).getBytes)
     cons.put(
       "_IM_PAIDEIA_STAKING_STATE_TOKENID",
       ConfKeys.im_paideia_staking_state_tokenid.ergoValue.getValue()

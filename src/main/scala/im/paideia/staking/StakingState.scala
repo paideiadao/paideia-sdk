@@ -3,7 +3,7 @@ package im.paideia.staking
 import work.lithos.plasma.PlasmaParameters
 import work.lithos.plasma.collections.PlasmaMap
 import scala.collection.mutable.SortedSet
-import sigmastate.AvlTreeFlags
+import sigma.data.AvlTreeFlags
 import org.ergoplatform.sdk.ErgoId
 import work.lithos.plasma.ByteConversion.convertsLongVal
 import work.lithos.plasma.collections.ProvenResult

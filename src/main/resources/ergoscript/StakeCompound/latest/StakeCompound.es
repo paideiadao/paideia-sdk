@@ -1,4 +1,9 @@
-{
+/** This is my contracts description.
+ * Here is another line describing what it does in more detail.
+ *
+ * @return
+ */
+@contract def stakeCompound(imPaideiaDaoKey: Coll[Byte]) = {
     #import lib/emptyDigest/1.0.0/emptyDigest.es;
     #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
     #import lib/bytearrayToTokenId/1.0.0/bytearrayToTokenId.es;
@@ -17,8 +22,6 @@
     // Constants                                                             //
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
-
-    val daoKey: Coll[Byte] = _IM_PAIDEIA_DAO_KEY
 
     val imPaideiaStakingProfitTokenIds: Coll[Byte] = 
         _IM_PAIDEIA_STAKING_PROFIT_TOKENIDS
@@ -280,7 +283,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val correctConfig: Boolean = config.tokens(0)._1 == daoKey
+    val correctConfig: Boolean = config.tokens(0)._1 == imPaideiaDaoKey
 
     val correctStakeState: Boolean = 
         stakeState.tokens(0)._1 == stakeStateTokenId

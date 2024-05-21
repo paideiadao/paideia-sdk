@@ -1,10 +1,8 @@
 package im.paideia
 
-import special.collection.Coll
-import special.collection.CollOverArray
+import sigma.Coll
 import com.google.common.primitives._
 import java.nio.charset.StandardCharsets
-import scalan.RType
 import scala.reflect.runtime.universe._
 import scala.reflect.runtime.universe.weakTypeTag
 import shapeless.Lazy

@@ -1,15 +1,14 @@
-{
+/**
+ * During the dao creation process important NFT's and tokens are minted.
+ * This contract makes sure they land in the correct DAO.
+ *
+ * @param paideiaDaoKey Token ID of the paideia dao key
+ *
+ * @return
+ */
+@contract def mint(paideiaDaoKey: Coll[Byte]) = {
     #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
     #import lib/bytearrayToTokenId/1.0.0/bytearrayToTokenId.es;
-
-    /**
-     *
-     *  Mint
-     *
-     *  During the dao creation process important NFT's and tokens are minted.
-     *  This contract makes sure they land in the correct DAO.
-     *
-     */
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -17,7 +16,6 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val paideiaDaoKey: Coll[Byte]              = _PAIDEIA_DAO_KEY
     val imPaideiaContractsProtoDao: Coll[Byte] = _IM_PAIDEIA_CONTRACTS_PROTODAO
     val imPaideiaContractsDao: Coll[Byte]      = _IM_PAIDEIA_CONTRACTS_DAO
 

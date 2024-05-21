@@ -10,11 +10,11 @@ import org.ergoplatform.appkit.ErgoType
 import org.ergoplatform.appkit.InputBox
 import im.paideia.governance.contracts.ProposalBasic
 import scorex.crypto.hash.Blake2b256
-import special.collection.Coll
+import sigma.Coll
 import im.paideia.Paideia
 import im.paideia.util.Env
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
-import sigmastate.eval.Colls
+import sigma.Colls
 import scorex.crypto.authds.ADDigest
 import java.nio.charset.StandardCharsets
 

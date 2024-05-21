@@ -1,9 +1,9 @@
 package im.paideia.common
 
 import org.scalatest.funsuite.AnyFunSuite
-import special.collection.Coll
+import sigma.Coll
 import org.ergoplatform.sdk.ErgoId
-import special.collection.CollOverArray
+import sigma.Colls
 import im.paideia.DAOConfigValueSerializer
 import im.paideia.DAOConfigValueDeserializer
 import im.paideia.common.contracts.PaideiaContractSignature

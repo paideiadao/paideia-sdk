@@ -16,15 +16,22 @@ import scala.collection.JavaConverters._
 import org.ergoplatform.appkit.impl.InputBoxImpl
 import im.paideia.Paideia
 import im.paideia.util.Env
-import java.util.HashMap
+import scala.collection.mutable.HashMap
 import im.paideia.util.ConfKeys
 import scorex.crypto.hash.Blake2b256
-import special.sigma.AvlTree
+import sigma.AvlTree
 import scorex.crypto.authds.ADDigest
 import im.paideia.common.events.CreateTransactionsEvent
 import org.ergoplatform.appkit.NetworkType
 import im.paideia.common.transactions.RefundTransaction
-import special.collection.Coll
+import sigma.Coll
+import sigma.ast.ConstantPlaceholder
+import sigma.ast.SCollection
+import sigma.ast.SByte
+import sigma.ast.Constant
+import sigma.ast.SType
+import sigma.ast.ByteArrayConstant
+import sigma.Colls
 
 class CastVote(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -39,15 +46,19 @@ class CastVote(contractSignature: PaideiaContractSignature)
     CastVoteBox(ctx, stakeKey, proposalIndex, vote, userAddress, this)
   }
 
-  override lazy val constants: HashMap[String, Object] = {
-    val cons = new HashMap[String, Object]()
-    cons.put(
-      "_IM_PAIDEIA_DAO_PROPOSAL_TOKENID",
-      Paideia
-        .getConfig(contractSignature.daoKey)
-        .getArray[Byte](ConfKeys.im_paideia_dao_proposal_tokenid)
+  override lazy val parameters: Map[String, Constant[SType]] = {
+    val params = new scala.collection.mutable.HashMap[String, Constant[SType]]()
+    params.put(
+      "imPaideiaDaoProposalTokenId",
+      ByteArrayConstant(
+        Colls.fromArray(
+          Paideia
+            .getConfig(contractSignature.daoKey)
+            .getArray[Byte](ConfKeys.im_paideia_dao_proposal_tokenid)
+        )
+      )
     )
-    cons
+    params.toMap
   }
 
   override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {

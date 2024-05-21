@@ -10,12 +10,12 @@ import im.paideia.common.events.PaideiaEventResponse
 import im.paideia.governance.transactions.EvaluateProposalBasicTransaction
 import im.paideia.common.events.PaideiaEvent
 import im.paideia.common.events.BlockEvent
-import special.collection.Coll
+import sigma.Coll
 import org.ergoplatform.appkit.Address
 import im.paideia.util.Env
 import org.ergoplatform.appkit.InputBox
 import im.paideia.util.ConfKeys
-import java.util.HashMap
+import scala.collection.mutable.HashMap
 import org.ergoplatform.sdk.ErgoId
 import im.paideia.common.boxes.PaideiaBox
 import org.ergoplatform.appkit.ContextVar
@@ -23,6 +23,13 @@ import im.paideia.governance.VoteRecord
 import scorex.crypto.authds.ADDigest
 import im.paideia.common.events.CreateTransactionsEvent
 import work.lithos.plasma.collections.ProvenResult
+import sigma.ast.Constant
+import sigma.ast.SType
+import sigma.ast.ByteArrayConstant
+import sigma.Colls
+import sigma.ast.ConstantPlaceholder
+import sigma.ast.SCollection
+import sigma.ast.SByte
 
 class ProposalBasic(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature)
@@ -116,10 +123,36 @@ class ProposalBasic(contractSignature: PaideiaContractSignature)
       "_IM_PAIDEIA_DAO_THRESHOLD",
       ConfKeys.im_paideia_dao_threshold.ergoValue.getValue()
     )
-    cons.put("_IM_PAIDEIA_DAO_KEY", ErgoId.create(contractSignature.daoKey).getBytes)
-    cons.put("_PAIDEIA_DAO_KEY", ErgoId.create(Env.paideiaDaoKey).getBytes)
-    cons.put("_PAIDEIA_TOKEN_ID", ErgoId.create(Env.paideiaTokenId).getBytes)
     cons
+  }
+
+  override lazy val parameters: Map[String, Constant[SType]] = {
+    val params = new scala.collection.mutable.HashMap[String, Constant[SType]]()
+    params.put(
+      "imPaideiaDaoKey",
+      ByteArrayConstant(
+        Colls.fromArray(
+          ErgoId.create(contractSignature.daoKey).getBytes
+        )
+      )
+    )
+    params.put(
+      "paideiaDaoKey",
+      ByteArrayConstant(
+        Colls.fromArray(
+          ErgoId.create(Env.paideiaDaoKey).getBytes
+        )
+      )
+    )
+    params.put(
+      "paideiaTokenId",
+      ByteArrayConstant(
+        Colls.fromArray(
+          ErgoId.create(Env.paideiaTokenId).getBytes
+        )
+      )
+    )
+    params.toMap
   }
 
   def getVote(

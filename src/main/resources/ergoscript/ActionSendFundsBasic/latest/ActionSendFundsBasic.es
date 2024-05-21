@@ -1,19 +1,20 @@
-{
+/**
+ * This action ensures that if the related proposal passes that the
+ * treasury sends funds to the outputs as defined at the time of proposal
+ * creation. 
+ * Any change is sent back to the treasury.
+ * If this action is to be repeated a copy is part of the output with 1
+ * repeat less.
+ *
+ * @param imPaideiaDaoKey Token ID of the dao config nft
+ * @param imPaideiaDaoProposalTokenId Token ID of the dao proposal tokens
+ *
+ * @return
+ */
+@contract def actionSendFundsBasic(imPaideiaDaoKey: Coll[Byte], imPaideiaDaoProposalTokenId: Coll[Byte]) = {
     #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
     #import lib/bytesWithoutCreationInfo/1.0.0/bytesWithoutCreationInfo.es;
     #import lib/tokensInBoxesAll/1.0.0/tokensInBoxesAll.es;
-    /**
-     *
-     *  ActionSendFundsBasic
-     *
-     *  This action ensures that if the related proposal passes that the
-     *  treasury sends funds to the outputs as defined at the time of proposal
-     *  creation. 
-     *  Any change is sent back to the treasury.
-     *  If this action is to be repeated a copy is part of the output with 1
-     *  repeat less.
-     *
-     */
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -21,8 +22,6 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val imPaideiaDaoKey             = _IM_PAIDEIA_DAO_KEY
-    val imPaideiaDaoProposalTokenId = _IM_PAIDEIA_DAO_PROPOSAL_TOKENID
     val imPaideiaContractsTreasury  = _IM_PAIDEIA_CONTRACTS_TREASURY
 
     ///////////////////////////////////////////////////////////////////////////

@@ -17,10 +17,10 @@ import org.ergoplatform.sdk.ErgoToken
 import org.ergoplatform.appkit.InputBox
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
-import special.collection.Coll
+import sigma.Coll
 import im.paideia.staking.contracts.SplitProfit
 import scorex.crypto.authds.ADDigest
-import special.sigma.AvlTree
+import sigma.AvlTree
 import org.ergoplatform.appkit.Address
 
 /** This class represents an implementation of a `PaideiaTransaction` used to evaluate the

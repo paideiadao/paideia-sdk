@@ -4,12 +4,12 @@ import org.ergoplatform.appkit.ContextVar
 import work.lithos.plasma.ByteConversion
 import org.ergoplatform.appkit.ErgoValue
 import work.lithos.plasma.collections.ProvenResult
-import special.collection.Coll
+import sigma.Coll
 import org.ergoplatform.sdk.ErgoId
 import org.ergoplatform.appkit.ErgoType
 import im.paideia.governance.VoteRecord
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
-import sigmastate.eval.Colls
+import sigma.Colls
 
 case class StakingContextVars(
   stakingStateContextVars: List[ContextVar],

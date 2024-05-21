@@ -12,11 +12,11 @@ import im.paideia.Paideia
 import im.paideia.util.ConfKeys
 import org.ergoplatform.sdk.ErgoToken
 import im.paideia.common.contracts.PaideiaContractSignature
-import special.collection.Coll
+import sigma.Coll
 import org.ergoplatform.appkit.ContextVar
 import im.paideia.staking.TotalStakingState
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
-import special.sigma.AvlTree
+import sigma.AvlTree
 import scorex.crypto.authds.ADDigest
 import im.paideia.staking.boxes.StakeStateBox
 import scorex.crypto.hash.Blake2b256

@@ -32,6 +32,20 @@ import scala.util.matching.Regex
 import sigma.ast.ErgoTree
 import sigma.Coll
 import sigma.Colls
+import org.ergoplatform.sdk.ContractTemplate
+import sigmastate.lang.SigmaTemplateCompiler
+import sigma.ast.Constant
+import sigma.ast.SType
+import java.net.URL
+import java.io.File
+import java.nio.file.Paths
+import java.nio.file.Files
+import java.nio.file.OpenOption
+import java.nio.file.StandardOpenOption
+import io.circe.Json
+import io.circe.parser._
+import java.nio.file.attribute.FileTime
+import java.nio.file.Path
 
 /** Represents a smart contract on the Paideia platform.
   *
@@ -69,53 +83,117 @@ class PaideiaContract(_contractSignature: PaideiaContractSignature) {
     */
   val boxes: HashMap[String, InputBox] = HashMap[String, InputBox]()
 
+  lazy val ergoScriptURL: URL = getClass.getResource(
+    "/ergoscript/" + getClass
+      .getSimpleName() + "/" + _contractSignature.version + "/" + getClass
+      .getSimpleName() + ".es"
+  )
+
   /** The ErgoScript code of this contract.
     *
     * Reads from file "ergoscript/{Simple Class Name of this contract}/{The version
     * specified in the contract signature}.
     */
-  lazy val ergoScript: String = {
-
+  lazy val ergoScript: (String, FileTime) = {
+    val modified = Files.getLastModifiedTime(Paths.get(ergoScriptURL.getPath()))
     val baseScript = Source
-      .fromResource(
-        "ergoscript/" + getClass
-          .getSimpleName() + "/" + _contractSignature.version + "/" + getClass
-          .getSimpleName() + ".es"
-      )
+      .fromFile(ergoScriptURL.getPath())
       .mkString
-    resolveDependencies(baseScript)
+    val resolved       = resolveDependencies(baseScript, modified)
+    var resolvedScript = resolved._1
+
+    constants.toArray
+      .sortBy(-1 * _._1.length())
+      .foreach((kv: (String, Object)) => {
+        resolvedScript = resolvedScript.replaceAll(kv._1, constantToString(kv._2))
+      })
+
+    (resolvedScript, resolved._2)
   }
 
-  def resolveDependencies(sourceScript: String): String = {
+  private def constantToString(c: Any): String = {
+    val res = c match {
+      case l: Long => l.toString().concat("L")
+      case b: Byte => b.toString().concat(".toByte")
+      case coll: Coll[_] =>
+        "Coll(" ++ coll.toArray.map(constantToString(_)).mkString(",") ++ ")"
+      case coll: Array[_] =>
+        "Coll(" ++ coll.map(constantToString(_)).mkString(",") ++ ")"
+      case o: Any => o.toString()
+    }
+    res
+  }
+
+  def resolveDependencies(
+    sourceScript: String,
+    sourceModified: FileTime
+  ): (String, FileTime) = {
     val importPattern: Regex = "#import ([0-9a-zA-Z\\./]+);".r
     importPattern.findFirstMatchIn(sourceScript) match {
-      case None => sourceScript
+      case None => (sourceScript, sourceModified)
       case Some(importMatch) => {
         val matched = importMatch.subgroups(0)
+        val importPath = Paths.get(
+          getClass
+            .getResource(
+              "/ergoscript/" + matched
+            )
+            .getPath()
+        )
+        val importModified = Files.getLastModifiedTime(importPath)
         val importScript = Source
-          .fromResource(
-            "ergoscript/" + matched
+          .fromFile(
+            importPath.toString()
           )
           .mkString
-        val resolvedImportScript = resolveDependencies(importScript)
+        val resolvedImport = resolveDependencies(importScript, importModified)
         resolveDependencies(
           sourceScript.replaceFirst(
             importMatch.matched,
-            resolvedImportScript
-          )
+            resolvedImport._1
+          ),
+          if (resolvedImport._2.compareTo(sourceModified) < 0) sourceModified
+          else resolvedImport._2
         )
       }
     }
   }
 
-  /** The Ergo tree root hash for the ErgoScript code associated with this contract.
+  lazy val parameters: Map[String, Constant[SType]] =
+    new HashMap[String, Constant[SType]]().toMap
+
+  /** The Ergo tree for the ErgoScript code associated with this contract.
     */
-  lazy val ergoTree: ErgoTree = {
-    AppkitHelpers.compile(
-      constants,
-      ergoScript,
+  lazy val ergoTree: ErgoTree =
+    contractTemplate.applyTemplate(Some(0), parameters)
+
+  lazy val contractTemplate: ContractTemplate = {
+    val templatePath = Paths.get(ergoScriptURL.getPath().replace(".es", ".json"))
+    if (Files.exists(templatePath)) {
+      val lastCompile = Files.getLastModifiedTime(templatePath)
+      if (lastCompile.compareTo(ergoScript._2) < 0) {
+        compileContract(templatePath)
+      }
+      val templateString = Files.readString(templatePath)
+      val templateJson   = parse(templateString).right.get
+      val res            = ContractTemplate.jsonEncoder.decoder(templateJson.hcursor)
+      res.right.get
+    } else {
+      Files.createFile(templatePath)
+      compileContract(templatePath)
+    }
+  }
+
+  def compileContract(templatePath: Path): ContractTemplate = {
+    val template = SigmaTemplateCompiler(
       _contractSignature.networkType.networkPrefix
+    ).compile(ergoScript._1)
+    Files.writeString(
+      templatePath,
+      template.toJsonString,
+      StandardOpenOption.TRUNCATE_EXISTING
     )
+    template
   }
 
   /** The ErgoContract representing this contract.
@@ -126,8 +204,8 @@ class PaideiaContract(_contractSignature: PaideiaContractSignature) {
   /** Constants used in the contract code. It stores a collection of key-value pairs
     * representing the different constants.
     */
-  lazy val constants: java.util.HashMap[String, Object] =
-    new java.util.HashMap[String, Object]()
+  lazy val constants: HashMap[String, Object] =
+    new HashMap[String, Object]()
 
   /** The digital signature of this contract.
     */

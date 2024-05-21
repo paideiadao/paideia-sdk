@@ -1,23 +1,20 @@
-{
+/** 
+ * This contract is a companion contract to the main stake contract.
+ * It ensures the stake is changed correctly following the rules.
+ *
+ * @param imPaideiaDaoKey Token ID of the dao key
+ *
+ * @return
+ */
+@contract def changeStake(imPaideiaDaoKey: Coll[Byte]) = {
     #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
     #import lib/bytearrayToTokenId/1.0.0/bytearrayToTokenId.es;
-    
-    /**
-     *
-     *  ChangeStake
-     *
-     *  This contract is a companion contract to the main stake contract.
-     *  It ensures the stake is changed correctly following the rules.
-     *
-     */
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
     // Constants                                                             //
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
-
-    val imPaideiaDaoKey: Coll[Byte] = _IM_PAIDEIA_DAO_KEY
 
     val imPaideiaContractsStakingChangeStake: Coll[Byte] = 
         _IM_PAIDEIA_CONTRACTS_STAKING_CHANGESTAKE

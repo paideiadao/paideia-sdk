@@ -25,10 +25,10 @@ import im.paideia.staking.TotalStakingState
 import im.paideia.governance.boxes.ProtoDAOBox
 import im.paideia.common.contracts.Treasury
 import im.paideia.DAOConfigValueSerializer
-import sigmastate.eval.Colls
+import sigma.Colls
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 import scorex.crypto.authds.ADDigest
-import special.sigma.AvlTree
+import sigma.AvlTree
 import org.ergoplatform.sdk.ErgoToken
 import im.paideia.governance.contracts.ActionSendFundsBasic
 import im.paideia.governance.contracts.ActionUpdateConfig
@@ -42,6 +42,11 @@ import im.paideia.staking.contracts.StakeVote
 import im.paideia.staking.contracts.Unstake
 import im.paideia.governance.contracts.CreateDAO
 import org.ergoplatform.appkit.Address
+import scorex.util.encode.Base16
+import sigma.serialization.ErgoTreeSerializer
+import sigma.ast.ByteArrayConstant
+import sigma.ast.ErgoTree
+import org.ergoplatform.appkit.AppkitHelpers
 
 case class CreateDAOTransaction(
   _ctx: BlockchainContextImpl,
@@ -131,6 +136,7 @@ case class CreateDAOTransaction(
   val actionSendFundsContract = ActionSendFundsBasic(
     PaideiaContractSignature(daoKey = dao.key)
   )
+
   val actionUpdateConfigContract = ActionUpdateConfig(
     PaideiaContractSignature(daoKey = dao.key)
   )

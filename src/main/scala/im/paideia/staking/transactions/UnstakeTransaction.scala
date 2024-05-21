@@ -3,7 +3,7 @@ package im.paideia.staking.transactions
 import im.paideia.common.transactions._
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import org.ergoplatform.appkit.InputBox
-import special.sigma.AvlTree
+import sigma.AvlTree
 import org.ergoplatform.ErgoAddress
 import org.ergoplatform.appkit.Eip4Token
 import org.ergoplatform.appkit.OutBox
@@ -20,13 +20,13 @@ import im.paideia.common.filtering._
 import org.ergoplatform.sdk.ErgoId
 import org.ergoplatform.appkit.ContextVar
 import org.ergoplatform.appkit.Address
-import special.collection.Coll
+import sigma.Coll
 import scala.collection.JavaConverters._
 import scorex.crypto.authds.ADDigest
 import im.paideia.staking.contracts.Unstake
 import im.paideia.staking.contracts.ChangeStake
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
-import sigmastate.eval.Colls
+import sigma.Colls
 
 case class UnstakeTransaction(
   _ctx: BlockchainContextImpl,

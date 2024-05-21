@@ -18,7 +18,6 @@ import im.paideia.common.contracts.Config
 import org.ergoplatform.sdk.ErgoToken
 import im.paideia.governance.contracts.ActionSendFundsBasic
 import org.ergoplatform.appkit.impl.InputBoxImpl
-import sigmastate.eval.CostingBox
 import org.ergoplatform.restapi.client.FullBlock
 import org.ergoplatform.restapi.client.BlockHeader
 import org.ergoplatform.restapi.client.BlockTransactions
@@ -29,9 +28,9 @@ import im.paideia.DAOConfigKey
 import im.paideia.DAOConfigValueSerializer
 import im.paideia.util.Env
 import im.paideia.common.events.CreateTransactionsEvent
-import sigmastate.eval.CostingSigmaDslBuilder
 import org.ergoplatform.appkit.impl.OutBoxImpl
 import org.ergoplatform.ErgoBoxCandidate
+import sigma.data.CBox
 
 class PerformActionTransactionSuite extends PaideiaTestSuite {
   test("Send funds") {
@@ -129,7 +128,7 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
           1,
           ctx.createPreHeader().build().getTimestamp() - 3600000,
           Array(
-            CostingBox(
+            CBox(
               ctx
                 .newTxBuilder()
                 .outBoxBuilder()

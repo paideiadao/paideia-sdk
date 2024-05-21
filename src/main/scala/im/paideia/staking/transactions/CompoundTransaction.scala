@@ -21,7 +21,7 @@ import org.ergoplatform.appkit.InputBox
 import org.ergoplatform.appkit.OutBox
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import org.ergoplatform.appkit.impl.ErgoTreeContract
-import special.sigma.AvlTree
+import sigma.AvlTree
 import scorex.crypto.authds.ADDigest
 import im.paideia.staking.contracts.StakeCompound
 

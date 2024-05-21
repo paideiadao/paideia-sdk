@@ -25,7 +25,7 @@ import im.paideia.Paideia
 import im.paideia.common.events.TransactionEvent
 import im.paideia.common.events.CreateTransactionsEvent
 import im.paideia.common.transactions.RefundTransaction
-import sigmastate.exceptions.InterpreterException
+import sigma.exceptions.InterpreterException
 
 class UnstakeTransactionSuite extends PaideiaTestSuite {
   test("Sign partial unstake tx") {

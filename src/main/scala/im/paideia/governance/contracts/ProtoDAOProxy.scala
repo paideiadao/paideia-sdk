@@ -16,7 +16,7 @@ import scala.collection.JavaConverters._
 import org.ergoplatform.appkit.impl.InputBoxImpl
 import org.ergoplatform.ErgoAddress
 import org.ergoplatform.appkit.Address
-import java.util.HashMap
+import scala.collection.mutable.HashMap
 import org.ergoplatform.appkit.ErgoValue
 import im.paideia.DAOConfigKey
 import org.ergoplatform.sdk.ErgoId
@@ -24,19 +24,22 @@ import java.nio.charset.StandardCharsets
 import im.paideia.util.ConfKeys
 import im.paideia.governance.GovernanceType
 import work.lithos.plasma.collections.PlasmaMap
-import sigmastate.AvlTreeFlags
+import sigma.data.AvlTreeFlags
 import work.lithos.plasma.PlasmaParameters
 import im.paideia.common.events.CreateTransactionsEvent
 import im.paideia.common.transactions.RefundTransaction
-import special.collection.Coll
+import sigma.Coll
 import im.paideia.Paideia
 import im.paideia.DAO
 import im.paideia.common.events.UpdateConfigEvent
 import scorex.crypto.authds.ADDigest
-import special.sigma.AvlTree
+import sigma.AvlTree
 import im.paideia.DAOConfigValue
 import work.lithos.plasma.ByteConversion
 import im.paideia.DAOConfigValueDeserializer
+import sigma.ast.Constant
+import sigma.ast.SType
+import sigma.ast.ByteArrayConstant
 
 class ProtoDAOProxy(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -182,6 +185,15 @@ class ProtoDAOProxy(contractSignature: PaideiaContractSignature)
     PaideiaEventResponse.merge(List(super.handleEvent(event), response))
   }
 
+  override lazy val parameters: Map[String, Constant[SType]] = {
+    val cons = new HashMap[String, Constant[SType]]()
+    cons.put(
+      "paideiaDaoKey",
+      ByteArrayConstant(ErgoId.create(Env.paideiaDaoKey).getBytes)
+    )
+    cons.toMap
+  }
+
   override lazy val constants: HashMap[String, Object] = {
     val cons = new HashMap[String, Object]()
     cons.put(
@@ -192,7 +204,6 @@ class ProtoDAOProxy(contractSignature: PaideiaContractSignature)
       "_IM_PAIDEIA_CONTRACTS_MINT",
       ConfKeys.im_paideia_contracts_mint.ergoValue.getValue()
     )
-    cons.put("_PAIDEIA_DAO_KEY", ErgoId.create(Env.paideiaDaoKey).getBytes)
     cons.put(
       "_EMPTY_CONFIG_DIGEST",
       ErgoValue
@@ -256,54 +267,50 @@ class ProtoDAOProxy(contractSignature: PaideiaContractSignature)
       "_IM_PAIDEIA_STAKING_PARTICIPATION_WEIGHT",
       ConfKeys.im_paideia_staking_weight_participation.ergoValue.getValue()
     )
-    if (contractSignature.version.startsWith("1.1.")) {
-      cons.put(
-        "_IM_PAIDEIA_DAO_URL",
-        ConfKeys.im_paideia_dao_url.ergoValue.getValue()
-      )
-      cons.put(
-        "_IM_PAIDEIA_DAO_DESCRIPTION",
-        ConfKeys.im_paideia_dao_description.ergoValue.getValue()
-      )
-      cons.put(
-        "_IM_PAIDEIA_DAO_LOGO",
-        ConfKeys.im_paideia_dao_logo.ergoValue.getValue()
-      )
-      cons.put(
-        "_IM_PAIDEIA_DAO_MIN_PROPOSAL_TIME",
-        ConfKeys.im_paideia_dao_min_proposal_time.ergoValue.getValue()
-      )
-      cons.put(
-        "_IM_PAIDEIA_DAO_BANNER",
-        ConfKeys.im_paideia_dao_banner.ergoValue.getValue()
-      )
-      cons.put(
-        "_IM_PAIDEIA_DAO_BANNER_ENABLED",
-        ConfKeys.im_paideia_dao_banner_enabled.ergoValue.getValue()
-      )
-      cons.put(
-        "_IM_PAIDEIA_DAO_FOOTER",
-        ConfKeys.im_paideia_dao_footer.ergoValue.getValue()
-      )
-      cons.put(
-        "_IM_PAIDEIA_DAO_FOOTER_ENABLED",
-        ConfKeys.im_paideia_dao_footer_enabled.ergoValue.getValue()
-      )
-      cons.put(
-        "_IM_PAIDEIA_DAO_THEME",
-        ConfKeys.im_paideia_dao_theme.ergoValue.getValue()
-      )
-    }
-    if (contractSignature.version.equals("1.1.2")) {
-      cons.put(
-        "_IM_PAIDEIA_STAKING_PROFIT_TOKENS",
-        ConfKeys.im_paideia_staking_profit_tokenids.ergoValue.getValue()
-      )
-      cons.put(
-        "_IM_PAIDEIA_STAKING_PROFIT_THRESHOLD",
-        ConfKeys.im_paideia_staking_profit_thresholds.ergoValue.getValue()
-      )
-    }
+    cons.put(
+      "_IM_PAIDEIA_DAO_URL",
+      ConfKeys.im_paideia_dao_url.ergoValue.getValue()
+    )
+    cons.put(
+      "_IM_PAIDEIA_DAO_DESCRIPTION",
+      ConfKeys.im_paideia_dao_description.ergoValue.getValue()
+    )
+    cons.put(
+      "_IM_PAIDEIA_DAO_LOGO",
+      ConfKeys.im_paideia_dao_logo.ergoValue.getValue()
+    )
+    cons.put(
+      "_IM_PAIDEIA_DAO_MIN_PROPOSAL_TIME",
+      ConfKeys.im_paideia_dao_min_proposal_time.ergoValue.getValue()
+    )
+    cons.put(
+      "_IM_PAIDEIA_DAO_BANNER",
+      ConfKeys.im_paideia_dao_banner.ergoValue.getValue()
+    )
+    cons.put(
+      "_IM_PAIDEIA_DAO_BANNER_ENABLED",
+      ConfKeys.im_paideia_dao_banner_enabled.ergoValue.getValue()
+    )
+    cons.put(
+      "_IM_PAIDEIA_DAO_FOOTER",
+      ConfKeys.im_paideia_dao_footer.ergoValue.getValue()
+    )
+    cons.put(
+      "_IM_PAIDEIA_DAO_FOOTER_ENABLED",
+      ConfKeys.im_paideia_dao_footer_enabled.ergoValue.getValue()
+    )
+    cons.put(
+      "_IM_PAIDEIA_DAO_THEME",
+      ConfKeys.im_paideia_dao_theme.ergoValue.getValue()
+    )
+    cons.put(
+      "_IM_PAIDEIA_STAKING_PROFIT_TOKENS",
+      ConfKeys.im_paideia_staking_profit_tokenids.ergoValue.getValue()
+    )
+    cons.put(
+      "_IM_PAIDEIA_STAKING_PROFIT_THRESHOLD",
+      ConfKeys.im_paideia_staking_profit_thresholds.ergoValue.getValue()
+    )
     cons
   }
 }

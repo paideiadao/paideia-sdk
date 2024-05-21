@@ -1,4 +1,9 @@
-{
+/** This is my contracts description.
+ * Here is another line describing what it does in more detail.
+ *
+ * @return
+ */
+@contract def castVote(imPaideiaDaoProposalTokenId: Coll[Byte]) = {
     #import lib/validRefund/1.0.0/validRefund.es;
 
     // Refund logic
@@ -14,15 +19,6 @@
      *  the stake key is returned to the user.
      *
      */
-
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
-    // Constants                                                             //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
-
-    val imPaideiaDaoProposalTokenId: Coll[Byte] = 
-        _IM_PAIDEIA_DAO_PROPOSAL_TOKENID
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //

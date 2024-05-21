@@ -7,7 +7,7 @@ import im.paideia.staking.contracts.SplitProfit
 import im.paideia.common.boxes.PaideiaBox
 import org.ergoplatform.appkit.ErgoValue
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
-import sigmastate.eval.Colls
+import sigma.Colls
 import org.ergoplatform.appkit.Address
 
 final case class SplitProfitBox(

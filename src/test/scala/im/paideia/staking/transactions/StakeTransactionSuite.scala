@@ -15,7 +15,6 @@ import org.ergoplatform.appkit.InputBox
 import im.paideia.DAOConfig
 import im.paideia.staking.transactions._
 import im.paideia.common.PaideiaTestSuite
-import sigmastate.exceptions.InterpreterException
 import im.paideia.util.Util
 import im.paideia.common.contracts.PaideiaContractSignature
 import im.paideia.util.ConfKeys
@@ -26,6 +25,7 @@ import im.paideia.Paideia
 import im.paideia.common.events.TransactionEvent
 import im.paideia.common.events.CreateTransactionsEvent
 import im.paideia.common.transactions.RefundTransaction
+import sigma.exceptions.InterpreterException
 
 class StakeTransactionSuite extends PaideiaTestSuite {
   test("Sign stake tx on empty state") {

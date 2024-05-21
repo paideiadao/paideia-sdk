@@ -7,7 +7,7 @@ import im.paideia.DAOConfig
 import im.paideia.governance.boxes.ProtoDAOBox
 import org.ergoplatform.sdk.ErgoToken
 import im.paideia.util.Env
-import java.util.HashMap
+import scala.collection.mutable.HashMap
 import im.paideia.DAOConfigKey
 import org.ergoplatform.sdk.ErgoId
 import org.ergoplatform.appkit.ErgoValue
@@ -19,13 +19,13 @@ import scala.collection.JavaConverters._
 import org.ergoplatform.restapi.client.ErgoTransactionOutput
 import im.paideia.Paideia
 import org.ergoplatform.appkit.impl.InputBoxImpl
-import special.sigma.AvlTree
+import sigma.AvlTree
 import im.paideia.governance.transactions.MintTransaction
 import org.ergoplatform.appkit.Address
 import im.paideia.util.ConfKeys
 import im.paideia.governance.transactions.CreateDAOTransaction
 import im.paideia.DAO
-import special.collection.Coll
+import sigma.Coll
 import scorex.crypto.authds.ADDigest
 import im.paideia.common.events.CreateTransactionsEvent
 import im.paideia.common.events.UpdateConfigEvent
@@ -40,6 +40,9 @@ import im.paideia.staking.contracts.StakeCompound
 import im.paideia.staking.contracts.StakeSnapshot
 import im.paideia.staking.contracts.StakeVote
 import im.paideia.staking.contracts.StakeProfitShare
+import sigma.ast.Constant
+import sigma.ast.SType
+import sigma.ast.ByteArrayConstant
 
 class ProtoDAO(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -310,7 +313,6 @@ class ProtoDAO(contractSignature: PaideiaContractSignature)
       ConfKeys.im_paideia_contracts_config.ergoValue.getValue()
     )
     cons.put("_IM_PAIDEIA_DAO_KEY", ConfKeys.im_paideia_dao_key.ergoValue.getValue())
-    cons.put("_PAIDEIA_DAO_KEY", ErgoId.create(Env.paideiaDaoKey).getBytes)
     cons.put("_IM_PAIDEIA_DAO_NAME", ConfKeys.im_paideia_dao_name.ergoValue.getValue())
     cons.put(
       "_IM_PAIDEIA_DAO_PROPOSAL_TOKENID",
@@ -342,6 +344,15 @@ class ProtoDAO(contractSignature: PaideiaContractSignature)
       ConfKeys.im_paideia_contracts_createdao.ergoValue.getValue()
     )
     cons
+  }
+
+  override lazy val parameters: Map[String, Constant[SType]] = {
+    val cons = new HashMap[String, Constant[SType]]()
+    cons.put(
+      "paideiaDaoKey",
+      ByteArrayConstant(ErgoId.create(Env.paideiaDaoKey).getBytes)
+    )
+    cons.toMap
   }
 
   override def getConfigContext(configDigest: Option[ADDigest]) = Paideia

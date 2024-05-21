@@ -11,11 +11,14 @@ import im.paideia.common.events.PaideiaEvent
 import im.paideia.common.events.PaideiaEventResponse
 import im.paideia.staking.transactions.SplitProfitTransaction
 import im.paideia.Paideia
-import java.util.HashMap
+import scala.collection.mutable.HashMap
 import org.ergoplatform.sdk.ErgoId
 import im.paideia.util.ConfKeys
 import im.paideia.common.events.CreateTransactionsEvent
 import org.ergoplatform.appkit.InputBox
+import sigma.ast.Constant
+import sigma.ast.SType
+import sigma.ast.ByteArrayConstant
 
 class SplitProfit(contractSig: PaideiaContractSignature)
   extends PaideiaContract(contractSig) {
@@ -66,9 +69,17 @@ class SplitProfit(contractSig: PaideiaContractSignature)
     PaideiaEventResponse.merge(List(super.handleEvent(event), response))
   }
 
+  override lazy val parameters: Map[String, Constant[SType]] = {
+    val cons = new HashMap[String, Constant[SType]]()
+    cons.put(
+      "imPaideiaDaoKey",
+      ByteArrayConstant(ErgoId.create(contractSig.daoKey).getBytes)
+    )
+    cons.toMap
+  }
+
   override lazy val constants: HashMap[String, Object] = {
     val cons = new HashMap[String, Object]()
-    cons.put("_IM_PAIDEIA_DAO_KEY", ErgoId.create(contractSig.daoKey).getBytes)
     cons.put(
       "_IM_PAIDEIA_CONTRACTS_TREASURY",
       ConfKeys.im_paideia_contracts_treasury.ergoValue.getValue()

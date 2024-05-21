@@ -11,8 +11,7 @@ import im.paideia.util.Env
 import org.ergoplatform.sdk.ErgoId
 import im.paideia.governance.boxes.DAOOriginBox
 import org.ergoplatform.appkit.impl.OutBoxImpl
-import sigmastate.eval.CostingSigmaDslBuilder
-import special.sigma.Box
+import sigma.Box
 import org.ergoplatform.sdk.ErgoToken
 import java.nio.charset.StandardCharsets
 import org.ergoplatform.appkit.ContextVar
@@ -20,7 +19,8 @@ import im.paideia.util.ConfKeys
 import im.paideia.staking.TotalStakingState
 import org.ergoplatform.appkit.OutBox
 import scorex.crypto.authds.ADDigest
-import special.sigma.AvlTree
+import sigma.AvlTree
+import sigma.data.CBox
 
 final case class CreateProposalTransaction(
   _ctx: BlockchainContextImpl,
@@ -102,13 +102,11 @@ final case class CreateProposalTransaction(
       .toArray
 
   val proposalOutput = new OutBoxImpl(
-    (new CostingSigmaDslBuilder())
-      .toErgoBox(createProposalInputBox.proposalBox)
-      .toCandidate
+    createProposalInputBox.proposalBox.asInstanceOf[CBox].ebox
   )
 
   val actionOutputs = createProposalInputBox.actionBoxes.map { (b: Box) =>
-    new OutBoxImpl((new CostingSigmaDslBuilder()).toErgoBox(b).toCandidate)
+    new OutBoxImpl(b.asInstanceOf[CBox].ebox)
   }.toList
 
   val userOutput = ctx

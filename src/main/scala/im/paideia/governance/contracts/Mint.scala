@@ -5,10 +5,13 @@ import im.paideia.common.contracts.PaideiaContractSignature
 import im.paideia.common.contracts.PaideiaActor
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.governance.boxes.MintBox
-import java.util.HashMap
+import scala.collection.mutable.HashMap
 import im.paideia.util.ConfKeys
 import im.paideia.util.Env
 import org.ergoplatform.sdk.ErgoId
+import sigma.ast.Constant
+import sigma.ast.SType
+import sigma.ast.ByteArrayConstant
 
 class Mint(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -37,8 +40,16 @@ class Mint(contractSignature: PaideiaContractSignature)
       "_IM_PAIDEIA_CONTRACTS_DAO",
       ConfKeys.im_paideia_contracts_dao.ergoValue.getValue()
     )
-    cons.put("_PAIDEIA_DAO_KEY", ErgoId.create(Env.paideiaDaoKey).getBytes)
     cons
+  }
+
+  override lazy val parameters: Map[String, Constant[SType]] = {
+    val cons = new HashMap[String, Constant[SType]]()
+    cons.put(
+      "paideiaDaoKey",
+      ByteArrayConstant(ErgoId.create(Env.paideiaDaoKey).getBytes)
+    )
+    cons.toMap
   }
 }
 

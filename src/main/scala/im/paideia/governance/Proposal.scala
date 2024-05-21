@@ -2,7 +2,7 @@ package im.paideia.governance
 
 import work.lithos.plasma.collections.PlasmaMap
 import org.ergoplatform.sdk.ErgoId
-import sigmastate.AvlTreeFlags
+import sigma.data.AvlTreeFlags
 import work.lithos.plasma.PlasmaParameters
 import work.lithos.plasma.collections.ProxyPlasmaMap
 import java.io.File

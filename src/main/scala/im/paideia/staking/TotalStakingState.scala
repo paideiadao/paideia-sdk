@@ -6,11 +6,8 @@ import work.lithos.plasma.collections.OpResult
 import work.lithos.plasma.ByteConversion
 import scala.util.Failure
 import scala.util.Success
-import special.collection.Coll
-import special.collection.CollOverArrayBuilder
+import sigma.Coll
 import org.ergoplatform.sdk.ErgoId
-import special.collection.PairOfCols
-import special.collection.CollOverArray
 import org.ergoplatform.appkit.ContextVar
 import org.ergoplatform.appkit.ErgoValue
 import org.ergoplatform.appkit.ErgoType

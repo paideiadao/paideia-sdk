@@ -23,7 +23,6 @@ import org.ergoplatform.restapi.client.Transactions
 import im.paideia.governance.Proposal
 import com.typesafe.config.ConfigList
 import im.paideia.common.events.CreateTransactionsEvent
-import sigmastate.exceptions.InterpreterException
 
 class EvaluateProposalTransactionSuite extends PaideiaTestSuite {
   test("Evaluate basic proposal, quorum met") {

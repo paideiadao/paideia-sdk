@@ -7,7 +7,7 @@ import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.governance.boxes.PaideiaOriginBox
 import org.ergoplatform.sdk.ErgoToken
 import im.paideia.util.Env
-import java.util.HashMap
+import scala.collection.mutable.HashMap
 import im.paideia.Paideia
 import im.paideia.DAOConfigKey
 import org.ergoplatform.sdk.ErgoId
@@ -17,6 +17,9 @@ import im.paideia.common.events.{PaideiaEvent, PaideiaEventResponse}
 import im.paideia.common.events.TransactionEvent
 import im.paideia.DAO
 import im.paideia.common.events.UpdateConfigEvent
+import sigma.ast.Constant
+import sigma.ast.SType
+import sigma.ast.ByteArrayConstant
 
 class PaideiaOrigin(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -62,9 +65,20 @@ class PaideiaOrigin(contractSignature: PaideiaContractSignature)
       "_IM_PAIDEIA_CONTRACTS_SPLIT_PROFIT",
       ConfKeys.im_paideia_contracts_split_profit.ergoValue.getValue()
     )
-    cons.put("_PAIDEIA_TOKEN_ID", ErgoId.create(Env.paideiaTokenId).getBytes)
-    cons.put("_PAIDEIA_DAO_KEY", ErgoId.create(Env.paideiaDaoKey).getBytes)
     cons
+  }
+
+  override lazy val parameters: Map[String, Constant[SType]] = {
+    val cons = new HashMap[String, Constant[SType]]()
+    cons.put(
+      "paideiaDaoKey",
+      ByteArrayConstant(ErgoId.create(Env.paideiaDaoKey).getBytes)
+    )
+    cons.put(
+      "paideiaTokenId",
+      ByteArrayConstant(ErgoId.create(Env.paideiaTokenId).getBytes)
+    )
+    cons.toMap
   }
 }
 

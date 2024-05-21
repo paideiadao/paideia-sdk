@@ -33,6 +33,7 @@ import im.paideia.staking.contracts.StakeSnapshot
 import im.paideia.staking.contracts.StakeVote
 import im.paideia.staking.contracts.Unstake
 import im.paideia.governance.contracts.CreateDAO
+import sigma.ast.ErgoTree
 
 class PaideiaTestSuite extends AnyFunSuite with HttpClientTesting {}
 
@@ -161,6 +162,7 @@ object PaideiaTestSuite {
         ConfKeys.im_paideia_default_action_sendfunds,
         actionSendFundsContract.ergoTree.bytes
       )
+
       paideiaConfig.set(
         ConfKeys.im_paideia_default_action_sendfunds_signature,
         actionSendFundsContract.contractSignature
