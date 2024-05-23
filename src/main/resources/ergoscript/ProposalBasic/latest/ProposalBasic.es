@@ -7,6 +7,7 @@
     #import lib/bytearrayToLongClamped/1.0.0/bytearrayToLongClamped.es;
     #import lib/bytearrayToTokenId/1.0.0/bytearrayToTokenId.es;
     #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
+    #import lib/tokenExists/1.0.0/tokenExists.es;
 
     /**
      *
@@ -250,7 +251,6 @@
         ///////////////////////////////////////////////////////////////////////
 
         val stakeState: Box = INPUTS(0)
-        val castVote: Box   = INPUTS(3)
 
         ///////////////////////////////////////////////////////////////////////
         // Outputs                                                           //
@@ -272,8 +272,6 @@
 
         val votesTreeO: AvlTree = proposalBasicO.R6[AvlTree].get
 
-        val voteCast: Coll[Byte] = castVote.R5[Coll[Byte]].get
-
         val stakeStateTree: AvlTree = stakeState.R4[Coll[AvlTree]].get(0)
 
         ///////////////////////////////////////////////////////////////////////
@@ -283,12 +281,14 @@
         val currentVoteProof: Coll[Byte] = getVar[Coll[Byte]](1).get
         val newVoteProof: Coll[Byte]     = getVar[Coll[Byte]](2).get
         val stakeProof: Coll[Byte]       = getVar[Coll[Byte]](3).get
+        val voteCast: Coll[Byte]         = getVar[Coll[Byte]](5).get
+        val voteKey: Coll[Byte]          = getVar[Coll[Byte]](6).get
         
         ///////////////////////////////////////////////////////////////////////
         // Intermediate calculations                                         //
         ///////////////////////////////////////////////////////////////////////
 
-        val voteKey: Coll[Byte] = castVote.tokens(0)._1
+        val voteKeyPresent: Boolean = tokenExists((INPUTS, voteKey))
 
         val currentVote: Option[Coll[Byte]] = 
             votesTree.get(voteKey,currentVoteProof)
@@ -362,6 +362,7 @@
         ///////////////////////////////////////////////////////////////////////  
 
         allOf(Coll(
+            voteKeyPresent,
             currentStakeAmount >= newVoteCount,
             proposalBasicO.propositionBytes == proposalBasic.propositionBytes,
             proposalBasicO.value >= proposalBasic.value,

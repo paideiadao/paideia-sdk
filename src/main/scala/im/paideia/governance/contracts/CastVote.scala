@@ -84,12 +84,19 @@ class CastVote(contractSignature: PaideiaContractSignature)
                   )
                 )
               } else {
-                CastVoteTransaction(
+                val castVoteBox = CastVoteBox.fromInputBox(cte.ctx, boxes(b))
+                val unsigned = CastVoteTransaction(
                   cte.ctx,
-                  boxes(b),
+                  castVoteBox.proposalIndex,
+                  castVoteBox.stakeKey,
+                  castVoteBox.vote,
                   Paideia.getDAO(contractSignature.daoKey),
-                  Address.create(Env.operatorAddress)
+                  Address.create(Env.operatorAddress),
+                  castVoteBox.userAddress
                 )
+                val check = unsigned.fundsMissing()
+                unsigned.userInputs = List(boxes(b))
+                unsigned
               }
             )
           )
