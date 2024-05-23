@@ -30,24 +30,19 @@ import sigma.Colls
 
 case class UnstakeTransaction(
   _ctx: BlockchainContextImpl,
-  unstakeProxyInput: InputBox,
+  stakingKey: String,
+  newStakeAndProfitRecord: Coll[Byte],
   _changeAddress: Address,
-  daoKey: String
+  userAddress: Address,
+  daoKey: String,
+  var stakingContextVars: StakingContextVars
 ) extends PaideiaTransaction {
 
   ctx = _ctx
 
-  val stakingKey = unstakeProxyInput.getTokens().get(0).getId.toString()
-
   val config = Paideia.getConfig(daoKey)
 
   val state = TotalStakingState(daoKey)
-
-  val newStakeAndProfitRecord = unstakeProxyInput
-    .getRegisters()
-    .get(1)
-    .getValue()
-    .asInstanceOf[Coll[Byte]]
 
   val newStakeRecord: StakeRecord = StakeRecord.stakeRecordConversion.convertFromBytes(
     newStakeAndProfitRecord.toArray
@@ -109,7 +104,7 @@ case class UnstakeTransaction(
     .filter((et: ErgoToken) => et.getValue > 0L)
     .toList
 
-  val stakingContextVars = stakeStateInputBox
+  stakingContextVars = stakeStateInputBox
     .unstake(stakingKey, newStakeRecord, newExtraTokens)
 
   val contextVars = stakingContextVars.stakingStateContextVars
@@ -157,23 +152,6 @@ case class UnstakeTransaction(
         companionContract.getConfigContext(Some(configDigest))
       )
     )
-
-  val proxyContextVars = List(
-    ContextVar.of(
-      0.toByte,
-      config.getProof(
-        ConfKeys.im_paideia_staking_state_tokenid,
-        ConfKeys.im_paideia_staking_profit_tokenids
-      )(Some(configDigest))
-    ),
-    ContextVar.of(1.toByte, stakingContextVars.companionContextVars(1).getValue()),
-    ContextVar.of(
-      2.toByte,
-      (if (stakingContextVars.companionContextVars.size > 2)
-         stakingContextVars.companionContextVars(2).getValue()
-       else ErgoValueBuilder.buildFor(Colls.fromArray(Array[Byte]())))
-    )
-  )
 
   val govTokenUnstake = if (currentStakeRecord.stake > newStakeRecord.stake) {
     List(
@@ -225,17 +203,7 @@ case class UnstakeTransaction(
       tokens: _*
     )
     .contract(
-      Address
-        .fromPropositionBytes(
-          _ctx.getNetworkType(),
-          unstakeProxyInput
-            .getRegisters()
-            .get(0)
-            .getValue()
-            .asInstanceOf[Coll[Byte]]
-            .toArray
-        )
-        .toErgoContract
+      userAddress.toErgoContract
     )
     .build()
 
@@ -243,8 +211,7 @@ case class UnstakeTransaction(
   fee           = 2350000L
   inputs = List[InputBox](
     stakeStateInput.withContextVars(contextVars: _*),
-    unstakeInput.withContextVars(unstakeContextVars: _*),
-    unstakeProxyInput.withContextVars(proxyContextVars: _*)
+    unstakeInput.withContextVars(unstakeContextVars: _*)
   )
   dataInputs = List[InputBox](configInput)
   outputs    = List[OutBox](stakeStateInputBox.outBox, companionOutput, userOutput)

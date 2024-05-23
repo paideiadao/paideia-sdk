@@ -7,6 +7,7 @@
     #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
     #import lib/bytearrayToTokenId/1.0.0/bytearrayToTokenId.es;
     #import lib/tokensInBoxes/1.0.0/tokensInBoxes.es;
+    #import lib/tokenExists/1.0.0/tokenExists.es;
 
     /**
      *
@@ -42,7 +43,6 @@
 
     val stakeState: Box = INPUTS(0)
     val unstake: Box    = SELF
-    val proxy: Box      = INPUTS(2)
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -185,7 +185,7 @@
         stakeStateOR8 == stakeStateR8
     ))
 
-    val keyInInput: Boolean = proxy.tokens(0)._1 == keys(0)
+    val keyInInput: Boolean = tokenExists((INPUTS, keys(0)))
 
     val tokensUnstaked: Boolean = allOf(Coll(
         currentStakeAmount == 

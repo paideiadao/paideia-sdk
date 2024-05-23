@@ -30,13 +30,15 @@ import scorex.crypto.authds.ADDigest
 
 case class AddStakeTransaction(
   _ctx: BlockchainContextImpl,
-  addStakeProxyInput: InputBox,
+  amount: Long,
+  stakingKey: String,
   _changeAddress: Address,
-  daoKey: String
+  userAddress: Address,
+  daoKey: String,
+  var stakingContextVars: StakingContextVars
 ) extends PaideiaTransaction {
-  val stakingKey = addStakeProxyInput.getTokens().get(0).getId.toString()
-  val amount     = addStakeProxyInput.getRegisters().get(1).getValue().asInstanceOf[Long]
-  val config     = Paideia.getConfig(daoKey)
+
+  val config = Paideia.getConfig(daoKey)
 
   val state = TotalStakingState(daoKey)
 
@@ -73,7 +75,7 @@ case class AddStakeTransaction(
   if (!configDigest.sameElements(config._config.digest))
     throw new Exception("Config not synced correctly")
 
-  val stakingContextVars = stakeStateInputBox
+  stakingContextVars = stakeStateInputBox
     .addStake(stakingKey, amount)
 
   val contextVars = stakingContextVars.stakingStateContextVars
@@ -99,17 +101,6 @@ case class AddStakeTransaction(
       )
     )
 
-  val proxyContextVars = List(
-    ContextVar.of(
-      0.toByte,
-      config.getProof(
-        ConfKeys.im_paideia_staking_state_tokenid
-      )(Some(configDigest))
-    ),
-    ContextVar.of(1.toByte, stakingContextVars.companionContextVars(0).getValue()),
-    ContextVar.of(2.toByte, stakingContextVars.companionContextVars(1).getValue())
-  )
-
   val userOutput = _ctx
     .newTxBuilder()
     .outBoxBuilder()
@@ -118,17 +109,7 @@ case class AddStakeTransaction(
       new ErgoToken(stakingKey, 1L)
     )
     .contract(
-      Address
-        .fromPropositionBytes(
-          _ctx.getNetworkType(),
-          addStakeProxyInput
-            .getRegisters()
-            .get(0)
-            .getValue()
-            .asInstanceOf[Coll[Byte]]
-            .toArray
-        )
-        .toErgoContract
+      userAddress.toErgoContract
     )
     .build()
 
@@ -137,8 +118,7 @@ case class AddStakeTransaction(
   changeAddress = _changeAddress
   inputs = List[InputBox](
     stakeStateInput.withContextVars(contextVars: _*),
-    changeStakeInput.withContextVars(changeStakeContextVars: _*),
-    addStakeProxyInput.withContextVars(proxyContextVars: _*)
+    changeStakeInput.withContextVars(changeStakeContextVars: _*)
   )
   dataInputs = List[InputBox](configInput)
   outputs = List[OutBox](

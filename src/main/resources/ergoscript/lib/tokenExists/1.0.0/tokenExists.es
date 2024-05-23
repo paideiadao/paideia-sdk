@@ -5,7 +5,7 @@ def tokenExists(params: (Coll[Box], Coll[Byte])): Boolean = {
             (b: Box) =>
             b.tokens.exists{
                 (token: (Coll[Byte],Long)) =>
-                token._1 == SELF.tokens(0)._1
+                token._1 == tokenId
             }
         }
 }

@@ -30,6 +30,11 @@ import sigma.Coll
 import sigma.ast.Constant
 import sigma.ast.SType
 import sigma.ast.ByteArrayConstant
+import org.ergoplatform.appkit.ContextVar
+import sigma.AvlTree
+import scorex.crypto.authds.ADDigest
+import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
+import sigma.Colls
 
 class UnstakeProxy(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -75,12 +80,65 @@ class UnstakeProxy(contractSignature: PaideiaContractSignature)
                         )
                       )
                     } else {
-                      UnstakeTransaction(
+                      val unsigned = UnstakeTransaction(
                         cte.ctx,
-                        boxes(b),
+                        boxes(b).getTokens().get(0).getId.toString(),
+                        boxes(b)
+                          .getRegisters()
+                          .get(1)
+                          .getValue()
+                          .asInstanceOf[Coll[Byte]],
                         Address.create(Env.operatorAddress),
-                        contractSignature.daoKey
+                        Address
+                          .fromPropositionBytes(
+                            cte.ctx.getNetworkType(),
+                            boxes(b)
+                              .getRegisters()
+                              .get(0)
+                              .getValue()
+                              .asInstanceOf[Coll[Byte]]
+                              .toArray
+                          ),
+                        contractSignature.daoKey,
+                        null
                       )
+                      val proxyContextVars = List(
+                        ContextVar.of(
+                          0.toByte,
+                          Paideia
+                            .getConfig(contractSignature.daoKey)
+                            .getProof(
+                              ConfKeys.im_paideia_staking_state_tokenid,
+                              ConfKeys.im_paideia_staking_profit_tokenids
+                            )(
+                              Some(
+                                ADDigest @@ unsigned
+                                  .dataInputs(0)
+                                  .getRegisters()
+                                  .get(0)
+                                  .getValue()
+                                  .asInstanceOf[AvlTree]
+                                  .digest
+                                  .toArray
+                              )
+                            )
+                        ),
+                        ContextVar.of(
+                          1.toByte,
+                          unsigned.stakingContextVars.companionContextVars(1).getValue()
+                        ),
+                        ContextVar.of(
+                          2.toByte,
+                          (if (unsigned.stakingContextVars.companionContextVars.size > 2)
+                             unsigned.stakingContextVars
+                               .companionContextVars(2)
+                               .getValue()
+                           else ErgoValueBuilder.buildFor(Colls.fromArray(Array[Byte]())))
+                        )
+                      )
+                      unsigned.userInputs =
+                        List(boxes(b).withContextVars(proxyContextVars: _*))
+                      unsigned
                     }
                   )
                 )

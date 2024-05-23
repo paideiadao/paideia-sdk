@@ -33,6 +33,9 @@ import sigma.ast.Constant
 import sigma.ast.SType
 import sigma.ast.ByteArrayConstant
 import sigma.Colls
+import org.ergoplatform.appkit.ContextVar
+import scorex.crypto.authds.ADDigest
+import sigma.AvlTree
 
 class AddStakeProxy(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -66,6 +69,27 @@ class AddStakeProxy(contractSignature: PaideiaContractSignature)
                     RefundTransaction(
                       cte.ctx,
                       boxes(b),
+                      Address
+                        .fromPropositionBytes(
+                          cte.ctx.getNetworkType(),
+                          boxes(b)
+                            .getRegisters()
+                            .get(0)
+                            .getValue()
+                            .asInstanceOf[Coll[Byte]]
+                            .toArray
+                        )
+                    )
+                  } else {
+                    val unsigned = AddStakeTransaction(
+                      cte.ctx,
+                      boxes(b)
+                        .getRegisters()
+                        .get(1)
+                        .getValue()
+                        .asInstanceOf[Long],
+                      boxes(b).getTokens().get(0).getId.toString(),
+                      Address.create(Env.operatorAddress),
                       Address.fromPropositionBytes(
                         NetworkType.MAINNET,
                         boxes(b)
@@ -74,15 +98,42 @@ class AddStakeProxy(contractSignature: PaideiaContractSignature)
                           .getValue()
                           .asInstanceOf[Coll[Byte]]
                           .toArray
+                      ),
+                      contractSignature.daoKey,
+                      null
+                    )
+                    val proxyContextVars = List(
+                      ContextVar.of(
+                        0.toByte,
+                        Paideia
+                          .getConfig(contractSignature.daoKey)
+                          .getProof(
+                            ConfKeys.im_paideia_staking_state_tokenid
+                          )(
+                            Some(
+                              ADDigest @@ unsigned
+                                .dataInputs(0)
+                                .getRegisters()
+                                .get(0)
+                                .getValue()
+                                .asInstanceOf[AvlTree]
+                                .digest
+                                .toArray
+                            )
+                          )
+                      ),
+                      ContextVar.of(
+                        1.toByte,
+                        unsigned.stakingContextVars.companionContextVars(0).getValue()
+                      ),
+                      ContextVar.of(
+                        2.toByte,
+                        unsigned.stakingContextVars.companionContextVars(1).getValue()
                       )
                     )
-                  } else {
-                    AddStakeTransaction(
-                      cte.ctx,
-                      boxes(b),
-                      Address.create(Env.operatorAddress),
-                      contractSignature.daoKey
-                    )
+                    unsigned.userInputs =
+                      List(boxes(b).withContextVars(proxyContextVars: _*))
+                    unsigned
                   }
                 )
               )

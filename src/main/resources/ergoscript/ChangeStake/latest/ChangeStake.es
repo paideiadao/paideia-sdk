@@ -9,6 +9,7 @@
 @contract def changeStake(imPaideiaDaoKey: Coll[Byte]) = {
     #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
     #import lib/bytearrayToTokenId/1.0.0/bytearrayToTokenId.es;
+    #import lib/tokenExists/1.0.0/tokenExists.es;
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -52,7 +53,6 @@
 
     val stakeStateO: Box  = OUTPUTS(0)
     val changeStakeO: Box = OUTPUTS(1)
-    val userO: Box        = OUTPUTS(2)
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -186,7 +186,7 @@
 
     val correctStakeState: Boolean = stakeState.tokens(0)._1 == stakingStakeTokenId
 
-    val keyInOutput: Boolean = userO.tokens(0)._1 == stakeOperations(0)._1
+    val keyInOutput: Boolean = tokenExists((OUTPUTS, stakeOperations(0)._1))
 
     val tokensStaked: Boolean = newStakeAmount - currentStakeAmount == 
         (stakeStateO.tokens(1)._2 - stakeState.tokens(1)._2) && 
