@@ -69,11 +69,6 @@
 
     val configTree: AvlTree = config.R4[AvlTree].get
 
-    val createProposalR5: Coll[Box] = createProposal.R5[Coll[Box]].get
-    val proposalBox: Box            = createProposalR5(0)
-
-    val actionBoxes: Coll[Box] = createProposalR5.slice(1,createProposalR5.size)
-
     val proposalIndex: Long    = proposalO.R4[Coll[Int]].get(0).toLong
     val proposalOR5: Coll[Long] = proposalO.R5[Coll[Long]].get
     val proposalEndTime: Long  = proposalOR5(0)
@@ -86,6 +81,8 @@
 
     val paideiaConfigProof: Coll[Byte] = getVar[Coll[Byte]](0).get
     val configProof: Coll[Byte]        = getVar[Coll[Byte]](1).get
+    val proposalBox: Box               = getVar[Box](2).get
+    val actionBoxes: Coll[Box]         = getVar[Coll[Box]](3).get
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //

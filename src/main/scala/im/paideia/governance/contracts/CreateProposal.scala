@@ -59,11 +59,20 @@ class CreateProposal(contractSignature: PaideiaContractSignature)
                     )
                   )
                 } else {
-                  CreateProposalTransaction(
+                  val createProposalBox =
+                    CreateProposalBox.fromInputBox(cte.ctx, boxes(b))
+                  val unsigned = CreateProposalTransaction(
                     cte.ctx,
-                    boxes(b),
-                    Address.create(Env.operatorAddress)
+                    createProposalBox.useContract.contractSignature.daoKey,
+                    createProposalBox.proposalBox,
+                    createProposalBox.actionBoxes,
+                    createProposalBox.voteKey,
+                    Address.create(Env.operatorAddress),
+                    createProposalBox.userAddress
                   )
+
+                  unsigned.userInputs = List(boxes(b))
+                  unsigned
                 }
               )
             )

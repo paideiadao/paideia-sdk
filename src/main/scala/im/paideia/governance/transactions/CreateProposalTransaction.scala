@@ -21,19 +21,23 @@ import org.ergoplatform.appkit.OutBox
 import scorex.crypto.authds.ADDigest
 import sigma.AvlTree
 import sigma.data.CBox
+import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
+import sigma.Colls
 
 final case class CreateProposalTransaction(
   _ctx: BlockchainContextImpl,
-  createProposalInput: InputBox,
-  _changeAddress: Address
+  daoKey: String,
+  proposalBox: Box,
+  actionBoxes: Array[Box],
+  voteKey: String,
+  _changeAddress: Address,
+  userAddress: Address
 ) extends PaideiaTransaction {
   ctx           = _ctx
   changeAddress = _changeAddress
   fee           = 1850000L
 
-  val createProposalInputBox = CreateProposalBox.fromInputBox(ctx, createProposalInput)
-
-  val dao = Paideia.getDAO(createProposalInputBox.useContract.contractSignature.daoKey)
+  val dao = Paideia.getDAO(daoKey)
 
   val daoOriginInput = Paideia.getBox(
     new FilterNode(
@@ -79,7 +83,7 @@ final case class CreateProposalTransaction(
     ctx,
     dao,
     daoOriginInputBox.propTokens - 1L,
-    daoOriginInputBox.actionTokens - createProposalInputBox.actionBoxes.size.toLong,
+    daoOriginInputBox.actionTokens - actionBoxes.size.toLong,
     daoOriginInputBox.useContract
   )
 
@@ -102,19 +106,19 @@ final case class CreateProposalTransaction(
       .toArray
 
   val proposalOutput = new OutBoxImpl(
-    createProposalInputBox.proposalBox.asInstanceOf[CBox].ebox
+    proposalBox.asInstanceOf[CBox].ebox
   )
 
-  val actionOutputs = createProposalInputBox.actionBoxes.map { (b: Box) =>
+  val actionOutputs = actionBoxes.map { (b: Box) =>
     new OutBoxImpl(b.asInstanceOf[CBox].ebox)
   }.toList
 
   val userOutput = ctx
     .newTxBuilder()
     .outBoxBuilder()
-    .contract(createProposalInputBox.userAddress.toErgoContract())
+    .contract(userAddress.toErgoContract())
     .value(1000000L)
-    .tokens(new ErgoToken(createProposalInputBox.voteKey, 1L))
+    .tokens(new ErgoToken(voteKey, 1L))
     .build()
 
   val daoOriginContext = List(
@@ -138,10 +142,18 @@ final case class CreateProposalTransaction(
             ConfKeys.im_paideia_contracts_action(ao.getErgoTree().bytes)
           ): _*
       )(Some(configDigest))
+    ),
+    ContextVar.of(
+      2.toByte,
+      ErgoValueBuilder.buildFor(proposalBox)
+    ),
+    ContextVar.of(
+      3.toByte,
+      ErgoValueBuilder.buildFor(Colls.fromArray(actionBoxes))
     )
   )
 
-  inputs = List(daoOriginInput.withContextVars(daoOriginContext: _*), createProposalInput)
+  inputs     = List(daoOriginInput.withContextVars(daoOriginContext: _*))
   dataInputs = List(paideiaConfigInput, configInput)
   outputs = List(daoOriginOutput.outBox, proposalOutput) ++ actionOutputs ++ List(
     userOutput
