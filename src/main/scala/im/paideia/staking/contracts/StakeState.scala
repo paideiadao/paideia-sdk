@@ -36,6 +36,7 @@ import im.paideia.staking.StakeRecord
 import im.paideia.common.events.CreateTransactionsEvent
 import java.lang
 import im.paideia.staking.ParticipationRecord
+import im.paideia.DAODefaultedException
 
 class StakeState(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -154,17 +155,22 @@ class StakeState(contractSignature: PaideiaContractSignature)
                          .fromInputBox(cte.ctx, boxes(b))
                          .nextEmission
                      ) {
-                       PaideiaEventResponse(
-                         1,
-                         List(
-                           EmitTransaction(
-                             cte.ctx,
-                             boxes(b),
-                             Address.create(Env.operatorAddress).getErgoAddress,
-                             contractSignature.daoKey
+                       try {
+                         PaideiaEventResponse(
+                           1,
+                           List(
+                             EmitTransaction(
+                               cte.ctx,
+                               boxes(b),
+                               Address.create(Env.operatorAddress).getErgoAddress,
+                               contractSignature.daoKey
+                             )
                            )
                          )
-                       )
+                       } catch {
+                         case e: DAODefaultedException => PaideiaEventResponse(0)
+                         case e: Exception             => throw e
+                       }
                      } else {
                        PaideiaEventResponse(0)
                      })
