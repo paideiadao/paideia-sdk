@@ -82,11 +82,11 @@ class ProtoDAO(contractSignature: PaideiaContractSignature)
                     .asInstanceOf[AvlTree]
                     .digest
                 ) {
-                  val nextTokenToMint = ProtoDAO.tokensToMint.find((s: DAOConfigKey) =>
+                  val tokensToMint = ProtoDAO.tokensToMint.filter((s: DAOConfigKey) =>
                     config._config.lookUp(s).response(0).tryOp.get == None
                   )
-                  nextTokenToMint match {
-                    case Some(value) =>
+                  if (iBox.getValue() > 6000000L) {
+                    if (tokensToMint.size > 0) {
                       PaideiaEventResponse(
                         2,
                         List(
@@ -94,12 +94,12 @@ class ProtoDAO(contractSignature: PaideiaContractSignature)
                             cte.ctx,
                             iBox,
                             dao,
-                            value,
+                            tokensToMint(0),
                             Address.create(Env.operatorAddress)
                           )
                         )
                       )
-                    case None => {
+                    } else {
                       try {
                         val newTx = CreateDAOTransaction(
                           cte.ctx,
@@ -112,6 +112,8 @@ class ProtoDAO(contractSignature: PaideiaContractSignature)
                         case _: Exception => PaideiaEventResponse(0)
                       }
                     }
+                  } else {
+                    PaideiaEventResponse(0)
                   }
                 } else {
                   PaideiaEventResponse(0)
