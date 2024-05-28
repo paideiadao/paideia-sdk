@@ -130,7 +130,7 @@ class Treasury(contractSignature: PaideiaContractSignature)
             )
         } else Unit
       })
-    if (result.length > 0) {
+    if (assetsFound) {
       Some(result.toArray)
     } else {
       None
