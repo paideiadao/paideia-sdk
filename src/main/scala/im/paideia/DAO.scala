@@ -13,3 +13,5 @@ case class DAO(
     proposals(index)
   }
 }
+
+class DAODefaultedException(message: String) extends Exception(message)
