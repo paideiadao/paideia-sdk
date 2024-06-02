@@ -17,6 +17,8 @@ import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 import sigmastate.eval.Colls
 import scorex.crypto.authds.ADDigest
 import java.nio.charset.StandardCharsets
+import scorex.crypto.authds.legacy.avltree.AVLTree
+import special.sigma.AvlTree
 
 case class ProposalBasicBox(
   _ctx: BlockchainContextImpl,
@@ -76,6 +78,7 @@ object ProposalBasicBox {
       inp.getRegisters().get(3).getValue().asInstanceOf[Coll[Byte]].toArray,
       StandardCharsets.UTF_8
     )
+    val votesTree = inp.getRegisters().get(2).getValue().asInstanceOf[AvlTree]
     ProposalBasicBox(
       ctx,
       Paideia.getDAO(contract.contractSignature.daoKey),
@@ -86,7 +89,8 @@ object ProposalBasicBox {
       longs(1),
       longs(0),
       ints(1),
-      contract
+      contract,
+      Some(ADDigest @@ votesTree.digest.toArray)
     )
   }
 }
