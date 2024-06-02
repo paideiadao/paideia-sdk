@@ -28,7 +28,7 @@
     val imPaideiaStakeStateTokenId: Coll[Byte] = 
         _IM_PAIDEIA_STAKING_STATE_TOKEN_ID
 
-    val imPaideiaContractsStakeState: Coll[Byte] = 
+    val imPaideiaContractsStakeStake: Coll[Byte] = 
         _IM_PAIDEIA_CONTRACTS_STAKING_STAKE
 
     val stakeInfoOffset: Int = 8
@@ -120,16 +120,14 @@
 
     val configValues: Coll[Option[Coll[Byte]]] = configTree.getMany(
         Coll(
-            imPaideiaContractsStakeState,
-            imPaideiaStakeStateTokenId,
-            imPaideiaStakeProfitTokenIds
+            imPaideiaContractsStakeStake,
+            imPaideiaStakeStateTokenId
         ),
         configProof
     )
 
     val stakeContractHash: Coll[Byte] = bytearrayToContractHash(configValues(0))
     val stakeStateTokenId: Coll[Byte] = bytearrayToTokenId(configValues(1))
-    val profitTokenIds: Coll[Byte] = configValues(2).get
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -137,20 +135,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val whiteListedTokenIds: Coll[Coll[Byte]] = 
-        profitTokenIds.slice(0,(profitTokenIds.size-6)/37).indices.map{
-            (i: Int) =>
-            profitTokenIds.slice(6+(37*i)+5,6+(37*(i+1)))
-        }
-
     val profit: Coll[Long] = stakeStateR5.slice(5,stakeStateR5.size)
-        .append(
-            whiteListedTokenIds.slice(
-                stakeStateR5.size-4,
-                whiteListedTokenIds.size).map{
-                    (tokId: Coll[Byte]) => 0L
-                }
-            )
 
     val longIndices: Coll[Int] = profit.indices.map{(i: Int) => i*8}
 

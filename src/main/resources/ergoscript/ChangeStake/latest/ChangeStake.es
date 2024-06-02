@@ -117,15 +117,13 @@
     val configValues: Coll[Option[Coll[Byte]]] = configTree.getMany(
         Coll(
             imPaideiaContractsStakingChangeStake,
-            imPaideiaStakingStateTokenId,
-            imPaideiaStakingProfitTokenIds
+            imPaideiaStakingStateTokenId
         ),
         configProof
     )
 
     val changeStakeContractSignature: Coll[Byte] = bytearrayToContractHash(configValues(0))
     val stakingStakeTokenId: Coll[Byte]          = bytearrayToTokenId(configValues(1))
-    val profitTokenIds: Coll[Byte]               = configValues(2).get
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -133,19 +131,8 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val whiteListedTokenIds: Coll[Coll[Byte]] = 
-        profitTokenIds.slice(0,(profitTokenIds.size-6)/37).indices.map{
-            (i: Int) =>
-            profitTokenIds.slice(6+(37*i)+5,6+(37*(i+1)))
-        }
-
     // Append 0's if the dao has added new whitelistedtokens
     val profit: Coll[Long] = stakeStateR5.slice(5,stakeStateR5.size)
-        .append(
-            whiteListedTokenIds.slice(
-                stakeStateR5.size-4,
-                whiteListedTokenIds.size
-            ).map{(tokId: Coll[Byte]) => 0L})
 
     val longIndices: Coll[Int] = profit.indices.map{(i: Int) => i*8}
     
@@ -209,18 +196,6 @@
     val correctErgProfit: Boolean = currentProfits(1) - newProfits(1) == 
         stakeState.value - stakeStateO.value
 
-    val correctTokenProfit: Boolean = 
-        stakeState.tokens.slice(2,stakeState.tokens.size).forall{
-            (token: (Coll[Byte], Long)) =>
-            val profitIndex: Int = whiteListedTokenIds.indexOf(token._1,-3)
-            val tokenAmountInOutput: Long = stakeStateO.tokens.fold(0L, {
-                (z: Long, outputToken: (Coll[Byte], Long)) => 
-                if (outputToken._1 == token._1) z + outputToken._2 else z}
-            )
-            token._2 - tokenAmountInOutput == 
-                currentProfits(profitIndex+2) - newProfits(profitIndex+2)
-        }
-
     val unchangedRegisters: Boolean = allOf(Coll(
         participationTreeO == participationTree,
         profitO == profit,
@@ -248,7 +223,6 @@
         correctNewState,
         noAddedOrNegativeProfit,
         correctErgProfit,
-        correctTokenProfit,
         selfOutput,
         unchangedRegisters,
         noPartialUnstake

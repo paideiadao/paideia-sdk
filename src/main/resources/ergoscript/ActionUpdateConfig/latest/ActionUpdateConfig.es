@@ -155,6 +155,7 @@
         correctConfig,
         correctProposal,
         activationTimePassed,
+        burnActionToken,
         correctConfigOutput,
         correctOutputNumber,
         noExtraBurn
