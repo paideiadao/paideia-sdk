@@ -6,6 +6,7 @@
 @contract def stakeVote(imPaideiaDaoKey: Coll[Byte]) = {
     #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
     #import lib/bytearrayToTokenId/1.0.0/bytearrayToTokenId.es;
+    #import lib/stakeRecordLockedUntil/1.0.0/stakeRecordLockedUntil.es;
 
     /**
      *
@@ -30,8 +31,6 @@
 
     val imPaideiaDaoProposalTokenId: Coll[Byte] = 
         _IM_PAIDEIA_DAO_PROPOSAL_TOKEN_ID
-
-    val stakeInfoOffset: Int = 8
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -171,7 +170,7 @@
     val currentParticipation: Option[Coll[Byte]] = 
         participationTree.get(stakeKey, participationProof)
 
-    val currentLockedUntil: Long = byteArrayToLong(currentStakeState.slice(0,8))
+    val currentLockedUntil: Long = stakeRecordLockedUntil(currentStakeState)
 
     val currentVoted: Long = 
         if (currentParticipation.isDefined) 

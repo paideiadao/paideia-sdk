@@ -10,6 +10,8 @@
     #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
     #import lib/bytearrayToTokenId/1.0.0/bytearrayToTokenId.es;
     #import lib/tokenExists/1.0.0/tokenExists.es;
+    #import lib/stakeRecordStake/1.0.0/stakeRecordStake.es;
+    #import lib/stakeRecordProfits/1.0.0/stakeRecordProfits.es;
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -22,11 +24,6 @@
 
     val imPaideiaStakingStateTokenId: Coll[Byte] = 
         _IM_PAIDEIA_STAKING_STATE_TOKEN_ID
-
-    val imPaideiaStakingProfitTokenIds: Coll[Byte] = 
-        _IM_PAIDEIA_STAKING_PROFIT_TOKENIDS
-
-    val stakeInfoOffset = 8
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -69,6 +66,7 @@
     val stakers: Long            = stakeStateR5(2)
     val voted: Long              = stakeStateR5(3)
     val votedTotal: Long         = stakeStateR5(4)
+    val profit: Coll[Long]       = stakeStateR5.slice(5,stakeStateR5.size)
     val stakeStateR6: Coll[Coll[Long]] = 
         stakeState.R6[Coll[Coll[Long]]].get
 
@@ -130,33 +128,20 @@
     // Intermediate calculations                                             //
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
-
-    // Append 0's if the dao has added new whitelistedtokens
-    val profit: Coll[Long] = stakeStateR5.slice(5,stakeStateR5.size)
-
-    val longIndices: Coll[Int] = profit.indices.map{(i: Int) => i*8}
     
-    val currentStakeState: Coll[Option[Coll[Byte]]] = 
+    val stakeRecord: Coll[Byte] = 
         stakeStateTree.get(stakeOperations(0)._1, proof).get
 
-    val currentProfits: Coll[Long] = longIndices.map{
-        (i: Int) => 
-        byteArrayToLong(
-            currentStakeState.slice(i+stakeInfoOffset,i+8+stakeInfoOffset)
-        )
-    }
+    val currentStakeAmount: Long = stakeRecordStake(stakeRecord)
+    val newStakeAmount: Long     = stakeRecordStake(stakeOperations(0)._2)
 
-    val newProfits: Coll[Long] = longIndices.map{
-        (i: Int) => 
-        byteArrayToLong(
-            stakeOperations(0)._2.slice(i+stakeInfoOffset,i+8+stakeInfoOffset)
-        )
-    }
+    val currentProfits: Coll[Long] = 
+        Coll(currentStakeAmount) ++ stakeRecordProfits(stakeRecord)
 
-    val combinedProfit: Coll[(Long, Long)] = currentProfits.zip(newProfits)
+    val newProfits: Coll[Long] = 
+        Coll(newStakeAmount) ++ stakeRecordProfits(stakeOperations(0)._2)
 
-    val currentStakeAmount: Long = currentProfits(0)
-    val newStakeAmount: Long     = newProfits(0)
+    val combinedProfit: Coll[(Long, Long)] = currentProfits.zip(newProfits) 
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //

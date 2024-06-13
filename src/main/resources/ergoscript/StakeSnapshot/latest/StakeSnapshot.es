@@ -39,9 +39,6 @@
     val imPaideiaStakingCycleLength: Coll[Byte] = 
         _IM_PAIDEIA_STAKING_CYCLELENGTH
 
-    val imPaideiaStakingProfitTokenIds: Coll[Byte] = 
-        _IM_PAIDEIA_STAKING_PROFIT_TOKENIDS
-
     val imPaideiaStakingPureParticipationWeight: Coll[Byte] =
         _IM_PAIDEIA_STAKING_WEIGHT_PURE_PARTICIPATION
 
@@ -153,7 +150,6 @@
             imPaideiaStakingEmissionAmount,
             imPaideiaStakingEmissionDelay,
             imPaideiaStakingCycleLength,
-            imPaideiaStakingProfitTokenIds,
             imPaideiaStakingPureParticipationWeight,
             imPaideiaStakingParticipationWeight,
             imPaideiaDaoTokenId
@@ -171,21 +167,19 @@
 
     val cycleLength: Long = bytearrayToLongClamped((configValues(4),(3600000L,(999999999999999L,86400000L))))
 
-    val profitTokenIds: Coll[Byte] = configValues(5).get
-
     val pureParticipationWeight: Byte = 
+        if (configValues(5).isDefined)
+            configValues(5).get(1)
+        else
+            0.toByte
+
+    val participationWeight: Byte = 
         if (configValues(6).isDefined)
             configValues(6).get(1)
         else
             0.toByte
 
-    val participationWeight: Byte = 
-        if (configValues(7).isDefined)
-            configValues(7).get(1)
-        else
-            0.toByte
-
-    val daoTokenId: Coll[Byte] = bytearrayToTokenId(configValues(8))
+    val daoTokenId: Coll[Byte] = bytearrayToTokenId(configValues(7))
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -205,18 +199,7 @@
             100.toByte - cappedPPWeight, 
             participationWeight))
 
-    val whiteListedTokenIds: Coll[Coll[Byte]] = 
-        profitTokenIds.slice(0,(profitTokenIds.size-6)/37).indices.map{
-            (i: Int) =>
-            profitTokenIds.slice(6+(37*i)+5,6+(37*(i+1)))
-        }
-
-    val profit: Coll[Long] = stakeStateR5.slice(5,stakeStateR5.size).append(
-        whiteListedTokenIds.slice(
-            stakeStateR5.size-3,
-            whiteListedTokenIds.size)
-        .map{(tokId: Coll[Byte]) => 0L}
-    )
+    val profit: Coll[Long] = stakeStateR5.slice(5,stakeStateR5.size)
 
     val outputProfit: Coll[Long] = stakeStateOR5.slice(5,stakeStateOR5.size)
         

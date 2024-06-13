@@ -7,6 +7,9 @@
     #import lib/emptyDigest/1.0.0/emptyDigest.es;
     #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
     #import lib/bytearrayToTokenId/1.0.0/bytearrayToTokenId.es;
+    #import lib/stakeRecordStake/1.0.0/stakeRecordStake.es;
+    #import lib/stakeRecordProfits/1.0.0/stakeRecordProfits.es;
+    #import lib/stakeRecordLockedUntil/1.0.0/stakeRecordLockedUntil.es;
 
     /**
      *
@@ -22,9 +25,6 @@
     // Constants                                                             //
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
-
-    val imPaideiaStakingProfitTokenIds: Coll[Byte] = 
-        _IM_PAIDEIA_STAKING_PROFIT_TOKENIDS
 
     val imPaideiaContractsStakingCompound: Coll[Byte] = 
         _IM_PAIDEIA_CONTRACTS_STAKING_COMPOUND
@@ -73,6 +73,7 @@
     val nextEmission: Long              = stakeStateR5(0)
     val totalStaked: Long               = stakeStateR5(1)
     val r5Rest: Coll[Long]              = stakeStateR5.slice(2, 5)
+    val profit: Coll[Long]              = stakeStateR5.slice(5,stakeStateR5.size)
     val stakeStateR6: Coll[Coll[Long]]  = stakeState.R6[Coll[Coll[Long]]].get
     val snapshotsStaked: Coll[Long]     = stakeStateR6(0)
     val snapshotsVoted: Coll[Long]      = stakeStateR6(1)
@@ -127,15 +128,13 @@
     val configValues: Coll[Option[Coll[Byte]]] = configTree.getMany(
         Coll(
             imPaideiaStakeStateTokenId,
-            imPaideiaContractsStakingCompound,
-            imPaideiaStakingProfitTokenIds
+            imPaideiaContractsStakingCompound
         ),
         configProof
     )
 
     val stakeStateTokenId: Coll[Byte]    = bytearrayToTokenId(configValues(0))
     val compoundContractHash: Coll[Byte] = bytearrayToContractHash(configValues(1))
-    val profitTokenIds: Coll[Byte]       = configValues(2).get
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -166,20 +165,6 @@
             100.toByte
 
     val totalWeight: Byte = totalParticipationWeight + stakingWeight
-
-    val whiteListedTokenIds: Coll[Coll[Byte]] = 
-        profitTokenIds.slice(0,(profitTokenIds.size-6)/37).indices.map{
-            (i: Int) =>
-            profitTokenIds.slice(6+(37*i)+5,6+(37*(i+1)))
-        }
-
-    val profit: Coll[Long] = stakeStateR5.slice(5,stakeStateR5.size).append(
-        whiteListedTokenIds.slice(
-            stakeStateR5.size-4,
-            whiteListedTokenIds.size).map{
-                (tokId: Coll[Byte]) => 0L
-            }
-        )
     
     val longIndices: Coll[Int] = profit.indices.map{(i: Int) => i*8}
     val notFound: Coll[Long]   = profit.map{(l: Long) => -1L}
@@ -191,32 +176,35 @@
     val filteredCompoundOperations: Coll[(Coll[Byte],Coll[Byte])] = 
         compoundOperations.filter{
             (kv: (Coll[Byte], Coll[Byte])) => 
-            byteArrayToLong(
-                kv._2.slice(stakeInfoOffset,8+stakeInfoOffset)
-            ) > 0
+            stakeRecordStake(kv._2) > 0
         }
 
-    val currentStakes: Coll[Coll[Long]] = stakeStateTree.getMany(keys,proof)
+    val currentStakeRecords: Coll[Option[Coll[Byte]]] = stakeStateTree.getMany(keys,proof)
+
+    val currentStakes: Coll[Coll[Long]] = currentStakeRecords
         .map{
             (b: Option[Coll[Byte]]) =>
             if (b.isDefined) {
-                longIndices.map{
-                    (i: Int) => 
-                    byteArrayToLong(
-                        b.get.slice(i+stakeInfoOffset,i+8+stakeInfoOffset)
-                    )
-                }
+                Coll(stakeRecordStake(b.get)) ++ stakeRecordProfits(b.get)
             } else {
                 notFound
+            }
+        }
+
+    val currentLocks: Coll[Long] = currentStakeRecords
+        .map{
+            (b: Option[Coll[Byte]]) =>
+            if (b.isDefined) {
+                stakeRecordLockedUntil(b.get)
+            } else {
+                -1L
             }
         }
 
     val snapshotStakes: Coll[Long] = snapshotsTree(0)._1.getMany(keys,snapshotProof)
         .map{
             (b: Option[Coll[Byte]]) => 
-                byteArrayToLong(
-                    b.get.slice(stakeInfoOffset,8+stakeInfoOffset)
-                )
+                stakeRecordStake(b.get)
         }
 
     val snapshotParticipation: Coll[(Long,Long)] = snapshotsTree(0)._2.getMany(
@@ -237,10 +225,12 @@
 
     val newStakes: Coll[Coll[Long]] = compoundOperations.map{
         (kv: (Coll[Byte], Coll[Byte])) => 
-        longIndices.map{
-            (i: Int) => 
-            byteArrayToLong(kv._2.slice(i+stakeInfoOffset,i+8+stakeInfoOffset))
-        }
+            Coll(stakeRecordStake(kv._2)) ++ stakeRecordProfits(kv._2)
+    }
+
+    val newLocks: Coll[Long] = compoundOperations.map{
+        (kv: (Coll[Byte], Coll[Byte])) => 
+            stakeRecordLockedUntil(kv._2)
     }
 
     val snapshotStaked: Long       = snapshotsStaked(0)
@@ -265,7 +255,7 @@
                 val newStake: Coll[BigInt] = currentStakes(index).zip(r).map{
                     (ll: (Long,BigInt)) => ll._1+ll._2
                 }
-                (r,newStake == newStakes(index).map{(s: Long) => s.toBigInt})
+                (r,newStake == newStakes(index).map{(s: Long) => s.toBigInt} && currentLocks(index) == newLocks(index))
             } else {
                 (snapshotProfit.map{(l: Long) => 0.toBigInt},true)
             }

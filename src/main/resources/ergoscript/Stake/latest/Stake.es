@@ -6,6 +6,9 @@
 @contract def stake(imPaideiaDaoKey: Coll[Byte]) = {
     #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
     #import lib/bytearrayToTokenId/1.0.0/bytearrayToTokenId.es;
+    #import lib/stakeRecordStake/1.0.0/stakeRecordStake.es;
+    #import lib/stakeRecordProfits/1.0.0/stakeRecordProfits.es;
+    #import lib/stakeRecordLockedUntil/1.0.0/stakeRecordLockedUntil.es;
 
     /**
      *
@@ -22,16 +25,11 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val imPaideiaStakeProfitTokenIds: Coll[Byte] = 
-        _IM_PAIDEIA_STAKING_PROFIT_TOKENIDS
-
     val imPaideiaStakeStateTokenId: Coll[Byte] = 
         _IM_PAIDEIA_STAKING_STATE_TOKEN_ID
 
     val imPaideiaContractsStakeStake: Coll[Byte] = 
         _IM_PAIDEIA_CONTRACTS_STAKING_STAKE
-
-    val stakeInfoOffset: Int = 8
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -135,20 +133,13 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val profit: Coll[Long] = stakeStateR5.slice(5,stakeStateR5.size)
-
-    val longIndices: Coll[Int] = profit.indices.map{(i: Int) => i*8}
-
     val mintedKey: Coll[Byte] = userO.tokens(0)
 
-    val stakeRecord: Coll[Long] = longIndices.map{
-        (i: Int) => 
-        byteArrayToLong(
-            stakeOperations(0)._2.slice(i+stakeInfoOffset,i+8+stakeInfoOffset)
-        )
-    }
+    val lockedUntil: Long = stakeRecordLockedUntil(stakeOperations(0)._2)
 
-    val stakeAmount: Long = stakeRecord(0)
+    val stakeAmount: Long = stakeRecordStake(stakeOperations(0)._2)
+
+    val profits: Coll[Long] = stakeRecordProfits(stakeOperations(0)._2)
 
     val updatedTree: AvlTree = stakeStateTree.insert(stakeOperations, proof).get
         
@@ -172,7 +163,7 @@
         stakeStateOR8 == stakeStateR8
     ))
 
-    val zeroReward: Boolean = stakeRecord.slice(1,stakeRecord.size).forall{
+    val zeroReward: Boolean = profits.forall{
         (l: Long) => l==0L
     }
 
@@ -199,6 +190,8 @@
 
     val correctNewState: Boolean = updatedTree.digest == stakeStateTreeO.digest
 
+    val notLocked: Boolean = lockedUntil == 0L
+
     val selfOutput = allOf(Coll(
         blake2b256(stakeO.propositionBytes) == stakeContractHash,
         stakeO.value >= stake.value
@@ -220,6 +213,7 @@
         correctNewState,
         zeroReward,
         selfOutput,
-        correctStakersCount
+        correctStakersCount,
+        notLocked
     )))
 }

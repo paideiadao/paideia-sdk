@@ -78,7 +78,6 @@ class StakeSnapshot(contractSignature: PaideiaContractSignature)
       ConfKeys.im_paideia_staking_emission_amount,
       ConfKeys.im_paideia_staking_emission_delay,
       ConfKeys.im_paideia_staking_cyclelength,
-      ConfKeys.im_paideia_staking_profit_tokenids,
       ConfKeys.im_paideia_staking_weight_pureparticipation,
       ConfKeys.im_paideia_staking_weight_participation,
       ConfKeys.im_paideia_dao_tokenid

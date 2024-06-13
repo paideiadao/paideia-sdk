@@ -67,7 +67,7 @@
         "Only one operation is performed on the stake state",
         "The digest of the new stake state is correct",
         "The new stake record is empty besides the new stake (0 profit and governance participation",
-        "Stake count is updated correctly",
+        "Staker count is updated correctly",
         "Register values not relevant to this action in the stake state are unchanged"
       )
     ),

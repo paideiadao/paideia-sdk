@@ -200,23 +200,13 @@ object StakingContextVars {
   ): StakingContextVars = {
     val stakeRec = proof.response(0).get
     stakeRec.clear
-    val operations = ErgoValue.of(
-      Array[(Coll[java.lang.Byte], Coll[java.lang.Byte])](
-        ErgoValue
-          .pairOf(
-            ErgoValue.of(
-              ByteConversion.convertsId.convertToBytes(ErgoId.create(stakingKey))
-            ),
-            ErgoValue.of(
-              StakeRecord.stakeRecordConversion
-                .convertToBytes(stakeRec)
-            )
+    val operations = ErgoValueBuilder.buildFor(
+      Colls.fromArray(
+        Array(
+          Colls.fromArray(
+            ByteConversion.convertsId.convertToBytes(ErgoId.create(stakingKey))
           )
-          .getValue
-      ),
-      ErgoType.pairType(
-        ErgoType.collType(ErgoType.byteType()),
-        ErgoType.collType(ErgoType.byteType())
+        )
       )
     )
     StakingContextVars(

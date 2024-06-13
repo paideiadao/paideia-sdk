@@ -8,6 +8,9 @@
     #import lib/bytearrayToTokenId/1.0.0/bytearrayToTokenId.es;
     #import lib/tokensInBoxes/1.0.0/tokensInBoxes.es;
     #import lib/tokenExists/1.0.0/tokenExists.es;
+    #import lib/stakeRecordLockedUntil/1.0.0/stakeRecordLockedUntil.es;
+    #import lib/stakeRecordStake/1.0.0/stakeRecordStake.es;
+    #import lib/stakeRecordProfits/1.0.0/stakeRecordProfits.es;
 
     /**
      *
@@ -29,11 +32,6 @@
 
     val imPaideiaContractsStakingUnstake: Coll[Byte] = 
         _IM_PAIDEIA_CONTRACTS_STAKING_UNSTAKE
-
-    val imPaideiaStakingProfitTokenIds: Coll[Byte] = 
-        _IM_PAIDEIA_STAKING_PROFIT_TOKENIDS
-
-    val stakeInfoOffset: Int = 8
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -106,10 +104,7 @@
     ///////////////////////////////////////////////////////////////////////////
 
     val configProof: Coll[Byte] = getVar[Coll[Byte]](0).get
-
-    val operations: Coll[(Coll[Byte],Coll[Byte])] = 
-        getVar[Coll[(Coll[Byte],Coll[Byte])]](1).get
-
+    val keys: Coll[Coll[Byte]]  = getVar[Coll[Coll[Byte]]](1).get
     val proof: Coll[Byte]       = getVar[Coll[Byte]](2).get
     val removeProof: Coll[Byte] = getVar[Coll[Byte]](3).get
 
@@ -122,15 +117,13 @@
     val configValues: Coll[Option[Coll[Byte]]] = configTree.getMany(
         Coll(
             imPaideiaStakeStateTokenId,
-            imPaideiaContractsStakingUnstake,
-            imPaideiaStakingProfitTokenIds
+            imPaideiaContractsStakingUnstake
         ),
         configProof
     )
 
     val stakeStateTokenId: Coll[Byte]   = bytearrayToTokenId(configValues(0))
     val unstakeContractHash: Coll[Byte] = bytearrayToContractHash(configValues(1))
-    val profitTokenIds: Coll[Byte]      = configValues(2).get
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -138,34 +131,13 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val whiteListedTokenIds: Coll[Coll[Byte]] = 
-        profitTokenIds.slice(0,(profitTokenIds.size-6)/37).indices.map{
-            (i: Int) =>
-            profitTokenIds.slice(6+(37*i)+5,6+(37*(i+1)))
-        }
+    val stakeRecord: Coll[Byte] = stakeStateTree.get(keys(0), proof).get
 
-    val profit: Coll[Long] = stakeStateR5.slice(5,stakeStateR5.size).append(
-        whiteListedTokenIds.slice(
-            stakeStateR5.size-4,
-            whiteListedTokenIds.size
-        ).map{(tokId: Coll[Byte]) => 0L})
+    val lockedUntil: Long = stakeRecordLockedUntil(stakeRecord)
 
-    val longIndices: Coll[Int] = profit.indices.map{(i: Int) => i*8}
+    val currentStakeAmount: Long = stakeRecordStake(stakeRecord)
 
-    val keys: Coll[Coll[Byte]] = operations.map{
-        (kv: (Coll[Byte], Coll[Byte])) => kv._1
-    }
-
-    val currentStakeState: Coll[Byte] = stakeStateTree.get(keys(0), proof).get
-
-    val currentProfits: Coll[Long] = longIndices.map{
-        (i: Int) => 
-        byteArrayToLong(
-            currentStakeState.slice(i+stakeInfoOffset,i+8+stakeInfoOffset)
-        )
-    }
-
-    val currentStakeAmount: Long = currentProfits(0)
+    val currentProfits: Coll[Long] = stakeRecordProfits(stakeRecord)
         
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -194,15 +166,7 @@
     ))
 
     val correctErgProfit: Boolean = 
-        currentProfits(1) == stakeState.value - stakeStateO.value
-
-    val correctTokenProfit: Boolean = stakeState.tokens
-        .slice(2,stakeState.tokens.size).forall{
-                (token: (Coll[Byte], Long)) =>
-                val profitIndex: Int = whiteListedTokenIds.indexOf(token._1,-3)
-                val tokenAmountInOutput: Long = tokensInBoxes((Coll(stakeStateO), token._1))
-                token._2 - tokenAmountInOutput == currentProfits(profitIndex+2)
-            }
+        currentProfits(0) == stakeState.value - stakeStateO.value
 
     val singleStakeOp: Boolean = keys.size == 1
 
@@ -211,6 +175,8 @@
     val correctNewState: Boolean = 
         stakeStateTree.remove(keys, removeProof).get.digest == 
             stakeStateOTree.digest
+
+    val unlocked: Boolean = CONTEXT.preHeader.timestamp > lockedUntil
         
     val selfOutput: Boolean = allOf(Coll(
         blake2b256(unstakeO.propositionBytes) == unstakeContractHash,
@@ -229,10 +195,10 @@
         keyInInput,
         tokensUnstaked,
         correctErgProfit,
-        correctTokenProfit,
         singleStakeOp,
         correctNewState,
         selfOutput,
-        correctStakersCount
+        correctStakersCount,
+        unlocked
     )))
 }
