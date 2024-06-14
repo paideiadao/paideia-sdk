@@ -4,8 +4,7 @@
  * @return
  */
 @contract def splitProfit(imPaideiaDaoKey: Coll[Byte]) = {
-    #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
-    #import lib/bytearrayToTokenId/1.0.0/bytearrayToTokenId.es;
+    #import lib/config/1.0.0/config.es;
     #import lib/tokensInBoxesAll/1.0.0/tokensInBoxesAll.es;
     #import lib/tokensInBoxes/1.0.0/tokensInBoxes.es;
     /**
@@ -63,14 +62,6 @@
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
-    // Registers                                                             //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
-
-    val configTree: AvlTree = config.R4[AvlTree].get
-
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
     // Context variables                                                     //
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
@@ -83,7 +74,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val configValues: Coll[Option[Coll[Byte]]] = configTree.getMany(
+    val configValues: Coll[Option[Coll[Byte]]] = configTree(config).getMany(
         Coll(
             imPaideiaContractsTreasury,
             imPaideiaContractsStakingState,
@@ -98,13 +89,6 @@
     val stakingStateContractHash: Coll[Byte] = bytearrayToContractHash(configValues(1))
     val profitSharingPct: Byte               = configValues(2).get(1)
     val governanceTokenId: Coll[Byte]        = bytearrayToTokenId(configValues(3))
-
-    val profitTokenIds: Coll[Coll[Byte]] = 
-        configValues(4).get.slice(0,(configValues(4).get.size-6)/37).indices
-        .map{
-            (i: Int) =>
-            configValues(4).get.slice(6+(37*i)+5,6+(37*(i+1)))
-        }
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -146,7 +130,7 @@
     val validTx: Boolean = if (profitSharingPct <= 0) {
         OUTPUTS.size == 2
     } else {
-        val tokenSplits: Boolean = Coll(governanceTokenId).append(profitTokenIds)
+        val tokenSplits: Boolean = Coll(governanceTokenId)
         .forall{
             (tokenId: Coll[Byte]) => {
                 val stakingInputTokens: Long = tokensInBoxes((Coll(stakingState), tokenId))

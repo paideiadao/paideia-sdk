@@ -10,6 +10,7 @@ import org.ergoplatform.appkit.ErgoType
 import im.paideia.governance.VoteRecord
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 import sigma.Colls
+import scorex.util.encode.Base16
 
 case class StakingContextVars(
   stakingStateContextVars: List[ContextVar],
@@ -159,7 +160,9 @@ object StakingContextVars {
     updatedStakeProof: ProvenResult[StakeRecord],
     updatedParticipationProof: ProvenResult[ParticipationRecord],
     newStakeRecord: StakeRecord,
-    newParticipationRecord: ParticipationRecord
+    newParticipationRecord: ParticipationRecord,
+    castedVote: VoteRecord,
+    stakeKey: String
   ): StakingContextVars = {
     StakingContextVars(
       List(
@@ -186,6 +189,24 @@ object StakingContextVars {
               ParticipationRecord.participationRecordConversion.convertToBytes(
                 newParticipationRecord
               )
+            )
+          )
+        ),
+        new ContextVar(
+          8.toByte,
+          ErgoValueBuilder.buildFor(
+            Colls.fromArray(
+              VoteRecord.convertsVoteRecord.convertToBytes(
+                castedVote
+              )
+            )
+          )
+        ),
+        new ContextVar(
+          9.toByte,
+          ErgoValueBuilder.buildFor(
+            Colls.fromArray(
+              Base16.decode(stakeKey).get
             )
           )
         )

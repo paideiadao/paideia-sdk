@@ -7,8 +7,7 @@
  * @return
  */
 @contract def mint(paideiaDaoKey: Coll[Byte]) = {
-    #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
-    #import lib/bytearrayToTokenId/1.0.0/bytearrayToTokenId.es;
+    #import lib/config/1.0.0/config.es;
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -26,7 +25,7 @@
     ///////////////////////////////////////////////////////////////////////////
 
     val protoDAO: Box = INPUTS(0)
-    val mint: Box      = SELF
+    val mint: Box     = SELF
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -46,16 +45,6 @@
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
-    // Registers                                                             //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
-
-    val paideiaConfigTree: AvlTree = paideiaConfig.R4[AvlTree].get
-
-    val configTree: AvlTree = protoDAO.R4[AvlTree].get
-
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
     // Context variables                                                     //
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
@@ -71,7 +60,7 @@
     ///////////////////////////////////////////////////////////////////////////
 
     val paideiaConfigValues: Coll[Option[Coll[Byte]]] = 
-        paideiaConfigTree.getMany(
+        configTree(paideiaConfig).getMany(
             Coll(
                 imPaideiaContractsProtoDao,
                 imPaideiaContractsDao
@@ -82,7 +71,7 @@
     val protoDaoContracctHash: Coll[Byte] = bytearrayToContractHash(paideiaConfigValues(0))
     val daoOriginContractHash: Coll[Byte] = bytearrayToContractHash(paideiaConfigValues(1))
 
-    val configValues: Coll[Option[Coll[Byte]]] = configTree.getMany(
+    val configValues: Coll[Option[Coll[Byte]]] = configTree(protoDAO).getMany(
         Coll(
             mintedToken
         ),

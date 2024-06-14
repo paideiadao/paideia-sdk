@@ -7,7 +7,7 @@
  * @return
  */
 @contract def paideiaOrigin(paideiaDaoKey: Coll[Byte], paideiaTokenId: Coll[Byte]) = {
-    #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
+    #import lib/config/1.0.0/config.es;
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -54,14 +54,6 @@
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
-    // Registers                                                             //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
-
-    val paideiaConfigTree: AvlTree = paideiaConfig.R4[AvlTree].get
-
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
     // Context variables                                                     //
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
@@ -74,7 +66,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val configValues: Coll[Option[Coll[Byte]]] = paideiaConfigTree.getMany(
+    val configValues: Coll[Option[Coll[Byte]]] = configTree(paideiaConfig).getMany(
         Coll(
             imPaideiaFeesCreateDaoErg,
             imPaideiaFeesCreateDaoPai,

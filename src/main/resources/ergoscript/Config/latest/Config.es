@@ -8,7 +8,7 @@
  * @return
  */
 @contract def config(imPaideiaDaoActionTokenId: Coll[Byte]) = {
-    #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
+    #import lib/config/1.0.0/config.es;
     #import lib/tokenExists/1.0.0/tokenExists.es;
 
     ///////////////////////////////////////////////////////////////////////////
@@ -37,14 +37,6 @@
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
-    // Registers                                                             //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
-
-    val configTreeO: AvlTree = configO.R4[AvlTree].get
-
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
     // Context variables                                                     //
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
@@ -57,7 +49,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val configValues: Coll[Option[Coll[Byte]]] = configTreeO.getMany(
+    val configValues: Coll[Option[Coll[Byte]]] = configTree(configO).getMany(
         Coll(
             imPaideiaContractsConfig
         ),

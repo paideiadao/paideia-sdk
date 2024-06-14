@@ -34,6 +34,26 @@ def snapshotValues(b: Box): Coll[Coll[Long]] = {
     b.R6[Coll[Coll[Long]]].get
 }
 
+def snapshotStaked(b: Box): Coll[Long] = {
+    b.R6[Coll[Coll[Long]]].get(0)
+}
+
+def snapshotVoted(b: Box): Coll[Long] = {
+    b.R6[Coll[Coll[Long]]].get(1)
+}
+
+def snapshotVotesCast(b: Box): Coll[Long] = {
+    b.R6[Coll[Coll[Long]]].get(2)
+}
+
+def snapshotPureParticipationWeight(b: Box): Coll[Long] = {
+    b.R6[Coll[Coll[Long]]].get(3)
+}
+
+def snapshotParticipationWeight(b: Box): Coll[Long] = {
+    b.R6[Coll[Coll[Long]]].get(4)
+}
+
 def snapshotTrees(b: Box): Coll[(AvlTree,AvlTree)] = {
     b.R7[Coll[(AvlTree,AvlTree)]].get
 }

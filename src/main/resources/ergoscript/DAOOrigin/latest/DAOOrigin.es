@@ -8,9 +8,11 @@
  * @return
  */
 @contract def daoOrigin(paideiaDaoKey: Coll[Byte], paideiaTokenId: Coll[Byte]) = {
-    #import lib/bytearrayToLongClamped/1.0.0/bytearrayToLongClamped.es;
     #import lib/maxLong/1.0.0/maxLong.es;
-    #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
+    #import lib/config/1.0.0/config.es;
+    #import lib/proposal/1.0.0/proposal.es;
+    #import lib/action/1.0.0/action.es;
+    #import lib/daoOrigin/1.0.0/daoOrigin.es;
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -54,24 +56,6 @@
 
     val daoOriginO: Box = OUTPUTS(0)
     val proposalO: Box  = OUTPUTS(1)
-
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
-    // Registers                                                             //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
-
-    val daoKey: Coll[Byte] = daoOrigin.R4[Coll[Byte]].get
-
-    val daoKeyO: Coll[Byte] = daoOriginO.R4[Coll[Byte]].get
-
-    val paideiaConfigTree: AvlTree = paideiaConfig.R4[AvlTree].get
-
-    val configTree: AvlTree = config.R4[AvlTree].get
-
-    val proposalIndex: Long    = proposalO.R4[Coll[Int]].get(0).toLong
-    val proposalOR5: Coll[Long] = proposalO.R5[Coll[Long]].get
-    val proposalEndTime: Long  = proposalOR5(0)
     
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -91,7 +75,7 @@
     ///////////////////////////////////////////////////////////////////////////
 
     val paideiaConfigValues: Coll[Option[Coll[Byte]]] = 
-        paideiaConfigTree.getMany(
+        configTree(paideiaConfig).getMany(
             Coll(
                 imPaideiaContractsDao,
                 imPaideiaFeesCreateProposalPaideia
@@ -102,7 +86,7 @@
     val daoOriginContractHash: Coll[Byte] = bytearrayToContractHash(paideiaConfigValues(0))
     val createProposalFee: Long = bytearrayToLongClamped((paideiaConfigValues(1),(0L,(100000000000L, 1000L))))
 
-    val configValues: Coll[Option[Coll[Byte]]] = configTree.getMany(
+    val configValues: Coll[Option[Coll[Byte]]] = configTree(config).getMany(
         Coll(
             imPaideiaDaoMinProposalTime,
             blake2b256(imPaideiaContractsProposal++proposalBox.propositionBytes)
@@ -141,47 +125,48 @@
     val paideiaCorrectConfig: Boolean = 
         paideiaConfig.tokens(0)._1 == paideiaDaoKey
 
-    val correctConfig: Boolean = config.tokens(0)._1 == daoKey
+    val correctConfig: Boolean = config.tokens(0)._1 == daoOriginKey(daoOrigin)
 
     val currentTime: Long = CONTEXT.preHeader.timestamp
 
     val correctDAOOutput: Boolean = allOf(
         Coll(
             blake2b256(daoOriginO.propositionBytes) == daoOriginContractHash,
-            daoOriginO.value        >= daoOrigin.value,
-            daoOriginO.tokens(0)    == daoOrigin.tokens(0),
-            daoOriginO.tokens(1)._1 == daoOrigin.tokens(1)._1,
-            daoOriginO.tokens(1)._2 == daoOrigin.tokens(1)._2 - 1L,
-            daoOriginO.tokens(2)._1 == daoOrigin.tokens(2)._1,
-            daoOriginO.tokens(2)._2 == daoOrigin.tokens(2)._2 - actionBoxes.size,
-            daoOriginO.tokens.size  == 3,
-            daoKeyO                 == daoKey
+            daoOriginO.value         >= daoOrigin.value,
+            daoOriginO.tokens(0)     == daoOrigin.tokens(0),
+            daoOriginO.tokens(1)._1  == daoOrigin.tokens(1)._1,
+            daoOriginO.tokens(1)._2  == daoOrigin.tokens(1)._2 - 1L,
+            daoOriginO.tokens(2)._1  == daoOrigin.tokens(2)._1,
+            daoOriginO.tokens(2)._2  == daoOrigin.tokens(2)._2 - actionBoxes.size,
+            daoOriginO.tokens.size   == 3,
+            daoOriginKey(daoOriginO) == daoOriginKey(daoOrigin)
         )
     )
 
     val correctProposalOutput: Boolean = allOf(
         Coll(
-            proposalO.value >= proposalBox.value,
-            proposalIndex == proposalId,
-            proposalO.tokens(0)._1 == daoOrigin.tokens(1)._1,
-            proposalO.tokens(0)._2 == 1L,
-            proposalO.tokens(1)._1 == paideiaTokenId,
-            proposalO.tokens(1)._2 == createProposalFee,
-            proposalO.propositionBytes == proposalBox.propositionBytes,
+            proposalO.value                        >= proposalBox.value,
+            pIndex(proposalO)                      == proposalId,
+            proposalO.tokens(0)._1                 == daoOrigin.tokens(1)._1,
+            proposalO.tokens(0)._2                 == 1L,
+            proposalO.tokens(1)._1                 == paideiaTokenId,
+            proposalO.tokens(1)._2                 == createProposalFee,
+            proposalO.propositionBytes             == proposalBox.propositionBytes,
+            pEndTime(proposalO)                    >= currentTime + minProposalTime,
             blake2b256(proposalO.propositionBytes) == proposalContractHash,
-            proposalEndTime >= currentTime + minProposalTime,
-            proposalOR5.slice(1,proposalOR5.size).forall{(p: Long) => p == 0L}
+            pVoted(proposalO)                      == 0L,
+            pVotes(proposalO).forall{(p: Long) => p == 0L}
         )
     )
 
     val correctActionOutputs: Boolean = actionOutputs.indices.forall{
         (i: Int) =>
         allOf(Coll(
-            actionOutputs(i).value >= actionBoxes(i).value,
-            actionOutputs(i).tokens(0)._1 == daoOrigin.tokens(2)._1,
-            actionOutputs(i).tokens(0)._2 == 1L,
-            actionOutputs(i).R4[Coll[Long]].get(0) == proposalId,
-            actionOutputs(i).R4[Coll[Long]].get(1) >= 0L,
+            actionOutputs(i).value            >= actionBoxes(i).value,
+            actionOutputs(i).tokens(0)._1     == daoOrigin.tokens(2)._1,
+            actionOutputs(i).tokens(0)._2     == 1L,
+            aProposalIndex(actionOutputs(i))  == proposalId,
+            aProposalOption(actionOutputs(i)) > 0L,
             blake2b256(actionOutputs(i).propositionBytes) == 
                 actionContractHashes(i)
         ))
