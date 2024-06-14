@@ -6,9 +6,7 @@
 @contract def stake(imPaideiaDaoKey: Coll[Byte]) = {
     #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
     #import lib/bytearrayToTokenId/1.0.0/bytearrayToTokenId.es;
-    #import lib/stakeRecordStake/1.0.0/stakeRecordStake.es;
-    #import lib/stakeRecordProfits/1.0.0/stakeRecordProfits.es;
-    #import lib/stakeRecordLockedUntil/1.0.0/stakeRecordLockedUntil.es;
+    #import lib/stakeRecord/1.0.0/stakeRecord.es;
 
     /**
      *

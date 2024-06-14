@@ -8,10 +8,7 @@
     #import lib/bytearrayToTokenId/1.0.0/bytearrayToTokenId.es;
     #import lib/tokensInBoxes/1.0.0/tokensInBoxes.es;
     #import lib/tokenExists/1.0.0/tokenExists.es;
-    #import lib/stakeRecordLockedUntil/1.0.0/stakeRecordLockedUntil.es;
-    #import lib/stakeRecordStake/1.0.0/stakeRecordStake.es;
-    #import lib/stakeRecordProfits/1.0.0/stakeRecordProfits.es;
-
+    #import lib/stakeRecord/1.0.0/stakeRecord.es;
     /**
      *
      *  Unstake

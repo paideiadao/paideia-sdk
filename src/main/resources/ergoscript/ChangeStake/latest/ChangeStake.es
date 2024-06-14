@@ -7,11 +7,10 @@
  * @return
  */
 @contract def changeStake(imPaideiaDaoKey: Coll[Byte]) = {
-    #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
-    #import lib/bytearrayToTokenId/1.0.0/bytearrayToTokenId.es;
+    #import lib/config/1.0.0/config.es;
     #import lib/tokenExists/1.0.0/tokenExists.es;
-    #import lib/stakeRecordStake/1.0.0/stakeRecordStake.es;
-    #import lib/stakeRecordProfits/1.0.0/stakeRecordProfits.es;
+    #import lib/stakeRecord/1.0.0/stakeRecord.es;
+    #import lib/stakeState/1.0.0/stakeState.es;
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -53,48 +52,6 @@
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
-    // Registers                                                             //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
-
-    val configTree: AvlTree = config.R4[AvlTree].get
-
-    val stakeStateTree: AvlTree  = stakeState.R4[Coll[AvlTree]].get(0)
-    val stakeStateR5: Coll[Long] = stakeState.R5[Coll[Long]].get
-    val nextEmission: Long       = stakeStateR5(0)
-    val totalStaked: Long        = stakeStateR5(1)
-    val stakers: Long            = stakeStateR5(2)
-    val voted: Long              = stakeStateR5(3)
-    val votedTotal: Long         = stakeStateR5(4)
-    val profit: Coll[Long]       = stakeStateR5.slice(5,stakeStateR5.size)
-    val stakeStateR6: Coll[Coll[Long]] = 
-        stakeState.R6[Coll[Coll[Long]]].get
-
-    val stakeStateR7: Coll[(AvlTree,AvlTree)] = 
-        stakeState.R7[Coll[(AvlTree,AvlTree)]].get
-
-    val stakeStateR8: Coll[Long] = stakeState.R8[Coll[Long]].get
-    val participationTree: AvlTree     = stakeState.R4[Coll[AvlTree]].get(1)
-
-    val stakeStateTreeO: AvlTree  = stakeStateO.R4[Coll[AvlTree]].get(0)
-    val stakeStateOR5: Coll[Long] = stakeStateO.R5[Coll[Long]].get
-    val nextEmissionO: Long       = stakeStateOR5(0)
-    val totalStakedO: Long        = stakeStateOR5(1)
-    val stakersO: Long            = stakeStateOR5(2)
-    val votedO: Long              = stakeStateOR5(3)
-    val votedTotalO: Long         = stakeStateOR5(4)
-    val profitO: Coll[Long]       = stakeStateOR5.slice(5,stakeStateOR5.size)
-    val stakeStateOR6: Coll[Coll[Long]] = 
-        stakeStateO.R6[Coll[Coll[Long]]].get
-
-    val stakeStateOR7: Coll[(AvlTree,AvlTree)] = 
-        stakeStateO.R7[Coll[(AvlTree,AvlTree)]].get
-
-    val stakeStateOR8: Coll[Long] = stakeStateO.R8[Coll[Long]].get
-    val participationTreeO: AvlTree     = stakeStateO.R4[Coll[AvlTree]].get(1)
-
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
     // Context variables                                                     //
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
@@ -112,7 +69,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val configValues: Coll[Option[Coll[Byte]]] = configTree.getMany(
+    val configValues: Coll[Option[Coll[Byte]]] = configTree(config).getMany(
         Coll(
             imPaideiaContractsStakingChangeStake,
             imPaideiaStakingStateTokenId
@@ -130,7 +87,7 @@
     ///////////////////////////////////////////////////////////////////////////
     
     val stakeRecord: Coll[Byte] = 
-        stakeStateTree.get(stakeOperations(0)._1, proof).get
+        stakeTree(stakeState).get(stakeOperations(0)._1, proof).get
 
     val currentStakeAmount: Long = stakeRecordStake(stakeRecord)
     val newStakeAmount: Long     = stakeRecordStake(stakeOperations(0)._2)
@@ -163,15 +120,15 @@
     val tokensStaked: Boolean = newStakeAmount - currentStakeAmount == 
         (stakeStateO.tokens(1)._2 - stakeState.tokens(1)._2) && 
         newStakeAmount - currentStakeAmount == 
-        totalStakedO - totalStaked
+        totalStaked(stakeStateO) - totalStaked(stakeState)
 
     val noPartialUnstake: Boolean = newStakeAmount >= currentStakeAmount
 
     val singleStakeOp: Boolean = stakeOperations.size == 1
 
     val correctNewState: Boolean = 
-        stakeStateTree.update(stakeOperations, proof).get.digest == 
-        stakeStateTreeO.digest
+        stakeTree(stakeState).update(stakeOperations, proof).get.digest == 
+        stakeTree(stakeStateO).digest
 
     val noAddedOrNegativeProfit: Boolean = 
         combinedProfit.slice(1,combinedProfit.size).forall{
@@ -182,15 +139,15 @@
         stakeState.value - stakeStateO.value
 
     val unchangedRegisters: Boolean = allOf(Coll(
-        participationTreeO == participationTree,
-        profitO == profit,
-        nextEmissionO == nextEmission,
-        stakersO == stakers,
-        votedO == voted,
-        votedTotalO == votedTotal,
-        stakeStateOR6 == stakeStateR6,
-        stakeStateOR7 == stakeStateR7,
-        stakeStateOR8 == stakeStateR8
+        participationTree(stakeStateO)  == participationTree(stakeState),
+        profit(stakeStateO)             == profit(stakeState),
+        nextEmission(stakeStateO)       == nextEmission(stakeState),
+        stakers(stakeStateO)            == stakers(stakeState),
+        votedThisCycle(stakeStateO)     == votedThisCycle(stakeState),
+        votesCastThisCycle(stakeStateO) == votesCastThisCycle(stakeState),
+        snapshotValues(stakeStateO)     == snapshotValues(stakeState),
+        snapshotTrees(stakeStateO)      == snapshotTrees(stakeState),
+        snapshotProfit(stakeStateO)     == snapshotProfit(stakeState)
     ))
 
     ///////////////////////////////////////////////////////////////////////////

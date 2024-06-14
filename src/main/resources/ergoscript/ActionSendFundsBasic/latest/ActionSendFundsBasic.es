@@ -12,9 +12,11 @@
  * @return
  */
 @contract def actionSendFundsBasic(imPaideiaDaoKey: Coll[Byte], imPaideiaDaoProposalTokenId: Coll[Byte]) = {
-    #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
+    #import lib/config/1.0.0/config.es;
     #import lib/bytesWithoutCreationInfo/1.0.0/bytesWithoutCreationInfo.es;
     #import lib/tokensInBoxesAll/1.0.0/tokensInBoxesAll.es;
+    #import lib/actionSendFundsBasic/1.0.0/actionSendFundsBasic.es;
+    #import lib/proposal/1.0.0/proposal.es;
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -43,26 +45,6 @@
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
-    // Registers                                                             //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
-
-    val configTree = configInput.R4[AvlTree].get
-
-    val sendFundsActionR4             = sendFundsAction.R4[Coll[Long]].get
-    val sendFundsActionProposalIndex  = sendFundsActionR4(0)
-    val sendFundsActionProposalOption = sendFundsActionR4(1)
-    val sendFundsActionRepeats        = sendFundsActionR4(2)
-    val sendFundsActionActivationTime = sendFundsActionR4(3)
-    val sendFundsActionRepeatTime     = sendFundsActionR4(4)
-    val sendFundsActionOutputs        = sendFundsAction.R5[Coll[Box]].get
-
-    val proposalR4           = proposalInput.R4[Coll[Int]].get
-    val proposalIndex        = proposalR4(0)
-    val proposalPassedOption = proposalR4(1)
-
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
     // Context variables                                                     //
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
@@ -75,7 +57,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
     
-    val configValues = configTree.getMany(
+    val configValues = configTree(configInput).getMany(
         Coll(
             imPaideiaContractsTreasury
         ),
@@ -92,22 +74,22 @@
     ///////////////////////////////////////////////////////////////////////////
 
     // Check if the current action is being repeated
-    val repeatedAction = sendFundsActionRepeats > 0L
+    val repeatedAction = aRepeats(sendFundsAction) > 0L
 
     // Based on the repeatedAction flag, either repeat or burn the action
     val repeatOrBurn = if (repeatedAction) {
         // Create output box for repeated action and check its correctness
-        val repeatOutput = OUTPUTS(sendFundsActionOutputs.size)
+        val repeatOutput = OUTPUTS(sfaOutputs(sendFundsAction).size)
         allOf(Coll(
-            repeatOutput.value                 == sendFundsAction.value,
-            repeatOutput.tokens                == sendFundsAction.tokens,
-            repeatOutput.R4[Coll[Long]].get(0) == sendFundsActionProposalIndex,
-            repeatOutput.R4[Coll[Long]].get(1) == sendFundsActionProposalOption,
-            repeatOutput.R4[Coll[Long]].get(2) == sendFundsActionRepeats - 1L,
-            repeatOutput.R4[Coll[Long]].get(3) == sendFundsActionActivationTime + sendFundsActionRepeatTime,
-            repeatOutput.R4[Coll[Long]].get(4) == sendFundsActionRepeatTime,
-            repeatOutput.R5[Coll[Box]].get     == sendFundsActionOutputs,
-            repeatOutput.propositionBytes      == sendFundsAction.propositionBytes
+            repeatOutput.value            == sendFundsAction.value,
+            repeatOutput.tokens           == sendFundsAction.tokens,
+            aProposalIndex(repeatOutput)  == aProposalIndex(sendFundsAction),
+            aProposalOption(repeatOutput) == aProposalOption(sendFundsAction),
+            aRepeats(repeatOutput)        == aRepeats(sendFundsAction) - 1L,
+            aActivationTime(repeatOutput) == aActivationTime(sendFundsAction) + aRepeatTime(sendFundsAction),
+            aRepeatTime(repeatOutput)     == aRepeatTime(sendFundsAction),
+            sfaOutputs(repeatOutput)      == sfaOutputs(sendFundsAction),
+            repeatOutput.propositionBytes == sendFundsAction.propositionBytes
         ))
     } else {
         !(OUTPUTS.exists{
@@ -137,20 +119,20 @@
     val correctConfig = configInput.tokens(0)._1 == imPaideiaDaoKey
 
     val correctProposal = allOf(Coll(
-        proposalInput.tokens(0)._1  == imPaideiaDaoProposalTokenId,
-        proposalIndex.toLong        == sendFundsActionProposalIndex,
-        proposalPassedOption.toLong == sendFundsActionProposalOption
+        proposalInput.tokens(0)._1          == imPaideiaDaoProposalTokenId,
+        pIndex(proposalInput).toLong        == aProposalIndex(sendFundsAction),
+        pPassedOption(proposalInput).toLong == aProposalOption(sendFundsAction)
     ))
 
-    val activationTimePassed = CONTEXT.preHeader.timestamp >= sendFundsActionActivationTime
+    val activationTimePassed = CONTEXT.preHeader.timestamp >= aActivationTime(sendFundsAction)
 
-    val correctOutput = sendFundsActionOutputs.zip(OUTPUTS.slice(0,sendFundsActionOutputs.size)).forall{
+    val correctOutput = sfaOutputs(sendFundsAction).zip(OUTPUTS.slice(0,sfaOutputs(sendFundsAction).size)).forall{
         (boxes: (Box,Box)) =>
         bytesWithoutCreationInfo(boxes._1) == bytesWithoutCreationInfo(boxes._2)
     }
 
     val correctOutputNumber = OUTPUTS.size == 
-        sendFundsActionOutputs.size +
+        sfaOutputs(sendFundsAction).size +
         (if (repeatedAction) 1 else 0) +
         (if (changeBoxPresent) 2 else 1)
 
