@@ -5,8 +5,7 @@
  */
 @contract def stakeProxy(imPaideiaDaoKey: Coll[Byte]) = {
     #import lib/validRefund/1.0.0/validRefund.es;
-    #import lib/bytearrayToTokenId/1.0.0/bytearrayToTokenId.es;
-    #import lib/bytearrayToString/1.0.0/bytearrayToString.es;
+    #import lib/config/1.0.0/config.es;
     #import lib/tokensInBoxes/1.0.0/tokensInBoxes.es;
     
     // Refund logic
@@ -74,8 +73,6 @@
     val userProp: Coll[Byte] = stakeProxy.R4[Coll[Byte]].get
     val stakeAmount: Long    = stakeProxy.R5[Long].get
 
-    val configTree: AvlTree = config.R4[AvlTree].get
-
     val stakeStateTree: AvlTree  = stakeState.R4[Coll[AvlTree]].get(0)
     val stakeStateR5: Coll[Long] = stakeState.R5[Coll[Long]].get
     val totalStaked: Long        = stakeStateR5(1)
@@ -105,7 +102,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val configValues: Coll[Option[Coll[Byte]]] = configTree.getMany(
+    val configValues: Coll[Option[Coll[Byte]]] = configTree(config).getMany(
         Coll(
             imPaideiaStakeStateTokenId,
             imPaideiaDaoName

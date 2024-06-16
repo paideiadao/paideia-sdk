@@ -5,8 +5,8 @@
  */
 @contract def treasury(daoActionTokenId: Coll[Byte], imPaideiaDaoKey: Coll[Byte], paideiaTokenId: Coll[Byte]) = {
     #import lib/tokensInBoxes/1.0.0/tokensInBoxes.es;
-    #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
-    #import lib/bytearrayToTokenId/1.0.0/bytearrayToTokenId.es;
+    #import lib/config/1.0.0/config.es;
+    #import lib/stakeState/1.0.0/stakeState.es;
 
     /**
      *
@@ -102,23 +102,6 @@
         }(0)
 
         ///////////////////////////////////////////////////////////////////////
-        // Registers                                                         //
-        ///////////////////////////////////////////////////////////////////////
-
-        val stakeStateR5: Coll[Long] = stakeState.R5[Coll[Long]].get
-        val nextSnapshot: Long       = stakeStateR5(0)
-        val totalStaked: Long        = stakeStateR5(1)
-
-        val stakeStateOR5: Coll[Long] = stakeStateO.R5[Coll[Long]].get
-        val nextSnapshotO: Long       = stakeStateOR5(0)
-        val totalStakedO: Long        = stakeStateOR5(1)
-        val stakersO: Long            = stakeStateOR5(2)
-
-        val paideiaConfigTree: AvlTree = paideiaConfig.R4[AvlTree].get
-
-        val configTree: AvlTree = config.R4[AvlTree].get
-
-        ///////////////////////////////////////////////////////////////////////
         // Context variables                                                 //
         ///////////////////////////////////////////////////////////////////////
 
@@ -129,7 +112,7 @@
         // DAO Config                                                        //
         ///////////////////////////////////////////////////////////////////////
 
-        val configValues: Coll[Option[Coll[Byte]]] = configTree.getMany(Coll(
+        val configValues: Coll[Option[Coll[Byte]]] = configTree(config).getMany(Coll(
             imPaideiaContractsStakingCompound,
             imPaideiaContractsStakingSnapshot,
             imPaideiaStakingEmission,
@@ -158,7 +141,7 @@
 
         val treasuryDao: Long = tokensInBoxes((treasuryInInput, daoTokenId))
 
-        val snapshotTx: Boolean = nextSnapshotO > nextSnapshot
+        val snapshotTx: Boolean = nextEmission(stakeStateO) > nextEmission(stakeState)
 
         ///////////////////////////////////////////////////////////////////////
         // Simple conditions                                                 //
@@ -195,7 +178,7 @@
 
         if (snapshotTx) {
             val paideiaConfigValues: Coll[Option[Coll[Byte]]] = 
-                paideiaConfigTree.getMany(Coll(
+                configTree(paideiaConfig).getMany(Coll(
                     imPaideiaFeeEmitPaideia,
                     imPaideiaFeeEmitOperatorPaideia,
                     imPaideiaContractsSplitProfit,
@@ -222,7 +205,7 @@
                 blake2b256(b.propositionBytes) == contractSplitProfitHash
             }(0)
 
-            val paideiaFee: Long = baseFee*stakersO+1L
+            val paideiaFee: Long = baseFee*stakers(stakeStateO)+1L
 
             val snapshotContractPresent: Boolean = 
                 blake2b256(INPUTS(1).propositionBytes) == snapshotContractHash
@@ -259,7 +242,7 @@
         } else {
             
             
-            val paideiaConfigValues = paideiaConfigTree.getMany(Coll(
+            val paideiaConfigValues = configTree(paideiaConfig).getMany(Coll(
                 imPaideiaFeeCompoundOperatorPaideia,
                 imPaideiaFeeOperatorMaxErg
             ), paideiaProof)

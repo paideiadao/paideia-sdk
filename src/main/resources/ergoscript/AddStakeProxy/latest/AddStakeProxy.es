@@ -5,7 +5,7 @@
  */
 @contract def addStakeProxy(imPaideiaDaoKey: Coll[Byte]) = {
     #import lib/validRefund/1.0.0/validRefund.es;
-    #import lib/bytearrayToTokenId/1.0.0/bytearrayToTokenId.es;
+    #import lib/config/1.0.0/config.es;
     
     // Refund logic
     sigmaProp(
@@ -70,8 +70,6 @@
 
     val stakeStateTreeO: AvlTree = stakeStateO.R4[Coll[AvlTree]].get(0)
 
-    val configTree: AvlTree = config.R4[AvlTree].get
-
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
     // Context variables                                                     //
@@ -91,7 +89,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val configValues: Coll[Option[Coll[Byte]]] = configTree.getMany(
+    val configValues: Coll[Option[Coll[Byte]]] = configTree(config).getMany(
         Coll(
             imPaideiaStakingStateTokenId
         ),

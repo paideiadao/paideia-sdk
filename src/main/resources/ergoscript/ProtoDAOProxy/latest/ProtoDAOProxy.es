@@ -5,9 +5,7 @@
  */
 @contract def protoDAOProxy(paideiaDaoKey: Coll[Byte]) = {
     #import lib/validRefund/1.0.0/validRefund.es;
-    #import lib/bytearrayToContractHash/1.0.0/bytearrayToContractHash.es;
-    #import lib/bytearrayToTokenId/1.0.0/bytearrayToTokenId.es;
-    #import lib/bytearrayToString/1.0.0/bytearrayToString.es;
+    #import lib/config/1.0.0/config.es;
 
     // Refund logic
     sigmaProp(
