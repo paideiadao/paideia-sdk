@@ -104,6 +104,7 @@ class CastVoteTransactionSuite extends PaideiaTestSuite {
           Address.create("9h7L7sUHZk43VQC3PHtSp5ujAWcZtYmWATBH746wi75C5XHi68b")
 
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
+        config.set(ConfKeys.im_paideia_contracts_config, configContract.contractSignature)
         configContract.newBox(configContract.box(ctx, dao).inputBox(), false)
 
         val stakingState = stakingContract
@@ -219,6 +220,7 @@ class CastVoteTransactionSuite extends PaideiaTestSuite {
           Address.create("9h7L7sUHZk43VQC3PHtSp5ujAWcZtYmWATBH746wi75C5XHi68b")
 
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
+        config.set(ConfKeys.im_paideia_contracts_config, configContract.contractSignature)
         configContract.newBox(configContract.box(ctx, dao).inputBox(), false)
 
         val stakingState = stakingContract

@@ -77,7 +77,7 @@ final case class CreateProposalTransaction(
     )
   )(0)
 
-  val daoOriginInputBox = DAOOriginBox.fromInput(ctx, daoOriginInput)
+  val daoOriginInputBox = DAOOriginBox.fromInputBox(ctx, daoOriginInput)
 
   val daoOriginOutput = DAOOriginBox(
     ctx,

@@ -5,6 +5,7 @@
  */
 @contract def stakeState(imPaideiaDaoKey: Coll[Byte]) = {
     #import lib/config/1.0.0/config.es;
+    #import lib/txTypes/1.0.0/txTypes.es;
 
     /**
      *
@@ -44,14 +45,6 @@
 
     val imPaideiaContractsStakingVote: Coll[Byte] = 
         _IM_PAIDEIA_CONTRACTS_STAKING_VOTE
-
-    val STAKE: Byte        = 0.toByte
-    val CHANGE_STAKE: Byte = 1.toByte
-    val UNSTAKE: Byte      = 2.toByte
-    val SNAPSHOT: Byte     = 3.toByte
-    val COMPOUND: Byte     = 4.toByte
-    val PROFIT_SHARE: Byte = 5.toByte
-    val VOTE: Byte         = 6.toByte
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -147,9 +140,6 @@
             blake2b256(companion.propositionBytes) == voteContractHash
     ))
 
-    val validTransactionType: Boolean = 
-        transactionType >= 0 && transactionType <= 6
-
     val validOutput: Boolean = allOf(Coll(
         blake2b256(stakeStateO.propositionBytes) == stakingStateContractHash,
         stakeStateO.tokens(0) == stakeState.tokens(0),
@@ -164,7 +154,6 @@
 
     sigmaProp(allOf(Coll(
         correctConfig,
-        validTransactionType,
         validTx,
         validOutput
     )))

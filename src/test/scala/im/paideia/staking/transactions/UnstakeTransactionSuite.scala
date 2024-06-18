@@ -62,6 +62,9 @@ class UnstakeTransactionSuite extends PaideiaTestSuite {
 
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
 
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_config, configContract.contractSignature)
+
         val configBox = Config(configContract.contractSignature).box(ctx, dao).inputBox()
         configContract.clearBoxes()
         configContract.newBox(configBox, false)
@@ -130,6 +133,8 @@ class UnstakeTransactionSuite extends PaideiaTestSuite {
         unstakeContract.newBox(unstakeContract.box(ctx).inputBox(), false)
 
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_config, configContract.contractSignature)
 
         val configBox = Config(configContract.contractSignature).box(ctx, dao).inputBox()
         configContract.clearBoxes()
@@ -194,6 +199,9 @@ class UnstakeTransactionSuite extends PaideiaTestSuite {
         unstakeContract.newBox(unstakeContract.box(ctx).inputBox(), false)
 
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
+
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_config, configContract.contractSignature)
 
         val configBox = Config(configContract.contractSignature).box(ctx, dao).inputBox()
         configContract.clearBoxes()

@@ -43,6 +43,7 @@ import im.paideia.staking.contracts.StakeProfitShare
 import sigma.ast.Constant
 import sigma.ast.SType
 import sigma.ast.ByteArrayConstant
+import org.ergoplatform.appkit.InputBox
 
 class ProtoDAO(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -288,6 +289,16 @@ class ProtoDAO(contractSignature: PaideiaContractSignature)
       case _ => PaideiaEventResponse(0)
     }
     PaideiaEventResponse.merge(List(super.handleEvent(event), response))
+  }
+
+  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
+    if (inputBox.getErgoTree().bytesHex != ergoTree.bytesHex) return false
+    try {
+      val b = ProtoDAOBox.fromInputBox(ctx, inputBox)
+      true
+    } catch {
+      case _: Throwable => false
+    }
   }
 
   override lazy val constants: HashMap[String, Object] = {

@@ -14,6 +14,7 @@ import im.paideia.staking.boxes.StakeSnapshotBox
 import sigma.ast.Constant
 import sigma.ast.SType
 import sigma.ast.ByteArrayConstant
+import org.ergoplatform.appkit.InputBox
 
 class StakeSnapshot(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -68,6 +69,16 @@ class StakeSnapshot(contractSignature: PaideiaContractSignature)
       ConfKeys.im_paideia_dao_tokenid.ergoValue.getValue()
     )
     cons
+  }
+
+  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
+    if (inputBox.getErgoTree().bytesHex != ergoTree.bytesHex) return false
+    try {
+      val b = StakeSnapshotBox.fromInputBox(ctx, inputBox)
+      true
+    } catch {
+      case _: Throwable => false
+    }
   }
 
   override def getConfigContext(configDigest: Option[ADDigest]) = Paideia

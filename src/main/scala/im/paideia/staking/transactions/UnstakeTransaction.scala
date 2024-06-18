@@ -27,6 +27,7 @@ import im.paideia.staking.contracts.Unstake
 import im.paideia.staking.contracts.ChangeStake
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 import sigma.Colls
+import im.paideia.util.TxTypes
 
 case class UnstakeTransaction(
   _ctx: BlockchainContextImpl,
@@ -116,7 +117,7 @@ case class UnstakeTransaction(
     )
 
   val companionContract =
-    if (contextVars(1).getValue.getValue.equals(StakingContextVars.UNSTAKE.getValue()))
+    if (contextVars(1).getValue.getValue.equals(TxTypes.UNSTAKE.getValue()))
       Unstake(
         config[PaideiaContractSignature](ConfKeys.im_paideia_contracts_staking_unstake)
           .withDaoKey(daoKey)
@@ -128,7 +129,7 @@ case class UnstakeTransaction(
         ).withDaoKey(daoKey)
       )
   val companionOutput =
-    if (contextVars(1).getValue.getValue.equals(StakingContextVars.UNSTAKE.getValue()))
+    if (contextVars(1).getValue.getValue.equals(TxTypes.UNSTAKE.getValue()))
       Unstake(
         config[PaideiaContractSignature](ConfKeys.im_paideia_contracts_staking_unstake)
           .withDaoKey(daoKey)
@@ -182,13 +183,13 @@ case class UnstakeTransaction(
     .toList
 
   val stakeKeyReturned =
-    if (contextVars(1).getValue.getValue != StakingContextVars.UNSTAKE.getValue())
+    if (contextVars(1).getValue.getValue != TxTypes.UNSTAKE.getValue())
       List[ErgoToken](new ErgoToken(stakingKey, 1L))
     else
       List[ErgoToken]()
 
   tokensToBurn =
-    if (contextVars(1).getValue.getValue == StakingContextVars.UNSTAKE.getValue())
+    if (contextVars(1).getValue.getValue == TxTypes.UNSTAKE.getValue())
       List[ErgoToken](new ErgoToken(stakingKey, 1L))
     else
       List[ErgoToken]()

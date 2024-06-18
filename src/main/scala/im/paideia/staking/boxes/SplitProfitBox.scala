@@ -9,6 +9,8 @@ import org.ergoplatform.appkit.ErgoValue
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 import sigma.Colls
 import org.ergoplatform.appkit.Address
+import org.ergoplatform.appkit.InputBox
+import scala.collection.JavaConverters._
 
 final case class SplitProfitBox(
   _ctx: BlockchainContextImpl,
@@ -22,4 +24,11 @@ final case class SplitProfitBox(
   contract = useContract.contract
 
   override def tokens: List[ErgoToken] = _tokens
+}
+
+object SplitProfitBox {
+  def fromInputBox(ctx: BlockchainContextImpl, inp: InputBox): SplitProfitBox = {
+    val contract = SplitProfit.getContractInstanceFromTree(inp.getErgoTree)
+    SplitProfitBox(ctx, inp.getValue, inp.getTokens().asScala.toList, contract)
+  }
 }

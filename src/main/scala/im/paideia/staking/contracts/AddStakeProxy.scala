@@ -36,6 +36,7 @@ import sigma.Colls
 import org.ergoplatform.appkit.ContextVar
 import scorex.crypto.authds.ADDigest
 import sigma.AvlTree
+import org.ergoplatform.appkit.InputBox
 
 class AddStakeProxy(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -143,6 +144,16 @@ class AddStakeProxy(contractSignature: PaideiaContractSignature)
       case _ => PaideiaEventResponse(0)
     }
     PaideiaEventResponse.merge(List(super.handleEvent(event), response))
+  }
+
+  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
+    if (inputBox.getErgoTree().bytesHex != ergoTree.bytesHex) return false
+    try {
+      // val b = AddStakeProxyBox.fromInputBox(ctx, inputBox)
+      true
+    } catch {
+      case _: Throwable => false
+    }
   }
 
   override lazy val constants: HashMap[String, Object] = {

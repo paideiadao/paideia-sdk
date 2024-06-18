@@ -46,6 +46,12 @@ import io.circe.Json
 import io.circe.parser._
 import java.nio.file.attribute.FileTime
 import java.nio.file.Path
+import im.paideia.common.events.CreateTransactionsEvent
+import im.paideia.common.transactions.UpdateOrRefreshTransaction
+import org.ergoplatform.appkit.Address
+import im.paideia.util.Env
+import im.paideia.Paideia
+import scala.collection.mutable.HashSet
 
 /** Represents a smart contract on the Paideia platform.
   *
@@ -54,7 +60,10 @@ import java.nio.file.Path
   * @param _contractSignature
   *   the digital signature of the contract
   */
-class PaideiaContract(_contractSignature: PaideiaContractSignature) {
+class PaideiaContract(
+  _contractSignature: PaideiaContractSignature,
+  longLivingKey: Option[String] = None
+) {
 
   /** The unspent transaction output set for this contract.
     *
@@ -126,35 +135,49 @@ class PaideiaContract(_contractSignature: PaideiaContractSignature) {
 
   def resolveDependencies(
     sourceScript: String,
-    sourceModified: FileTime
+    sourceModified: FileTime,
+    matches: Set[String] = new HashSet()
   ): (String, FileTime) = {
     val importPattern: Regex = "#import ([0-9a-zA-Z\\./]+);".r
     importPattern.findFirstMatchIn(sourceScript) match {
       case None => (sourceScript, sourceModified)
       case Some(importMatch) => {
         val matched = importMatch.subgroups(0)
-        val importPath = Paths.get(
-          getClass
-            .getResource(
-              "/ergoscript/" + matched
-            )
-            .getPath()
-        )
-        val importModified = Files.getLastModifiedTime(importPath)
-        val importScript = Source
-          .fromFile(
-            importPath.toString()
+        if (!matches.contains(matched)) {
+          val importPath = Paths.get(
+            getClass
+              .getResource(
+                "/ergoscript/" + matched
+              )
+              .getPath()
           )
-          .mkString
-        val resolvedImport = resolveDependencies(importScript, importModified)
-        resolveDependencies(
-          sourceScript.replaceFirst(
-            importMatch.matched,
-            resolvedImport._1
-          ),
-          if (resolvedImport._2.compareTo(sourceModified) < 0) sourceModified
-          else resolvedImport._2
-        )
+          val importModified = Files.getLastModifiedTime(importPath)
+          val importScript = Source
+            .fromFile(
+              importPath.toString()
+            )
+            .mkString
+          matches.add(matched)
+          val resolvedImport = resolveDependencies(importScript, importModified, matches)
+          resolveDependencies(
+            sourceScript.replaceFirst(
+              importMatch.matched,
+              resolvedImport._1
+            ),
+            if (resolvedImport._2.compareTo(sourceModified) < 0) sourceModified
+            else resolvedImport._2,
+            matches
+          )
+        } else {
+          resolveDependencies(
+            sourceScript.replaceFirst(
+              importMatch.matched,
+              ""
+            ),
+            sourceModified,
+            matches
+          )
+        }
       }
     }
   }
@@ -309,7 +332,12 @@ class PaideiaContract(_contractSignature: PaideiaContractSignature) {
           }
         val handledOutputs =
           te.tx.getOutputs().asScala.map { (output: ErgoTransactionOutput) =>
-            if (output.getErgoTree == ergoTree.bytesHex)
+            if (
+              output.getErgoTree == ergoTree.bytesHex && validateBox(
+                te.ctx,
+                new InputBoxImpl(output)
+              )
+            )
               newBox(new InputBoxImpl(output), te.mempool, te.rollback)
             else false
           }
@@ -331,9 +359,49 @@ class PaideiaContract(_contractSignature: PaideiaContractSignature) {
             .toList
         )
       }
+      case cte: CreateTransactionsEvent => {
+        if (longLivingKey.isDefined && getUtxoSet.size > 0) {
+          val correctContract = Paideia.instantiateContractInstance(
+            Paideia
+              .getConfig(contractSignature.daoKey)(longLivingKey.get)
+              .asInstanceOf[PaideiaContractSignature]
+              .withDaoKey(contractSignature.daoKey)
+          )
+          PaideiaEventResponse.merge(
+            getUtxoSet.toArray
+              .flatMap(boxId => {
+                if (boxes(boxId).getCreationHeight() < cte.height - 504000) {
+                  Some(
+                    PaideiaEventResponse(
+                      1,
+                      List(
+                        UpdateOrRefreshTransaction(
+                          cte.ctx,
+                          boxes(boxId),
+                          Address.fromErgoTree(
+                            correctContract.ergoTree,
+                            cte.ctx.getNetworkType()
+                          ),
+                          Address.create(Env.operatorAddress)
+                        )
+                      )
+                    )
+                  )
+                } else {
+                  None
+                }
+              })
+          )
+        } else {
+          PaideiaEventResponse(0)
+        }
+      }
       case _ => PaideiaEventResponse(0)
     }
   }
+
+  // This should be overridden in sub classes
+  def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = ???
 
   def getConfigContext(configDigest: Option[ADDigest]): ErgoValue[Coll[java.lang.Byte]] =
     ErgoValueBuilder.buildFor(Colls.fromArray(Array[Byte]()))

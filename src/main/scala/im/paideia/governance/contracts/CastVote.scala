@@ -32,6 +32,7 @@ import sigma.ast.Constant
 import sigma.ast.SType
 import sigma.ast.ByteArrayConstant
 import sigma.Colls
+import org.ergoplatform.appkit.InputBox
 
 class CastVote(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -59,6 +60,16 @@ class CastVote(contractSignature: PaideiaContractSignature)
       )
     )
     params.toMap
+  }
+
+  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
+    if (inputBox.getErgoTree().bytesHex != ergoTree.bytesHex) return false
+    try {
+      val b = CastVoteBox.fromInputBox(ctx, inputBox)
+      true
+    } catch {
+      case _: Throwable => false
+    }
   }
 
   override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {

@@ -1,4 +1,5 @@
 #import lib/vlqByteSize/1.0.0/vlqByteSize.es;
+#import lib/config/1.0.0/config.es;
 
 //Normal box will have following bytes structure when serialized:
 // value(ulong)
@@ -14,7 +15,17 @@
 //
 // bytesWithoutRef is this without the txId and index
 
-def updateOrRefresh(contractHash: Coll[Byte]): Boolean = {
+def updateOrRefresh(params: (Coll[Byte], Box)): Boolean = {
+    val configKey = params._1
+    val config = params._2
+    val configProof = getVar[Coll[Byte]](0).get
+
+    val configValues = configTree(config).getMany(Coll(
+        configKey
+    ), configProof)
+
+    val contractHash = bytearrayToContractHash(configValues(0))
+
     val inputIndex = INPUTS.indexOf(SELF,0)
     val selfOutput = OUTPUTS(inputIndex)
     val creationDifference = selfOutput.creationInfo._1 - SELF.creationInfo._1

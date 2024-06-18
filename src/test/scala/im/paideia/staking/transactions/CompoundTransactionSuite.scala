@@ -79,6 +79,8 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
         compoundContract.newBox(compoundContract.box(ctx).inputBox(), false)
 
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_config, configContract.contractSignature)
 
         val configBox = Config(configContract.contractSignature).box(ctx, dao).inputBox()
         configContract.clearBoxes()
@@ -134,7 +136,8 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
         val dummyAddress = Address.create("4MQyML64GnzMxZgm")
 
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
-
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_config, configContract.contractSignature)
         val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
         treasuryContract.clearBoxes()
         treasuryContract.newBox(
@@ -226,7 +229,8 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
         compoundContract.newBox(compoundContract.box(ctx).inputBox(), false)
 
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
-
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_config, configContract.contractSignature)
         val configBox = Config(configContract.contractSignature).box(ctx, dao).inputBox()
         configContract.clearBoxes()
         configContract.newBox(configBox, false)
@@ -303,7 +307,8 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
         compoundContract.newBox(compoundContract.box(ctx).inputBox(), false)
 
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
-
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_config, configContract.contractSignature)
         val configBox = Config(configContract.contractSignature).box(ctx, dao).inputBox()
         configContract.clearBoxes()
         configContract.newBox(configBox, false)
@@ -375,7 +380,8 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
         compoundContract.newBox(compoundContract.box(ctx).inputBox(), false)
 
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
-
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_config, configContract.contractSignature)
         val configBox = Config(configContract.contractSignature).box(ctx, dao).inputBox()
         configContract.clearBoxes()
         configContract.newBox(configBox, false)

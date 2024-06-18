@@ -10,6 +10,8 @@
 @contract def config(imPaideiaDaoActionTokenId: Coll[Byte]) = {
     #import lib/config/1.0.0/config.es;
     #import lib/tokenExists/1.0.0/tokenExists.es;
+    #import lib/updateOrRefresh/1.0.0/updateOrRefresh.es;
+    #import lib/txTypes/1.0.0/txTypes.es;
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -19,70 +21,81 @@
 
     val imPaideiaContractsConfig: Coll[Byte]  = _IM_PAIDEIA_CONTRACTS_CONFIG
 
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
-    // Inputs                                                                //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
+    val validChangeConfigTransaction: Boolean = {
 
-    val config: Box = SELF
+        ///////////////////////////////////////////////////////////////////////////
+        //                                                                       //
+        // Inputs                                                                //
+        //                                                                       //
+        ///////////////////////////////////////////////////////////////////////////
 
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
-    // Outputs                                                               //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
+        val config: Box = SELF
 
-    val configO: Box = OUTPUTS(0)
+        ///////////////////////////////////////////////////////////////////////////
+        //                                                                       //
+        // Outputs                                                               //
+        //                                                                       //
+        ///////////////////////////////////////////////////////////////////////////
 
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
-    // Context variables                                                     //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
+        val configO: Box = OUTPUTS(0)
 
-    val configProof: Coll[Byte] = getVar[Coll[Byte]](0).get
+        ///////////////////////////////////////////////////////////////////////////
+        //                                                                       //
+        // Context variables                                                     //
+        //                                                                       //
+        ///////////////////////////////////////////////////////////////////////////
 
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
-    // DAO Config value extraction                                           //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
+        val configProof: Coll[Byte] = getVar[Coll[Byte]](0).get
 
-    val configValues: Coll[Option[Coll[Byte]]] = configTree(configO).getMany(
-        Coll(
-            imPaideiaContractsConfig
-        ),
-        configProof
-    )
+        ///////////////////////////////////////////////////////////////////////////
+        //                                                                       //
+        // DAO Config value extraction                                           //
+        //                                                                       //
+        ///////////////////////////////////////////////////////////////////////////
 
-    val configContractHash: Coll[Byte] = bytearrayToContractHash(configValues(0))
+        val configValues: Coll[Option[Coll[Byte]]] = configTree(configO).getMany(
+            Coll(
+                imPaideiaContractsConfig
+            ),
+            configProof
+        )
 
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
-    // Simple conditions                                                     //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
+        val configContractHash: Coll[Byte] = bytearrayToContractHash(configValues(0))
 
-    val tokensIntact: Boolean = config.tokens == configO.tokens
-    val valueIntact: Boolean  = config.value <= configO.value
+        ///////////////////////////////////////////////////////////////////////////
+        //                                                                       //
+        // Simple conditions                                                     //
+        //                                                                       //
+        ///////////////////////////////////////////////////////////////////////////
 
-    val contractIntact: Boolean = blake2b256(configO.propositionBytes) == 
-        configContractHash
+        val tokensIntact: Boolean = config.tokens == configO.tokens
+        val valueIntact: Boolean  = config.value <= configO.value
 
-    val validAction: Boolean = tokenExists((INPUTS, imPaideiaDaoActionTokenId))
+        val contractIntact: Boolean = blake2b256(configO.propositionBytes) == 
+            configContractHash
 
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
-    // Final contract result                                                 //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
+        val validAction: Boolean = tokenExists((INPUTS, imPaideiaDaoActionTokenId))
 
-    sigmaProp(allOf(Coll(
-        tokensIntact,
-        valueIntact,
-        contractIntact,
-        validAction
+        ///////////////////////////////////////////////////////////////////////////
+        //                                                                       //
+        // Final contract result                                                 //
+        //                                                                       //
+        ///////////////////////////////////////////////////////////////////////////
+
+        allOf(Coll(
+            tokensIntact,
+            valueIntact,
+            contractIntact,
+            validAction
+        ))
+
+    }
+
+    val transactionType: Byte = getVar[Byte](1).get
+
+    sigmaProp(anyOf(Coll(
+        transactionType == CHANGE_CONFIG && validChangeConfigTransaction,
+        transactionType == UPDATE && updateOrRefresh((imPaideiaContractsConfig, SELF))
     )))
 
 }

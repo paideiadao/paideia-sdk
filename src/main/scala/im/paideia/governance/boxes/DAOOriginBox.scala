@@ -48,7 +48,7 @@ case class DAOOriginBox(
 }
 
 object DAOOriginBox {
-  def fromInput(ctx: BlockchainContextImpl, inp: InputBox): DAOOriginBox = {
+  def fromInputBox(ctx: BlockchainContextImpl, inp: InputBox): DAOOriginBox = {
     val contract = DAOOrigin(PaideiaContractSignature(daoKey = Env.paideiaDaoKey))
     DAOOriginBox(
       ctx,

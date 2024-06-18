@@ -11,6 +11,7 @@ import im.paideia.governance.VoteRecord
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 import sigma.Colls
 import scorex.util.encode.Base16
+import im.paideia.util.TxTypes._
 
 case class StakingContextVars(
   stakingStateContextVars: List[ContextVar],
@@ -18,14 +19,6 @@ case class StakingContextVars(
 )
 
 object StakingContextVars {
-  val STAKE        = ErgoValue.of(0.toByte)
-  val CHANGE_STAKE = ErgoValue.of(1.toByte)
-  val UNSTAKE      = ErgoValue.of(2.toByte)
-  val SNAPSHOT     = ErgoValue.of(3.toByte)
-  val COMPOUND     = ErgoValue.of(4.toByte)
-  val PROFIT_SHARE = ErgoValue.of(5.toByte)
-  val VOTE         = ErgoValue.of(6.toByte)
-
   val dummyKey: String =
     "ce552663312afc2379a91f803c93e2b10b424f176fbc930055c10def2fd88a5d"
 

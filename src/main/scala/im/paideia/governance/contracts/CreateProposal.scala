@@ -22,6 +22,7 @@ import sigma.Coll
 import sigma.ast.Constant
 import sigma.ast.SType
 import sigma.ast.ByteArrayConstant
+import org.ergoplatform.appkit.InputBox
 
 class CreateProposal(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -83,6 +84,16 @@ class CreateProposal(contractSignature: PaideiaContractSignature)
       case _ => PaideiaEventResponse(0)
     }
     PaideiaEventResponse.merge(List(super.handleEvent(event), response))
+  }
+
+  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
+    if (inputBox.getErgoTree().bytesHex != ergoTree.bytesHex) return false
+    try {
+      val b = CreateProposalBox.fromInputBox(ctx, inputBox)
+      true
+    } catch {
+      case _: Throwable => false
+    }
   }
 
   override lazy val parameters: Map[String, Constant[SType]] = {

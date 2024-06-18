@@ -154,6 +154,16 @@ class ActionSendFundsBasic(contractSignature: PaideiaContractSignature)
     )
     cons.toMap
   }
+
+  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
+    if (inputBox.getErgoTree().bytesHex != ergoTree.bytesHex) return false
+    try {
+      val b = ActionSendFundsBasicBox.fromInputBox(ctx, inputBox)
+      true
+    } catch {
+      case _: Throwable => false
+    }
+  }
 }
 
 object ActionSendFundsBasic extends PaideiaActor {

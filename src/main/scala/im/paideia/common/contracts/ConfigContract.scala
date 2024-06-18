@@ -24,6 +24,7 @@ import sigma.ast.Constant
 import sigma.ast.SType
 import sigma.ast.ByteArrayConstant
 import sigma.Colls
+import org.ergoplatform.appkit.InputBox
 
 /** This class represents a configuration contract and extends the PaideiaContract
   * abstract class.
@@ -33,7 +34,10 @@ import sigma.Colls
   *   this contract.
   */
 class Config(contractSignature: PaideiaContractSignature)
-  extends PaideiaContract(contractSignature) {
+  extends PaideiaContract(
+    contractSignature,
+    ConfKeys.im_paideia_contracts_config.originalKey
+  ) {
 
   /** Creates a ConfigBox object given a BlockchainContextImpl object and a DAO object.
     *
@@ -49,12 +53,16 @@ class Config(contractSignature: PaideiaContractSignature)
     dao: DAO,
     digestOpt: Option[ADDigest] = None
   ): ConfigBox = {
-    val res = new ConfigBox(dao.config, digestOpt)
-    res.ctx      = ctx
-    res.contract = contract
-    res.value    = 1000000L
-    res.tokens   = List(new ErgoToken(dao.key, 1L))
-    res
+    new ConfigBox(ctx, dao, this, digestOpt)
+  }
+
+  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
+    try {
+      val b = ConfigBox.fromInputBox(ctx, inputBox)
+      true
+    } catch {
+      case _: Throwable => false
+    }
   }
 
   /** Represents the constants defined in this contract. Returns a HashMap object with the

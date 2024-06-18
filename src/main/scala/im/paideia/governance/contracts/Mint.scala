@@ -12,6 +12,7 @@ import org.ergoplatform.sdk.ErgoId
 import sigma.ast.Constant
 import sigma.ast.SType
 import sigma.ast.ByteArrayConstant
+import org.ergoplatform.appkit.InputBox
 
 class Mint(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -23,11 +24,7 @@ class Mint(contractSignature: PaideiaContractSignature)
     tokenDescription: String,
     tokenDecimals: Int
   ): MintBox = {
-    val res = new MintBox(tokenId, mintAmount, tokenName, tokenDescription, tokenDecimals)
-    res.ctx      = ctx
-    res.value    = 1000000L
-    res.contract = contract
-    res
+    MintBox(ctx, tokenId, mintAmount, tokenName, tokenDescription, tokenDecimals, this)
   }
 
   override lazy val constants: HashMap[String, Object] = {
@@ -50,6 +47,16 @@ class Mint(contractSignature: PaideiaContractSignature)
       ByteArrayConstant(ErgoId.create(Env.paideiaDaoKey).getBytes)
     )
     cons.toMap
+  }
+
+  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
+    if (inputBox.getErgoTree().bytesHex != ergoTree.bytesHex) return false
+    try {
+      // val b = MintBox.fromInputBox(ctx, inputBox)
+      true
+    } catch {
+      case _: Throwable => false
+    }
   }
 }
 

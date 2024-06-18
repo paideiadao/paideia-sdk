@@ -146,6 +146,7 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
         actionContract.newBox(actionBox.inputBox(), false)
 
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
+        config.set(ConfKeys.im_paideia_contracts_config, configContract.contractSignature)
         configContract.newBox(configContract.box(ctx, dao).inputBox(), false)
 
         val eventResponse = Paideia.handleEvent(

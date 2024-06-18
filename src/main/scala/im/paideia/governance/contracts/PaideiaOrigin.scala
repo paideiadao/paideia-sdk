@@ -20,6 +20,7 @@ import im.paideia.common.events.UpdateConfigEvent
 import sigma.ast.Constant
 import sigma.ast.SType
 import sigma.ast.ByteArrayConstant
+import org.ergoplatform.appkit.InputBox
 
 class PaideiaOrigin(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -29,15 +30,17 @@ class PaideiaOrigin(contractSignature: PaideiaContractSignature)
     daoConfig: DAOConfig,
     daoTokensRemaining: Long
   ): PaideiaOriginBox = {
-    val res = new PaideiaOriginBox
-    res.ctx   = ctx
-    res.value = 1000000L
-    res.tokens = List(
-      new ErgoToken(Env.paideiaOriginNFT, 1L),
-      new ErgoToken(Env.daoTokenId, daoTokensRemaining)
-    )
-    res.contract = contract
-    res
+    PaideiaOriginBox(ctx, 1000000L, daoTokensRemaining, this)
+  }
+
+  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
+    if (inputBox.getErgoTree().bytesHex != ergoTree.bytesHex) return false
+    try {
+      val b = PaideiaOriginBox.fromInputBox(ctx, inputBox)
+      true
+    } catch {
+      case _: Throwable => false
+    }
   }
 
   override lazy val constants: HashMap[String, Object] = {

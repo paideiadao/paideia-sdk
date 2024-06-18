@@ -22,6 +22,7 @@ import sigma.Coll
 import scala.collection.JavaConverters._
 import scorex.crypto.authds.ADDigest
 import sigma.AvlTree
+import im.paideia.util.TxTypes
 
 /** A transaction that updates configuration of the Paideia DAO and creates a new Config
   * box while consuming an existing `configInput` box and an `actionInput` box which
@@ -139,7 +140,8 @@ final case class UpdateConfigTransaction(
 
   // Set inputs, dataInputs, outputs and changeAddress
   inputs = List(
-    configInput.withContextVars(context: _*),
+    configInput
+      .withContextVars(context(0), ContextVar.of(1.toByte, TxTypes.CHANGE_CONFIG)),
     actionInput.withContextVars((context ++ actionContext): _*)
   )
   dataInputs = List(proposalInput)
