@@ -7,6 +7,8 @@
     #import lib/tokensInBoxes/1.0.0/tokensInBoxes.es;
     #import lib/config/1.0.0/config.es;
     #import lib/stakeState/1.0.0/stakeState.es;
+    #import lib/txTypes/1.0.0/txTypes.es;
+    #import lib/tokenExists/1.0.0/tokenExists.es;
 
     /**
      *
@@ -51,18 +53,23 @@
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
+    // Transaction Type                                                      //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    val transactionType: Byte = getVar[Byte](0).get
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
     // Intermediate calculations                                             //
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val validAction: Boolean = INPUTS.exists{
-        (box: Box) =>
-        if (box.tokens.size > 0) {
-            box.tokens(0)._1 == daoActionTokenId
-        } else {
+    def validAction(txType: Byte): Boolean = 
+        if (txType == TREASURY_SPEND) 
+            tokenExists((INPUTS, daoActionTokenId)) 
+        else 
             false
-        }
-    }
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -70,7 +77,8 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val validStakeOp = if (!validAction) {
+    def validStakeTransaction(txType: Byte): Boolean = {
+        if (txType == SNAPSHOT || txType == COMPOUND) {
         /**
         * Relevant for stake transactions only
         * The treasury funds the off chain actions needed for staking
@@ -105,8 +113,8 @@
         // Context variables                                                 //
         ///////////////////////////////////////////////////////////////////////
 
-        val paideiaProof: Coll[Byte] = getVar[Coll[Byte]](0).get
-        val configProof: Coll[Byte] = getVar[Coll[Byte]](1).get
+        val paideiaProof: Coll[Byte] = getVar[Coll[Byte]](1).get
+        val configProof: Coll[Byte]  = getVar[Coll[Byte]](2).get
 
         ///////////////////////////////////////////////////////////////////////
         // DAO Config                                                        //
@@ -141,8 +149,6 @@
 
         val treasuryDao: Long = tokensInBoxes((treasuryInInput, daoTokenId))
 
-        val snapshotTx: Boolean = nextEmission(stakeStateO) > nextEmission(stakeState)
-
         ///////////////////////////////////////////////////////////////////////
         // Simple conditions                                                 //
         ///////////////////////////////////////////////////////////////////////
@@ -176,7 +182,8 @@
         // Transaction validity                                              //
         ///////////////////////////////////////////////////////////////////////
 
-        if (snapshotTx) {
+        def validSnapshotTransaction(stakeTxType: Byte): Boolean = {
+            if (stakeTxType == SNAPSHOT) {
             val paideiaConfigValues: Coll[Option[Coll[Byte]]] = 
                 configTree(paideiaConfig).getMany(Coll(
                     imPaideiaFeeEmitPaideia,
@@ -239,9 +246,13 @@
                 splitProfitOutput.tokens(0)._2 >= paideiaFee,
                 snapshotContractPresent
             ))
-        } else {
-            
-            
+            } else {
+                false
+            }
+        } 
+        
+        def validCompoundTransaction(stakeTxType: Byte): Boolean = {
+            if (stakeTxType == COMPOUND) {
             val paideiaConfigValues = configTree(paideiaConfig).getMany(Coll(
                 imPaideiaFeeCompoundOperatorPaideia,
                 imPaideiaFeeOperatorMaxErg
@@ -281,9 +292,18 @@
                 compoundContractPresent,
                 govTokensSame
             ))
+            } else {
+                false
+            }
         }
-    } else {
-        false
+
+        anyOf(Coll(
+            validSnapshotTransaction(transactionType),
+            validCompoundTransaction(transactionType)
+        ))
+        } else {
+            false
+        }
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -295,8 +315,8 @@
     sigmaProp(
         anyOf(
             Coll(
-                validAction,
-                validStakeOp
+                validStakeTransaction(transactionType),
+                validAction(transactionType)
             )
         )
     )

@@ -37,3 +37,7 @@ def bytearrayToLongClamped(params: (Option[Coll[Byte]], (Long, (Long, Long)))): 
 def bytearrayToString(configValue: Option[Coll[Byte]]): Coll[Byte] = {
     configValue.get.slice(5,configValue.get.size)
 }
+
+def configDaoKey(box: Box): Coll[Byte] = {
+    box.tokens(0)._1
+}

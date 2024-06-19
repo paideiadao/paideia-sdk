@@ -61,3 +61,7 @@ def snapshotTrees(b: Box): Coll[(AvlTree,AvlTree)] = {
 def snapshotProfit(b: Box): Coll[Long] = {
     b.R8[Coll[Long]].get
 }
+
+def stakeStateNFT(box: Box): Coll[Byte] = {
+    box.tokens(0)._1
+}

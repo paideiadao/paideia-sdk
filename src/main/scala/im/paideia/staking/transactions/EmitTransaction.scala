@@ -24,6 +24,7 @@ import org.ergoplatform.appkit.impl.ErgoTreeContract
 import sigma.AvlTree
 import scorex.crypto.authds.ADDigest
 import im.paideia.staking.contracts.StakeSnapshot
+import im.paideia.util.TxTypes
 
 case class EmitTransaction(
   _ctx: BlockchainContextImpl,
@@ -200,8 +201,9 @@ case class EmitTransaction(
     .build()
 
   val treasuryContextVars = List(
+    ContextVar.of(0.toByte, TxTypes.SNAPSHOT),
     ContextVar.of(
-      0.toByte,
+      1.toByte,
       paideiaConfig.getProof(
         ConfKeys.im_paideia_fees_emit_paideia,
         ConfKeys.im_paideia_fees_emit_operator_paideia,
@@ -210,7 +212,7 @@ case class EmitTransaction(
       )(Some(paideiaConfigDigest))
     ),
     ContextVar.of(
-      1.toByte,
+      2.toByte,
       config.getProof(
         ConfKeys.im_paideia_contracts_staking_compound,
         ConfKeys.im_paideia_contracts_staking_snapshot,

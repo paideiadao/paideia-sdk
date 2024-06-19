@@ -24,6 +24,7 @@ import sigma.Coll
 import scorex.crypto.authds.ADDigest
 import sigma.AvlTree
 import sigma.data.CBox
+import im.paideia.util.TxTypes
 
 final case class SendFundsBasicTransaction(
   _ctx: BlockchainContextImpl,
@@ -70,7 +71,10 @@ final case class SendFundsBasicTransaction(
   val fundsNeeded = actionInputBox.fundsNeeded
 
   val coveringTreasuryBoxes =
-    treasuryContract.findBoxes(fundsNeeded._1, fundsNeeded._2).get
+    treasuryContract
+      .findBoxes(fundsNeeded._1, fundsNeeded._2)
+      .get
+      .map(ib => ib.withContextVars(ContextVar.of(0.toByte, TxTypes.TREASURY_SPEND)))
 
   val configDigest =
     ADDigest @@ configInput

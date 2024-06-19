@@ -7,3 +7,4 @@ val PROFIT_SHARE: Byte = 5.toByte
 val VOTE: Byte         = 6.toByte
 val UPDATE: Byte       = 7.toByte
 val CHANGE_CONFIG: Byte = 8.toByte
+val TREASURY_SPEND: Byte = 9.toByte

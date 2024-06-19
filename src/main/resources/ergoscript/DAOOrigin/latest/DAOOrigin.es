@@ -43,7 +43,6 @@
     ///////////////////////////////////////////////////////////////////////////
 
     val daoOrigin: Box      = SELF
-    val createProposal: Box = INPUTS(1)
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -141,11 +140,11 @@
     ///////////////////////////////////////////////////////////////////////////
 
     val paideiaCorrectConfig: Boolean = 
-        paideiaConfig.tokens(0)._1 == paideiaDaoKey
+        configDaoKey(paideiaConfig) == paideiaDaoKey
 
-    val correctConfig: Boolean = config.tokens(0)._1 == daoOriginKey(daoOrigin)
+    val correctConfig: Boolean = configDaoKey(config) == daoOriginKey(daoOrigin)
 
-    val correctStakeState: Boolean = stakeState.tokens(0)._1 == stakeStateTokenId
+    val correctStakeState: Boolean = stakeStateNFT(stakeState) == stakeStateTokenId
 
     val enoughStaked: Boolean = stakeRecordStake(stakeRecord) >= minStakeAmount
 
