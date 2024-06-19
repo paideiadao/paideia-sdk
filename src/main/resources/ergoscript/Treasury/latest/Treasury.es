@@ -9,6 +9,8 @@
     #import lib/stakeState/1.0.0/stakeState.es;
     #import lib/txTypes/1.0.0/txTypes.es;
     #import lib/tokenExists/1.0.0/tokenExists.es;
+    #import lib/ergInBoxes/1.0.0/ergInBoxes.es;
+    #import lib/tokensInBoxes/1.0.0/tokensInBoxes.es;
 
     /**
      *
@@ -301,6 +303,59 @@
             validSnapshotTransaction(transactionType),
             validCompoundTransaction(transactionType)
         ))
+        } else {
+            false
+        }
+    }
+
+    def validConsolidateTransaction(txType: Byte): Boolean = {
+        if (txType == CONSOLIDATE) {
+
+            ///////////////////////////////////////////////////////////////
+            // INPUTS                                                    //
+            ///////////////////////////////////////////////////////////////
+
+            val treasuryInputs: Coll[Box] = INPUTS.filter{(b: Box) => 
+                b.propositionBytes == SELF.propositionBytes}
+
+            ///////////////////////////////////////////////////////////////
+            // OUTPUTS                                                   //
+            ///////////////////////////////////////////////////////////////
+
+            val treasuryOutputs: Coll[Box] = OUTPUTS.filter{(b: Box) => 
+                b.propositionBytes == SELF.propositionBytes}
+
+            ///////////////////////////////////////////////////////////////
+            // Intermediate Calculations                                 //
+            ///////////////////////////////////////////////////////////////
+
+            val ergDifference: Long = ergInBoxes(treasuryInputs) - ergInBoxes(treasuryOutputs)
+
+            ///////////////////////////////////////////////////////////////
+            // Simple Conditions                                         //
+            ///////////////////////////////////////////////////////////////
+
+            val enoughInputs: Boolean = treasuryInputs.size >= 5
+
+            val onlyOneOutputs: Boolean = treasuryOutputs.size == 1
+
+            val tokensPreserved: Boolean = treasuryOutputs(0).tokens.forall{
+                (token: (Coll[Byte], Long)) => 
+                tokensInBoxes((treasuryInputs, token._1)) == token._2
+            }
+
+            val enoughErgPreserved: Boolean = ergDifference <= 2000000L
+
+            ///////////////////////////////////////////////////////////////
+            // Tx Validity                                               //
+            ///////////////////////////////////////////////////////////////
+
+            allOf(Coll(
+                enoughInputs,
+                onlyOneOutputs,
+                tokensPreserved,
+                enoughErgPreserved
+            ))
         } else {
             false
         }
