@@ -13,6 +13,9 @@
     #import lib/proposal/1.0.0/proposal.es;
     #import lib/action/1.0.0/action.es;
     #import lib/daoOrigin/1.0.0/daoOrigin.es;
+    #import lib/stakeState/1.0.0/stakeState.es;
+    #import lib/stakeRecord/1.0.0/stakeRecord.es;
+    #import lib/tokenExists/1.0.0/tokenExists.es;
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -29,6 +32,9 @@
 
     val imPaideiaDaoMinProposalTime: Coll[Byte] = 
         _IM_PAIDEIA_DAO_MIN_PROPOSAL_TIME
+
+    val imPaideiaDaoMinStakeProposal: Coll[Byte] = _IM_PAIDEIA_DAO_MIN_STAKE_PROPOSAL
+    val imPaideiaStakingStateTokenId: Coll[Byte] = _IM_PAIDEIA_STAKING_STATE_TOKENID
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -47,6 +53,7 @@
 
     val paideiaConfig: Box = CONTEXT.dataInputs(0)
     val config: Box        = CONTEXT.dataInputs(1)
+    val stakeState: Box    = CONTEXT.dataInputs(2)
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -67,6 +74,8 @@
     val configProof: Coll[Byte]        = getVar[Coll[Byte]](1).get
     val proposalBox: Box               = getVar[Box](2).get
     val actionBoxes: Coll[Box]         = getVar[Coll[Box]](3).get
+    val stakeKey: Coll[Byte]           = getVar[Coll[Byte]](4).get
+    val stakeProof: Coll[Byte]         = getVar[Coll[Byte]](5).get
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -89,6 +98,8 @@
     val configValues: Coll[Option[Coll[Byte]]] = configTree(config).getMany(
         Coll(
             imPaideiaDaoMinProposalTime,
+            imPaideiaDaoMinStakeProposal,
+            imPaideiaStakingStateTokenId,
             blake2b256(imPaideiaContractsProposal++proposalBox.propositionBytes)
         )++actionBoxes.map{
             (box: Box) =>
@@ -99,9 +110,12 @@
 
     //Min 12 hours, max 1 month, default 24 hours
     val minProposalTime: Long = bytearrayToLongClamped((configValues(0),(43200000L,(2626560000L,86400000L))))
-    val proposalContractHash: Coll[Byte] = bytearrayToContractHash(configValues(1))
+    //Minimum amount staked to be able to create a proposal. Should not be higher than total staked amount to avoid locking the DAO
+    val minStakeAmount: Long = bytearrayToLongClamped((configValues(1),(0L, (totalStaked(stakeState)/2L,0L))))
+    val stakeStateTokenId: Coll[Byte] = bytearrayToTokenId(configValues(2))
+    val proposalContractHash: Coll[Byte] = bytearrayToContractHash(configValues(3))
     val actionContractHashes: Coll[Coll[Byte]] = 
-        configValues.slice(2,configValues.size).map{
+        configValues.slice(4,configValues.size).map{
             (cv: Option[Coll[Byte]]) =>
             bytearrayToContractHash(cv)
         }
@@ -116,6 +130,10 @@
 
     val actionOutputs: Coll[Box] = OUTPUTS.slice(2,actionBoxes.size+2)
 
+    val stakeRecord: Coll[Byte] = stakeTree(stakeState).get(stakeKey, stakeProof).get
+
+    val currentTime: Long = CONTEXT.preHeader.timestamp
+
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
     // Simple conditions                                                     //
@@ -127,7 +145,11 @@
 
     val correctConfig: Boolean = config.tokens(0)._1 == daoOriginKey(daoOrigin)
 
-    val currentTime: Long = CONTEXT.preHeader.timestamp
+    val correctStakeState: Boolean = stakeState.tokens(0)._1 == stakeStateTokenId
+
+    val enoughStaked: Boolean = stakeRecordStake(stakeRecord) >= minStakeAmount
+
+    val keyInOutput: Boolean = tokenExists((OUTPUTS, stakeKey))
 
     val correctDAOOutput: Boolean = allOf(
         Coll(
@@ -183,6 +205,9 @@
         correctConfig,
         correctDAOOutput,
         correctProposalOutput,
-        correctActionOutputs
+        correctActionOutputs,
+        correctStakeState,
+        enoughStaked,
+        keyInOutput
     )))
 }

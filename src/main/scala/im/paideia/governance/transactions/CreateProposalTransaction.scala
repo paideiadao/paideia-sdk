@@ -23,6 +23,8 @@ import sigma.AvlTree
 import sigma.data.CBox
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 import sigma.Colls
+import scorex.util.encode.Base16
+import im.paideia.staking.boxes.StakeStateBox
 
 final case class CreateProposalTransaction(
   _ctx: BlockchainContextImpl,
@@ -76,6 +78,17 @@ final case class CreateProposalTransaction(
       0
     )
   )(0)
+
+  val stakeStateInput = Paideia.getBox(
+    new FilterLeaf[String](
+      FilterType.FTEQ,
+      Base16.encode(dao.config.getArray(ConfKeys.im_paideia_staking_state_tokenid)),
+      CompareField.ASSET,
+      0
+    )
+  )(0)
+
+  val stakeStateBox = StakeStateBox.fromInputBox(ctx, stakeStateInput)
 
   val daoOriginInputBox = DAOOriginBox.fromInputBox(ctx, daoOriginInput)
 
@@ -136,6 +149,8 @@ final case class CreateProposalTransaction(
       dao.config.getProof(
         List(
           ConfKeys.im_paideia_dao_min_proposal_time,
+          ConfKeys.im_paideia_dao_min_stake_proposal,
+          ConfKeys.im_paideia_staking_state_tokenid,
           ConfKeys.im_paideia_contracts_proposal(proposalOutput.getErgoTree().bytes)
         ) ++
           actionOutputs.map((ao: OutBox) =>
@@ -150,11 +165,22 @@ final case class CreateProposalTransaction(
     ContextVar.of(
       3.toByte,
       ErgoValueBuilder.buildFor(Colls.fromArray(actionBoxes))
+    ),
+    ContextVar.of(
+      4.toByte,
+      Base16.decode(voteKey).get
+    ),
+    ContextVar.of(
+      5.toByte,
+      TotalStakingState(dao.key).currentStakingState
+        .getStakes(List(voteKey), Some(stakeStateBox.stateDigest))
+        .proof
+        .bytes
     )
   )
 
   inputs     = List(daoOriginInput.withContextVars(daoOriginContext: _*))
-  dataInputs = List(paideiaConfigInput, configInput)
+  dataInputs = List(paideiaConfigInput, configInput, stakeStateInput)
   outputs = List(daoOriginOutput.outBox, proposalOutput) ++ actionOutputs ++ List(
     userOutput
   )
