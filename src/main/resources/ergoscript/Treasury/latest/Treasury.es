@@ -371,7 +371,8 @@
         anyOf(
             Coll(
                 validStakeTransaction(transactionType),
-                validAction(transactionType)
+                validAction(transactionType),
+                validConsolidateTransaction(transactionType)
             )
         )
     )

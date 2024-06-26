@@ -322,6 +322,8 @@
 
         val voteHappened: Boolean = pVotes(proposalBasicO) != pVotes(proposalBasic)
 
+        val notPassedEnd: Boolean = CONTEXT.preHeader.timestamp < pEndTime(proposalBasic)
+
         val correctVoteValues = if (currentVote.isDefined) {
             val oldVoteValues: Coll[Long] = 
                 currentVote.get.indices.slice(0,currentVote.get.size/8).map{
@@ -365,6 +367,7 @@
             pPassedOption(proposalBasicO)    == pPassedOption(proposalBasic),
             pEndTime(proposalBasicO)         == pEndTime(proposalBasic),
             pVoteTree(proposalBasicO).digest == newVotesTree.digest,
+            notPassedEnd,
             correctVoteValues,
             voteKeyPresent,
             correctStakeState,
