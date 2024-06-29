@@ -45,7 +45,7 @@
         //                                                                       //
         ///////////////////////////////////////////////////////////////////////////
 
-        val configProof: Coll[Byte] = getVar[Coll[Byte]](0).get
+        val configProof: Coll[Byte] = getVar[Coll[Byte]](1).get
 
         ///////////////////////////////////////////////////////////////////////////
         //                                                                       //
@@ -91,7 +91,7 @@
 
     }
 
-    val transactionType: Byte = getVar[Byte](1).get
+    val transactionType: Byte = getVar[Byte](0).get
 
     sigmaProp(anyOf(Coll(
         transactionType == CHANGE_CONFIG && validChangeConfigTransaction,

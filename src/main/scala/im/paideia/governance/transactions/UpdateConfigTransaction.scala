@@ -130,18 +130,24 @@ final case class UpdateConfigTransaction(
     )
   )
 
+  val configProof =
+    dao.config.getProof(ConfKeys.im_paideia_contracts_config)(resultingDigest)
+
   // Create context variables
   val context = List(
     ContextVar.of(
       0.toByte,
-      dao.config.getProof(ConfKeys.im_paideia_contracts_config)(resultingDigest)
+      configProof
     )
   )
 
   // Set inputs, dataInputs, outputs and changeAddress
   inputs = List(
     configInput
-      .withContextVars(context(0), ContextVar.of(1.toByte, TxTypes.CHANGE_CONFIG)),
+      .withContextVars(
+        ContextVar.of(1.toByte, configProof),
+        ContextVar.of(0.toByte, TxTypes.CHANGE_CONFIG)
+      ),
     actionInput.withContextVars((context ++ actionContext): _*)
   )
   dataInputs = List(proposalInput)

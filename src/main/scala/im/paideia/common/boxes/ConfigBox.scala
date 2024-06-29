@@ -24,7 +24,7 @@ final case class ConfigBox(
   dao: DAO,
   useContract: Config,
   digestOpt: Option[ADDigest] = None,
-  _value: Long                = 1000000L
+  _value: Long                = 1000000000L
 ) extends PaideiaBox {
   ctx      = _ctx
   contract = useContract.contract
@@ -72,7 +72,8 @@ object ConfigBox {
       ctx,
       Paideia.getDAO(daoKey),
       contract,
-      Some(configTreeDigest)
+      Some(configTreeDigest),
+      inp.getValue()
     )
   }
 }

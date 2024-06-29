@@ -18,7 +18,7 @@
 def updateOrRefresh(params: (Coll[Byte], Box)): Boolean = {
     val configKey = params._1
     val config = params._2
-    val configProof = getVar[Coll[Byte]](0).get
+    val configProof = getVar[Coll[Byte]](1).get
 
     val configValues = configTree(config).getMany(Coll(
         configKey

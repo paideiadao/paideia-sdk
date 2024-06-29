@@ -25,6 +25,7 @@ trait PaideiaBox {
   private var _registers: List[ErgoValue[_]] = List[ErgoValue[_]]()
   private var _contextVars: List[ContextVar] = _
   private var _ctx: BlockchainContextImpl    = _
+  var creationHeightOverride: Option[Int]    = None
 
   /** Converts this output to an input box (used in spending transactions).
     *
@@ -51,6 +52,9 @@ trait PaideiaBox {
       .value(value) // Setting Output's value
       .contract(contract) // Setting Output's contract
 
+    if (creationHeightOverride.isDefined)
+      b = b.creationHeight(creationHeightOverride.get)
+
     if (tokens.size > 0) // If there are any Tokens include them
       b = b.tokens(tokens: _*)
 
@@ -58,6 +62,11 @@ trait PaideiaBox {
       b = b.registers(registers: _*)
 
     b.build() // Return built OutBox
+  }
+
+  def withCreationHeight(_creationHeight: Int): PaideiaBox = {
+    creationHeightOverride = Some(_creationHeight)
+    this
   }
 
   /** Gets the list of registers of this output.

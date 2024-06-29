@@ -367,31 +367,36 @@ class PaideiaContract(
               .asInstanceOf[PaideiaContractSignature]
               .withDaoKey(contractSignature.daoKey)
           )
-          PaideiaEventResponse.merge(
-            getUtxoSet.toArray
-              .flatMap(boxId => {
-                if (boxes(boxId).getCreationHeight() < cte.height - 504000) {
-                  Some(
-                    PaideiaEventResponse(
-                      1,
-                      List(
-                        UpdateOrRefreshTransaction(
-                          cte.ctx,
-                          boxes(boxId),
-                          Address.fromErgoTree(
-                            correctContract.ergoTree,
-                            cte.ctx.getNetworkType()
-                          ),
-                          Address.create(Env.operatorAddress)
-                        )
-                      )
-                    )
-                  )
-                } else {
-                  None
-                }
-              })
-          )
+          val outdatedBoxes = getUtxoSet.toList
+            .flatMap(boxId => {
+              if (boxes(boxId).getCreationHeight() < cte.height - 504000) {
+                Some(
+                  boxes(boxId)
+                )
+              } else {
+                None
+              }
+            })
+          if (outdatedBoxes.length > 0) {
+            PaideiaEventResponse(
+              1,
+              List(
+                UpdateOrRefreshTransaction(
+                  cte.ctx,
+                  outdatedBoxes,
+                  longLivingKey.get,
+                  Paideia.getDAO(contractSignature.daoKey),
+                  Address.fromErgoTree(
+                    correctContract.ergoTree,
+                    cte.ctx.getNetworkType()
+                  ),
+                  Address.create(Env.operatorAddress)
+                )
+              )
+            )
+          } else {
+            PaideiaEventResponse(0)
+          }
         } else {
           PaideiaEventResponse(0)
         }
