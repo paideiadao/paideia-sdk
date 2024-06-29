@@ -26,7 +26,10 @@ import sigma.ast.ByteArrayConstant
 import org.ergoplatform.appkit.InputBox
 
 class DAOOrigin(contractSignature: PaideiaContractSignature)
-  extends PaideiaContract(contractSignature) {
+  extends PaideiaContract(
+    contractSignature,
+    ConfKeys.im_paideia_contracts_dao.originalKey
+  ) {
   def box(
     ctx: BlockchainContextImpl,
     dao: DAO,

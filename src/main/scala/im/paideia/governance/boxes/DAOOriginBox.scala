@@ -19,11 +19,12 @@ case class DAOOriginBox(
   dao: DAO,
   propTokens: Long,
   actionTokens: Long,
-  useContract: DAOOrigin
+  useContract: DAOOrigin,
+  _value: Long = 1000000000L
 ) extends PaideiaBox {
 
   ctx      = _ctx
-  value    = 1000000L
+  value    = _value
   contract = useContract.contract
 
   override def registers: List[ErgoValue[_]] = {
@@ -58,7 +59,8 @@ object DAOOriginBox {
       ),
       inp.getTokens().get(1).getValue,
       inp.getTokens().get(2).getValue,
-      contract
+      contract,
+      inp.getValue()
     )
   }
 }
