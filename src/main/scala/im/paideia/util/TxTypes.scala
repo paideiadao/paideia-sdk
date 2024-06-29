@@ -13,4 +13,5 @@ object TxTypes {
   val UPDATE         = ErgoValue.of(7.toByte)
   val CHANGE_CONFIG  = ErgoValue.of(8.toByte)
   val TREASURY_SPEND = ErgoValue.of(9.toByte)
+  val CONSOLIDATE    = ErgoValue.of(10.toByte)
 }

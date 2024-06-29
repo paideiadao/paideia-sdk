@@ -21,6 +21,9 @@ import sigma.Colls
 import sigma.ast.ConstantPlaceholder
 import sigma.ast.SCollection
 import sigma.ast.SByte
+import im.paideia.common.events.{PaideiaEvent, PaideiaEventResponse}
+import im.paideia.common.events.CreateTransactionsEvent
+import im.paideia.common.transactions.ConsolidateTransaction
 
 /** Treasury class represents the main contract for the Paideia Treasury which manages and
   * holds assets and tokens of the Paideia DAO treasury on Ergo Blockchain.
@@ -129,6 +132,24 @@ class Treasury(contractSignature: PaideiaContractSignature)
       ByteArrayConstant(Colls.fromArray(ErgoId.create(Env.paideiaTokenId).getBytes))
     )
     cons.toMap
+  }
+
+  override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
+    val response: PaideiaEventResponse = event match {
+      case cte: CreateTransactionsEvent => {
+        val utxos = getUtxoSet.toList
+        if (utxos.length >= 5) {
+          PaideiaEventResponse(
+            1,
+            List(ConsolidateTransaction(cte.ctx, utxos.map(boxes(_))))
+          )
+        } else {
+          PaideiaEventResponse(0)
+        }
+      }
+      case _: PaideiaEvent => PaideiaEventResponse(0)
+    }
+    PaideiaEventResponse.merge(List(super.handleEvent(event), response))
   }
 
   /** It searches through all the boxes in the blockchain and matches the conditions to

@@ -346,6 +346,8 @@
 
             val enoughErgPreserved: Boolean = ergDifference <= 2000000L
 
+            val usefulConsolidation: Boolean = ergInBoxes(treasuryInputs) >= 2000000L
+
             ///////////////////////////////////////////////////////////////
             // Tx Validity                                               //
             ///////////////////////////////////////////////////////////////
@@ -354,7 +356,8 @@
                 enoughInputs,
                 onlyOneOutputs,
                 tokensPreserved,
-                enoughErgPreserved
+                enoughErgPreserved,
+                usefulConsolidation
             ))
         } else {
             false
