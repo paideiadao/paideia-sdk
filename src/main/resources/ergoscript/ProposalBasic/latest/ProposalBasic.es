@@ -6,7 +6,7 @@
 @contract def proposalBasic(imPaideiaDaoKey: Coll[Byte], paideiaDaoKey: Coll[Byte], paideiaTokenId: Coll[Byte]) = {
     #import lib/config/1.0.0/config.es;
     #import lib/proposal/1.0.0/proposal.es;
-    #import lib/tokenExists/1.0.0/tokenExists.es;
+    #import lib/box/1.0.0/box.es;
     #import lib/stakeState/1.0.0/stakeState.es;
 
     /**

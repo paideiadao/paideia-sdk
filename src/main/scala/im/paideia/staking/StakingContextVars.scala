@@ -45,7 +45,7 @@ object StakingContextVars {
     )
     StakingContextVars(
       List(
-        new ContextVar(1.toByte, STAKE)
+        new ContextVar(0.toByte, STAKE)
       ),
       List(
         new ContextVar(1.toByte, stakeOperations),
@@ -57,7 +57,7 @@ object StakingContextVars {
   def emit: StakingContextVars = {
     StakingContextVars(
       List(
-        new ContextVar(1.toByte, SNAPSHOT)
+        new ContextVar(0.toByte, SNAPSHOT)
       ),
       List[ContextVar](
       )
@@ -67,7 +67,7 @@ object StakingContextVars {
   def profitShare: StakingContextVars = {
     StakingContextVars(
       List(
-        new ContextVar(1.toByte, PROFIT_SHARE)
+        new ContextVar(0.toByte, PROFIT_SHARE)
       ),
       List[ContextVar](
       )
@@ -101,7 +101,7 @@ object StakingContextVars {
     )
     StakingContextVars(
       List(
-        new ContextVar(1.toByte, COMPOUND)
+        new ContextVar(0.toByte, COMPOUND)
       ),
       List(
         new ContextVar(1.toByte, operations),
@@ -137,7 +137,7 @@ object StakingContextVars {
     )
     StakingContextVars(
       List(
-        new ContextVar(1.toByte, CHANGE_STAKE)
+        new ContextVar(0.toByte, CHANGE_STAKE)
       ),
       List(
         new ContextVar(1.toByte, operations),
@@ -159,7 +159,7 @@ object StakingContextVars {
   ): StakingContextVars = {
     StakingContextVars(
       List(
-        new ContextVar(1.toByte, VOTE)
+        new ContextVar(0.toByte, VOTE)
       ),
       List(
         new ContextVar(1.toByte, voteProof.proof.ergoValue),
@@ -225,7 +225,7 @@ object StakingContextVars {
     )
     StakingContextVars(
       List(
-        new ContextVar(1.toByte, UNSTAKE)
+        new ContextVar(0.toByte, UNSTAKE)
       ),
       List(
         new ContextVar(1.toByte, operations),

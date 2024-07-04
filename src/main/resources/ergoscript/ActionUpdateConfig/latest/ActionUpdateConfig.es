@@ -8,8 +8,7 @@
  * @return
  */
 @contract def actionUpdateConfig(imPaideiaDaoKey: Coll[Byte], imPaideiaDaoProposalTokenId: Coll[Byte]) = {
-    #import lib/tokensInBoxesAll/1.0.0/tokensInBoxesAll.es;
-    #import lib/tokenExists/1.0.0/tokenExists.es;
+    #import lib/box/1.0.0/box.es;
     #import lib/proposal/1.0.0/proposal.es;
     #import lib/config/1.0.0/config.es;
     #import lib/actionUpdateConfig/1.0.0/actionUpdateConfig.es;

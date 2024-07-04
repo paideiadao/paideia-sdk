@@ -14,7 +14,7 @@
 @contract def actionSendFundsBasic(imPaideiaDaoKey: Coll[Byte], imPaideiaDaoProposalTokenId: Coll[Byte]) = {
     #import lib/config/1.0.0/config.es;
     #import lib/bytesWithoutCreationInfo/1.0.0/bytesWithoutCreationInfo.es;
-    #import lib/tokensInBoxesAll/1.0.0/tokensInBoxesAll.es;
+    #import lib/box/1.0.0/box.es;
     #import lib/actionSendFundsBasic/1.0.0/actionSendFundsBasic.es;
     #import lib/proposal/1.0.0/proposal.es;
 

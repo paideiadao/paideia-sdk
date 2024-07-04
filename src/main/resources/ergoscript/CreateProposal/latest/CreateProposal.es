@@ -5,7 +5,7 @@
  */
 @contract def createProposal(imPaideiaDaoKey: Coll[Byte]) = {
     #import lib/validRefund/1.0.0/validRefund.es;
-    #import lib/tokenExists/1.0.0/tokenExists.es;
+    #import lib/box/1.0.0/box.es;
     #import lib/bytesWithoutCreationInfo/1.0.0/bytesWithoutCreationInfo.es;
 
     // Refund logic

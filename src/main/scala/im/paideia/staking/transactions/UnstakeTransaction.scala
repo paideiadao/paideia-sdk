@@ -111,8 +111,23 @@ case class UnstakeTransaction(
   val contextVars = stakingContextVars.stakingStateContextVars
     .::(
       ContextVar.of(
-        0.toByte,
-        stakeStateInputBox.useContract.getConfigContext(Some(configDigest))
+        1.toByte,
+        if (
+          stakingContextVars
+            .stakingStateContextVars(0)
+            .getValue
+            .getValue
+            .equals(TxTypes.UNSTAKE.getValue())
+        )
+          stakeStateInputBox.useContract.getConfigContext(
+            Some(configDigest),
+            ConfKeys.im_paideia_contracts_staking_unstake
+          )
+        else
+          stakeStateInputBox.useContract.getConfigContext(
+            Some(configDigest),
+            ConfKeys.im_paideia_contracts_staking_changestake
+          )
       )
     )
 

@@ -81,8 +81,11 @@ case class AddStakeTransaction(
   val contextVars = stakingContextVars.stakingStateContextVars
     .::(
       ContextVar.of(
-        0.toByte,
-        stakeStateInputBox.useContract.getConfigContext(Some(configDigest))
+        1.toByte,
+        stakeStateInputBox.useContract.getConfigContext(
+          Some(configDigest),
+          ConfKeys.im_paideia_contracts_staking_changestake
+        )
       )
     )
 

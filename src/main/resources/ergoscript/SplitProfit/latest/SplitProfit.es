@@ -5,8 +5,7 @@
  */
 @contract def splitProfit(imPaideiaDaoKey: Coll[Byte]) = {
     #import lib/config/1.0.0/config.es;
-    #import lib/tokensInBoxesAll/1.0.0/tokensInBoxesAll.es;
-    #import lib/tokensInBoxes/1.0.0/tokensInBoxes.es;
+    #import lib/box/1.0.0/box.es;
     /**
      *
      *  SplitProfit

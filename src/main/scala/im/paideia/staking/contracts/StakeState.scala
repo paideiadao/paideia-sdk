@@ -40,9 +40,13 @@ import sigma.ast.SType
 import sigma.ast.ByteArrayConstant
 import org.ergoplatform.appkit.InputBox
 import im.paideia.util.TxTypes
+import im.paideia.DAOConfigKey
 
 class StakeState(contractSignature: PaideiaContractSignature)
-  extends PaideiaContract(contractSignature) {
+  extends PaideiaContract(
+    contractSignature,
+    longLivingKey = ConfKeys.im_paideia_contracts_staking_state.originalKey
+  ) {
 
   def box(
     ctx: BlockchainContextImpl,
@@ -89,7 +93,7 @@ class StakeState(contractSignature: PaideiaContractSignature)
     box(
       ctx,
       dao.key,
-      1000000L,
+      1000000000L,
       stakePoolSize,
       state.currentStakingState.emissionTime,
       emptyProfit.toArray,
@@ -375,18 +379,12 @@ class StakeState(contractSignature: PaideiaContractSignature)
     PaideiaEventResponse.merge(List(super.handleEvent(event), response))
   }
 
-  override def getConfigContext(configDigest: Option[ADDigest]) = {
+  def getConfigContext(configDigest: Option[ADDigest], companionKey: DAOConfigKey) = {
     Paideia
       .getConfig(contractSignature.daoKey)
       .getProof(
         ConfKeys.im_paideia_contracts_staking_state,
-        ConfKeys.im_paideia_contracts_staking_stake,
-        ConfKeys.im_paideia_contracts_staking_changestake,
-        ConfKeys.im_paideia_contracts_staking_unstake,
-        ConfKeys.im_paideia_contracts_staking_snapshot,
-        ConfKeys.im_paideia_contracts_staking_compound,
-        ConfKeys.im_paideia_contracts_staking_profitshare,
-        ConfKeys.im_paideia_contracts_staking_vote
+        companionKey
       )(configDigest)
   }
 

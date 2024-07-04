@@ -4,13 +4,10 @@
  * @return
  */
 @contract def treasury(daoActionTokenId: Coll[Byte], imPaideiaDaoKey: Coll[Byte], paideiaTokenId: Coll[Byte]) = {
-    #import lib/tokensInBoxes/1.0.0/tokensInBoxes.es;
     #import lib/config/1.0.0/config.es;
     #import lib/stakeState/1.0.0/stakeState.es;
     #import lib/txTypes/1.0.0/txTypes.es;
-    #import lib/tokenExists/1.0.0/tokenExists.es;
-    #import lib/ergInBoxes/1.0.0/ergInBoxes.es;
-    #import lib/tokensInBoxes/1.0.0/tokensInBoxes.es;
+    #import lib/box/1.0.0/box.es;
 
     /**
      *

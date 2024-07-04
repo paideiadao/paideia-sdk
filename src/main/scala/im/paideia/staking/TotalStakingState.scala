@@ -63,10 +63,10 @@ object TotalStakingState {
     clearAll: Boolean = false
   ): TotalStakingState = {
     if (clearAll) _stakingStates.clear()
-    val daoConfig    = Paideia.getConfig(daoKey)
-    val currentState = StakingState(daoKey, nextEmission, true)
-    val profitTokensSize =
-      daoConfig.getArray[Object](ConfKeys.im_paideia_staking_profit_tokenids).size
+    val daoConfig        = Paideia.getConfig(daoKey)
+    val currentState     = StakingState(daoKey, nextEmission, true)
+    val profitTokensSize = 0
+    // daoConfig.getArray[Object](ConfKeys.im_paideia_staking_profit_tokenids).size
     val cycleLength = daoConfig[Long](ConfKeys.im_paideia_staking_cyclelength)
     val snapshots =
       HashMap[Long, StakingState](

@@ -8,7 +8,7 @@
  */
 @contract def changeStake(imPaideiaDaoKey: Coll[Byte]) = {
     #import lib/config/1.0.0/config.es;
-    #import lib/tokenExists/1.0.0/tokenExists.es;
+    #import lib/box/1.0.0/box.es;
     #import lib/stakeRecord/1.0.0/stakeRecord.es;
     #import lib/stakeState/1.0.0/stakeState.es;
 

@@ -15,7 +15,7 @@
     #import lib/daoOrigin/1.0.0/daoOrigin.es;
     #import lib/stakeState/1.0.0/stakeState.es;
     #import lib/stakeRecord/1.0.0/stakeRecord.es;
-    #import lib/tokenExists/1.0.0/tokenExists.es;
+    #import lib/box/1.0.0/box.es;
     #import lib/updateOrRefresh/1.0.0/updateOrRefresh.es;
     #import lib/txTypes/1.0.0/txTypes.es;
 
