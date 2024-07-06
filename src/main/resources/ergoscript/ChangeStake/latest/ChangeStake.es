@@ -3,10 +3,11 @@
  * It ensures the stake is changed correctly following the rules.
  *
  * @param imPaideiaDaoKey Token ID of the dao key
+ * @param stakingStakeTokenId Token ID of the stake state NFT
  *
  * @return
  */
-@contract def changeStake(imPaideiaDaoKey: Coll[Byte]) = {
+@contract def changeStake(imPaideiaDaoKey: Coll[Byte], stakingStakeTokenId: Coll[Byte]) = {
     #import lib/config/1.0.0/config.es;
     #import lib/box/1.0.0/box.es;
     #import lib/stakeRecord/1.0.0/stakeRecord.es;
@@ -21,9 +22,6 @@
     val imPaideiaContractsStakingChangeStake: Coll[Byte] = 
         _IM_PAIDEIA_CONTRACTS_STAKING_CHANGESTAKE
 
-    val imPaideiaStakingStateTokenId: Coll[Byte] = 
-        _IM_PAIDEIA_STAKING_STATE_TOKEN_ID
-
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
     // Inputs                                                                //
@@ -31,7 +29,7 @@
     ///////////////////////////////////////////////////////////////////////////
 
     val changeStake: Box = SELF
-    val stakeState: Box  = INPUTS(0)
+    val stakeState: Box = filterByTokenId((INPUTS, stakingStakeTokenId))(0)
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -39,16 +37,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val config: Box = CONTEXT.dataInputs(0)
-
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
-    // Outputs                                                               //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
-
-    val stakeStateO: Box  = OUTPUTS(0)
-    val changeStakeO: Box = OUTPUTS(1)
+    val config: Box = filterByTokenId((CONTEXT.dataInputs, imPaideiaDaoKey))(0)
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -71,14 +60,21 @@
 
     val configValues: Coll[Option[Coll[Byte]]] = configTree(config).getMany(
         Coll(
-            imPaideiaContractsStakingChangeStake,
-            imPaideiaStakingStateTokenId
+            imPaideiaContractsStakingChangeStake
         ),
         configProof
     )
 
-    val changeStakeContractSignature: Coll[Byte] = bytearrayToContractHash(configValues(0))
-    val stakingStakeTokenId: Coll[Byte]          = bytearrayToTokenId(configValues(1))
+    val changeStakeContractHash: Coll[Byte] = bytearrayToContractHash(configValues(0))
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Outputs                                                               //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    val stakeStateO: Box  = filterByTokenId((OUTPUTS,stakingStakeTokenId))(0)
+    val changeStakeO: Box = filterByHash((OUTPUTS, changeStakeContractHash))(0)
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -106,14 +102,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val correctConfigTokenId: Boolean = config.tokens(0)._1 == imPaideiaDaoKey
-
-    val selfOutput: Boolean = allOf(Coll(
-        blake2b256(changeStakeO.propositionBytes) == changeStakeContractSignature,
-        changeStakeO.value >= changeStake.value
-    ))
-
-    val correctStakeState: Boolean = stakeState.tokens(0)._1 == stakingStakeTokenId
+    val selfOutput: Boolean = changeStakeO.value >= changeStake.value
 
     val keyInOutput: Boolean = tokenExists((OUTPUTS, stakeOperations(0)._1))
 
@@ -157,8 +146,6 @@
     ///////////////////////////////////////////////////////////////////////////
 
     sigmaProp(allOf(Coll(
-        correctConfigTokenId,
-        correctStakeState,
         keyInOutput,
         tokensStaked,
         singleStakeOp,

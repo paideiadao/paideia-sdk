@@ -27,7 +27,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val config             = INPUTS(0)
+    val config             = filterByTokenId((INPUTS, imPaideiaDaoKey))(0)
     val actionUpdateConfig = SELF
 
     ///////////////////////////////////////////////////////////////////////////
@@ -36,7 +36,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val proposal = CONTEXT.dataInputs(0)
+    val proposal = filterByTokenId((CONTEXT.dataInputs,imPaideiaDaoProposalTokenId))(0)
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -44,7 +44,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val configOutput = OUTPUTS(0)
+    val configOutput = filterByTokenId((OUTPUTS, imPaideiaDaoKey))(0) 
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -100,8 +100,6 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val correctConfig = config.tokens(0)._1 == imPaideiaDaoKey
-
     val correctProposal = allOf(Coll(
         proposal.tokens(0)._1       == imPaideiaDaoProposalTokenId,
         pIndex(proposal).toLong        == aProposalIndex(actionUpdateConfig),
@@ -113,6 +111,8 @@
     val burnActionToken = !(tokenExists((OUTPUTS, SELF.tokens(0)._1)))
 
     val correctOutputNumber = OUTPUTS.size == 2
+
+    val correctInputNumber = INPUTS.size == 2
 
     val noExtraBurn = tokensInBoxesAll(INPUTS) == tokensInBoxesAll(OUTPUTS) + 1L
 
@@ -130,7 +130,7 @@
     ///////////////////////////////////////////////////////////////////////////
 
     sigmaProp(allOf(Coll(
-        correctConfig,
+        correctInputNumber,
         correctProposal,
         activationTimePassed,
         burnActionToken,

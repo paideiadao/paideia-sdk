@@ -38,6 +38,9 @@ class CastVoteTransactionSuite extends PaideiaTestSuite {
         val voteTokenId       = Util.randomKey
         val stakeStateTokenId = Util.randomKey
 
+        val dao = new DAO(daoKey, config)
+        Paideia.addDAO(dao)
+
         val digest1 = config._config.digest
 
         config.set(ConfKeys.im_paideia_dao_name, "Test DAO")
@@ -73,8 +76,7 @@ class CastVoteTransactionSuite extends PaideiaTestSuite {
           )
         voteContract.newBox(voteContract.box(ctx).inputBox(), false)
         val digest2 = config._config.digest
-        val dao     = new DAO(daoKey, config)
-        Paideia.addDAO(dao)
+
         dao.proposals(0) = Proposal(dao.key, 0, "test")
 
         val proposalContract = ProposalBasic(PaideiaContractSignature(daoKey = dao.key))
@@ -154,6 +156,9 @@ class CastVoteTransactionSuite extends PaideiaTestSuite {
         val voteTokenId       = Util.randomKey
         val stakeStateTokenId = Util.randomKey
 
+        val dao = new DAO(daoKey, config)
+        Paideia.addDAO(dao)
+
         val digest1 = config._config.digest
 
         config.set(ConfKeys.im_paideia_dao_name, "Test DAO")
@@ -189,8 +194,7 @@ class CastVoteTransactionSuite extends PaideiaTestSuite {
           )
         voteContract.newBox(voteContract.box(ctx).inputBox(), false)
         val digest2 = config._config.digest
-        val dao     = new DAO(daoKey, config)
-        Paideia.addDAO(dao)
+
         dao.proposals(0) = Proposal(dao.key, 0, "test")
 
         val proposalContract = ProposalBasic(PaideiaContractSignature(daoKey = dao.key))

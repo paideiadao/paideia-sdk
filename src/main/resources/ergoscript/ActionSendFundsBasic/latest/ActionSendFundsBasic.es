@@ -40,8 +40,8 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val configInput   = CONTEXT.dataInputs(0)
-    val proposalInput = CONTEXT.dataInputs(1)
+    val configInput   = filterByTokenId((CONTEXT.dataInputs, imPaideiaDaoKey))(0)
+    val proposalInput = filterByTokenId((CONTEXT.dataInputs, imPaideiaDaoProposalTokenId))(0)
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -116,8 +116,6 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val correctConfig = configInput.tokens(0)._1 == imPaideiaDaoKey
-
     val correctProposal = allOf(Coll(
         proposalInput.tokens(0)._1          == imPaideiaDaoProposalTokenId,
         pIndex(proposalInput).toLong        == aProposalIndex(sendFundsAction),
@@ -150,7 +148,6 @@
     ///////////////////////////////////////////////////////////////////////////
 
     sigmaProp(allOf(Coll(
-        correctConfig,
         correctProposal,
         activationTimePassed,
         repeatOrBurn,

@@ -3,7 +3,7 @@
  *
  * @return
  */
-@contract def splitProfit(imPaideiaDaoKey: Coll[Byte]) = {
+@contract def splitProfit(imPaideiaDaoKey: Coll[Byte], stakeStateTokenId: Coll[Byte]) = {
     #import lib/config/1.0.0/config.es;
     #import lib/box/1.0.0/box.es;
     /**
@@ -35,29 +35,11 @@
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
-    // Inputs                                                                //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
-
-    //Only relevant for profitsharepct > 0
-    val stakingState: Box = INPUTS(0)
-
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
     // Data Inputs                                                           //
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val config: Box = CONTEXT.dataInputs(0)
-
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
-    // Outputs                                                               //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
-
-    //Only relevant for profitsharepct > 0
-    val stakingStateO: Box = OUTPUTS(0)
+    val config: Box = filterByTokenId((CONTEXT.dataInputs, imPaideiaDaoKey))(0)
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -78,8 +60,7 @@
             imPaideiaContractsTreasury,
             imPaideiaContractsStakingState,
             imPaideiaProfitSharingPct,
-            imPaideiaDaoGovernanceTokenId,
-            imPaideiaStakingProfitTokenIds
+            imPaideiaDaoGovernanceTokenId
         ),
         configProof
     )
@@ -95,10 +76,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val treasuryO: Box = OUTPUTS.filter{
-        (b: Box) => 
-        blake2b256(b.propositionBytes) == treasuryContractHash
-    }(0)
+    val treasuryO: Box = filterByHash((OUTPUTS,treasuryContractHash))(0)
 
     val minerO: Box = OUTPUTS.filter{
         (b: Box) => 
@@ -115,8 +93,6 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val correctConfigTokenId: Boolean = config.tokens(0)._1 == imPaideiaDaoKey
-
     val generalConditions: Boolean = allOf(
         Coll(
             minerO.value <= 5000000L,
@@ -129,6 +105,8 @@
     val validTx: Boolean = if (profitSharingPct <= 0) {
         OUTPUTS.size == 2
     } else {
+        val stakingState: Box = filterByTokenId((INPUTS,stakeStateTokenId))(0)
+        val stakingStateO: Box = filterByTokenId((OUTPUTS, stakeStateTokenId))(0)
         val tokenSplits: Boolean = Coll(governanceTokenId)
         .forall{
             (tokenId: Coll[Byte]) => {
@@ -162,5 +140,5 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    sigmaProp(correctConfigTokenId && validTx)
+    sigmaProp(validTx)
 }

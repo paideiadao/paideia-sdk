@@ -3,7 +3,7 @@
  *
  * @return
  */
-@contract def unstake(imPaideiaDaoKey: Coll[Byte]) = {
+@contract def unstake(imPaideiaDaoKey: Coll[Byte], stakeStateTokenId: Coll[Byte]) = {
     #import lib/config/1.0.0/config.es;
     #import lib/stakeState/1.0.0/stakeState.es;
     #import lib/box/1.0.0/box.es;
@@ -23,9 +23,6 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val imPaideiaStakeStateTokenId: Coll[Byte] = 
-        _IM_PAIDEIA_STAKING_STATE_TOKEN_ID
-
     val imPaideiaContractsStakingUnstake: Coll[Byte] = 
         _IM_PAIDEIA_CONTRACTS_STAKING_UNSTAKE
 
@@ -35,7 +32,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val stakeState: Box = INPUTS(0)
+    val stakeState: Box = filterByTokenId((INPUTS, stakeStateTokenId))(0)
     val unstake: Box    = SELF
 
     ///////////////////////////////////////////////////////////////////////////
@@ -44,16 +41,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val config: Box = CONTEXT.dataInputs(0)
-
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
-    // Outputs                                                               //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
-
-    val stakeStateO: Box = OUTPUTS(0)
-    val unstakeO: Box    = OUTPUTS(1)
+    val config: Box = filterByTokenId((CONTEXT.dataInputs, imPaideiaDaoKey))(0)
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -74,14 +62,21 @@
 
     val configValues: Coll[Option[Coll[Byte]]] = configTree(config).getMany(
         Coll(
-            imPaideiaStakeStateTokenId,
             imPaideiaContractsStakingUnstake
         ),
         configProof
     )
 
-    val stakeStateTokenId: Coll[Byte]   = bytearrayToTokenId(configValues(0))
-    val unstakeContractHash: Coll[Byte] = bytearrayToContractHash(configValues(1))
+    val unstakeContractHash: Coll[Byte] = bytearrayToContractHash(configValues(0))
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Outputs                                                               //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    val stakeStateO: Box = filterByTokenId((OUTPUTS, stakeStateTokenId))(0)
+    val unstakeO: Box    = filterByHash((OUTPUTS, unstakeContractHash))(0)
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //

@@ -15,6 +15,7 @@ import sigma.ast.Constant
 import sigma.ast.SType
 import sigma.ast.ByteArrayConstant
 import org.ergoplatform.appkit.InputBox
+import sigma.Colls
 
 class StakeProfitShare(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -22,12 +23,22 @@ class StakeProfitShare(contractSignature: PaideiaContractSignature)
   def box(ctx: BlockchainContextImpl) = StakeProfitShareBox(ctx, this)
 
   override lazy val parameters: Map[String, Constant[SType]] = {
-    val cons = new HashMap[String, Constant[SType]]()
-    cons.put(
+    val params = new HashMap[String, Constant[SType]]()
+    params.put(
       "imPaideiaDaoKey",
       ByteArrayConstant(ErgoId.create(contractSignature.daoKey).getBytes)
     )
-    cons.toMap
+    params.put(
+      "stakeStateTokenId",
+      ByteArrayConstant(
+        Colls.fromArray(
+          Paideia
+            .getConfig(contractSignature.daoKey)
+            .getArray[Byte](ConfKeys.im_paideia_staking_state_tokenid)
+        )
+      )
+    )
+    params.toMap
   }
 
   override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
@@ -43,16 +54,8 @@ class StakeProfitShare(contractSignature: PaideiaContractSignature)
   override lazy val constants: HashMap[String, Object] = {
     val cons = new HashMap[String, Object]()
     cons.put(
-      "_IM_PAIDEIA_STAKING_STATE_TOKEN_ID",
-      ConfKeys.im_paideia_staking_state_tokenid.ergoValue.getValue()
-    )
-    cons.put(
       "_IM_PAIDEIA_CONTRACTS_STAKING_PROFITSHARE",
       ConfKeys.im_paideia_contracts_staking_profitshare.ergoValue.getValue()
-    )
-    cons.put(
-      "_IM_PAIDEIA_STAKING_PROFIT_TOKENIDS",
-      ConfKeys.im_paideia_staking_profit_tokenids.ergoValue.getValue()
     )
     cons
   }
@@ -60,9 +63,7 @@ class StakeProfitShare(contractSignature: PaideiaContractSignature)
   override def getConfigContext(configDigest: Option[ADDigest]) = Paideia
     .getConfig(contractSignature.daoKey)
     .getProof(
-      ConfKeys.im_paideia_staking_state_tokenid,
-      ConfKeys.im_paideia_contracts_staking_profitshare,
-      ConfKeys.im_paideia_staking_profit_tokenids
+      ConfKeys.im_paideia_contracts_staking_profitshare
     )(configDigest)
 }
 

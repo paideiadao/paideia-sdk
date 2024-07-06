@@ -3,10 +3,11 @@
  *
  * @return
  */
-@contract def stakeSnapshot(imPaideiaDaoKey: Coll[Byte]) = {
+@contract def stakeSnapshot(imPaideiaDaoKey: Coll[Byte], stakeStateTokenId: Coll[Byte]) = {
     #import lib/config/1.0.0/config.es;
     #import lib/emptyDigest/1.0.0/emptyDigest.es;
     #import lib/stakeState/1.0.0/stakeState.es;
+    #import lib/box/1.0.0/box.es;
 
     /**
      *
@@ -23,8 +24,6 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val imPaideiaStakeStateTokenId: Coll[Byte] = 
-        _IM_PAIDEIA_STAKING_STATE_TOKEN_ID
 
     val imPaideiaContractsStakingSnapShot: Coll[Byte] = 
         _IM_PAIDEIA_CONTRACTS_STAKING_SNAPSHOT
@@ -52,7 +51,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val stakeState: Box = INPUTS(0)
+    val stakeState: Box = filterByTokenId((INPUTS, stakeStateTokenId))(0)
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -60,73 +59,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val config: Box = CONTEXT.dataInputs(0)
-
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
-    // Outputs                                                               //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
-
-    val stakeStateO: Box = OUTPUTS(0)
-    val snapshotO: Box   = OUTPUTS(1)
-
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
-    // Registers                                                             //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
-
-    // val configTree: AvlTree = config.R4[AvlTree].get
-
-    // val stakeStateTree: AvlTree    = stakeState.R4[Coll[AvlTree]].get(0)
-    // val participationTree: AvlTree = stakeState.R4[Coll[AvlTree]].get(1)
-
-    // val stakeStateR5: Coll[Long]    = stakeState.R5[Coll[Long]].get
-    // val nextSnapshot: Long          = stakeStateR5(0)
-    // val totalStaked: Long           = stakeStateR5(1)
-    // val stakers: Long               = stakeStateR5(2)
-    // val voted: Long                 = stakeStateR5(3)
-    // val votedTotal: Long            = stakeStateR5(4)
-
-    // val stakeStateR6: Coll[Coll[Long]] = 
-    //     stakeState.R6[Coll[Coll[Long]]].get
-
-    // val snapshotsStaked: Coll[Long]     = stakeStateR6(0)
-    // val snapshotsVoted: Coll[Long]      = stakeStateR6(1)
-    // val snapshotsVotedTotal: Coll[Long] = stakeStateR6(2)
-    // val snapshotsPPWeight: Coll[Long]   = stakeStateR6(3)
-    // val snapshotsPWeight: Coll[Long]    = stakeStateR6(4)
-
-    // val snapshotsTree: Coll[(AvlTree, AvlTree)] = 
-    //     stakeState.R7[Coll[(AvlTree, AvlTree)]].get
-
-    // val snapshotsProfit: Coll[Coll[Long]] = stakeState.R8[Coll[Coll[Long]]].get
-
-    // val stakeStateOTree: AvlTree    = stakeStateO.R4[Coll[AvlTree]].get(0)
-    // val participationTreeO: AvlTree = stakeStateO.R4[Coll[AvlTree]].get(1)
-
-    // val stakeStateOR5: Coll[Long]      = stakeStateO.R5[Coll[Long]].get
-    // val nextSnapshotO: Long            = stakeStateOR5(0)
-    // val totalStakedO: Long             = stakeStateOR5(1)
-    // val stakersO: Long                 = stakeStateOR5(2)
-    // val votedO: Long                   = stakeStateOR5(3)
-    // val votedTotalO: Long              = stakeStateOR5(4)
-
-    // val stakeStateOR6: Coll[Coll[Long]] = 
-    //     stakeStateO.R6[Coll[Coll[Long]]].get
-
-    // val newSnapshotsStaked: Coll[Long]     = stakeStateOR6(0)
-    // val newSnapshotsVoted: Coll[Long]      = stakeStateOR6(1)
-    // val newSnapshotsVotedTotal: Coll[Long] = stakeStateOR6(2)
-    // val newSnapshotsPPWeight: Coll[Long]   = stakeStateOR6(3)
-    // val newSnapshotsPWeight: Coll[Long]    = stakeStateOR6(4)
-
-    // val newSnapshotsTrees: Coll[(AvlTree, AvlTree)] = 
-    //     stakeStateO.R7[Coll[(AvlTree, AvlTree)]].get
-
-    // val newSnapshotsProfit: Coll[Long] = 
-    //     stakeStateO.R8[Coll[Long]].get
+    val config: Box = filterByTokenId((CONTEXT.dataInputs, imPaideiaDaoKey))(0)
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -144,7 +77,6 @@
 
     val configValues: Coll[Option[Coll[Byte]]] = configTree(config).getMany(
         Coll(
-            imPaideiaStakeStateTokenId,
             imPaideiaContractsStakingSnapShot,
             imPaideiaStakingEmissionAmount,
             imPaideiaStakingEmissionDelay,
@@ -156,29 +88,37 @@
         configProof
     )
 
-    val stakeStateTokenId: Coll[Byte]    = bytearrayToTokenId(configValues(0))
-    val snapshotContractHash: Coll[Byte] = bytearrayToContractHash(configValues(1))
+    val snapshotContractHash: Coll[Byte] = bytearrayToContractHash(configValues(0))
 
-    val emissionAmount: Long = bytearrayToLongClamped((configValues(2),(1L,(999999999999999L,1L))))
+    val emissionAmount: Long = bytearrayToLongClamped((configValues(1),(1L,(999999999999999L,1L))))
 
     val emissionDelay: Int = 
-        bytearrayToLongClamped((configValues(3),(1L,(10L,2L)))).toInt
+        bytearrayToLongClamped((configValues(2),(1L,(10L,2L)))).toInt
 
-    val cycleLength: Long = bytearrayToLongClamped((configValues(4),(3600000L,(999999999999999L,86400000L))))
+    val cycleLength: Long = bytearrayToLongClamped((configValues(3),(3600000L,(999999999999999L,86400000L))))
 
     val pureParticipationWeight: Byte = 
+        if (configValues(4).isDefined)
+            configValues(4).get(1)
+        else
+            0.toByte
+
+    val participationWeight: Byte = 
         if (configValues(5).isDefined)
             configValues(5).get(1)
         else
             0.toByte
 
-    val participationWeight: Byte = 
-        if (configValues(6).isDefined)
-            configValues(6).get(1)
-        else
-            0.toByte
+    val daoTokenId: Coll[Byte] = bytearrayToTokenId(configValues(6))
 
-    val daoTokenId: Coll[Byte] = bytearrayToTokenId(configValues(7))
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Outputs                                                               //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    val stakeStateO: Box = filterByTokenId((OUTPUTS, stakeStateTokenId))(0)
+    val snapshotO: Box   = filterByHash((OUTPUTS,snapshotContractHash))(0)
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //

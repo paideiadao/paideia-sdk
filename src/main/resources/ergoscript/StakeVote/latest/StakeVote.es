@@ -3,7 +3,7 @@
  *
  * @return
  */
-@contract def stakeVote(imPaideiaDaoKey: Coll[Byte]) = {
+@contract def stakeVote(imPaideiaDaoKey: Coll[Byte], stakeStateTokenId: Coll[Byte]) = {
     #import lib/config/1.0.0/config.es;
     #import lib/stakeRecord/1.0.0/stakeRecord.es;
     #import lib/box/1.0.0/box.es;
@@ -28,9 +28,6 @@
     val imPaideiaContractsStakingVote: Coll[Byte] = 
         _IM_PAIDEIA_CONTRACTS_STAKING_VOTE
 
-    val imPaideiaStakeStateTokenId: Coll[Byte] = 
-        _IM_PAIDEIA_STAKING_STATE_TOKEN_ID
-
     val imPaideiaDaoProposalTokenId: Coll[Byte] = 
         _IM_PAIDEIA_DAO_PROPOSAL_TOKEN_ID
 
@@ -40,9 +37,8 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val stakeState: Box = INPUTS(0)
+    val stakeState: Box = filterByTokenId((INPUTS, stakeStateTokenId))(0)
     val vote: Box       = SELF
-    val proposal: Box   = INPUTS(2)
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -51,15 +47,6 @@
     ///////////////////////////////////////////////////////////////////////////
 
     val config: Box = CONTEXT.dataInputs(0)
-
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
-    // Outputs                                                               //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
-
-    val stakeStateO: Box = OUTPUTS(0)
-    val voteO: Box       = OUTPUTS(1)
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -87,21 +74,30 @@
     val configValues: Coll[Option[Coll[Byte]]] = configTree(config).getMany(
         Coll(
             imPaideiaContractsStakingVote,
-            imPaideiaStakeStateTokenId,
             imPaideiaDaoProposalTokenId
         ),
         configProof
     )
 
     val stakeVoteContractHash: Coll[Byte] = bytearrayToContractHash(configValues(0))
-    val stakeStateTokenId: Coll[Byte]     = bytearrayToTokenId(configValues(1))
-    val proposalTokenId: Coll[Byte]       = bytearrayToTokenId(configValues(2))
+    val proposalTokenId: Coll[Byte]       = bytearrayToTokenId(configValues(1))
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Outputs                                                               //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    val stakeStateO: Box = filterByTokenId((OUTPUTS, stakeStateTokenId))(0)
+    val voteO: Box       = filterByHash((OUTPUTS, stakeVoteContractHash))(0)
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
     // Intermediate calculations                                             //
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
+
+    val proposal: Box = filterByTokenId((INPUTS, proposalTokenId))(0)
 
     val currentVote: Option[Coll[Byte]] = pVoteTree(proposal).get(stakeKey, currentVoteProof)
 
@@ -223,10 +219,7 @@
     val correctNewParticipationRecord: Boolean = 
         newParticipationRecord == updatedParticipationRecord
 
-    val selfOutput: Boolean = allOf(Coll(
-        blake2b256(voteO.propositionBytes) == stakeVoteContractHash,
-        voteO.value >= vote.value
-    ))
+    val selfOutput: Boolean = voteO.value >= vote.value
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //

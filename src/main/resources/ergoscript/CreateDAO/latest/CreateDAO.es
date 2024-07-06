@@ -372,8 +372,8 @@
     val correctTreasuryContract: Coll[Byte] = blake2b256(
         substConstants(
             defaultTreasuryContract,
-            Coll(0),
-            Coll(actionTokenId)
+            Coll(0,3),
+            Coll(daoKey,actionTokenId++stakeStateTokenId)
         )
     )
 
@@ -404,40 +404,40 @@
     val correctStakingChangeContract: Coll[Byte] = blake2b256(
         substConstants(
             defaultStakingChangeContract,
-            Coll(0),
-            Coll(daoKey)
+            Coll(0,1),
+            Coll(daoKey,stakeStateTokenId)
         )
     )
 
     val correctStakingStakeContract: Coll[Byte] = blake2b256(
         substConstants(
             defaultStakingStakeContract,
-            Coll(0),
-            Coll(daoKey)
+            Coll(0,1),
+            Coll(daoKey,stakeStateTokenId)
         )
     )
 
     val correctStakingCompoundContract: Coll[Byte] = blake2b256(
         substConstants(
             defaultStakingCompoundContract,
-            Coll(0),
-            Coll(daoKey)
+            Coll(0,1),
+            Coll(daoKey,stakeStateTokenId)
         )
     )
 
     val correctStakingProfitShareContract: Coll[Byte] = blake2b256(
         substConstants(
             defaultStakingProfitShareContract,
-            Coll(0),
-            Coll(daoKey)
+            Coll(0,1),
+            Coll(daoKey,stakeStateTokenId)
         )
     )
 
     val correctStakingSnapshotContract: Coll[Byte] = blake2b256(
         substConstants(
             defaultStakingSnapshotContract,
-            Coll(0),
-            Coll(daoKey)
+            Coll(0,1),
+            Coll(daoKey,stakeStateTokenId)
         )
     )
 
@@ -452,16 +452,16 @@
     val correctStakingVoteContract: Coll[Byte] = blake2b256(
         substConstants(
             defaultStakingVoteContract,
-            Coll(0),
-            Coll(daoKey)
+            Coll(0,1),
+            Coll(daoKey,stakeStateTokenId)
         )
     )
 
     val correctStakingUnstakeContract: Coll[Byte] = blake2b256(
         substConstants(
             defaultStakingUnstakeContract,
-            Coll(0),
-            Coll(daoKey)
+            Coll(0,1),
+            Coll(daoKey,stakeStateTokenId)
         )
     )
     val currentTime: Long = CONTEXT.preHeader.timestamp

@@ -62,7 +62,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val config: Box = CONTEXT.dataInputs(0)
+    val config: Box = filterByTokenId((CONTEXT.dataInputs, imPaideiaDaoKey))(0)
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -70,7 +70,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val stakeStateO: Box = OUTPUTS(0)
+    val stakeStateO: Box = filterByTokenId((OUTPUTS, stakeState.tokens(0)._1))(0)
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //

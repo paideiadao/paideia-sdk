@@ -55,6 +55,10 @@ object PaideiaTestSuite {
         ConfKeys.im_paideia_dao_action_tokenid,
         ErgoId.create(Util.randomKey).getBytes
       )
+      paideiaConfig.set(
+        ConfKeys.im_paideia_staking_state_tokenid,
+        ErgoId.create(Util.randomKey).getBytes
+      )
       Paideia.addDAO(DAO(Env.paideiaDaoKey, paideiaConfig))
       val proposalTokenId = Util.randomKey
       paideiaConfig.set(

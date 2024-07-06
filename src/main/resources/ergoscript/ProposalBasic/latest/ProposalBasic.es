@@ -52,25 +52,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val config: Box = CONTEXT.dataInputs(0)
-
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
-    // Registers                                                             //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
-
-    val proposalBasicR4: Coll[Int] = proposalBasic.R4[Coll[Int]].get
-    val proposalIndex: Int         = proposalBasicR4(0)
-    val passed: Int                = proposalBasicR4(1)
-
-    val proposalBasicR5: Coll[Long] = proposalBasic.R5[Coll[Long]].get
-    val endTime: Long               = proposalBasicR5(0)
-    val voted: Long                 = proposalBasicR5(1)
-
-    val votes: Coll[Long] = proposalBasicR5.slice(2,proposalBasicR5.size)
-
-    val votesTree: AvlTree = proposalBasic.R6[AvlTree].get
+    val config: Box = filterByTokenId((CONTEXT.dataInputs, imPaideiaDaoKey))(0)
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -127,25 +109,8 @@
         // Data Inputs                                                       //
         ///////////////////////////////////////////////////////////////////////
 
-        val stakeState: Box    = CONTEXT.dataInputs(1)
-        val paideiaConfig: Box = CONTEXT.dataInputs(2)
-
-        ///////////////////////////////////////////////////////////////////////
-        // Outputs                                                           //
-        ///////////////////////////////////////////////////////////////////////
-
-        val proposalBasicO: Box = OUTPUTS(0)
-        val splitProfitO: Box   = OUTPUTS(1)
-
-        ///////////////////////////////////////////////////////////////////////
-        // Registers                                                         //
-        ///////////////////////////////////////////////////////////////////////
-
-        val proposalBasicOR4: Coll[Int]  = proposalBasicO.R4[Coll[Int]].get
-        val proposalIndexO: Int          = proposalBasicOR4(0)
-        val passedOutput: Int            = proposalBasicOR4(1)
-        val proposalBasicOR5: Coll[Long] = proposalBasicO.R5[Coll[Long]].get
-        val votesTreeO: AvlTree          = proposalBasicO.R6[AvlTree].get
+        val stakeState: Box    = filterByTokenId((CONTEXT.dataInputs, stakeStateTokenId))(0)
+        val paideiaConfig: Box = filterByTokenId((CONTEXT.dataInputs,paideiaDaoKey))(0)
 
         ///////////////////////////////////////////////////////////////////////
         // Context variables                                                 //
@@ -169,6 +134,14 @@
         val padFee: Long = byteArrayToLong(paideiaConfigValues(0).get.slice(1,9))
 
         val splitProfitContractHash: Coll[Byte] = bytearrayToContractHash(paideiaConfigValues(1))
+
+
+        ///////////////////////////////////////////////////////////////////////
+        // Outputs                                                           //
+        ///////////////////////////////////////////////////////////////////////
+
+        val proposalBasicO: Box = filterByHash((OUTPUTS, blake2b256(proposalBasic.propositionBytes)))(0)
+        val splitProfitO: Box   = filterByHash((OUTPUTS, splitProfitContractHash))(0)
 
         ///////////////////////////////////////////////////////////////////////
         // Intermediate calculations                                         //
@@ -245,29 +218,13 @@
         // Inputs                                                            //
         ///////////////////////////////////////////////////////////////////////
 
-        val stakeState: Box = INPUTS(0)
+        val stakeState: Box = filterByTokenId((INPUTS, stakeStateTokenId))(0)
 
         ///////////////////////////////////////////////////////////////////////
         // Outputs                                                           //
         ///////////////////////////////////////////////////////////////////////
 
-        val proposalBasicO: Box = OUTPUTS(2)
-
-        ///////////////////////////////////////////////////////////////////////
-        // Registers                                                         //
-        ///////////////////////////////////////////////////////////////////////
-
-        val proposalBasicOR4: Coll[Int] = proposalBasicO.R4[Coll[Int]].get
-
-        val proposalBasicOR5: Coll[Long] = proposalBasicO.R5[Coll[Long]].get
-        val endTimeO: Long               = proposalBasicOR5(0)
-        val votedO: Long                 = proposalBasicOR5(1)
-
-        val votesO: Coll[Long] = proposalBasicOR5.slice(2,proposalBasicOR5.size)
-
-        val votesTreeO: AvlTree = proposalBasicO.R6[AvlTree].get
-
-        val stakeStateTree: AvlTree = stakeState.R4[Coll[AvlTree]].get(0)
+        val proposalBasicO: Box = filterByHash((OUTPUTS,blake2b256(proposalBasic.propositionBytes)))(0)
 
         ///////////////////////////////////////////////////////////////////////
         // Context variables                                                 //
@@ -338,16 +295,16 @@
                 .map{(kv: (Long,Long)) => kv._2-kv._1}
 
             allOf(Coll(
-                votedO == voted - oldVoteCount + newVoteCount,
-                votesO == votes.zip(changedVoteValues).map{
+                pVoted(proposalBasicO) == pVoted(proposalBasic) - oldVoteCount + newVoteCount,
+                pVotes(proposalBasicO) == pVotes(proposalBasic).zip(changedVoteValues).map{
                     (kv: (Long,Long)) => 
                         kv._1+kv._2
                 }
             ))
         } else {
             allOf(Coll(
-                votedO == voted + newVoteCount,
-                votesO == votes.zip(newVoteValues).map{
+                pVoted(proposalBasicO) == pVoted(proposalBasic) + newVoteCount,
+                pVotes(proposalBasicO) == pVotes(proposalBasic).zip(newVoteValues).map{
                     (kv: (Long,Long)) => 
                         kv._1+kv._2
                 }

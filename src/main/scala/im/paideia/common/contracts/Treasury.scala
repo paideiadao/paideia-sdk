@@ -24,6 +24,9 @@ import sigma.ast.SByte
 import im.paideia.common.events.{PaideiaEvent, PaideiaEventResponse}
 import im.paideia.common.events.CreateTransactionsEvent
 import im.paideia.common.transactions.ConsolidateTransaction
+import scorex.util.encode.Base16
+import sigma.ast.Tuple
+import _root_.sigma.ast.CollectionConstant
 
 /** Treasury class represents the main contract for the Paideia Treasury which manages and
   * holds assets and tokens of the Paideia DAO treasury on Ergo Blockchain.
@@ -112,26 +115,32 @@ class Treasury(contractSignature: PaideiaContractSignature)
   }
 
   override lazy val parameters: Map[String, Constant[SType]] = {
-    val cons = new scala.collection.mutable.HashMap[String, Constant[SType]]()
-    cons.put(
-      "daoActionTokenId",
+    val params = new scala.collection.mutable.HashMap[String, Constant[SType]]()
+    params.put(
+      "daoKeyId",
+      ByteArrayConstant(Colls.fromArray(Base16.decode(contractSignature.daoKey).get))
+    )
+    params.put(
+      "daoActionTokenIdAndStakeStateTokenId",
       ByteArrayConstant(
         Colls.fromArray(
           Paideia
             .getConfig(contractSignature.daoKey)
-            .getArray[Byte](ConfKeys.im_paideia_dao_action_tokenid)
+            .getArray[Byte](ConfKeys.im_paideia_dao_action_tokenid) ++ Paideia
+            .getConfig(contractSignature.daoKey)
+            .getArray[Byte](ConfKeys.im_paideia_staking_state_tokenid)
         )
       )
     )
-    cons.put(
-      "imPaideiaDaoKey",
+    params.put(
+      "paideiaDaoKey",
       ByteArrayConstant(Colls.fromArray(ErgoId.create(Env.paideiaDaoKey).getBytes))
     )
-    cons.put(
+    params.put(
       "paideiaTokenId",
       ByteArrayConstant(Colls.fromArray(ErgoId.create(Env.paideiaTokenId).getBytes))
     )
-    cons.toMap
+    params.toMap
   }
 
   override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {

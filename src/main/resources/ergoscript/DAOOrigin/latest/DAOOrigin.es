@@ -56,8 +56,8 @@
             //                                                                       //
             ///////////////////////////////////////////////////////////////////////////
 
-            val paideiaConfig: Box = CONTEXT.dataInputs(0)
-            val config: Box        = CONTEXT.dataInputs(1)
+            val paideiaConfig: Box = filterByTokenId((CONTEXT.dataInputs, paideiaDaoKey))(0)
+            val config: Box        = filterByTokenId((CONTEXT.dataInputs, daoOriginKey(daoOrigin)))(0)
             val stakeState: Box    = CONTEXT.dataInputs(2)
 
             ///////////////////////////////////////////////////////////////////////////

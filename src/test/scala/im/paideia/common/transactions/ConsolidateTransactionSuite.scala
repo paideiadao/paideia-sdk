@@ -42,6 +42,10 @@ class ConsolidateTransactionSuite extends PaideiaTestSuite {
           ErgoId.create(actionTokenId).getBytes
         )
         config.set(
+          ConfKeys.im_paideia_staking_state_tokenid,
+          ErgoId.create(stakeStateTokenId).getBytes
+        )
+        config.set(
           ConfKeys.im_paideia_dao_vote_tokenid,
           ErgoId.create(voteTokenId).getBytes
         )

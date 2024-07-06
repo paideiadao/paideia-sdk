@@ -3,10 +3,11 @@
  *
  * @return
  */
-@contract def stake(imPaideiaDaoKey: Coll[Byte]) = {
+@contract def stake(imPaideiaDaoKey: Coll[Byte], stakeStateTokenId: Coll[Byte]) = {
     #import lib/config/1.0.0/config.es;
     #import lib/stakeState/1.0.0/stakeState.es;
     #import lib/stakeRecord/1.0.0/stakeRecord.es;
+    #import lib/box/1.0.0/box.es;
 
     /**
      *
@@ -23,9 +24,6 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val imPaideiaStakeStateTokenId: Coll[Byte] = 
-        _IM_PAIDEIA_STAKING_STATE_TOKEN_ID
-
     val imPaideiaContractsStakeStake: Coll[Byte] = 
         _IM_PAIDEIA_CONTRACTS_STAKING_STAKE
 
@@ -35,7 +33,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val stakeState: Box = INPUTS(0)
+    val stakeState: Box = filterByTokenId((INPUTS, stakeStateTokenId))(0)
     val stake: Box      = SELF
 
     ///////////////////////////////////////////////////////////////////////////
@@ -44,17 +42,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val config: Box = CONTEXT.dataInputs(0)
-
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
-    // Outputs                                                               //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
-
-    val stakeStateO: Box = OUTPUTS(0)
-    val stakeO: Box      = OUTPUTS(1)
-    val userO: Box       = OUTPUTS(2)
+    val config: Box = filterByTokenId((CONTEXT.dataInputs, imPaideiaDaoKey))(0)
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -77,14 +65,21 @@
 
     val configValues: Coll[Option[Coll[Byte]]] = configTree(config).getMany(
         Coll(
-            imPaideiaContractsStakeStake,
-            imPaideiaStakeStateTokenId
+            imPaideiaContractsStakeStake
         ),
         configProof
     )
 
     val stakeContractHash: Coll[Byte] = bytearrayToContractHash(configValues(0))
-    val stakeStateTokenId: Coll[Byte] = bytearrayToTokenId(configValues(1))
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Outputs                                                               //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    val stakeStateO: Box = filterByTokenId((OUTPUTS, stakeStateTokenId))(0)
+    val stakeO: Box      = filterByHash((OUTPUTS,stakeContractHash))(0)
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -92,7 +87,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val mintedKey: Coll[Byte] = userO.tokens(0)
+    val mintedKeyId: Coll[Byte] = INPUTS(0).id
 
     val lockedUntil: Long = stakeRecordLockedUntil(stakeOperations(0)._2)
 
@@ -128,17 +123,10 @@
         (l: Long) => l==0L
     }
 
-    val correctKeyMinted: Boolean = stakeState.id == mintedKey._1 && 
+    val correctKeyMinted: Boolean = stakeState.id == mintedKeyId && 
         stakeState.id == stakeOperations(0)._1
     
-    val correctAmountMinted: Boolean = OUTPUTS.flatMap{(b: Box) => b.tokens}
-        .fold(0L, {
-            (z: Long, t: (Coll[Byte], Long)) => 
-            z + (if (t._1 == mintedKey._1) 
-                    t._2 
-                else 
-                    0L)
-            }) == 1L
+    val correctAmountMinted: Boolean = tokensInBoxes((OUTPUTS, mintedKeyId)) == 1L
 
     val tokensStaked: Boolean = 
         stakeAmount == 
@@ -153,10 +141,7 @@
 
     val notLocked: Boolean = lockedUntil == 0L
 
-    val selfOutput = allOf(Coll(
-        blake2b256(stakeO.propositionBytes) == stakeContractHash,
-        stakeO.value >= stake.value
-    ))
+    val selfOutput = stakeO.value >= stake.value
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //

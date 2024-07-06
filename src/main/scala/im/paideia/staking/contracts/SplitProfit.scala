@@ -85,6 +85,14 @@ class SplitProfit(contractSig: PaideiaContractSignature)
       "imPaideiaDaoKey",
       ByteArrayConstant(ErgoId.create(contractSig.daoKey).getBytes)
     )
+    cons.put(
+      "stakeStateTokenId",
+      ByteArrayConstant(
+        Paideia
+          .getConfig(contractSig.daoKey)
+          .getArray[Byte](ConfKeys.im_paideia_staking_state_tokenid)
+      )
+    )
     cons.toMap
   }
 

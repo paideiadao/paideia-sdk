@@ -55,6 +55,10 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
           ErgoId.create(proposalTokenId).getBytes
         )
         config.set(
+          ConfKeys.im_paideia_staking_state_tokenid,
+          ErgoId.create(stakeStateTokenId).getBytes
+        )
+        config.set(
           ConfKeys.im_paideia_dao_action_tokenid,
           ErgoId.create(actionTokenId).getBytes
         )
@@ -142,6 +146,15 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
             )
           )
         )
+        val actionInputBox = treasuryContract
+          .box(
+            ctx,
+            dao.config,
+            2000000L,
+            List(new ErgoToken(testToken, 20L), new ErgoToken(Util.randomKey, 10L))
+          )
+          .inputBox()
+          .getErgoTree()
         actionContract.clearBoxes()
         actionContract.newBox(actionBox.inputBox(), false)
 
@@ -186,6 +199,10 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
         config.set(
           ConfKeys.im_paideia_dao_action_tokenid,
           ErgoId.create(actionTokenId).getBytes
+        )
+        config.set(
+          ConfKeys.im_paideia_staking_state_tokenid,
+          ErgoId.create(stakeStateTokenId).getBytes
         )
         config.set(
           ConfKeys.im_paideia_dao_vote_tokenid,
@@ -280,6 +297,10 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
           ErgoId.create(actionTokenId).getBytes
         )
         config.set(
+          ConfKeys.im_paideia_staking_state_tokenid,
+          ErgoId.create(stakeStateTokenId).getBytes
+        )
+        config.set(
           ConfKeys.im_paideia_dao_vote_tokenid,
           ErgoId.create(voteTokenId).getBytes
         )
@@ -370,6 +391,10 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
         config.set(
           ConfKeys.im_paideia_dao_action_tokenid,
           ErgoId.create(actionTokenId).getBytes
+        )
+        config.set(
+          ConfKeys.im_paideia_staking_state_tokenid,
+          ErgoId.create(stakeStateTokenId).getBytes
         )
         config.set(
           ConfKeys.im_paideia_dao_vote_tokenid,

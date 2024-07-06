@@ -62,6 +62,16 @@ class ChangeStake(contractSignature: PaideiaContractSignature)
         )
       )
     )
+    params.put(
+      "stakingStakeTokenId",
+      ByteArrayConstant(
+        Colls.fromArray(
+          Paideia
+            .getConfig(contractSignature.daoKey)
+            .getArray(ConfKeys.im_paideia_staking_state_tokenid)
+        )
+      )
+    )
     params.toMap
   }
 

@@ -3,7 +3,7 @@
  * 
  * @return
  */
-@contract def treasury(daoActionTokenId: Coll[Byte], imPaideiaDaoKey: Coll[Byte], paideiaTokenId: Coll[Byte]) = {
+@contract def treasury(daoKeyId: Coll[Byte], paideiaDaoKey: Coll[Byte], paideiaTokenId: Coll[Byte], daoActionTokenIdAndStakeStateTokenId: Coll[Byte]) = {
     #import lib/config/1.0.0/config.es;
     #import lib/stakeState/1.0.0/stakeState.es;
     #import lib/txTypes/1.0.0/txTypes.es;
@@ -50,6 +50,9 @@
     val imPaideiaGovernanceTokenId: Coll[Byte] =
         _IM_PAIDEIA_DAO_GOVERNANCE_TOKEN_ID
 
+    val daoActionTokenId: Coll[Byte] = daoActionTokenIdAndStakeStateTokenId.slice(0,32)
+    val stakeStateTokenId: Coll[Byte] = daoActionTokenIdAndStakeStateTokenId.slice(32,64)
+
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
     // Transaction Type                                                      //
@@ -87,26 +90,23 @@
         // Inputs                                                            //
         ///////////////////////////////////////////////////////////////////////
 
-        val stakeState: Box = INPUTS(0)
+        val stakeState: Box = filterByTokenId((INPUTS, stakeStateTokenId))(0)
         val treasury: Box   = SELF
 
         ///////////////////////////////////////////////////////////////////////
         // Data Inputs                                                       //
         ///////////////////////////////////////////////////////////////////////
 
-        val config: Box        = CONTEXT.dataInputs(0)
-        val paideiaConfig: Box = CONTEXT.dataInputs(1)
+        val config: Box        = filterByTokenId((CONTEXT.dataInputs, daoKeyId))(0)
+        val paideiaConfig: Box = filterByTokenId((CONTEXT.dataInputs, paideiaDaoKey))(0)
 
         ///////////////////////////////////////////////////////////////////////
         // Outputs                                                           //
         ///////////////////////////////////////////////////////////////////////
 
-        val stakeStateO: Box = OUTPUTS(0)
+        val stakeStateO: Box = filterByTokenId((OUTPUTS, stakeStateTokenId))(0)
 
-        val treasuryO: Box = OUTPUTS.filter{
-            (b: Box) => 
-            b.propositionBytes == treasury.propositionBytes
-        }(0)
+        val treasuryO: Box = filterByHash((OUTPUTS, blake2b256(treasury.propositionBytes)))(0)
 
         ///////////////////////////////////////////////////////////////////////
         // Context variables                                                 //
@@ -135,14 +135,9 @@
         // Intermediate calculations                                         //
         ///////////////////////////////////////////////////////////////////////
 
-        val treasuryInInput: Coll[Box] = INPUTS.filter{
-            (b: Box) => 
-            b.propositionBytes == treasury.propositionBytes
-        }
+        val treasuryInInput: Coll[Box] = filterByHash((INPUTS, blake2b256(treasury.propositionBytes)))
 
-        val treasuryNerg: Long = treasuryInInput.fold(0L, {
-            (z: Long, b: Box) => z + b.value
-        })
+        val treasuryNerg: Long = ergInBoxes(treasuryInInput)
 
         val treasuryPaideia: Long = tokensInBoxes((treasuryInInput, paideiaTokenId))
 
@@ -151,9 +146,6 @@
         ///////////////////////////////////////////////////////////////////////
         // Simple conditions                                                 //
         ///////////////////////////////////////////////////////////////////////
-
-        val correctPaideiaConfig: Boolean = 
-            paideiaConfig.tokens(0)._1 == imPaideiaDaoKey
 
         val noMissingTokens: Boolean = treasuryInInput.flatMap{
             (b: Box) => b.tokens
@@ -312,15 +304,13 @@
             // INPUTS                                                    //
             ///////////////////////////////////////////////////////////////
 
-            val treasuryInputs: Coll[Box] = INPUTS.filter{(b: Box) => 
-                b.propositionBytes == SELF.propositionBytes}
+            val treasuryInputs: Coll[Box] = filterByHash((INPUTS, blake2b256(SELF.propositionBytes)))
 
             ///////////////////////////////////////////////////////////////
             // OUTPUTS                                                   //
             ///////////////////////////////////////////////////////////////
 
-            val treasuryOutputs: Coll[Box] = OUTPUTS.filter{(b: Box) => 
-                b.propositionBytes == SELF.propositionBytes}
+            val treasuryOutputs: Coll[Box] = filterByHash((OUTPUTS, blake2b256(SELF.propositionBytes)))
 
             ///////////////////////////////////////////////////////////////
             // Intermediate Calculations                                 //
@@ -372,7 +362,7 @@
             Coll(
                 validStakeTransaction(transactionType),
                 validAction(transactionType),
-                validConsolidateTransaction(transactionType)
+                validConsolidateTransaction(transactionType),
             )
         )
     )

@@ -15,6 +15,7 @@ import sigma.ast.Constant
 import sigma.ast.SType
 import sigma.ast.ByteArrayConstant
 import org.ergoplatform.appkit.InputBox
+import sigma.Colls
 
 class Stake(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -22,12 +23,22 @@ class Stake(contractSignature: PaideiaContractSignature)
   def box(ctx: BlockchainContextImpl) = StakeBox(ctx, this)
 
   override lazy val parameters: Map[String, Constant[SType]] = {
-    val cons = new HashMap[String, Constant[SType]]()
-    cons.put(
+    val params = new HashMap[String, Constant[SType]]()
+    params.put(
       "imPaideiaDaoKey",
       ByteArrayConstant(ErgoId.create(contractSignature.daoKey).getBytes)
     )
-    cons.toMap
+    params.put(
+      "stakeStateTokenId",
+      ByteArrayConstant(
+        Colls.fromArray(
+          Paideia
+            .getConfig(contractSignature.daoKey)
+            .getArray[Byte](ConfKeys.im_paideia_staking_state_tokenid)
+        )
+      )
+    )
+    params.toMap
   }
 
   override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
