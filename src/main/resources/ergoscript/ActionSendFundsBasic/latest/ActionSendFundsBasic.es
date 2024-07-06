@@ -92,13 +92,7 @@
             repeatOutput.propositionBytes == sendFundsAction.propositionBytes
         ))
     } else {
-        !(OUTPUTS.exists{
-            (b: Box) =>
-            b.tokens.exists{
-                (token: (Coll[Byte],Long)) =>
-                token._1 == sendFundsAction.tokens(0)._1
-            }
-        })
+        !(tokenExists((OUTPUTS, aActionToken(sendFundsAction)._1)))
     }
 
     val changeBoxPresent: Boolean = 
@@ -117,7 +111,7 @@
     ///////////////////////////////////////////////////////////////////////////
 
     val correctProposal = allOf(Coll(
-        proposalInput.tokens(0)._1          == imPaideiaDaoProposalTokenId,
+        pProposalToken(proposalInput)._1  == imPaideiaDaoProposalTokenId,
         pIndex(proposalInput).toLong        == aProposalIndex(sendFundsAction),
         pPassedOption(proposalInput).toLong == aProposalOption(sendFundsAction)
     ))

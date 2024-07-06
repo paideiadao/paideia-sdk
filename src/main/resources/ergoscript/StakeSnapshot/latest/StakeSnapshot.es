@@ -151,11 +151,10 @@
             if (tt._1._1 == daoTokenId) 
                 tt._2._1 == tt._1._1 && tt._1._2 + emissionAmount == tt._2._2 
             else 
-                tt._2._1 == tt._1._1 && tt._1._2 == tt._2._2
+                tt._2 == tt._1
     }
 
     val correctStakeState: Boolean = allOf(Coll(
-        stakeState.tokens(0)._1 == stakeStateTokenId,
         totalStaked(stakeStateO)              == totalStaked(stakeState),
         stakers(stakeStateO)                  == stakers(stakeState),
         votedThisCycle(stakeStateO)           == 0L,
@@ -217,12 +216,7 @@
 
     val correctTime: Boolean = nextEmission(stakeState) <= CONTEXT.preHeader.timestamp
 
-    val correctConfig: Boolean = config.tokens(0)._1 == imPaideiaDaoKey
-
-    val selfOutput: Boolean = allOf(Coll(
-        blake2b256(snapshotO.propositionBytes) == snapshotContractHash,
-        snapshotO.value >= SELF.value
-    ))
+    val selfOutput: Boolean = snapshotO.value >= SELF.value
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -240,7 +234,6 @@
         correctSize,
         profitReset,
         correctNextShapshot,
-        correctTime,
-        correctConfig
+        correctTime
     )))
 }

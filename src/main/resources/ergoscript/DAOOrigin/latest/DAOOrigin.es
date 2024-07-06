@@ -130,7 +130,7 @@
             //                                                                       //
             ///////////////////////////////////////////////////////////////////////////
 
-            val proposalId: Long = maxLong - daoOrigin.tokens(1)._2
+            val proposalId: Long = maxLong - daoProposalToken(daoOrigin)._2
 
             val actionOutputs: Coll[Box] = OUTPUTS.slice(2,actionBoxes.size+2)
 
@@ -158,14 +158,14 @@
             val correctDAOOutput: Boolean = allOf(
                 Coll(
                     blake2b256(daoOriginO.propositionBytes) == daoOriginContractHash,
-                    daoOriginO.value         >= daoOrigin.value,
-                    daoOriginO.tokens(0)     == daoOrigin.tokens(0),
-                    daoOriginO.tokens(1)._1  == daoOrigin.tokens(1)._1,
-                    daoOriginO.tokens(1)._2  == daoOrigin.tokens(1)._2 - 1L,
-                    daoOriginO.tokens(2)._1  == daoOrigin.tokens(2)._1,
-                    daoOriginO.tokens(2)._2  == daoOrigin.tokens(2)._2 - actionBoxes.size,
-                    daoOriginO.tokens.size   == 3,
-                    daoOriginKey(daoOriginO) == daoOriginKey(daoOrigin)
+                    daoOriginO.value                 >= daoOrigin.value,
+                    daoToken(daoOriginO)             == daoToken(daoOrigin),
+                    daoProposalToken(daoOriginO)._1  == daoProposalToken(daoOrigin)._1,
+                    daoProposalToken(daoOriginO)._2  == daoProposalToken(daoOrigin)._2 - 1L,
+                    daoActionToken(daoOriginO)._1    == daoActionToken(daoOrigin)._1,
+                    daoActionToken(daoOriginO)._2    == daoActionToken(daoOrigin)._2 - actionBoxes.size,
+                    daoOriginO.tokens.size           == 3,
+                    daoOriginKey(daoOriginO)         == daoOriginKey(daoOrigin)
                 )
             )
 
@@ -173,10 +173,10 @@
                 Coll(
                     proposalO.value                        >= proposalBox.value,
                     pIndex(proposalO)                      == proposalId,
-                    proposalO.tokens(0)._1                 == daoOrigin.tokens(1)._1,
-                    proposalO.tokens(0)._2                 == 1L,
-                    proposalO.tokens(1)._1                 == paideiaTokenId,
-                    proposalO.tokens(1)._2                 == createProposalFee,
+                    pProposalToken(proposalO)._1           == daoProposalToken(daoOrigin)._1,
+                    pProposalToken(proposalO)._2           == 1L,
+                    pPaideiaToken(proposalO)._1            == paideiaTokenId,
+                    pPaideiaToken(proposalO)._2            == createProposalFee,
                     proposalO.propositionBytes             == proposalBox.propositionBytes,
                     pEndTime(proposalO)                    >= currentTime + minProposalTime,
                     blake2b256(proposalO.propositionBytes) == proposalContractHash,
@@ -189,8 +189,8 @@
                 (i: Int) =>
                 allOf(Coll(
                     actionOutputs(i).value            >= actionBoxes(i).value,
-                    actionOutputs(i).tokens(0)._1     == daoOrigin.tokens(2)._1,
-                    actionOutputs(i).tokens(0)._2     == 1L,
+                    aActionToken(actionOutputs(i))._1 == daoActionToken(daoOrigin)._1,
+                    aActionToken(actionOutputs(i))._2 == 1L,
                     aProposalIndex(actionOutputs(i))  == proposalId,
                     aProposalOption(actionOutputs(i)) > 0L,
                     blake2b256(actionOutputs(i).propositionBytes) == 

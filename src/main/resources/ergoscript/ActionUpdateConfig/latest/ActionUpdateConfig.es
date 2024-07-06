@@ -101,14 +101,14 @@
     ///////////////////////////////////////////////////////////////////////////
 
     val correctProposal = allOf(Coll(
-        proposal.tokens(0)._1       == imPaideiaDaoProposalTokenId,
+        pProposalToken(proposal)._1    == imPaideiaDaoProposalTokenId,
         pIndex(proposal).toLong        == aProposalIndex(actionUpdateConfig),
         pPassedOption(proposal).toLong == aProposalOption(actionUpdateConfig)
     ))
 
     val activationTimePassed = CONTEXT.preHeader.timestamp >= aActivationTime(actionUpdateConfig)
 
-    val burnActionToken = !(tokenExists((OUTPUTS, SELF.tokens(0)._1)))
+    val burnActionToken = !(tokenExists((OUTPUTS, aActionToken(SELF)._1)))
 
     val correctOutputNumber = OUTPUTS.size == 2
 

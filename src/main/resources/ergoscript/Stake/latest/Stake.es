@@ -103,12 +103,9 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val correctConfigTokenId: Boolean = config.tokens(0)._1 == imPaideiaDaoKey
-
     val correctStakeState: Boolean = allOf(Coll(
-        stakeState.tokens(0)._1 == stakeStateTokenId,
-        stakeStateO.value >= stakeState.value,
-        stakeStateO.tokens.slice(2,stakeStateO.tokens.size) == stakeState.tokens.slice(2,stakeState.tokens.size),
+        stakeStateO.value               >= stakeState.value,
+        otherTokens(stakeStateO)        == otherTokens(stakeState),
         participationTree(stakeStateO)  == participationTree(stakeState),
         nextEmission(stakeStateO)       == nextEmission(stakeState),
         votedThisCycle(stakeStateO)     == votedThisCycle(stakeState),
@@ -123,14 +120,13 @@
         (l: Long) => l==0L
     }
 
-    val correctKeyMinted: Boolean = stakeState.id == mintedKeyId && 
-        stakeState.id == stakeOperations(0)._1
+    val correctKeyMinted: Boolean = mintedKeyId == stakeOperations(0)._1
     
     val correctAmountMinted: Boolean = tokensInBoxes((OUTPUTS, mintedKeyId)) == 1L
 
     val tokensStaked: Boolean = 
         stakeAmount == 
-        (stakeStateO.tokens(1)._2 - stakeState.tokens(1)._2) && 
+        (govToken(stakeStateO)._2 - govToken(stakeState)._2) && 
         stakeAmount == totalStaked(stakeStateO) - totalStaked(stakeState)
 
     val correctStakersCount: Boolean = stakers(stakeState) + 1L == stakers(stakeStateO)
@@ -150,7 +146,6 @@
     ///////////////////////////////////////////////////////////////////////////
 
     sigmaProp(allOf(Coll(
-        correctConfigTokenId,
         correctStakeState,
         correctKeyMinted,
         correctAmountMinted,

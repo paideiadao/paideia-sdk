@@ -8,6 +8,7 @@
     #import lib/txTypes/1.0.0/txTypes.es;
     #import lib/updateOrRefresh/1.0.0/updateOrRefresh.es;
     #import lib/box/1.0.0/box.es;
+    #import lib/stakeState/1.0.0/stakeState.es;
 
     /**
      *
@@ -70,7 +71,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val stakeStateO: Box = filterByTokenId((OUTPUTS, stakeState.tokens(0)._1))(0)
+    val stakeStateO: Box = filterByTokenId((OUTPUTS, stakeStateToken(stakeState)._1))(0)
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -89,8 +90,8 @@
 
     def validOutput(contractHash: Coll[Byte]): Boolean = allOf(Coll(
         blake2b256(stakeStateO.propositionBytes) == contractHash,
-        stakeStateO.tokens(0) == stakeState.tokens(0),
-        stakeStateO.tokens(1)._1 == stakeState.tokens(1)._1
+        stakeStateToken(stakeStateO) == stakeStateToken(stakeState),
+        govToken(stakeStateO)._1 == govToken(stakeState)._1
     ))
 
     def transactionValidation(contractKey: Coll[Byte]): Boolean = {
@@ -115,8 +116,6 @@
     // Simple conditions                                                     //
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
-
-    val correctConfig: Boolean = config.tokens(0)._1 == imPaideiaDaoKey
 
     def validStake(txType: Byte): Boolean = if (txType == STAKE) {
         transactionValidation(imPaideiaContractsStakingStake) 
@@ -155,8 +154,5 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    sigmaProp(allOf(Coll(
-        correctConfig,
-        validTx
-    )))
+    sigmaProp(validTx)
 }

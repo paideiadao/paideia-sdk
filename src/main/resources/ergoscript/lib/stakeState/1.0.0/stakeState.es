@@ -65,3 +65,9 @@ def snapshotProfit(b: Box): Coll[Long] = {
 def stakeStateNFT(box: Box): Coll[Byte] = {
     box.tokens(0)._1
 }
+
+def stakeStateToken(b: Box): (Coll[Byte], Long) = b.tokens(0)
+
+def govToken(b: Box): (Coll[Byte], Long) = b.tokens(1)
+
+def otherTokens(b: Box): Coll[(Coll[Byte], Long)] = b.tokens.slice(2,b.tokens.size)

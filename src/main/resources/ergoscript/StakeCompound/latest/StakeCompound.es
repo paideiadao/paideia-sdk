@@ -220,11 +220,6 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val correctConfig: Boolean = config.tokens(0)._1 == imPaideiaDaoKey
-
-    val correctStakeState: Boolean = 
-        stakeState.tokens(0)._1 == stakeStateTokenId
-
     val validCompounds: Boolean = allOf(
         rewards.map{
             (reward: (Coll[BigInt],Boolean)) =>
@@ -275,8 +270,6 @@
     ///////////////////////////////////////////////////////////////////////////
 
     sigmaProp(allOf(Coll(
-        correctConfig,
-        correctStakeState,
         validCompounds,
         correctTotalStaked,
         correctSnapshot,

@@ -84,9 +84,6 @@
         blake2b256(b.propositionBytes) != stakingStateContractHash
     }(0)
 
-    val tokensIn: Long  = tokensInBoxesAll(INPUTS)
-    val tokensOut: Long = tokensInBoxesAll(OUTPUTS)
-
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
     // Simple conditions                                                     //
@@ -97,7 +94,7 @@
         Coll(
             minerO.value <= 5000000L,
             minerO.tokens.size == 0,
-            tokensIn == tokensOut,
+            tokensInBoxesAll(INPUTS) == tokensInBoxesAll(OUTPUTS),
             treasuryO.value >= 1000000L
         )
     )

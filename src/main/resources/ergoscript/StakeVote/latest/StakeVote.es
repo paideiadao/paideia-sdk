@@ -189,13 +189,6 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val correctConfig: Boolean = config.tokens(0)._1 == imPaideiaDaoKey
-
-    val correctStakeState: Boolean = 
-        stakeState.tokens(0)._1 == stakeStateTokenId
-
-    val correctProposal: Boolean = proposal.tokens(0)._1 == proposalTokenId
-
     val keyInOutput: Boolean = tokenExists((OUTPUTS, stakeKey))
 
     val correctStakeOutput: Boolean = allOf(Coll(
@@ -228,12 +221,9 @@
     ///////////////////////////////////////////////////////////////////////////
 
     sigmaProp(allOf(Coll(
-        correctProposal,
         selfOutput,
         keyInOutput,
         correctStakeOutput,
-        correctStakeState,
-        correctConfig,
         correctNewStakeRecord,
         correctNewParticipationRecord
     )))

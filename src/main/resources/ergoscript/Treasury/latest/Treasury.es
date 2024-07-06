@@ -233,8 +233,7 @@
                 correctDaoLeft,
                 correctOtherTokens,
                 noMissingTokens,
-                splitProfitOutput.tokens(0)._1 == paideiaTokenId,
-                splitProfitOutput.tokens(0)._2 >= paideiaFee,
+                tokensInBoxes((Coll(splitProfitOutput), paideiaTokenId)) >= paideiaFee,
                 snapshotContractPresent
             ))
             } else {
@@ -272,7 +271,7 @@
                 blake2b256(INPUTS(1).propositionBytes) == compoundContractHash
 
             val govTokensSame: Boolean = 
-                stakeStateO.tokens(1)._2 == stakeState.tokens(1)._2
+                govToken(stakeStateO)._2 == govToken(stakeState)._2
 
             allOf(Coll(
                 correctErg,

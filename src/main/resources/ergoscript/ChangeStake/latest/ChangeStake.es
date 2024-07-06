@@ -107,7 +107,7 @@
     val keyInOutput: Boolean = tokenExists((OUTPUTS, stakeOperations(0)._1))
 
     val tokensStaked: Boolean = newStakeAmount - currentStakeAmount == 
-        (stakeStateO.tokens(1)._2 - stakeState.tokens(1)._2) && 
+        (govToken(stakeStateO)._2 - govToken(stakeState)._2) && 
         newStakeAmount - currentStakeAmount == 
         totalStaked(stakeStateO) - totalStaked(stakeState)
 

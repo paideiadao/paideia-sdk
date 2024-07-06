@@ -96,10 +96,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val correctConfig: Boolean = config.tokens(0)._1 == imPaideiaDaoKey
-
     val correctStakeState: Boolean = allOf(Coll(
-        stakeState.tokens(0)._1 == stakeStateTokenId,
         participationTree(stakeStateO) == participationTree(stakeState),
         nextEmission(stakeStateO) == nextEmission(stakeState),
         votedThisCycle(stakeStateO) == votedThisCycle(stakeState),
@@ -114,7 +111,7 @@
 
     val tokensUnstaked: Boolean = allOf(Coll(
         currentStakeAmount == 
-            (stakeState.tokens(1)._2 - stakeStateO.tokens(1)._2),
+            (govToken(stakeState)._2 - govToken(stakeStateO)._2),
         currentStakeAmount == totalStaked(stakeState) - totalStaked(stakeStateO)
     ))
 
@@ -143,7 +140,6 @@
     ///////////////////////////////////////////////////////////////////////////
 
     sigmaProp(allOf(Coll(
-        correctConfig,
         correctStakeState,
         keyInInput,
         tokensUnstaked,

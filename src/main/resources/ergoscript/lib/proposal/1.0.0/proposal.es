@@ -21,3 +21,7 @@ def pVotes(b: Box): Coll[Long] = {
 def pVoteTree(b: Box): AvlTree = {
     b.R6[AvlTree].get
 }
+
+def pProposalToken(b: Box): (Coll[Byte], Long) = b.tokens(0)
+
+def pPaideiaToken(b: Box): (Coll[Byte], Long) = b.tokens(1)

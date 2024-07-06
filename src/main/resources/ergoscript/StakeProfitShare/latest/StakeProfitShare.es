@@ -83,7 +83,7 @@
 
     val ergProfit: Long = stakeStateO.value - stakeState.value
 
-    val govProfit: Long = stakeStateO.tokens(1)._2 - stakeState.tokens(1)._2
+    val govProfit: Long = govToken(stakeStateO)._2 - govToken(stakeState)._2
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -91,10 +91,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val correctConfig: Boolean = config.tokens(0)._1 == imPaideiaDaoKey
-
     val correctStakeState: Boolean = allOf(Coll(
-        stakeState.tokens(0)._1         == stakeStateTokenId,
         stakeTree(stakeStateO)          == stakeTree(stakeState),
         participationTree(stakeStateO)  == participationTree(stakeState),
         nextEmission(stakeStateO)       == nextEmission(stakeState),
@@ -113,10 +110,7 @@
     val correctGovProfit: Boolean = 
         govProfit >= 0L && profit(stakeStateO)(0) - profit(stakeState)(0) == govProfit
 
-    val selfOutput: Boolean = allOf(Coll(
-        blake2b256(profitShareO.propositionBytes) == profitShareContractHash,
-        profitShareO.value >= profitShare.value
-    ))
+    val selfOutput: Boolean = profitShareO.value >= profitShare.value
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -125,7 +119,6 @@
     ///////////////////////////////////////////////////////////////////////////
 
     sigmaProp(allOf(Coll(
-        correctConfig,
         correctStakeState,
         correctErgProfit,
         correctGovProfit,

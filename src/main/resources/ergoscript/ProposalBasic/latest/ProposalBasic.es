@@ -159,12 +159,6 @@
         // Simple conditions                                                 //
         ///////////////////////////////////////////////////////////////////////
 
-        val correctstakeState: Boolean = 
-            stakeState.tokens(0)._1 == stakeStateTokenId
-
-        val paideiaCorrectConfig: Boolean = 
-            paideiaConfig.tokens(0)._1 == paideiaDaoKey
-
         val correctWinningVote: Boolean = pVotes(proposalBasic).indices.forall{
                     (i: Int) =>
                     if (i==winningVote._1) pVotes(proposalBasic)(i) == winningVote._2
@@ -176,7 +170,7 @@
         val correctOut: Boolean = allOf(Coll(
             proposalBasicO.propositionBytes == proposalBasic.propositionBytes,
             proposalBasicO.value            >= proposalBasic.value - 3000000L,
-            proposalBasicO.tokens(0)        == proposalBasic.tokens(0),
+            pProposalToken(proposalBasicO)  == pProposalToken(proposalBasic),
             pIndex(proposalBasicO)          == pIndex(proposalBasic),
             pVoted(proposalBasicO)          == pVoted(proposalBasic),
             pVotes(proposalBasicO)          == pVotes(proposalBasic),
@@ -185,10 +179,8 @@
         ))
 
         val correctSplitProfitOut: Boolean = allOf(Coll(
-            blake2b256(splitProfitO.propositionBytes) == splitProfitContractHash,
             splitProfitO.value >= 1000000L,
-            splitProfitO.tokens(0)._1 == paideiaTokenId,
-            splitProfitO.tokens(0)._2 >= padTokens
+            tokensInBoxes((Coll(splitProfitO),paideiaTokenId)) >= padTokens
         ))
 
         val passedEnd: Boolean = CONTEXT.preHeader.timestamp > pEndTime(proposalBasic)
@@ -198,8 +190,6 @@
         ///////////////////////////////////////////////////////////////////////
 
         allOf(Coll(
-            correctstakeState,
-            paideiaCorrectConfig,
             correctWinningVote,
             correctOut,
             passedEnd,
@@ -274,9 +264,6 @@
         // Simple conditions                                                 //
         ///////////////////////////////////////////////////////////////////////
 
-        val correctStakeState: Boolean = 
-            stakeState.tokens(0)._1 == stakeStateTokenId
-
         val voteHappened: Boolean = pVotes(proposalBasicO) != pVotes(proposalBasic)
 
         val notPassedEnd: Boolean = CONTEXT.preHeader.timestamp < pEndTime(proposalBasic)
@@ -327,18 +314,9 @@
             notPassedEnd,
             correctVoteValues,
             voteKeyPresent,
-            correctStakeState,
             voteHappened
         ))
     }
-
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
-    // Simple conditions                                                     //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
-
-    val correctConfig: Boolean = config.tokens(0)._1 == imPaideiaDaoKey
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -346,8 +324,5 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    sigmaProp(allOf(Coll(
-        correctConfig,
-        validTransaction
-    )))
+    sigmaProp(validTransaction)
 }

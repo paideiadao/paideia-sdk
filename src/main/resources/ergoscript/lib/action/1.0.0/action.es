@@ -17,3 +17,5 @@ def aActivationTime(b: Box): Long = {
 def aRepeatTime(b: Box): Long = {
     b.R4[Coll[Long]].get(4)
 }
+
+def aActionToken(b: Box): (Coll[Byte], Long) = b.tokens(0)
