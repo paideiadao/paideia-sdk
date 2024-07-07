@@ -187,7 +187,8 @@
             mintO.tokens(0)._2 == mintInfo._2,
             mintOName == mintInfo._1,
             mintODesc == mintOName,
-            mintODecimals == decimals0
+            mintODecimals == decimals0,
+            mintO.value >= 1000000L
         ))
 
         val validProtoDAOOut = allOf(Coll(

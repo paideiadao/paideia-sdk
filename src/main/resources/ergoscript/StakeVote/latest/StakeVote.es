@@ -142,7 +142,7 @@
         val currentVoteCount: Long = currentVoteValues.fold(0L, {
             (z: Long, v: Long) => z + v
         })
-        currentVotedTotal - currentVoteCount + newVoteCount
+        max(currentVotedTotal - currentVoteCount + newVoteCount,0L)
     } else {
         currentVotedTotal + newVoteCount
     }
