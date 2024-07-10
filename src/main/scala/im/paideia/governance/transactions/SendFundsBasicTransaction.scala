@@ -70,12 +70,6 @@ final case class SendFundsBasicTransaction(
 
   val fundsNeeded = actionInputBox.fundsNeeded
 
-  val coveringTreasuryBoxes =
-    treasuryContract
-      .findBoxes(fundsNeeded._1, fundsNeeded._2)
-      .get
-      .map(ib => ib.withContextVars(ContextVar.of(0.toByte, TxTypes.TREASURY_SPEND)))
-
   val configDigest =
     ADDigest @@ configInput
       .getRegisters()
@@ -84,6 +78,22 @@ final case class SendFundsBasicTransaction(
       .asInstanceOf[AvlTree]
       .digest
       .toArray
+
+  val coveringTreasuryBoxes =
+    treasuryContract
+      .findBoxes(fundsNeeded._1, fundsNeeded._2)
+      .get
+      .map(ib =>
+        ib.withContextVars(
+          ContextVar.of(0.toByte, TxTypes.TREASURY_SPEND),
+          ContextVar.of(
+            1.toByte,
+            dao.config.getProof(
+              ConfKeys.im_paideia_contracts_action(actionInput.getErgoTree().bytes)
+            )(Some(configDigest))
+          )
+        )
+      )
 
   val selfOutput = if (actionInputBox.repeats > 0) {
     List(
@@ -112,6 +122,10 @@ final case class SendFundsBasicTransaction(
   val context = List(
     ContextVar.of(
       0.toByte,
+      TxTypes.TREASURY_SPEND
+    ),
+    ContextVar.of(
+      1.toByte,
       dao.config.getProof(ConfKeys.im_paideia_contracts_treasury)(Some(configDigest))
     )
   )

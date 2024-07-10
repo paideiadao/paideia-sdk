@@ -90,7 +90,7 @@ object PaideiaTestSuite {
         PaideiaContractSignature(daoKey = Env.paideiaDaoKey)
       )
       val proposalBasicContract = ProposalBasic(
-        PaideiaContractSignature(daoKey = Util.randomKey)
+        PaideiaContractSignature(daoKey = Env.paideiaDaoKey)
       )
       val stakingChangeContract = ChangeStake(
         PaideiaContractSignature(daoKey = Env.paideiaDaoKey)

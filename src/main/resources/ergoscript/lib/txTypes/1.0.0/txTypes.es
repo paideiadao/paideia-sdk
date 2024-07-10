@@ -10,3 +10,5 @@ val CHANGE_CONFIG: Byte   = 8.toByte
 val TREASURY_SPEND: Byte  = 9.toByte
 val CONSOLIDATE: Byte     = 10.toByte
 val CREATE_PROPOSAL: Byte = 11.toByte
+val GARBAGE_COLLECT: Byte = 12.toByte
+val EVALUATE: Byte        = 13.toByte

@@ -20,8 +20,10 @@
     ///////////////////////////////////////////////////////////////////////////
 
     val imPaideiaContractsConfig: Coll[Byte]  = _IM_PAIDEIA_CONTRACTS_CONFIG
+    val imPaideiaContractsAction: Coll[Byte]  = _IM_PAIDEIA_CONTRACTS_ACTION
 
-    val validChangeConfigTransaction: Boolean = {
+    def validChangeConfigTransaction(txType: Byte): Boolean = {
+        if (txType == CHANGE_CONFIG) {
 
         ///////////////////////////////////////////////////////////////////////////
         //                                                                       //
@@ -30,6 +32,7 @@
         ///////////////////////////////////////////////////////////////////////////
 
         val config: Box = SELF
+        val action: Box = filterByTokenId((INPUTS, imPaideiaDaoActionTokenId))(0)
 
         ///////////////////////////////////////////////////////////////////////////
         //                                                                       //
@@ -55,7 +58,8 @@
 
         val configValues: Coll[Option[Coll[Byte]]] = configTree(configO).getMany(
             Coll(
-                imPaideiaContractsConfig
+                imPaideiaContractsConfig,
+                blake2b256(imPaideiaContractsAction++action.propositionBytes)
             ),
             configProof
         )
@@ -74,7 +78,7 @@
         val contractIntact: Boolean = blake2b256(configO.propositionBytes) == 
             configContractHash
 
-        val validAction: Boolean = tokenExists((INPUTS, imPaideiaDaoActionTokenId))
+        val validAction: Boolean = configValues(1).isDefined
 
         ///////////////////////////////////////////////////////////////////////////
         //                                                                       //
@@ -88,13 +92,15 @@
             contractIntact,
             validAction
         ))
-
+        } else {
+            false
+        }
     }
 
     val transactionType: Byte = getVar[Byte](0).get
 
     sigmaProp(anyOf(Coll(
-        transactionType == CHANGE_CONFIG && validChangeConfigTransaction,
+        validChangeConfigTransaction(transactionType),
         transactionType == UPDATE && updateOrRefresh((imPaideiaContractsConfig, SELF))
     )))
 

@@ -45,7 +45,7 @@ final case class UpdateConfigTransaction(
 
   ctx = _ctx
 
-  fee = 1000000L
+  fee = 2000000L
 
   // Create ActionUpdateConfigBox from the input
   val actionInputBox = ActionUpdateConfigBox.fromInputBox(ctx, actionInput)
@@ -101,8 +101,9 @@ final case class UpdateConfigTransaction(
 
   // Create action context variables
   val actionContext = List(
+    ContextVar.of(0.toByte, TxTypes.CHANGE_CONFIG),
     ContextVar.of(
-      1.toByte,
+      2.toByte,
       if (actionInputBox.remove.size > 0) {
         val result =
           dao.config.removeProof(actionInputBox.remove: _*)(Left(resultingDigest.get))
@@ -111,7 +112,7 @@ final case class UpdateConfigTransaction(
       } else ErgoValueBuilder.buildFor(Colls.fromArray(Array[Byte]()))
     ),
     ContextVar.of(
-      2.toByte,
+      3.toByte,
       if (actionInputBox.update.size > 0) {
         val result =
           dao.config.updateProof(actionInputBox.update: _*)(Left(resultingDigest.get))
@@ -120,7 +121,7 @@ final case class UpdateConfigTransaction(
       } else ErgoValueBuilder.buildFor(Colls.fromArray(Array[Byte]()))
     ),
     ContextVar.of(
-      3.toByte,
+      4.toByte,
       if (actionInputBox.insert.size > 0) {
         val result =
           dao.config.insertProof(actionInputBox.insert: _*)(Left(resultingDigest.get))
@@ -131,12 +132,15 @@ final case class UpdateConfigTransaction(
   )
 
   val configProof =
-    dao.config.getProof(ConfKeys.im_paideia_contracts_config)(resultingDigest)
+    dao.config.getProof(
+      ConfKeys.im_paideia_contracts_config,
+      ConfKeys.im_paideia_contracts_action(actionInput.getErgoTree().bytes)
+    )(resultingDigest)
 
   // Create context variables
   val context = List(
     ContextVar.of(
-      0.toByte,
+      1.toByte,
       configProof
     )
   )

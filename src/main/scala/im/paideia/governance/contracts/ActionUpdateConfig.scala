@@ -37,7 +37,18 @@ import sigma.ast.SCollection
 import sigma.ast.SByte
 
 class ActionUpdateConfig(contractSignature: PaideiaContractSignature)
-  extends PaideiaContract(contractSignature) {
+  extends PaideiaContract(
+    contractSignature,
+    garbageCollectable = Some(
+      Array(
+        new ErgoId(
+          Paideia
+            .getConfig(contractSignature.daoKey)
+            .getArray(ConfKeys.im_paideia_dao_action_tokenid)
+        )
+      )
+    )
+  ) {
 
   def box(
     ctx: BlockchainContextImpl,
@@ -78,7 +89,7 @@ class ActionUpdateConfig(contractSignature: PaideiaContractSignature)
           getUtxoSet
             .map(boxes(_))
             .map((b: InputBox) => {
-              val proposalInput = Paideia
+              val proposalInputs = Paideia
                 .getBox(
                   new FilterLeaf[String](
                     FilterType.FTEQ,
@@ -103,9 +114,10 @@ class ActionUpdateConfig(contractSignature: PaideiaContractSignature)
                     .getValue()
                     .asInstanceOf[Coll[Long]](0)
                     .toInt
-                )(0)
+                )
               if (
-                proposalInput
+                proposalInputs.size > 0 &&
+                proposalInputs(0)
                   .getRegisters()
                   .get(0)
                   .getValue()

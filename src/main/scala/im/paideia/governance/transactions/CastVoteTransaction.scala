@@ -24,6 +24,7 @@ import im.paideia.staking.contracts.StakeVote
 import im.paideia.governance.VoteRecord
 import sigma.Colls
 import scorex.util.encode.Base16
+import im.paideia.util.TxTypes
 
 final case class CastVoteTransaction(
   _ctx: BlockchainContextImpl,
@@ -115,17 +116,6 @@ final case class CastVoteTransaction(
       .digest
       .toArray
 
-  val configContext = List(
-    ContextVar.of(
-      0.toByte,
-      dao.config.getProof(
-        ConfKeys.im_paideia_dao_quorum,
-        ConfKeys.im_paideia_dao_threshold,
-        ConfKeys.im_paideia_staking_state_tokenid
-      )(Some(configDigest))
-    )
-  )
-
   val stakeVoteContract = StakeVote(
     dao
       .config[PaideiaContractSignature](ConfKeys.im_paideia_contracts_staking_vote)
@@ -160,25 +150,26 @@ final case class CastVoteTransaction(
       )
     )
 
-  val extraContext = List(
+  val proposalContext = List(
+    ContextVar.of(0.toByte, TxTypes.VOTE),
     ContextVar.of(
       3.toByte,
       getProof.proof.ergoValue
     ),
-    ContextVar.of(4.toByte, ErgoValueBuilder.buildFor(0, 0L)),
+    ContextVar.of(10.toByte, ErgoValueBuilder.buildFor(0, 0L)),
     ContextVar.of(
-      5.toByte,
+      4.toByte,
       ErgoValueBuilder.buildFor(
         Colls.fromArray(VoteRecord.convertsVoteRecord.convertToBytes(vote))
       )
     ),
     ContextVar.of(
-      6.toByte,
+      5.toByte,
       ErgoValueBuilder.buildFor(
         Colls.fromArray(Base16.decode(stakeKey).get)
       )
     )
-  )
+  ) ++ result._1
 
   val userOutput = _ctx
     .newTxBuilder()
@@ -193,7 +184,7 @@ final case class CastVoteTransaction(
   inputs = List(
     stakeStateInput.withContextVars(stakeStateContextVars: _*),
     stakeVoteInput.withContextVars(stakeVoteContextVars: _*),
-    proposalInput.withContextVars(configContext ++ result._1 ++ extraContext: _*)
+    proposalInput.withContextVars(proposalContext: _*)
   )
   dataInputs = List(configInput)
   outputs = List(

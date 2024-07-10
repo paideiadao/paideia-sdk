@@ -22,6 +22,7 @@ import im.paideia.staking.contracts.SplitProfit
 import scorex.crypto.authds.ADDigest
 import sigma.AvlTree
 import org.ergoplatform.appkit.Address
+import im.paideia.util.TxTypes
 
 /** This class represents an implementation of a `PaideiaTransaction` used to evaluate the
   * proposal basic transaction.
@@ -145,25 +146,25 @@ final case class EvaluateProposalBasicTransaction(
       .toArray
 
   val context = List(
+    ContextVar.of(0.toByte, TxTypes.EVALUATE),
     ContextVar.of(
-      0.toByte,
+      1.toByte,
       dao.config.getProof(
         ConfKeys.im_paideia_dao_quorum,
-        ConfKeys.im_paideia_dao_threshold,
-        ConfKeys.im_paideia_staking_state_tokenid
+        ConfKeys.im_paideia_dao_threshold
       )(Some(configDigest))
     ),
     ContextVar.of(
-      1.toByte,
+      2.toByte,
       paideiaConfig.getProof(
         ConfKeys.im_paideia_fees_createproposal_paideia,
         ConfKeys.im_paideia_contracts_split_profit
       )(Some(paideiaConfigDigest))
     ),
-    ContextVar.of(2.toByte, Array[Byte]()),
     ContextVar.of(3.toByte, Array[Byte]()),
+    ContextVar.of(4.toByte, Array[Byte]()),
     ContextVar
-      .of(4.toByte, ErgoValueBuilder.buildFor((winningVoteIndex, winningVoteAmount)))
+      .of(10.toByte, ErgoValueBuilder.buildFor((winningVoteIndex, winningVoteAmount)))
   )
 
   /** Sets `inputs`, `dataInputs`, and `outputs` fields of the

@@ -32,7 +32,18 @@ import sigma.ast.SCollection
 import sigma.ast.SByte
 
 class ProposalBasic(contractSignature: PaideiaContractSignature)
-  extends PaideiaContract(contractSignature)
+  extends PaideiaContract(
+    contractSignature,
+    garbageCollectable = Some(
+      Array(
+        new ErgoId(
+          Paideia
+            .getConfig(contractSignature.daoKey)
+            .getArray(ConfKeys.im_paideia_dao_proposal_tokenid)
+        )
+      )
+    )
+  )
   with ProposalContract {
 
   def box(
@@ -122,10 +133,6 @@ class ProposalBasic(contractSignature: PaideiaContractSignature)
       ConfKeys.im_paideia_contracts_split_profit.ergoValue.getValue()
     )
     cons.put(
-      "_IM_PAIDEIA_STAKING_STATE_TOKENID",
-      ConfKeys.im_paideia_staking_state_tokenid.ergoValue.getValue()
-    )
-    cons.put(
       "_IM_PAIDEIA_DAO_QUORUM",
       ConfKeys.im_paideia_dao_quorum.ergoValue.getValue()
     )
@@ -143,6 +150,16 @@ class ProposalBasic(contractSignature: PaideiaContractSignature)
       ByteArrayConstant(
         Colls.fromArray(
           ErgoId.create(contractSignature.daoKey).getBytes
+        )
+      )
+    )
+    params.put(
+      "stakeStateTokenId",
+      ByteArrayConstant(
+        Colls.fromArray(
+          Paideia
+            .getConfig(contractSignature.daoKey)
+            .getArray[Byte](ConfKeys.im_paideia_staking_state_tokenid)
         )
       )
     )

@@ -17,6 +17,8 @@
     #import lib/box/1.0.0/box.es;
     #import lib/actionSendFundsBasic/1.0.0/actionSendFundsBasic.es;
     #import lib/proposal/1.0.0/proposal.es;
+    #import lib/garbageCollect/1.0.0/garbageCollect.es;
+    #import lib/txTypes/1.0.0/txTypes.es;
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -25,6 +27,12 @@
     ///////////////////////////////////////////////////////////////////////////
 
     val imPaideiaContractsTreasury  = _IM_PAIDEIA_CONTRACTS_TREASURY
+
+    val transactionType: Byte = getVar[Byte](0).get
+
+    if (transactionType == GARBAGE_COLLECT) {
+        sigmaProp(garbageCollect(Coll(aActionToken(SELF)._1)))
+    } else {
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -49,7 +57,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val configProof = getVar[Coll[Byte]](0).get
+    val configProof = getVar[Coll[Byte]](1).get
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -150,4 +158,5 @@
         noExtraBurn,
         correctMinerOut
     )))
+    }
 }

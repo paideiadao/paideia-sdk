@@ -172,6 +172,7 @@
             val correctProposalOutput: Boolean = allOf(
                 Coll(
                     proposalO.value                        >= proposalBox.value,
+                    proposalO.value                        >= 5000000L,
                     pIndex(proposalO)                      == proposalId,
                     pProposalToken(proposalO)._1           == daoProposalToken(daoOrigin)._1,
                     pProposalToken(proposalO)._2           == 1L,
@@ -189,6 +190,7 @@
                 (i: Int) =>
                 allOf(Coll(
                     actionOutputs(i).value            >= actionBoxes(i).value,
+                    actionOutputs(i).value            >= 2000000L,
                     aActionToken(actionOutputs(i))._1 == daoActionToken(daoOrigin)._1,
                     aActionToken(actionOutputs(i))._2 == 1L,
                     aProposalIndex(actionOutputs(i))  == proposalId,

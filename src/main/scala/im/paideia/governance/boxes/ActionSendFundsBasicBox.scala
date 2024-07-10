@@ -49,7 +49,7 @@ final case class ActionSendFundsBasicBox(
   useContract: ActionSendFundsBasic
 ) extends PaideiaBox {
   ctx      = _ctx
-  value    = 1000000L
+  value    = 2000000L
   contract = useContract.contract
 
   /** A list of Ergo tokens within the transaction.

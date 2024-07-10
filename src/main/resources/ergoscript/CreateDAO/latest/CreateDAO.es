@@ -396,8 +396,8 @@
     val correctProposalBasicContract: Coll[Byte] = blake2b256(
         substConstants(
             defaultProposalBasicContract,
-            Coll(0),
-            Coll(daoKey)
+            Coll(0,3),
+            Coll(daoKey,stakeStateTokenId)
         )
     )
 

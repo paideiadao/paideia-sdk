@@ -157,6 +157,10 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
           .getErgoTree()
         actionContract.clearBoxes()
         actionContract.newBox(actionBox.inputBox(), false)
+        config.set(
+          ConfKeys.im_paideia_contracts_action(actionContract.ergoTree.bytes),
+          actionContract.contractSignature
+        )
 
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
         config.set(ConfKeys.im_paideia_contracts_config, configContract.contractSignature)
@@ -253,6 +257,10 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
         )
         actionContract.clearBoxes()
         actionContract.newBox(actionBox.inputBox(), false)
+        config.set(
+          ConfKeys.im_paideia_contracts_action(actionContract.ergoTree.bytes),
+          actionContract.contractSignature
+        )
 
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
         config
@@ -349,6 +357,10 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
         )
         actionContract.clearBoxes()
         actionContract.newBox(actionBox.inputBox(), false)
+        config.set(
+          ConfKeys.im_paideia_contracts_action(actionContract.ergoTree.bytes),
+          actionContract.contractSignature
+        )
 
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
         config
@@ -438,6 +450,10 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
         )
         actionContract.clearBoxes()
         actionContract.newBox(actionBox.inputBox(), false)
+        config.set(
+          ConfKeys.im_paideia_contracts_action(actionContract.ergoTree.bytes),
+          actionContract.contractSignature
+        )
 
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
         config

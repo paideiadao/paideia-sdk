@@ -29,7 +29,7 @@ final case class ActionUpdateConfigBox(
   insert: List[(DAOConfigKey, Array[Byte])]
 ) extends PaideiaBox {
   ctx      = _ctx
-  value    = 1000000L
+  value    = 2000000L
   contract = useContract.contract
 
   override def tokens: List[ErgoToken] = List(

@@ -80,6 +80,12 @@ class Config(contractSignature: PaideiaContractSignature)
       "_IM_PAIDEIA_CONTRACTS_CONFIG",
       ConfKeys.im_paideia_contracts_config.ergoValue.getValue()
     )
+    cons.put(
+      "_IM_PAIDEIA_CONTRACTS_ACTION",
+      Colls.fromArray(
+        ConfKeys.im_paideia_contracts_action(Array[Byte]()).originalKeyBytes
+      )
+    )
     cons
   }
 

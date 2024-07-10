@@ -52,6 +52,8 @@ import org.ergoplatform.appkit.Address
 import im.paideia.util.Env
 import im.paideia.Paideia
 import scala.collection.mutable.HashSet
+import org.ergoplatform.sdk.ErgoId
+import im.paideia.common.transactions.GarbageCollectTransaction
 
 /** Represents a smart contract on the Paideia platform.
   *
@@ -62,7 +64,8 @@ import scala.collection.mutable.HashSet
   */
 class PaideiaContract(
   _contractSignature: PaideiaContractSignature,
-  longLivingKey: Option[String] = None
+  longLivingKey: Option[String]             = None,
+  garbageCollectable: Option[Array[ErgoId]] = None
 ) {
 
   /** The unspent transaction output set for this contract.
@@ -390,6 +393,24 @@ class PaideiaContract(
                     correctContract.ergoTree,
                     cte.ctx.getNetworkType()
                   ),
+                  Address.create(Env.operatorAddress)
+                )
+              )
+            )
+          } else {
+            PaideiaEventResponse(0)
+          }
+        } else if (garbageCollectable.isDefined) {
+          val garbage =
+            getUtxoSet.filter(boxes(_).getCreationHeight() < cte.height - 788400)
+          if (garbage.size > 0) {
+            PaideiaEventResponse(
+              1,
+              garbage.toList.map(g =>
+                GarbageCollectTransaction(
+                  cte.ctx,
+                  boxes(g),
+                  garbageCollectable.get,
                   Address.create(Env.operatorAddress)
                 )
               )

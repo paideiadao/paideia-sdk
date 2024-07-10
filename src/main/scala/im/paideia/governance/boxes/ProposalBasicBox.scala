@@ -32,7 +32,7 @@ case class ProposalBasicBox(
   digestOpt: Option[ADDigest] = None
 ) extends PaideiaBox {
   ctx      = _ctx
-  value    = if (passed != -1) 1000000L else 4000000L
+  value    = if (passed != -1) 2000000L else 5000000L
   contract = useContract.contract
 
   override def tokens: List[ErgoToken] = {

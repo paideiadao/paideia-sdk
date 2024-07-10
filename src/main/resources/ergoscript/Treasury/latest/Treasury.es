@@ -24,7 +24,8 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val imPaideiaFeeEmitPaideia: Coll[Byte] = _IM_PAIDEIA_FEE_EMIT_PAIDEIA
+    val imPaideiaFeeEmitPaideia: Coll[Byte]  = _IM_PAIDEIA_FEE_EMIT_PAIDEIA
+    val imPaideiaContractsAction: Coll[Byte] = _IM_PAIDEIA_CONTRACTS_ACTION
 
     val imPaideiaFeeOperatorMaxErg: Coll[Byte] = 
         _IM_PAIDEIA_FEE_OPERATOR_MAX_ERG
@@ -68,9 +69,22 @@
     ///////////////////////////////////////////////////////////////////////////
 
     def validAction(txType: Byte): Boolean = 
-        if (txType == TREASURY_SPEND) 
-            tokenExists((INPUTS, daoActionTokenId)) 
-        else 
+        if (txType == TREASURY_SPEND) {
+            val action: Box = filterByTokenId((INPUTS, daoActionTokenId))(0)
+
+            val configProof: Coll[Byte] = getVar[Coll[Byte]](1).get
+
+            val config: Box = filterByTokenId((CONTEXT.dataInputs, daoKeyId))(0)
+
+            val configValues: Coll[Option[Coll[Byte]]] = configTree(config).getMany(
+                Coll(
+                    blake2b256(imPaideiaContractsAction++action.propositionBytes)
+                ),
+                configProof
+            )
+
+            configValues(0).isDefined
+        } else 
             false
 
     ///////////////////////////////////////////////////////////////////////////

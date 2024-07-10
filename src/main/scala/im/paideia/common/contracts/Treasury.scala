@@ -84,6 +84,12 @@ class Treasury(contractSignature: PaideiaContractSignature)
       ConfKeys.im_paideia_fees_emit_operator_paideia.ergoValue.getValue()
     )
     cons.put(
+      "_IM_PAIDEIA_CONTRACTS_ACTION",
+      Colls.fromArray(
+        ConfKeys.im_paideia_contracts_action(Array[Byte]()).originalKeyBytes
+      )
+    )
+    cons.put(
       "_IM_PAIDEIA_CONTRACTS_SPLIT_PROFIT",
       ConfKeys.im_paideia_contracts_split_profit.ergoValue.getValue()
     )

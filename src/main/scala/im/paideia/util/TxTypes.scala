@@ -15,4 +15,6 @@ object TxTypes {
   val TREASURY_SPEND  = ErgoValue.of(9.toByte)
   val CONSOLIDATE     = ErgoValue.of(10.toByte)
   val CREATE_PROPOSAL = ErgoValue.of(11.toByte)
+  val GARBAGE_COLLECT = ErgoValue.of(12.toByte)
+  val EVALUATE        = ErgoValue.of(13.toByte)
 }
