@@ -62,6 +62,8 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
         val dummyAddress = Address.create("4MQyML64GnzMxZgm")
 
         val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_treasury, treasuryContract.contractSignature)
         treasuryContract.clearBoxes()
         treasuryContract.newBox(
           treasuryContract
@@ -139,6 +141,8 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
         dao.config
           .set(ConfKeys.im_paideia_contracts_config, configContract.contractSignature)
         val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_treasury, treasuryContract.contractSignature)
         treasuryContract.clearBoxes()
         treasuryContract.newBox(
           treasuryContract
@@ -212,6 +216,8 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
         val dummyAddress = Address.create("4MQyML64GnzMxZgm")
 
         val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_treasury, treasuryContract.contractSignature)
         treasuryContract.clearBoxes()
         treasuryContract.newBox(
           treasuryContract
@@ -290,6 +296,8 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
         val dummyAddress = Address.create("4MQyML64GnzMxZgm")
 
         val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_treasury, treasuryContract.contractSignature)
         treasuryContract.clearBoxes()
         treasuryContract.newBox(
           treasuryContract
@@ -363,6 +371,8 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
         val dummyAddress = Address.create("4MQyML64GnzMxZgm")
 
         val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_treasury, treasuryContract.contractSignature)
         treasuryContract.clearBoxes()
         treasuryContract.newBox(
           treasuryContract

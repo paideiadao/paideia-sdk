@@ -37,7 +37,10 @@ import _root_.sigma.ast.CollectionConstant
   *   \- the signature of the Paideia Contract entity
   */
 class Treasury(contractSignature: PaideiaContractSignature)
-  extends PaideiaContract(contractSignature) {
+  extends PaideiaContract(
+    contractSignature,
+    longLivingKey = ConfKeys.im_paideia_contracts_treasury.originalKey
+  ) {
 
   /** Creates an instance of the TreasuryBox object.
     * @param ctx
@@ -116,6 +119,10 @@ class Treasury(contractSignature: PaideiaContractSignature)
     cons.put(
       "_IM_PAIDEIA_DAO_GOVERNANCE_TOKEN_ID",
       ConfKeys.im_paideia_dao_tokenid.ergoValue.getValue()
+    )
+    cons.put(
+      "_IM_PAIDEIA_CONTRACTS_TREASURY",
+      ConfKeys.im_paideia_contracts_treasury.ergoValue.getValue()
     )
     cons
   }

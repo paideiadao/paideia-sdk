@@ -37,16 +37,19 @@ final case class UpdateOrRefreshTransaction(
   val configInputBox = ConfigBox.fromInputBox(ctx, configInput)
 
   minimizeChangeBox = false
-  val updatedBoxes = outdatedBoxes.map(outdatedBox =>
-    _ctx
+  val updatedBoxes = outdatedBoxes.map(outdatedBox => {
+    val builder = _ctx
       .newTxBuilder()
       .outBoxBuilder()
       .contract(newAddress.toErgoContract())
       .value(outdatedBox.getValue() - 2000000L / outdatedBoxes.length)
-      .tokens(outdatedBox.getTokens().asScala: _*)
-      .registers(outdatedBox.getRegisters().asScala: _*)
-      .build()
-  )
+
+    if (outdatedBox.getTokens().size() > 0)
+      builder.tokens(outdatedBox.getTokens().asScala: _*)
+    if (outdatedBox.getRegisters().size() > 0)
+      builder.registers(outdatedBox.getRegisters().asScala: _*)
+    builder.build()
+  })
 
   ctx = _ctx
   fee = 1000000L

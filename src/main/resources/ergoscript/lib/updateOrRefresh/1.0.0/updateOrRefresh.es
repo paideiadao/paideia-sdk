@@ -18,38 +18,42 @@
 def updateOrRefresh(params: (Coll[Byte], Box)): Boolean = {
     val configKey = params._1
     val config = params._2
-    val configProof = getVar[Coll[Byte]](1).get
+    val configProof = getVar[Coll[Byte]](1).getOrElse(Coll[Byte]())
 
-    val configValues = configTree(config).getMany(Coll(
+    val uor_configValues = configTree(config).getMany(Coll(
         configKey
     ), configProof)
 
-    val contractHash = bytearrayToContractHash(configValues(0))
+    val contractHash = bytearrayToContractHash(uor_configValues(0))
 
     val inputIndex = INPUTS.indexOf(SELF,0)
-    val selfOutput = OUTPUTS(inputIndex)
-    val creationDifference = selfOutput.creationInfo._1 - SELF.creationInfo._1
+    if (inputIndex >= OUTPUTS.size) {
+        false
+    } else {
+        val selfOutput = OUTPUTS(inputIndex)
+        val creationDifference = selfOutput.creationInfo._1 - SELF.creationInfo._1
 
-    val inputValueSize = vlqByteSize(SELF.value)
-    val outputValueSize = vlqByteSize(selfOutput.value)
+        val inputValueSize = vlqByteSize(SELF.value)
+        val outputValueSize = vlqByteSize(selfOutput.value)
 
-    val inputCreationHeightSize = vlqByteSize(SELF.creationInfo._1.toLong)
-    val outputCreationHeightSize = vlqByteSize(selfOutput.creationInfo._1.toLong)
+        val inputCreationHeightSize = vlqByteSize(SELF.creationInfo._1.toLong)
+        val outputCreationHeightSize = vlqByteSize(selfOutput.creationInfo._1.toLong)
 
-    val inputBytes = SELF.bytesWithoutRef.slice(inputValueSize + SELF.propositionBytes.size + inputCreationHeightSize, SELF.bytesWithoutRef.size)
-    val outputBytes = selfOutput.bytesWithoutRef.slice(outputValueSize + selfOutput.propositionBytes.size + outputCreationHeightSize, selfOutput.bytesWithoutRef.size)
+        val inputBytes = SELF.bytesWithoutRef.slice(inputValueSize + SELF.propositionBytes.size + inputCreationHeightSize, SELF.bytesWithoutRef.size)
+        val outputBytes = selfOutput.bytesWithoutRef.slice(outputValueSize + selfOutput.propositionBytes.size + outputCreationHeightSize, selfOutput.bytesWithoutRef.size)
 
-    val correctValue = selfOutput.value >= SELF.value - 2000000L
-    val correctHash = blake2b256(selfOutput.propositionBytes) == contractHash
-    val correctBytes = inputBytes == outputBytes
+        val correctValue = selfOutput.value >= SELF.value - 2000000L
+        val correctHash = blake2b256(selfOutput.propositionBytes) == contractHash
+        val correctBytes = inputBytes == outputBytes
 
-    allOf(Coll(
-        correctValue,
-        correctHash,
-        correctBytes,
-        anyOf(Coll(
-            creationDifference >= 504000,
-            SELF.propositionBytes != selfOutput.propositionBytes
+        allOf(Coll(
+            correctValue,
+            correctHash,
+            correctBytes,
+            anyOf(Coll(
+                creationDifference >= 504000,
+                SELF.propositionBytes != selfOutput.propositionBytes
+            ))
         ))
-    ))
+    }
 }

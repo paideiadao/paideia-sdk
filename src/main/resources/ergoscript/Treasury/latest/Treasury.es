@@ -8,6 +8,7 @@
     #import lib/stakeState/1.0.0/stakeState.es;
     #import lib/txTypes/1.0.0/txTypes.es;
     #import lib/box/1.0.0/box.es;
+    #import lib/updateOrRefresh/1.0.0/updateOrRefresh.es;
 
     /**
      *
@@ -24,8 +25,9 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val imPaideiaFeeEmitPaideia: Coll[Byte]  = _IM_PAIDEIA_FEE_EMIT_PAIDEIA
-    val imPaideiaContractsAction: Coll[Byte] = _IM_PAIDEIA_CONTRACTS_ACTION
+    val imPaideiaFeeEmitPaideia: Coll[Byte]     = _IM_PAIDEIA_FEE_EMIT_PAIDEIA
+    val imPaideiaContractsAction: Coll[Byte]    = _IM_PAIDEIA_CONTRACTS_ACTION
+    val imPaideiaContractsTreasury: Coll[Byte]  = _IM_PAIDEIA_CONTRACTS_TREASURY
 
     val imPaideiaFeeOperatorMaxErg: Coll[Byte] = 
         _IM_PAIDEIA_FEE_OPERATOR_MAX_ERG
@@ -67,6 +69,13 @@
     // Intermediate calculations                                             //
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
+
+    def validUpdateOrRefresh(txType: Byte): Boolean = {
+        if (txType == UPDATE) {
+            val config: Box = filterByTokenId((CONTEXT.dataInputs, daoKeyId))(0)
+            updateOrRefresh((imPaideiaContractsTreasury, config))
+        } else false
+    }
 
     def validAction(txType: Byte): Boolean = 
         if (txType == TREASURY_SPEND) {
@@ -126,8 +135,8 @@
         // Context variables                                                 //
         ///////////////////////////////////////////////////////////////////////
 
-        val paideiaProof: Coll[Byte] = getVar[Coll[Byte]](1).get
-        val configProof: Coll[Byte]  = getVar[Coll[Byte]](2).get
+        val paideiaProof: Coll[Byte] = getVar[Coll[Byte]](1).getOrElse(Coll[Byte]())
+        val configProof: Coll[Byte]  = getVar[Coll[Byte]](2).getOrElse(Coll[Byte]())
 
         ///////////////////////////////////////////////////////////////////////
         // DAO Config                                                        //
@@ -376,6 +385,7 @@
                 validStakeTransaction(transactionType),
                 validAction(transactionType),
                 validConsolidateTransaction(transactionType),
+                validUpdateOrRefresh(transactionType)
             )
         )
     )
