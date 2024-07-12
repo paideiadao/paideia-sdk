@@ -234,7 +234,7 @@
 
         val createDaoHash: Coll[Byte] = paideiaConfigValues(0).get.slice(1,33)
 
-        blake2b256(createDao.propositionBytes) == createDaoHash
+        blake2b256(createDao.propositionBytes) == createDaoHash        
     }
 
     ///////////////////////////////////////////////////////////////////////////

@@ -78,7 +78,9 @@ class CreateProposalTransactionSuite extends PaideiaTestSuite {
           Address.create("9h7L7sUHZk43VQC3PHtSp5ujAWcZtYmWATBH746wi75C5XHi68b")
 
         val daoOriginContract =
-          DAOOrigin(PaideiaContractSignature(daoKey = Env.paideiaDaoKey))
+          DAOOrigin(PaideiaContractSignature(daoKey = dao.key))
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_dao, daoOriginContract.contractSignature)
         daoOriginContract.newBox(
           daoOriginContract
             .box(ctx, dao, Long.MaxValue, Long.MaxValue)
@@ -224,7 +226,9 @@ class CreateProposalTransactionSuite extends PaideiaTestSuite {
           Address.create("9h7L7sUHZk43VQC3PHtSp5ujAWcZtYmWATBH746wi75C5XHi68b")
 
         val daoOriginContract =
-          DAOOrigin(PaideiaContractSignature(daoKey = Env.paideiaDaoKey))
+          DAOOrigin(PaideiaContractSignature(daoKey = dao.key))
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_dao, daoOriginContract.contractSignature)
         daoOriginContract.newBox(
           daoOriginContract
             .box(ctx, dao, Long.MaxValue, Long.MaxValue)

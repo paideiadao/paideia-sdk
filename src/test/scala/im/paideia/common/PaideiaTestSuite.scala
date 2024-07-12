@@ -148,6 +148,11 @@ object PaideiaTestSuite {
         ConfKeys.im_paideia_contracts_split_profit,
         splitProfitContract.contractSignature
       )
+      paideiaConfig.set(ConfKeys.im_paideia_default_dao, daoContract.ergoTree.bytes)
+      paideiaConfig.set(
+        ConfKeys.im_paideia_default_dao_signature,
+        daoContract.contractSignature
+      )
       paideiaConfig.set(ConfKeys.im_paideia_fees_createproposal_paideia, 10000L)
       paideiaConfig.set(
         ConfKeys.im_paideia_default_treasury,

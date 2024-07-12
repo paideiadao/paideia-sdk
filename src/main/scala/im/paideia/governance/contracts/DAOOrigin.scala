@@ -85,16 +85,30 @@ class DAOOrigin(contractSignature: PaideiaContractSignature)
   }
 
   override lazy val parameters: Map[String, Constant[SType]] = {
-    val cons = new HashMap[String, Constant[SType]]()
-    cons.put(
+    val params = new HashMap[String, Constant[SType]]()
+    params.put(
+      "imPaideiaDaoKey",
+      ByteArrayConstant(ErgoId.create(contractSignature.daoKey).getBytes)
+    )
+    params.put(
       "paideiaDaoKey",
       ByteArrayConstant(ErgoId.create(Env.paideiaDaoKey).getBytes)
     )
-    cons.put(
+    params.put(
       "paideiaTokenId",
       ByteArrayConstant(ErgoId.create(Env.paideiaTokenId).getBytes)
     )
-    cons.toMap
+    params.put(
+      "stakeStateTokenId",
+      ByteArrayConstant(
+        Colls.fromArray(
+          Paideia
+            .getConfig(contractSignature.daoKey)
+            .getArray[Byte](ConfKeys.im_paideia_staking_state_tokenid)
+        )
+      )
+    )
+    params.toMap
   }
 
   override lazy val constants: HashMap[String, Object] = {
@@ -102,10 +116,6 @@ class DAOOrigin(contractSignature: PaideiaContractSignature)
     cons.put(
       "_IM_PAIDEIA_CONTRACTS_DAO",
       ConfKeys.im_paideia_contracts_dao.ergoValue.getValue()
-    )
-    cons.put(
-      "_IM_PAIDEIA_STAKING_STATE_TOKENID",
-      ConfKeys.im_paideia_staking_state_tokenid.ergoValue.getValue()
     )
     cons.put(
       "_IM_PAIDEIA_FEES_CREATEPROPOSAL_PAIDEIA",

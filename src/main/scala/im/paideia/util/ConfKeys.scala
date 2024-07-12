@@ -4,7 +4,9 @@ import im.paideia.DAOConfigKey
 import java.nio.charset.StandardCharsets
 
 object ConfKeys {
-  val im_paideia_default_treasury = DAOConfigKey("im.paideia.default.treasury")
+  val im_paideia_default_dao           = DAOConfigKey("im.paideia.default.dao")
+  val im_paideia_default_dao_signature = DAOConfigKey("im.paideia.default.dao.signature")
+  val im_paideia_default_treasury      = DAOConfigKey("im.paideia.default.treasury")
   val im_paideia_default_treasury_signature = DAOConfigKey(
     "im.paideia.default.treasury.signature"
   )

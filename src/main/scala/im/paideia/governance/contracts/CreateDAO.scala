@@ -30,6 +30,8 @@ import sigma.ast.Constant
 import sigma.ast.SType
 import sigma.ast.ByteArrayConstant
 import org.ergoplatform.appkit.InputBox
+import im.paideia.DAOConfigKey
+import scorex.util.encode.Base16
 
 class CreateDAO(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -228,6 +230,24 @@ class CreateDAO(contractSignature: PaideiaContractSignature)
     cons
   }
 
+  def getInsertKeys(): Array[Array[Byte]] = {
+    Array(
+      ConfKeys.im_paideia_contracts_treasury.hashedKey,
+      ConfKeys.im_paideia_contracts_config.hashedKey,
+      ConfKeys.im_paideia_contracts_action_base.getBytes(),
+      ConfKeys.im_paideia_contracts_proposal_base.getBytes(),
+      ConfKeys.im_paideia_contracts_staking_changestake.hashedKey,
+      ConfKeys.im_paideia_contracts_staking_stake.hashedKey,
+      ConfKeys.im_paideia_contracts_staking_compound.hashedKey,
+      ConfKeys.im_paideia_contracts_staking_profitshare.hashedKey,
+      ConfKeys.im_paideia_contracts_staking_snapshot.hashedKey,
+      ConfKeys.im_paideia_contracts_staking_state.hashedKey,
+      ConfKeys.im_paideia_contracts_staking_vote.hashedKey,
+      ConfKeys.im_paideia_contracts_staking_unstake.hashedKey,
+      ConfKeys.im_paideia_contracts_dao.hashedKey
+    )
+  }
+
   def getInsertOperations(dao: DAO) = {
     val configContract = Config(
       PaideiaContractSignature(daoKey = dao.key)
@@ -256,6 +276,7 @@ class CreateDAO(contractSignature: PaideiaContractSignature)
     val stakingVoteContract    = StakeVote(PaideiaContractSignature(daoKey = dao.key))
     val stakingUnstakeContract = Unstake(PaideiaContractSignature(daoKey = dao.key))
     val stakeStateContract     = StakeState(PaideiaContractSignature(daoKey = dao.key))
+    val daoOriginContract      = DAOOrigin(PaideiaContractSignature(daoKey = dao.key))
     Array(
       (
         ConfKeys.im_paideia_contracts_treasury,
@@ -314,14 +335,17 @@ class CreateDAO(contractSignature: PaideiaContractSignature)
       (
         ConfKeys.im_paideia_contracts_staking_unstake,
         DAOConfigValueSerializer(stakingUnstakeContract.contractSignature)
+      ),
+      (
+        ConfKeys.im_paideia_contracts_dao,
+        DAOConfigValueSerializer(daoOriginContract.contractSignature)
       )
     )
   }
 
-  override def getConfigContext(configDigest: Option[ADDigest]) = Paideia
-    .getConfig(contractSignature.daoKey)
-    .getProof(
-      ConfKeys.im_paideia_contracts_dao,
+  def getConfigKeys(): Array[DAOConfigKey] = {
+    Array(
+      ConfKeys.im_paideia_default_dao,
       ConfKeys.im_paideia_default_config,
       ConfKeys.im_paideia_default_config_signature,
       ConfKeys.im_paideia_default_treasury,
@@ -347,17 +371,31 @@ class CreateDAO(contractSignature: PaideiaContractSignature)
       ConfKeys.im_paideia_default_staking_vote,
       ConfKeys.im_paideia_default_staking_vote_signature,
       ConfKeys.im_paideia_default_staking_unstake,
-      ConfKeys.im_paideia_default_staking_unstake_signature
+      ConfKeys.im_paideia_default_staking_unstake_signature,
+      ConfKeys.im_paideia_default_dao_signature
+    )
+  }
+
+  override def getConfigContext(configDigest: Option[ADDigest]) = Paideia
+    .getConfig(contractSignature.daoKey)
+    .getProof(
+      getConfigKeys(): _*
     )(configDigest)
+
+  def getDAOConfigKeys(): Array[DAOConfigKey] = {
+    Array(
+      ConfKeys.im_paideia_dao_proposal_tokenid,
+      ConfKeys.im_paideia_dao_action_tokenid,
+      ConfKeys.im_paideia_dao_key,
+      ConfKeys.im_paideia_staking_state_tokenid,
+      ConfKeys.im_paideia_staking_cyclelength
+    )
+  }
 
   def getDAOConfigContext(daoConfig: DAOConfig, configDigest: Option[ADDigest]) =
     daoConfig
       .getProof(
-        ConfKeys.im_paideia_dao_proposal_tokenid,
-        ConfKeys.im_paideia_dao_action_tokenid,
-        ConfKeys.im_paideia_dao_key,
-        ConfKeys.im_paideia_staking_state_tokenid,
-        ConfKeys.im_paideia_staking_cyclelength
+        getDAOConfigKeys(): _*
       )(configDigest)
 
 }

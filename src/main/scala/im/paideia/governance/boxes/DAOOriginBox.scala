@@ -13,6 +13,7 @@ import org.ergoplatform.appkit.InputBox
 import sigma.Coll
 import sigma.Colls
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
+import scorex.crypto.hash.Blake2b256
 
 case class DAOOriginBox(
   _ctx: BlockchainContextImpl,
@@ -50,7 +51,9 @@ case class DAOOriginBox(
 
 object DAOOriginBox {
   def fromInputBox(ctx: BlockchainContextImpl, inp: InputBox): DAOOriginBox = {
-    val contract = DAOOrigin(PaideiaContractSignature(daoKey = Env.paideiaDaoKey))
+    val contract = DAOOrigin
+      .contractInstances(Blake2b256(inp.getErgoTree().bytes).array.toList)
+      .asInstanceOf[DAOOrigin]
     DAOOriginBox(
       ctx,
       Paideia.getDAO(

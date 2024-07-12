@@ -7,7 +7,7 @@
  *
  * @return
  */
-@contract def daoOrigin(paideiaDaoKey: Coll[Byte], paideiaTokenId: Coll[Byte]) = {
+@contract def daoOrigin(imPaideiaDaoKey: Coll[Byte], paideiaDaoKey: Coll[Byte], paideiaTokenId: Coll[Byte], stakeStateTokenId: Coll[Byte]) = {
     #import lib/maxLong/1.0.0/maxLong.es;
     #import lib/config/1.0.0/config.es;
     #import lib/proposal/1.0.0/proposal.es;
@@ -36,7 +36,6 @@
         _IM_PAIDEIA_DAO_MIN_PROPOSAL_TIME
 
     val imPaideiaDaoMinStakeProposal: Coll[Byte] = _IM_PAIDEIA_DAO_MIN_STAKE_PROPOSAL
-    val imPaideiaStakingStateTokenId: Coll[Byte] = _IM_PAIDEIA_STAKING_STATE_TOKENID
 
     val transactionType: Byte          = getVar[Byte](0).get
 
@@ -57,8 +56,8 @@
             ///////////////////////////////////////////////////////////////////////////
 
             val paideiaConfig: Box = filterByTokenId((CONTEXT.dataInputs, paideiaDaoKey))(0)
-            val config: Box        = filterByTokenId((CONTEXT.dataInputs, daoOriginKey(daoOrigin)))(0)
-            val stakeState: Box    = CONTEXT.dataInputs(2)
+            val config: Box        = filterByTokenId((CONTEXT.dataInputs, imPaideiaDaoKey))(0)
+            val stakeState: Box    = filterByTokenId((CONTEXT.dataInputs, stakeStateTokenId))(0)
 
             ///////////////////////////////////////////////////////////////////////////
             //                                                                       //
@@ -90,20 +89,18 @@
             val paideiaConfigValues: Coll[Option[Coll[Byte]]] = 
                 configTree(paideiaConfig).getMany(
                     Coll(
-                        imPaideiaContractsDao,
                         imPaideiaFeesCreateProposalPaideia
                     ),
                     paideiaConfigProof
                 )
 
-            val daoOriginContractHash: Coll[Byte] = bytearrayToContractHash(paideiaConfigValues(0))
-            val createProposalFee: Long = bytearrayToLongClamped((paideiaConfigValues(1),(0L,(100000000000L, 1000L))))
+            val createProposalFee: Long = bytearrayToLongClamped((paideiaConfigValues(0),(0L,(100000000000L, 1000L))))
 
             val configValues: Coll[Option[Coll[Byte]]] = configTree(config).getMany(
                 Coll(
+                    imPaideiaContractsDao,
                     imPaideiaDaoMinProposalTime,
                     imPaideiaDaoMinStakeProposal,
-                    imPaideiaStakingStateTokenId,
                     blake2b256(imPaideiaContractsProposal++proposalBox.propositionBytes)
                 )++actionBoxes.map{
                     (box: Box) =>
@@ -112,11 +109,11 @@
                 configProof
             )
 
+            val daoOriginContractHash: Coll[Byte] = bytearrayToContractHash(configValues(0))
             //Min 12 hours, max 1 month, default 24 hours
-            val minProposalTime: Long = bytearrayToLongClamped((configValues(0),(43200000L,(2626560000L,86400000L))))
+            val minProposalTime: Long = bytearrayToLongClamped((configValues(1),(43200000L,(2626560000L,86400000L))))
             //Minimum amount staked to be able to create a proposal. Should not be higher than total staked amount to avoid locking the DAO
-            val minStakeAmount: Long = bytearrayToLongClamped((configValues(1),(0L, (totalStaked(stakeState)/2L,0L))))
-            val stakeStateTokenId: Coll[Byte] = bytearrayToTokenId(configValues(2))
+            val minStakeAmount: Long = bytearrayToLongClamped((configValues(2),(0L, (totalStaked(stakeState)/2L,0L))))
             val proposalContractHash: Coll[Byte] = bytearrayToContractHash(configValues(3))
             val actionContractHashes: Coll[Coll[Byte]] = 
                 configValues.slice(4,configValues.size).map{
@@ -143,13 +140,6 @@
             // Simple conditions                                                     //
             //                                                                       //
             ///////////////////////////////////////////////////////////////////////////
-
-            val paideiaCorrectConfig: Boolean = 
-                configDaoKey(paideiaConfig) == paideiaDaoKey
-
-            val correctConfig: Boolean = configDaoKey(config) == daoOriginKey(daoOrigin)
-
-            val correctStakeState: Boolean = stakeStateNFT(stakeState) == stakeStateTokenId
 
             val enoughStaked: Boolean = stakeRecordStake(stakeRecord) >= minStakeAmount
 
@@ -207,12 +197,9 @@
             ///////////////////////////////////////////////////////////////////////////
 
             allOf(Coll(
-                paideiaCorrectConfig,
-                correctConfig,
                 correctDAOOutput,
                 correctProposalOutput,
                 correctActionOutputs,
-                correctStakeState,
                 enoughStaked,
                 keyInOutput
             ))
@@ -223,7 +210,8 @@
 
     def validUpdateOrRefresh(txType: Byte): Boolean = {
         if (txType == UPDATE) {
-            updateOrRefresh((imPaideiaContractsDao, CONTEXT.dataInputs(0)))
+            val config = filterByTokenId((CONTEXT.dataInputs, imPaideiaDaoKey))(0)
+            updateOrRefresh((imPaideiaContractsDao, config))
         } else {
             false
         }

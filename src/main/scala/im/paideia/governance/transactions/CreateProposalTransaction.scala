@@ -142,7 +142,6 @@ final case class CreateProposalTransaction(
       Paideia
         .getConfig(Env.paideiaDaoKey)
         .getProof(
-          ConfKeys.im_paideia_contracts_dao,
           ConfKeys.im_paideia_fees_createproposal_paideia
         )(Some(paideiaConfigDigest))
     ),
@@ -150,9 +149,9 @@ final case class CreateProposalTransaction(
       2.toByte,
       dao.config.getProof(
         List(
+          ConfKeys.im_paideia_contracts_dao,
           ConfKeys.im_paideia_dao_min_proposal_time,
           ConfKeys.im_paideia_dao_min_stake_proposal,
-          ConfKeys.im_paideia_staking_state_tokenid,
           ConfKeys.im_paideia_contracts_proposal(proposalOutput.getErgoTree().bytes)
         ) ++
           actionOutputs.map((ao: OutBox) =>

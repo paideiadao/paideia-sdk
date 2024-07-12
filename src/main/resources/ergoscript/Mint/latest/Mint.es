@@ -106,6 +106,6 @@
         correctDataInput,
         validProtoDAO,
         validMintedToken,
-        validDAOOutput
+        //validDAOOutput
     )))
 }

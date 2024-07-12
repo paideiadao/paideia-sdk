@@ -107,9 +107,11 @@ case class CreateDAOTransaction(
 
   val paideiaConfig = Paideia.getConfig(Env.paideiaDaoKey)
 
-  val daoOriginOutput = DAOOrigin(
+  val daoOriginContract = DAOOrigin(
     PaideiaContractSignature(networkType = _ctx.getNetworkType(), daoKey = dao.key)
-  ).box(
+  )
+
+  val daoOriginOutput = daoOriginContract.box(
     _ctx,
     dao,
     Long.MaxValue,
@@ -227,6 +229,8 @@ case class CreateDAOTransaction(
 
   var resultingDigest: Option[ADDigest] = None
 
+  val insertOperations = createDaoContract.getInsertOperations(dao)
+
   val contextVarsCreateDAO = List(
     ContextVar.of(
       0.toByte,
@@ -240,7 +244,7 @@ case class CreateDAOTransaction(
       2.toByte, {
         var result = dao.config
           .insertProof(
-            createDaoContract.getInsertOperations(dao): _*
+            insertOperations: _*
           )(Left(configDigest))
         resultingDigest = Some(result._2)
         result._1
@@ -285,6 +289,9 @@ case class CreateDAOTransaction(
             ),
             Colls.fromArray(
               DAOConfigValueSerializer(stakingUnstakeContract.contractSignature)
+            ),
+            Colls.fromArray(
+              DAOConfigValueSerializer(daoOriginContract.contractSignature)
             )
           )
         )
@@ -298,6 +305,30 @@ case class CreateDAOTransaction(
             Colls.fromArray(actionSendFundsContract.ergoTree.bytes),
             Colls.fromArray(actionUpdateConfigContract.ergoTree.bytes),
             Colls.fromArray(proposalBasicContract.ergoTree.bytes)
+          )
+        )
+      )
+    ),
+    ContextVar.of(
+      5.toByte,
+      ErgoValueBuilder.buildFor(
+        Colls.fromArray(
+          Array(
+            Colls.fromArray(
+              createDaoContract
+                .getConfigKeys()
+                .map((dck: DAOConfigKey) => Colls.fromArray(dck.hashedKey))
+            ),
+            Colls.fromArray(
+              createDaoContract
+                .getDAOConfigKeys()
+                .map((dck: DAOConfigKey) => Colls.fromArray(dck.hashedKey))
+            ),
+            Colls.fromArray(
+              createDaoContract
+                .getInsertKeys()
+                .map((b: Array[Byte]) => Colls.fromArray(b))
+            )
           )
         )
       )
