@@ -34,8 +34,8 @@ class Mint(contractSignature: PaideiaContractSignature)
       ConfKeys.im_paideia_contracts_protodao.ergoValue.getValue()
     )
     cons.put(
-      "_IM_PAIDEIA_CONTRACTS_DAO",
-      ConfKeys.im_paideia_contracts_dao.ergoValue.getValue()
+      "_IM_PAIDEIA_CONTRACTS_CREATEDAO",
+      ConfKeys.im_paideia_contracts_createdao.ergoValue.getValue()
     )
     cons
   }

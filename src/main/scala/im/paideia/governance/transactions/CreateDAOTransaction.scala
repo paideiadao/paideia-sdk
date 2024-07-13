@@ -187,7 +187,7 @@ case class CreateDAOTransaction(
     paideiaConfig
       .getProof(
         ConfKeys.im_paideia_contracts_protodao,
-        ConfKeys.im_paideia_contracts_dao
+        ConfKeys.im_paideia_contracts_createdao
       )(Some(paideiaConfigDigest))
   )
 
