@@ -68,7 +68,7 @@ class ChangeStake(contractSignature: PaideiaContractSignature)
         Colls.fromArray(
           Paideia
             .getConfig(contractSignature.daoKey)
-            .getArray(ConfKeys.im_paideia_staking_state_tokenid)
+            .getArray[Byte](ConfKeys.im_paideia_staking_state_tokenid)
         )
       )
     )

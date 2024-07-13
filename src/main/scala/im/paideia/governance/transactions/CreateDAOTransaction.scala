@@ -124,7 +124,7 @@ case class CreateDAOTransaction(
 
   val emissionTime = _ctx.createPreHeader().build().getTimestamp() + dao.config[Long](
     ConfKeys.im_paideia_staking_cyclelength
-  ) - 600000L
+  )
 
   val state = TotalStakingState(
     dao.key,
@@ -311,27 +311,7 @@ case class CreateDAOTransaction(
     ),
     ContextVar.of(
       5.toByte,
-      ErgoValueBuilder.buildFor(
-        Colls.fromArray(
-          Array(
-            Colls.fromArray(
-              createDaoContract
-                .getConfigKeys()
-                .map((dck: DAOConfigKey) => Colls.fromArray(dck.hashedKey))
-            ),
-            Colls.fromArray(
-              createDaoContract
-                .getDAOConfigKeys()
-                .map((dck: DAOConfigKey) => Colls.fromArray(dck.hashedKey))
-            ),
-            Colls.fromArray(
-              createDaoContract
-                .getInsertKeys()
-                .map((b: Array[Byte]) => Colls.fromArray(b))
-            )
-          )
-        )
-      )
+      ErgoValueBuilder.buildFor(createDaoContract.getAvlTreeKeys)
     )
   )
 
