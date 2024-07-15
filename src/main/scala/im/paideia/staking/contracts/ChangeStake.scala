@@ -35,10 +35,6 @@ class ChangeStake(contractSignature: PaideiaContractSignature)
       "_IM_PAIDEIA_CONTRACTS_STAKING_CHANGESTAKE",
       ConfKeys.im_paideia_contracts_staking_changestake.ergoValue.getValue()
     )
-    cons.put(
-      "_IM_PAIDEIA_STAKING_PROFIT_TOKENIDS",
-      ConfKeys.im_paideia_staking_profit_tokenids.ergoValue.getValue()
-    )
     cons
   }
 
@@ -79,8 +75,7 @@ class ChangeStake(contractSignature: PaideiaContractSignature)
     .getConfig(contractSignature.daoKey)
     .getProof(
       ConfKeys.im_paideia_contracts_staking_changestake,
-      ConfKeys.im_paideia_staking_state_tokenid,
-      ConfKeys.im_paideia_staking_profit_tokenids
+      ConfKeys.im_paideia_staking_state_tokenid
     )(configDigest)
 }
 

@@ -82,12 +82,6 @@
     val imPaideiaDaoTheme: Coll[Byte] =
       _IM_PAIDEIA_DAO_THEME
 
-    val imPaideiaDaoStakingProfitTokens: Coll[Byte] =
-      _IM_PAIDEIA_STAKING_PROFIT_TOKENS
-
-    val imPaideiaDaoStakingProfitThreshold: Coll[Byte] =
-      _IM_PAIDEIA_STAKING_PROFIT_THRESHOLD
-
     val collBPrefix: Coll[Byte] = 
         Coll(10.toByte,0.toByte,0.toByte,0.toByte,0.toByte,32.toByte)
 
@@ -198,9 +192,7 @@
         (imPaideiaDaoBannerEnabled,configValues(16)),
         (imPaideiaDaoFooter,configValues(17)),
         (imPaideiaDaoFooterEnabled,configValues(18)),
-        (imPaideiaDaoTheme,configValues(19)),
-        (imPaideiaDaoStakingProfitTokens,configValues(20)),
-        (imPaideiaDaoStakingProfitThreshold,configValues(21))
+        (imPaideiaDaoTheme,configValues(19))
     ),configInsertProof).get
 
     val daoName: Coll[Byte] = configValues(0).slice(5, configValues(0).size)

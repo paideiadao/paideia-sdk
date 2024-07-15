@@ -49,12 +49,6 @@ case class UnstakeTransaction(
     newStakeAndProfitRecord.toArray
   )
 
-  val whiteListedTokens = config
-    .getArray[Object](ConfKeys.im_paideia_staking_profit_tokenids)
-    .map((arrB: Object) =>
-      new ErgoId(arrB.asInstanceOf[Array[Object]].map(_.asInstanceOf[Byte]))
-    )
-
   val stakeStateInput = Paideia.getBox(
     new FilterLeaf[String](
       FilterType.FTEQ,
@@ -91,22 +85,8 @@ case class UnstakeTransaction(
   if (!configDigest.sameElements(config._config.digest))
     throw new Exception("Config not synced correctly")
 
-  val newExtraTokens = stakeStateInputBox.extraTokens
-    .map { (et: ErgoToken) =>
-      val profitRecordIndex = whiteListedTokens.indexOf(et.getId)
-      new ErgoToken(
-        et.getId,
-        et.getValue - (currentStakeRecord
-          .rewards(1 + profitRecordIndex) - newStakeRecord.rewards(
-          1 + profitRecordIndex
-        ))
-      )
-    }
-    .filter((et: ErgoToken) => et.getValue > 0L)
-    .toList
-
   stakingContextVars = stakeStateInputBox
-    .unstake(stakingKey, newStakeRecord, newExtraTokens)
+    .unstake(stakingKey, newStakeRecord, stakeStateInputBox.extraTokens)
 
   val contextVars = stakingContextVars.stakingStateContextVars
     .::(
@@ -180,22 +160,22 @@ case class UnstakeTransaction(
     List[ErgoToken]()
   }
 
-  val profitTokenUnstake = currentStakeRecord.rewards.indices
-    .slice(0, currentStakeRecord.rewards.size - 1)
-    .map((i: Int) =>
-      if (currentStakeRecord.rewards(i + 1) - newStakeRecord.rewards(i + 1) > 0) {
-        Some(
-          new ErgoToken(
-            whiteListedTokens(i),
-            currentStakeRecord.rewards(i + 1) - newStakeRecord.rewards(i + 1)
-          )
-        )
-      } else {
-        None
-      }
-    )
-    .flatten
-    .toList
+  // val profitTokenUnstake = currentStakeRecord.rewards.indices
+  //   .slice(0, currentStakeRecord.rewards.size - 1)
+  //   .map((i: Int) =>
+  //     if (currentStakeRecord.rewards(i + 1) - newStakeRecord.rewards(i + 1) > 0) {
+  //       Some(
+  //         new ErgoToken(
+  //           whiteListedTokens(i),
+  //           currentStakeRecord.rewards(i + 1) - newStakeRecord.rewards(i + 1)
+  //         )
+  //       )
+  //     } else {
+  //       None
+  //     }
+  //   )
+  //   .flatten
+  //   .toList
 
   val stakeKeyReturned =
     if (contextVars(1).getValue.getValue != TxTypes.UNSTAKE.getValue())
@@ -209,7 +189,7 @@ case class UnstakeTransaction(
     else
       List[ErgoToken]()
 
-  val tokens = stakeKeyReturned ++ govTokenUnstake ++ profitTokenUnstake
+  val tokens = stakeKeyReturned ++ govTokenUnstake // ++ profitTokenUnstake
 
   val userOutput = ctx
     .newTxBuilder()

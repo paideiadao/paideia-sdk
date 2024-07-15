@@ -113,11 +113,7 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
         PaideiaTestSuite.init(ctx)
         val dao    = StakingTest.testDAO
         val sigUsd = Util.randomKey
-        dao.config.set(
-          ConfKeys.im_paideia_staking_profit_tokenids,
-          Array(ErgoId.create(sigUsd).getBytes)
-        )
-        val state = TotalStakingState(dao.key, 0L)
+        val state  = TotalStakingState(dao.key, 0L)
 
         val stakingContract = StakeState(PaideiaContractSignature(daoKey = dao.key))
         dao.config

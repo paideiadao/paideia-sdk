@@ -24,9 +24,6 @@
     val imPaideiaContractsTreasury: Coll[Byte] = _IM_PAIDEIA_CONTRACTS_TREASURY
     val imPaideiaProfitSharingPct: Coll[Byte]  = _IM_PAIDEIA_PROFIT_SHARING_PCT
 
-    val imPaideiaStakingProfitTokenIds: Coll[Byte] = 
-        _IM_PAIDEIA_STAKING_PROFIT_TOKENIDS
-
     val imPaideiaDaoGovernanceTokenId: Coll[Byte] = 
         _IM_PAIDEIA_DAO_GOVERNANCE_TOKENID
 

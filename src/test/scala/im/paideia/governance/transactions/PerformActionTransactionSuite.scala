@@ -62,10 +62,6 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
           ConfKeys.im_paideia_dao_action_tokenid,
           ErgoId.create(actionTokenId).getBytes
         )
-        config.set(
-          ConfKeys.im_paideia_dao_vote_tokenid,
-          ErgoId.create(voteTokenId).getBytes
-        )
         config.set(ConfKeys.im_paideia_dao_key, ErgoId.create(daoKey).getBytes)
         val dao = new DAO(daoKey, config)
 
@@ -191,7 +187,6 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
         val daoGovTokenId     = Util.randomKey
         val proposalTokenId   = Util.randomKey
         val actionTokenId     = Util.randomKey
-        val voteTokenId       = Util.randomKey
         val stakeStateTokenId = Util.randomKey
         config.set(ConfKeys.im_paideia_dao_name, "Test DAO")
         config
@@ -207,10 +202,6 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
         config.set(
           ConfKeys.im_paideia_staking_state_tokenid,
           ErgoId.create(stakeStateTokenId).getBytes
-        )
-        config.set(
-          ConfKeys.im_paideia_dao_vote_tokenid,
-          ErgoId.create(voteTokenId).getBytes
         )
         config.set(ConfKeys.im_paideia_dao_key, ErgoId.create(daoKey).getBytes)
         val dao = new DAO(daoKey, config)
@@ -248,7 +239,7 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
           List[(DAOConfigKey, Array[Byte])](),
           List(
             (
-              ConfKeys.im_paideia_staking_profit_tokenids,
+              DAOConfigKey("My own dao config key"),
               DAOConfigValueSerializer(
                 Array(ErgoId.create(Env.paideiaTokenId).getBytes)
               )
@@ -307,10 +298,6 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
         config.set(
           ConfKeys.im_paideia_staking_state_tokenid,
           ErgoId.create(stakeStateTokenId).getBytes
-        )
-        config.set(
-          ConfKeys.im_paideia_dao_vote_tokenid,
-          ErgoId.create(voteTokenId).getBytes
         )
         config.set(ConfKeys.im_paideia_dao_key, ErgoId.create(daoKey).getBytes)
         val dao = new DAO(daoKey, config)
@@ -407,10 +394,6 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
         config.set(
           ConfKeys.im_paideia_staking_state_tokenid,
           ErgoId.create(stakeStateTokenId).getBytes
-        )
-        config.set(
-          ConfKeys.im_paideia_dao_vote_tokenid,
-          ErgoId.create(voteTokenId).getBytes
         )
         config.set(ConfKeys.im_paideia_dao_key, ErgoId.create(daoKey).getBytes)
         val dao = new DAO(daoKey, config)

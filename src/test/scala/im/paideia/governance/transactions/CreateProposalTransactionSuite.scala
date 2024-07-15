@@ -53,21 +53,14 @@ class CreateProposalTransactionSuite extends PaideiaTestSuite {
           ConfKeys.im_paideia_dao_action_tokenid,
           ErgoId.create(actionTokenId).getBytes
         )
-        config.set(
-          ConfKeys.im_paideia_dao_vote_tokenid,
-          ErgoId.create(voteTokenId).getBytes
-        )
         config.set(ConfKeys.im_paideia_dao_key, ErgoId.create(daoKey).getBytes)
         config.set(
           ConfKeys.im_paideia_staking_state_tokenid,
           ErgoId.create(stakeStateTokenId).getBytes
         )
-        // config.set(ConfKeys.im_paideia_dao_min_proposal_time, 43200000L)
-        config.set(ConfKeys.im_paideia_staking_profit_tokenids, Array[Array[Byte]]())
         config.set(ConfKeys.im_paideia_staking_emission_delay, 4L)
         config.set(ConfKeys.im_paideia_staking_emission_amount, 100000L)
         config.set(ConfKeys.im_paideia_staking_cyclelength, 1000000L)
-        config.set(ConfKeys.im_paideia_staking_profit_thresholds, Array(0L, 0L))
         val dao = new DAO(daoKey, config)
         Paideia.addDAO(dao)
 
@@ -200,21 +193,14 @@ class CreateProposalTransactionSuite extends PaideiaTestSuite {
           ConfKeys.im_paideia_dao_action_tokenid,
           ErgoId.create(actionTokenId).getBytes
         )
-        config.set(
-          ConfKeys.im_paideia_dao_vote_tokenid,
-          ErgoId.create(voteTokenId).getBytes
-        )
         config.set(ConfKeys.im_paideia_dao_key, ErgoId.create(daoKey).getBytes)
         config.set(
           ConfKeys.im_paideia_staking_state_tokenid,
           ErgoId.create(stakeStateTokenId).getBytes
         )
-        // config.set(ConfKeys.im_paideia_dao_min_proposal_time, 43200000L)
-        config.set(ConfKeys.im_paideia_staking_profit_tokenids, Array[Array[Byte]]())
         config.set(ConfKeys.im_paideia_staking_emission_delay, 4L)
         config.set(ConfKeys.im_paideia_staking_emission_amount, 100000L)
         config.set(ConfKeys.im_paideia_staking_cyclelength, 1000000L)
-        config.set(ConfKeys.im_paideia_staking_profit_thresholds, Array(0L, 0L))
         config.set(ConfKeys.im_paideia_dao_min_stake_proposal, 1000L)
         val dao = new DAO(daoKey, config)
         Paideia.addDAO(dao)

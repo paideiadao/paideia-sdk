@@ -83,13 +83,7 @@ case class ProtoDAOProxyBox(
       Colls.fromArray(DAOConfigValueSerializer(bannerEnabled)),
       Colls.fromArray(DAOConfigValueSerializer(footer)),
       Colls.fromArray(DAOConfigValueSerializer(footerEnabled)),
-      Colls.fromArray(DAOConfigValueSerializer(theme)),
-      Colls.fromArray(
-        DAOConfigValueSerializer(Array[Array[Byte]]())
-      ),
-      Colls.fromArray(
-        DAOConfigValueSerializer(Array(0L, 0L))
-      )
+      Colls.fromArray(DAOConfigValueSerializer(theme))
     )
     List(
       ErgoValueBuilder.buildFor(
@@ -214,18 +208,6 @@ case class ProtoDAOProxyBox(
       (
         ConfKeys.im_paideia_dao_theme,
         DAOConfigValueSerializer(theme)
-      ),
-      (
-        ConfKeys.im_paideia_staking_profit_tokenids,
-        DAOConfigValueSerializer(
-          Array[Array[Byte]]()
-        )
-      ),
-      (
-        ConfKeys.im_paideia_staking_profit_thresholds,
-        DAOConfigValueSerializer(
-          Array(0L, 0L)
-        )
       )
     )
   }

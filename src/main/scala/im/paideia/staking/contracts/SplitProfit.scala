@@ -114,10 +114,6 @@ class SplitProfit(contractSig: PaideiaContractSignature)
       "_IM_PAIDEIA_DAO_GOVERNANCE_TOKENID",
       ConfKeys.im_paideia_dao_tokenid.ergoValue.getValue()
     )
-    cons.put(
-      "_IM_PAIDEIA_STAKING_PROFIT_TOKENIDS",
-      ConfKeys.im_paideia_staking_profit_tokenids.ergoValue.getValue()
-    )
     cons
   }
 }

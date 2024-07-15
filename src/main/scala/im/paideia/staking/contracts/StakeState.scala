@@ -84,10 +84,8 @@ class StakeState(contractSignature: PaideiaContractSignature)
 
   def emptyBox(ctx: BlockchainContextImpl, dao: DAO, stakePoolSize: Long) = {
     val state = TotalStakingState(dao.key)
-    val whiteListedTokens =
-      dao.config.getArray[Array[Object]](ConfKeys.im_paideia_staking_profit_tokenids)
 
-    val emptyProfit = new Array[Long](whiteListedTokens.size + 2).toList
+    val emptyProfit = new Array[Long](2).toList
 
     val emissionDelay = dao.config[Long](ConfKeys.im_paideia_staking_emission_delay)
     box(

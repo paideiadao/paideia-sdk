@@ -28,10 +28,6 @@ class StakeCompound(contractSignature: PaideiaContractSignature)
       "_IM_PAIDEIA_CONTRACTS_STAKING_COMPOUND",
       ConfKeys.im_paideia_contracts_staking_compound.ergoValue.getValue()
     )
-    cons.put(
-      "_IM_PAIDEIA_STAKING_PROFIT_TOKENIDS",
-      ConfKeys.im_paideia_staking_profit_tokenids.ergoValue.getValue()
-    )
     cons
   }
 

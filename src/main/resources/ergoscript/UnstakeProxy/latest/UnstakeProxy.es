@@ -30,9 +30,6 @@
     val imPaideiaStakeStateTokenId: Coll[Byte] = 
         _IM_PAIDEIA_STAKING_STATE_TOKENID
 
-    val imPaideiaStakingProfitTokenIds: Coll[Byte] = 
-        _IM_PAIDEIA_STAKING_PROFIT_TOKENIDS
-
     val stakeInfoOffset: Int = 8
 
     ///////////////////////////////////////////////////////////////////////////
@@ -92,14 +89,12 @@
 
     val configValues: Coll[Option[Coll[Byte]]] = configTree(config).getMany(
         Coll(
-            imPaideiaStakeStateTokenId,
-            imPaideiaStakingProfitTokenIds
+            imPaideiaStakeStateTokenId
         ),
         configProof
     )
 
     val stakeStateTokenId: Coll[Byte] = bytearrayToTokenId(configValues(0))
-    val profitTokenIds: Coll[Byte]    = configValues(1).get
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -113,12 +108,6 @@
 
     val longIndices: Coll[Int] = 
         newStakeRecord.slice(0,newStakeRecord.size/8-(stakeInfoOffset/8)).indices
-
-    val whiteListedTokenIds: Coll[Coll[Byte]] = 
-        profitTokenIds.slice(0,(profitTokenIds.size-6)/37).indices.map{
-            (i: Int) =>
-            profitTokenIds.slice(6+(37*i)+5,6+(37*(i+1)))
-        }
 
     val stakeKey: Coll[Byte] = proxy.tokens(0)._1
 
@@ -168,15 +157,6 @@
     val correctErgProfit: Boolean = 
         currentProfits(1) - newProfits(1) == userO.value-1000000L
 
-    val correctTokenProfit: Boolean = 
-        stakeState.tokens.slice(2,stakeState.tokens.size).forall{
-            (token: (Coll[Byte], Long)) =>
-            val profitIndex: Int = whiteListedTokenIds.indexOf(token._1,-3)
-            val tokenAmountInOutput: Long = tokensInBoxes((Coll(userO), token._1))
-            tokenAmountInOutput == 
-                currentProfits(profitIndex+2) - newProfits(profitIndex+2)
-        }
-
     val keyPresent: Boolean = 
         if (newStake > 0)
             userO.tokens(0)._1 == stakeKey
@@ -204,7 +184,6 @@
         correctStakeState,
         tokensUnstaked,
         correctErgProfit,
-        correctTokenProfit,
         keyPresent,
         correctNewState,
         correctUserOutput

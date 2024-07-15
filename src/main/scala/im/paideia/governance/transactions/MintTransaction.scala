@@ -64,7 +64,6 @@ final case class MintTransaction(
   val tokenInfo = tokenToMint match {
     case ConfKeys.im_paideia_dao_proposal_tokenid =>
       (daoName ++ " Proposal", Long.MaxValue)
-    case ConfKeys.im_paideia_dao_vote_tokenid   => (daoName ++ " Vote", Long.MaxValue)
     case ConfKeys.im_paideia_dao_action_tokenid => (daoName ++ " Action", Long.MaxValue)
     case ConfKeys.im_paideia_staking_state_tokenid => (daoName ++ " Stake State", 1L)
     case _ =>

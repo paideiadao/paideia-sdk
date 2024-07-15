@@ -127,11 +127,6 @@ class ProfitShareTransactionSuite extends PaideiaTestSuite {
         val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
         dao.config
           .set(ConfKeys.im_paideia_contracts_treasury, treasuryContract.contractSignature)
-        val sigUsd = Util.randomKey
-        dao.config.set(
-          ConfKeys.im_paideia_staking_profit_tokenids,
-          Array(ErgoId.create(sigUsd).getBytes)
-        )
 
         val profitShareContract =
           StakeProfitShare(PaideiaContractSignature(daoKey = dao.key))
@@ -207,11 +202,6 @@ class ProfitShareTransactionSuite extends PaideiaTestSuite {
         val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
         dao.config
           .set(ConfKeys.im_paideia_contracts_treasury, treasuryContract.contractSignature)
-        val sigUsd = Util.randomKey
-        dao.config.set(
-          ConfKeys.im_paideia_staking_profit_tokenids,
-          Array(ErgoId.create(sigUsd).getBytes)
-        )
 
         val profitShareContract =
           StakeProfitShare(PaideiaContractSignature(daoKey = dao.key))
@@ -225,7 +215,7 @@ class ProfitShareTransactionSuite extends PaideiaTestSuite {
 
         val splitProfitContract = SplitProfit(PaideiaContractSignature(daoKey = dao.key))
         val splitProfitBox = splitProfitContract
-          .box(ctx, 3000000L, List[ErgoToken](new ErgoToken(sigUsd, 1000000L)))
+          .box(ctx, 3000000L, List[ErgoToken](new ErgoToken(Util.randomKey, 1000000L)))
         splitProfitContract.newBox(splitProfitBox.inputBox(), false)
 
         val stakingStateBox = stakingState

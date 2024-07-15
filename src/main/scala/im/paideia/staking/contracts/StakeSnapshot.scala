@@ -60,10 +60,6 @@ class StakeSnapshot(contractSignature: PaideiaContractSignature)
       ConfKeys.im_paideia_staking_cyclelength.ergoValue.getValue()
     )
     cons.put(
-      "_IM_PAIDEIA_STAKING_PROFIT_TOKENIDS",
-      ConfKeys.im_paideia_staking_profit_tokenids.ergoValue.getValue()
-    )
-    cons.put(
       "_IM_PAIDEIA_STAKING_WEIGHT_PURE_PARTICIPATION",
       ConfKeys.im_paideia_staking_weight_pureparticipation.ergoValue.getValue()
     )

@@ -136,7 +136,6 @@ object ConfKeys {
     "im.paideia.contracts.split.profit"
   )
 
-  val im_paideia_contracts_vote        = DAOConfigKey("im.paideia.contracts.vote")
   val im_paideia_dao_name              = DAOConfigKey("im.paideia.dao.name")
   val im_paideia_dao_url               = DAOConfigKey("im.paideia.dao.url")
   val im_paideia_dao_description       = DAOConfigKey("im.paideia.dao.desc")
@@ -147,7 +146,6 @@ object ConfKeys {
   val im_paideia_dao_footer            = DAOConfigKey("im.paideia.dao.footer")
   val im_paideia_dao_footer_enabled    = DAOConfigKey("im.paideia.dao.footer.enabled")
   val im_paideia_dao_tokenid           = DAOConfigKey("im.paideia.dao.tokenid")
-  val im_paideia_dao_vote_tokenid      = DAOConfigKey("im.paideia.dao.vote.tokenid")
   val im_paideia_dao_proposal_tokenid  = DAOConfigKey("im.paideia.dao.proposal.tokenid")
   val im_paideia_dao_action_tokenid    = DAOConfigKey("im.paideia.dao.action.tokenid")
   val im_paideia_dao_key               = DAOConfigKey("im.paideia.dao.key")
@@ -168,14 +166,6 @@ object ConfKeys {
     "im.paideia.staking.emission.delay"
   )
   val im_paideia_staking_cyclelength = DAOConfigKey("im.paideia.staking.cyclelength")
-
-  val im_paideia_staking_profit_tokenids = DAOConfigKey(
-    "im.paideia.staking.profit.tokenids"
-  )
-
-  val im_paideia_staking_profit_thresholds = DAOConfigKey(
-    "im.paideia.staking.profit.thresholds"
-  )
 
   val im_paideia_staking_profit_share_pct = DAOConfigKey(
     "im.paideia.staking.profit.sharepct"

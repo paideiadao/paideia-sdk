@@ -46,11 +46,9 @@ class CreateDAOTransactionSuite extends PaideiaTestSuite {
           ConfKeys.im_paideia_staking_state_tokenid,
           ErgoId.create(stakeStateTokenId).getBytes
         )
-        config.set(ConfKeys.im_paideia_staking_profit_tokenids, Array[Array[Byte]]())
         config.set(ConfKeys.im_paideia_staking_emission_delay, 4L)
         config.set(ConfKeys.im_paideia_staking_emission_amount, 100000L)
         config.set(ConfKeys.im_paideia_staking_cyclelength, 1000000L)
-        config.set(ConfKeys.im_paideia_staking_profit_thresholds, Array(0L, 0L))
         Paideia.addDAO(new DAO(daoKey, config))
         val mintContract = Mint(PaideiaContractSignature(daoKey = Env.paideiaDaoKey))
         mintContract.newBox(

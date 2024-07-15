@@ -314,14 +314,6 @@ class ProtoDAOProxy(contractSignature: PaideiaContractSignature)
       "_IM_PAIDEIA_DAO_THEME",
       ConfKeys.im_paideia_dao_theme.ergoValue.getValue()
     )
-    cons.put(
-      "_IM_PAIDEIA_STAKING_PROFIT_TOKENS",
-      ConfKeys.im_paideia_staking_profit_tokenids.ergoValue.getValue()
-    )
-    cons.put(
-      "_IM_PAIDEIA_STAKING_PROFIT_THRESHOLD",
-      ConfKeys.im_paideia_staking_profit_thresholds.ergoValue.getValue()
-    )
     cons
   }
 }

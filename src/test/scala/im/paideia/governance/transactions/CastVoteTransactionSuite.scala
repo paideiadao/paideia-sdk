@@ -54,20 +54,14 @@ class CastVoteTransactionSuite extends PaideiaTestSuite {
           ConfKeys.im_paideia_dao_action_tokenid,
           ErgoId.create(actionTokenId).getBytes
         )
-        config.set(
-          ConfKeys.im_paideia_dao_vote_tokenid,
-          ErgoId.create(voteTokenId).getBytes
-        )
         config.set(ConfKeys.im_paideia_dao_key, ErgoId.create(daoKey).getBytes)
         config.set(
           ConfKeys.im_paideia_staking_state_tokenid,
           ErgoId.create(stakeStateTokenId).getBytes
         )
-        config.set(ConfKeys.im_paideia_staking_profit_tokenids, Array[Array[Byte]]())
         config.set(ConfKeys.im_paideia_staking_emission_delay, 4L)
         config.set(ConfKeys.im_paideia_staking_emission_amount, 100000L)
         config.set(ConfKeys.im_paideia_staking_cyclelength, 1000000L)
-        config.set(ConfKeys.im_paideia_staking_profit_thresholds, Array(0L, 0L))
         val voteContract = StakeVote(PaideiaContractSignature(daoKey = daoKey))
         config
           .set(
@@ -172,20 +166,14 @@ class CastVoteTransactionSuite extends PaideiaTestSuite {
           ConfKeys.im_paideia_dao_action_tokenid,
           ErgoId.create(actionTokenId).getBytes
         )
-        config.set(
-          ConfKeys.im_paideia_dao_vote_tokenid,
-          ErgoId.create(voteTokenId).getBytes
-        )
         config.set(ConfKeys.im_paideia_dao_key, ErgoId.create(daoKey).getBytes)
         config.set(
           ConfKeys.im_paideia_staking_state_tokenid,
           ErgoId.create(stakeStateTokenId).getBytes
         )
-        config.set(ConfKeys.im_paideia_staking_profit_tokenids, Array[Array[Byte]]())
         config.set(ConfKeys.im_paideia_staking_emission_delay, 4L)
         config.set(ConfKeys.im_paideia_staking_emission_amount, 100000L)
         config.set(ConfKeys.im_paideia_staking_cyclelength, 1000000L)
-        config.set(ConfKeys.im_paideia_staking_profit_thresholds, Array(0L, 0L))
         val voteContract = StakeVote(PaideiaContractSignature(daoKey = daoKey))
         config
           .set(

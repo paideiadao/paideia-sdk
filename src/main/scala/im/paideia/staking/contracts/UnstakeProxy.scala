@@ -109,8 +109,7 @@ class UnstakeProxy(contractSignature: PaideiaContractSignature)
                           Paideia
                             .getConfig(contractSignature.daoKey)
                             .getProof(
-                              ConfKeys.im_paideia_staking_state_tokenid,
-                              ConfKeys.im_paideia_staking_profit_tokenids
+                              ConfKeys.im_paideia_staking_state_tokenid
                             )(
                               Some(
                                 ADDigest @@ unsigned
@@ -175,10 +174,6 @@ class UnstakeProxy(contractSignature: PaideiaContractSignature)
     cons.put(
       "_IM_PAIDEIA_STAKING_STATE_TOKENID",
       ConfKeys.im_paideia_staking_state_tokenid.ergoValue.getValue()
-    )
-    cons.put(
-      "_IM_PAIDEIA_STAKING_PROFIT_TOKENIDS",
-      ConfKeys.im_paideia_staking_profit_tokenids.ergoValue.getValue()
     )
     cons
   }

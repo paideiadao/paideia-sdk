@@ -70,8 +70,7 @@ object SplitProfitTransaction {
         ConfKeys.im_paideia_contracts_treasury,
         ConfKeys.im_paideia_contracts_staking_state,
         ConfKeys.im_paideia_staking_profit_share_pct,
-        ConfKeys.im_paideia_dao_tokenid,
-        ConfKeys.im_paideia_staking_profit_tokenids
+        ConfKeys.im_paideia_dao_tokenid
       )(Some(configDigest))
     )
 
@@ -89,13 +88,7 @@ object SplitProfitTransaction {
 
       val stakeStateInputBox = StakeStateBox.fromInputBox(ctx, stakeStateInput)
 
-      val whiteListedTokens = dao.config
-        .getArray[Object](ConfKeys.im_paideia_staking_profit_tokenids)
-        .map((arrB: Object) =>
-          new ErgoId(arrB.asInstanceOf[Array[Object]].map(_.asInstanceOf[Byte]))
-        )
-
-      val profitToShare = Array.fill(whiteListedTokens.size + 2)(0L)
+      val profitToShare = Array.fill(2)(0L)
 
       val govToken = new ErgoId(
         dao.config.getArray[Byte](ConfKeys.im_paideia_dao_tokenid)
@@ -113,49 +106,16 @@ object SplitProfitTransaction {
           )
       ) * profitSharePct) / 100
       profitToShare(1) = (totalErg * profitSharePct) / 100
-      whiteListedTokens.indices.foreach(i =>
-        profitToShare(i + 2) = (splitProfitInputs.foldLeft(0L)((z, spi) =>
-          z + spi
-            .getTokens()
-            .asScala
-            .foldLeft(0L)((x, et) =>
-              if (et.getId == whiteListedTokens(i)) x + et.getValue
-              else x
-            )
-        ) * profitSharePct) / 100
-      )
 
       val extraTokens = stakeStateInput
         .getTokens()
         .subList(2, stakeStateInput.getTokens().size)
         .asScala
-        .map((token: ErgoToken) =>
-          whiteListedTokens.find(_ == token.getId) match {
-            case None => token
-            case Some(value) =>
-              new ErgoToken(
-                token.getId,
-                token.getValue + profitToShare(whiteListedTokens.indexOf(value) + 2)
-              )
-          }
-        )
-
-      val newExtraTokens = whiteListedTokens
-        .filter((tokenId: ErgoId) =>
-          stakeStateInput
-            .getTokens()
-            .asScala
-            .find((t: ErgoToken) => t.getId == tokenId) match {
-            case None        => profitToShare(2 + whiteListedTokens.indexOf(tokenId)) > 0L
-            case Some(value) => false
-          }
-        )
-        .map(tId => new ErgoToken(tId, profitToShare(2 + whiteListedTokens.indexOf(tId))))
 
       val state = TotalStakingState(dao.key)
 
       val stakingContextVars = stakeStateInputBox
-        .profitShare(profitToShare.toList, extraTokens.toList ++ newExtraTokens.toList)
+        .profitShare(profitToShare.toList, extraTokens.toList)
 
       val contextVars = stakingContextVars.stakingStateContextVars
         .::(

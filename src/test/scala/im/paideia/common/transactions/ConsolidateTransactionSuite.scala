@@ -45,10 +45,6 @@ class ConsolidateTransactionSuite extends PaideiaTestSuite {
           ConfKeys.im_paideia_staking_state_tokenid,
           ErgoId.create(stakeStateTokenId).getBytes
         )
-        config.set(
-          ConfKeys.im_paideia_dao_vote_tokenid,
-          ErgoId.create(voteTokenId).getBytes
-        )
         config.set(ConfKeys.im_paideia_dao_key, ErgoId.create(daoKey).getBytes)
         val dao = new DAO(daoKey, config)
 

@@ -57,10 +57,6 @@ class MintTokenTransactionSuite extends PaideiaTestSuite {
         val daoTokenId = Util.randomKey
         config.set(ConfKeys.im_paideia_dao_name, "Test DAO")
         config.set(ConfKeys.im_paideia_dao_tokenid, ErgoId.create(daoTokenId).getBytes)
-        config.set(
-          ConfKeys.im_paideia_dao_vote_tokenid,
-          ErgoId.create(Util.randomKey).getBytes
-        )
         Paideia.addDAO(new DAO(daoKey, config))
         val protoDAOContract =
           ProtoDAO(PaideiaContractSignature(daoKey = Env.paideiaDaoKey))

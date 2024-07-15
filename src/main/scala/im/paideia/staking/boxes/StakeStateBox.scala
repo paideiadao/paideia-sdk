@@ -129,11 +129,7 @@ case class StakeStateBox(
     val stakeRecord = StakeRecord(
       amount,
       0L,
-      List.fill(
-        dao.config
-          .getArray[Object](ConfKeys.im_paideia_staking_profit_tokenids)
-          .size + 1
-      )(0L)
+      List.fill(1)(0L)
     )
 
     stakedTokenTotal += amount
@@ -234,11 +230,7 @@ case class StakeStateBox(
               StakeRecord(
                 0,
                 0,
-                List.fill(
-                  dao.config
-                    .getArray[Object](ConfKeys.im_paideia_staking_profit_tokenids)
-                    .size + 1
-                )(0L)
+                List.fill(1)(0L)
               )
           }
         )
