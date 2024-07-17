@@ -170,17 +170,22 @@ class StakeState(contractSignature: PaideiaContractSignature)
                          .fromInputBox(cte.ctx, boxes(b))
                          .nextEmission
                      ) {
-                       PaideiaEventResponse(
-                         1,
-                         List(
-                           EmitTransaction(
-                             cte.ctx,
-                             boxes(b),
-                             Address.create(Env.operatorAddress).getErgoAddress,
-                             contractSignature.daoKey
+                       try {
+                         PaideiaEventResponse(
+                           1,
+                           List(
+                             EmitTransaction(
+                               cte.ctx,
+                               boxes(b),
+                               Address.create(Env.operatorAddress).getErgoAddress,
+                               contractSignature.daoKey
+                             )
                            )
                          )
-                       )
+                       } catch {
+                         case e: DAODefaultedException => PaideiaEventResponse(0)
+                         case e: Exception             => throw e
+                       }
                      } else {
                        PaideiaEventResponse(0)
                      })

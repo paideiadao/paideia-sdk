@@ -25,6 +25,7 @@ import sigma.AvlTree
 import scorex.crypto.authds.ADDigest
 import im.paideia.staking.contracts.StakeSnapshot
 import im.paideia.util.TxTypes
+import im.paideia.DAODefaultedException
 
 case class EmitTransaction(
   _ctx: BlockchainContextImpl,
@@ -126,7 +127,8 @@ case class EmitTransaction(
       ergFee,
       treasuryTokens
     )
-    .get
+  if (coveringTreasuryBoxes.isEmpty)
+    throw new DAODefaultedException("Failed to pay emit transaction")
 
   val tokensInPool = stakeStateInput
     .getTokens()
@@ -230,7 +232,7 @@ case class EmitTransaction(
   inputs = List[InputBox](
     stakeStateInput.withContextVars(contextVars: _*),
     snapshotInput.withContextVars(snapshotContextVars: _*)
-  ) ++ coveringTreasuryBoxes
+  ) ++ coveringTreasuryBoxes.get
     .map(_.withContextVars(treasuryContextVars: _*))
   dataInputs = List[InputBox](configInput, paideiaConfigInput)
   outputs = List[OutBox](
