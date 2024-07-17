@@ -1,4 +1,15 @@
-{
+/** This is my contracts description.
+ * Here is another line describing what it does in more detail.
+ *
+ * @return
+ */
+@contract def proposalBasic(imPaideiaDaoKey: Coll[Byte], paideiaDaoKey: Coll[Byte], paideiaTokenId: Coll[Byte], stakeStateTokenId: Coll[Byte]) = {
+    #import lib/config/1.0.0/config.es;
+    #import lib/proposal/1.0.0/proposal.es;
+    #import lib/box/1.0.0/box.es;
+    #import lib/stakeState/1.0.0/stakeState.es;
+    #import lib/garbageCollect/1.0.0/garbageCollect.es;
+    #import lib/txTypes/1.0.0/txTypes.es;
 
     /**
      *
@@ -15,11 +26,8 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val imPaideiaDaoKey: Coll[Byte]       = _IM_PAIDEIA_DAO_KEY
     val imPaideiaDaoQuorum: Coll[Byte]    = _IM_PAIDEIA_DAO_QUORUM
     val imPaideiaDaoThreshold: Coll[Byte] = _IM_PAIDEIA_DAO_THRESHOLD
-    val paideiaDaoKey: Coll[Byte]         = _PAIDEIA_DAO_KEY
-    val paideiaTokenId: Coll[Byte]        = _PAIDEIA_TOKEN_ID
 
     val imPaideiaContractsSplitProfit: Coll[Byte] = 
         _IM_PAIDEIA_CONTRACTS_SPLIT_PROFIT
@@ -27,250 +35,22 @@
     val imPaideiaFeesCreateProposalPaideia: Coll[Byte] = 
         _IM_PAIDEIA_FEES_CREATE_PROPOSAL_PAIDEIA
 
-    val imPaideiaStakingStateTokenId: Coll[Byte] = 
-        _IM_PAIDEIA_STAKING_STATE_TOKENID
-
     val stakeInfoOffset: Int = 8
 
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
-    // Inputs                                                                //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
-
-    val proposalBasic: Box = SELF
-
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
-    // Data Inputs                                                           //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
-
-    val config: Box = CONTEXT.dataInputs(0)
-
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
-    // Registers                                                             //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
-
-    val configTree: AvlTree = config.R4[AvlTree].get
-
-    val proposalBasicR4: Coll[Int] = proposalBasic.R4[Coll[Int]].get
-    val proposalIndex: Int         = proposalBasicR4(0)
-    val passed: Int                = proposalBasicR4(1)
-
-    val proposalBasicR5: Coll[Long] = proposalBasic.R5[Coll[Long]].get
-    val endTime: Long               = proposalBasicR5(0)
-    val voted: Long                 = proposalBasicR5(1)
-
-    val votes: Coll[Long] = proposalBasicR5.slice(2,proposalBasicR5.size)
-
-    val votesTree: AvlTree = proposalBasic.R6[AvlTree].get
-
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
-    // Context variables                                                     //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
-
-    val configProof: Coll[Byte] = getVar[Coll[Byte]](0).get
-
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
-    // DAO Config value extraction                                           //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
-
-    val configValues = configTree.getMany(
-        Coll(
-            imPaideiaDaoQuorum,
-            imPaideiaDaoThreshold,
-            imPaideiaStakingStateTokenId
-        ),
-        configProof
-    )
-
-    val quorumNeeded: Long    = byteArrayToLong(configValues(0).get.slice(1,9))
-    val thresholdNeeded: Long = byteArrayToLong(configValues(1).get.slice(1,9))
-
-    val stakeStateTokenId: Coll[Byte] = configValues(2).get.slice(6,38)
-
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
-    // Intermediate calculations                                             //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
-
-    val proposalBasicIndex = INPUTS.indexOf(proposalBasic, -1)
-
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
-    // Transaction dependent logic                                           //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
-
-    val validTransaction: Boolean = 
-    if (proposalBasicIndex == 0 && passed == -1) {
-
-        /**
-        * EvaluateProposal Transaction
-        * Checks that the end time has passed and evaluates which option has won
-        * the vote
-        */
-
-        ///////////////////////////////////////////////////////////////////////
-        // Data Inputs                                                       //
-        ///////////////////////////////////////////////////////////////////////
-
-        val stakeState: Box    = CONTEXT.dataInputs(1)
-        val paideiaConfig: Box = CONTEXT.dataInputs(2)
-
-        ///////////////////////////////////////////////////////////////////////
-        // Outputs                                                           //
-        ///////////////////////////////////////////////////////////////////////
-
-        val proposalBasicO: Box = OUTPUTS(0)
-        val splitProfitO: Box   = OUTPUTS(1)
-
-        ///////////////////////////////////////////////////////////////////////
-        // Registers                                                         //
-        ///////////////////////////////////////////////////////////////////////
-
-        val proposalBasicOR4: Coll[Int]  = proposalBasicO.R4[Coll[Int]].get
-        val proposalIndexO: Int          = proposalBasicOR4(0)
-        val passedOutput: Int            = proposalBasicOR4(1)
-        val proposalBasicOR5: Coll[Long] = proposalBasicO.R5[Coll[Long]].get
-        val votesTreeO: AvlTree          = proposalBasicO.R6[AvlTree].get
-
-        val paideiaConfigTree: AvlTree = paideiaConfig.R4[AvlTree].get
-
-        val totalStaked: Long = stakeState.R5[Coll[Long]].get(1)
-
-        ///////////////////////////////////////////////////////////////////////
-        // Context variables                                                 //
-        ///////////////////////////////////////////////////////////////////////
-
-        val paideiaConfigProof: Coll[Byte] = getVar[Coll[Byte]](1).get
-        val winningVote: (Int,Long)        = getVar[(Int,Long)](4).get
-
-        ///////////////////////////////////////////////////////////////////////
-        // AVL Tree value extraction                                         //
-        ///////////////////////////////////////////////////////////////////////
-
-        val paideiaConfigValues = paideiaConfigTree.getMany(
-            Coll(
-                imPaideiaFeesCreateProposalPaideia,
-                imPaideiaContractsSplitProfit
-            ),
-            paideiaConfigProof
-        )
-
-        val padFee: Long = byteArrayToLong(paideiaConfigValues(0).get.slice(1,9))
-
-        val splitProfitContractHash: Coll[Byte] = 
-            paideiaConfigValues(1).get.slice(1,33)
-
-        ///////////////////////////////////////////////////////////////////////
-        // Intermediate calculations                                         //
-        ///////////////////////////////////////////////////////////////////////
-
-        val passedOption: Int = 
-            if (voted > (totalStaked*quorumNeeded/1000) && winningVote._2 > (voted*thresholdNeeded/1000)) 
-                winningVote._1
-            else 
-                -2
-
-        val padTokens: Long = min(proposalBasic.tokens(1)._2,padFee)
-
-        ///////////////////////////////////////////////////////////////////////
-        // Simple conditions                                                 //
-        ///////////////////////////////////////////////////////////////////////
-
-        val correctstakeState: Boolean = 
-            stakeState.tokens(0)._1 == stakeStateTokenId
-
-        val paideiaCorrectConfig: Boolean = 
-            paideiaConfig.tokens(0)._1 == paideiaDaoKey
-
-        val correctWinningVote: Boolean = votes.indices.forall{
-                    (i: Int) =>
-                    if (i==winningVote._1) votes(i) == winningVote._2
-                    else votes(i) <= winningVote._2
-            } && 
-            votes.size > winningVote._1 &&
-            winningVote._1 >= 0
-
-        val correctOut: Boolean = allOf(Coll(
-            proposalBasicO.propositionBytes == proposalBasic.propositionBytes,
-            proposalBasicO.value >= proposalBasic.value - 3000000L,
-            proposalBasicO.tokens(0) == proposalBasic.tokens(0),
-            proposalIndexO == proposalIndex,
-            proposalBasicOR5 == proposalBasicR5,
-            votesTreeO == votesTree,
-            passedOutput == passedOption
-        ))
-
-        val correctSplitProfitOut: Boolean = allOf(Coll(
-            blake2b256(splitProfitO.propositionBytes) == splitProfitContractHash,
-            splitProfitO.value >= 1000000L,
-            splitProfitO.tokens(0)._1 == paideiaTokenId,
-            splitProfitO.tokens(0)._2 >= padTokens
-        ))
-
-        val passedEnd: Boolean = CONTEXT.preHeader.timestamp > endTime
-
-        ///////////////////////////////////////////////////////////////////////
-        // Transaction validity                                              //
-        ///////////////////////////////////////////////////////////////////////
-
-        allOf(Coll(
-            correctstakeState,
-            paideiaCorrectConfig,
-            correctWinningVote,
-            correctOut,
-            passedEnd,
-            correctSplitProfitOut
-        ))
-
-    } else {
-
-        /**
-        * Cast Vote Transaction
-        * Casts a vote on the proposal ensuring the avl tree is updated and the vote
-        * power does not exceed staked amount
-        */
-
+    def validVoteTransaction(txType: Byte): Boolean = {
+        if (txType == VOTE) {
         ///////////////////////////////////////////////////////////////////////
         // Inputs                                                            //
         ///////////////////////////////////////////////////////////////////////
 
-        val stakeState: Box = INPUTS(0)
-        val castVote: Box   = INPUTS(3)
+        val proposalBasic: Box = SELF
+        val stakeState: Box    = filterByTokenId((INPUTS, stakeStateTokenId))(0)
 
         ///////////////////////////////////////////////////////////////////////
         // Outputs                                                           //
         ///////////////////////////////////////////////////////////////////////
 
-        val proposalBasicO: Box = OUTPUTS(2)
-
-        ///////////////////////////////////////////////////////////////////////
-        // Registers                                                         //
-        ///////////////////////////////////////////////////////////////////////
-
-        val proposalBasicOR4: Coll[Int] = proposalBasicO.R4[Coll[Int]].get
-
-        val proposalBasicOR5: Coll[Long] = proposalBasicO.R5[Coll[Long]].get
-        val endTimeO: Long               = proposalBasicOR5(0)
-        val votedO: Long                 = proposalBasicOR5(1)
-
-        val votesO: Coll[Long] = proposalBasicOR5.slice(2,proposalBasicOR5.size)
-
-        val votesTreeO: AvlTree = proposalBasicO.R6[AvlTree].get
-
-        val voteCast: Coll[Byte] = castVote.R5[Coll[Byte]].get
-
-        val stakeStateTree: AvlTree = stakeState.R4[Coll[AvlTree]].get(0)
+        val proposalBasicO: Box = filterByHash((OUTPUTS,blake2b256(proposalBasic.propositionBytes)))(0)
 
         ///////////////////////////////////////////////////////////////////////
         // Context variables                                                 //
@@ -279,21 +59,23 @@
         val currentVoteProof: Coll[Byte] = getVar[Coll[Byte]](1).get
         val newVoteProof: Coll[Byte]     = getVar[Coll[Byte]](2).get
         val stakeProof: Coll[Byte]       = getVar[Coll[Byte]](3).get
+        val voteCast: Coll[Byte]         = getVar[Coll[Byte]](4).get
+        val voteKey: Coll[Byte]          = getVar[Coll[Byte]](5).get
         
         ///////////////////////////////////////////////////////////////////////
         // Intermediate calculations                                         //
         ///////////////////////////////////////////////////////////////////////
 
-        val voteKey: Coll[Byte] = castVote.tokens(0)._1
+        val voteKeyPresent: Boolean = tokenExists((INPUTS, voteKey))
 
         val currentVote: Option[Coll[Byte]] = 
-            votesTree.get(voteKey,currentVoteProof)
+            pVoteTree(proposalBasic).get(voteKey,currentVoteProof)
 
         val newVotesTree: AvlTree = 
             if (currentVote.isDefined) {
-                votesTree.update(Coll((voteKey,voteCast)),newVoteProof).get
+                pVoteTree(proposalBasic).update(Coll((voteKey,voteCast)),newVoteProof).get
             } else {
-                votesTree.insert(Coll((voteKey,voteCast)),newVoteProof).get
+                pVoteTree(proposalBasic).insert(Coll((voteKey,voteCast)),newVoteProof).get
             }
 
         val newVoteValues: Coll[Long] = 
@@ -306,8 +88,8 @@
             (z: Long, v: Long) => z+v
         })
 
-        val currentStakeState: Option[Coll[Byte]] = 
-            stakeStateTree.get(voteKey, stakeProof).get
+        val currentStakeState: Coll[Byte] = 
+            stakeTree(stakeState).get(voteKey, stakeProof).get
 
         val currentStakeAmount: Long = 
             byteArrayToLong(
@@ -318,10 +100,9 @@
         // Simple conditions                                                 //
         ///////////////////////////////////////////////////////////////////////
 
-        val correctStakeState: Boolean = 
-            stakeState.tokens(0)._1 == stakeStateTokenId
+        val voteHappened: Boolean = pVotes(proposalBasicO) != pVotes(proposalBasic)
 
-        val R5Changed: Boolean = proposalBasicOR5 != proposalBasicR5
+        val notPassedEnd: Boolean = CONTEXT.preHeader.timestamp < pEndTime(proposalBasic)
 
         val correctVoteValues = if (currentVote.isDefined) {
             val oldVoteValues: Coll[Long] = 
@@ -337,16 +118,16 @@
                 .map{(kv: (Long,Long)) => kv._2-kv._1}
 
             allOf(Coll(
-                votedO == voted - oldVoteCount + newVoteCount,
-                votesO == votes.zip(changedVoteValues).map{
+                pVoted(proposalBasicO) == pVoted(proposalBasic) - oldVoteCount + newVoteCount,
+                pVotes(proposalBasicO) == pVotes(proposalBasic).zip(changedVoteValues).map{
                     (kv: (Long,Long)) => 
                         kv._1+kv._2
                 }
             ))
         } else {
             allOf(Coll(
-                votedO == voted + newVoteCount,
-                votesO == votes.zip(newVoteValues).map{
+                pVoted(proposalBasicO) == pVoted(proposalBasic) + newVoteCount,
+                pVotes(proposalBasicO) == pVotes(proposalBasic).zip(newVoteValues).map{
                     (kv: (Long,Long)) => 
                         kv._1+kv._2
                 }
@@ -358,26 +139,144 @@
         ///////////////////////////////////////////////////////////////////////  
 
         allOf(Coll(
-            currentStakeAmount >= newVoteCount,
-            proposalBasicO.propositionBytes == proposalBasic.propositionBytes,
-            proposalBasicO.value >= proposalBasic.value,
-            proposalBasicO.tokens == proposalBasic.tokens,
-            proposalBasicOR4 == proposalBasicR4,
-            endTimeO == endTime,
+            currentStakeAmount               >= newVoteCount,
+            proposalBasicO.propositionBytes  == proposalBasic.propositionBytes,
+            proposalBasicO.value             >= proposalBasic.value,
+            proposalBasicO.tokens            == proposalBasic.tokens,
+            pIndex(proposalBasicO)           == pIndex(proposalBasic),
+            pPassedOption(proposalBasicO)    == pPassedOption(proposalBasic),
+            pEndTime(proposalBasicO)         == pEndTime(proposalBasic),
+            pVoteTree(proposalBasicO).digest == newVotesTree.digest,
+            notPassedEnd,
             correctVoteValues,
-            votesTreeO.digest == newVotesTree.digest,
-            correctStakeState,
-            R5Changed
+            voteKeyPresent,
+            voteHappened
         ))
+        } else { false }
     }
 
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
-    // Simple conditions                                                     //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
+    def validEvaluateTransaction(txType: Byte): Boolean = {
+        if (txType == EVALUATE) {
+        ///////////////////////////////////////////////////////////////////////
+        // Inputs                                                            //
+        ///////////////////////////////////////////////////////////////////////
 
-    val correctConfig: Boolean = config.tokens(0)._1 == imPaideiaDaoKey
+        val proposalBasic: Box = SELF
+
+        ///////////////////////////////////////////////////////////////////////
+        // Data Inputs                                                       //
+        ///////////////////////////////////////////////////////////////////////
+
+        val stakeState: Box    = filterByTokenId((CONTEXT.dataInputs, stakeStateTokenId))(0)
+        val paideiaConfig: Box = filterByTokenId((CONTEXT.dataInputs,paideiaDaoKey))(0)
+        val config: Box        = filterByTokenId((CONTEXT.dataInputs, imPaideiaDaoKey))(0)
+
+        ///////////////////////////////////////////////////////////////////////
+        // Context variables                                                 //
+        ///////////////////////////////////////////////////////////////////////
+
+        val configProof: Coll[Byte]        = getVar[Coll[Byte]](1).getOrElse(Coll[Byte]())
+        val paideiaConfigProof: Coll[Byte] = getVar[Coll[Byte]](2).getOrElse(Coll[Byte]())
+        val winningVote: Option[(Int,Long)] = getVar[(Int,Long)](10).getOrElse((-2,0L))
+
+        ///////////////////////////////////////////////////////////////////////
+        // AVL Tree value extraction                                         //
+        ///////////////////////////////////////////////////////////////////////
+
+        val configValues = configTree(config).getMany(
+            Coll(
+                imPaideiaDaoQuorum,
+                imPaideiaDaoThreshold
+            ),
+            configProof
+        )
+
+        val quorumNeeded: Long    = bytearrayToLongClamped((configValues(0),(1L,(999L,500L))))
+        val thresholdNeeded: Long = bytearrayToLongClamped((configValues(1),(1L,(999L,500L))))
+
+        val paideiaConfigValues = configTree(paideiaConfig).getMany(
+            Coll(
+                imPaideiaFeesCreateProposalPaideia,
+                imPaideiaContractsSplitProfit
+            ),
+            paideiaConfigProof
+        )
+
+        val padFee: Long = byteArrayToLong(paideiaConfigValues(0).get.slice(1,9))
+
+        val splitProfitContractHash: Coll[Byte] = bytearrayToContractHash(paideiaConfigValues(1))
+
+        ///////////////////////////////////////////////////////////////////////
+        // Outputs                                                           //
+        ///////////////////////////////////////////////////////////////////////
+
+        val proposalBasicO: Box = filterByHash((OUTPUTS, blake2b256(proposalBasic.propositionBytes)))(0)
+        val splitProfitO: Box   = filterByHash((OUTPUTS, splitProfitContractHash))(0)
+
+        ///////////////////////////////////////////////////////////////////////
+        // Intermediate calculations                                         //
+        ///////////////////////////////////////////////////////////////////////
+
+        val passedOption: Int = 
+            if (pVoted(proposalBasic) >= (totalStaked(stakeState)*quorumNeeded/1000) && winningVote._2 >= (pVoted(proposalBasic)*thresholdNeeded/1000)) 
+                winningVote._1
+            else 
+                -2
+
+        val padTokens: Long = min(proposalBasic.tokens(1)._2,padFee)
+
+        ///////////////////////////////////////////////////////////////////////
+        // Simple conditions                                                 //
+        ///////////////////////////////////////////////////////////////////////
+
+        val correctWinningVote: Boolean = pVotes(proposalBasic).indices.forall{
+                    (i: Int) =>
+                    if (i==winningVote._1) pVotes(proposalBasic)(i) == winningVote._2
+                    else pVotes(proposalBasic)(i) <= winningVote._2
+            } && 
+            pVotes(proposalBasic).size > winningVote._1 &&
+            winningVote._1 >= 0
+
+        val correctOut: Boolean = allOf(Coll(
+            proposalBasicO.propositionBytes == proposalBasic.propositionBytes,
+            proposalBasicO.value            >= proposalBasic.value - 3000000L,
+            proposalBasicO.value            >= 2000000L,
+            pProposalToken(proposalBasicO)  == pProposalToken(proposalBasic),
+            pIndex(proposalBasicO)          == pIndex(proposalBasic),
+            pVoted(proposalBasicO)          == pVoted(proposalBasic),
+            pVotes(proposalBasicO)          == pVotes(proposalBasic),
+            pVoteTree(proposalBasicO)       == pVoteTree(proposalBasic),
+            pPassedOption(proposalBasicO)   == passedOption
+        ))
+
+        val correctSplitProfitOut: Boolean = allOf(Coll(
+            splitProfitO.value >= 1000000L,
+            tokensInBoxes((Coll(splitProfitO),paideiaTokenId)) >= padTokens
+        ))
+
+        val passedEnd: Boolean = CONTEXT.preHeader.timestamp > pEndTime(proposalBasic)
+
+        val notEvaluatedYet: Boolean = pPassedOption(proposalBasic) == -1
+
+        ///////////////////////////////////////////////////////////////////////
+        // Transaction validity                                              //
+        ///////////////////////////////////////////////////////////////////////
+
+        allOf(Coll(
+            correctWinningVote,
+            correctOut,
+            passedEnd,
+            correctSplitProfitOut,
+            notEvaluatedYet
+        ))
+        } else { false }
+    }
+
+    def validGarbageCollectTransaction(txType: Byte): Boolean = {
+        if (txType == GARBAGE_COLLECT) {
+            garbageCollect(Coll(pProposalToken(SELF)._1))
+        } else { false }
+    }
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -385,8 +284,11 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    sigmaProp(allOf(Coll(
-        correctConfig,
-        validTransaction
-    )))
+    val transactionType: Byte = getVar[Byte](0).get
+       
+    sigmaProp(anyOf(Coll(
+        validGarbageCollectTransaction(transactionType),
+        validEvaluateTransaction(transactionType),
+        validVoteTransaction(transactionType)
+    ))) 
 }

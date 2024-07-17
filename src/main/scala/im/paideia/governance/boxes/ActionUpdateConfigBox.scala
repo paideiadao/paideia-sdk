@@ -8,12 +8,12 @@ import im.paideia.governance.contracts.ActionUpdateConfig
 import org.ergoplatform.sdk.ErgoToken
 import im.paideia.util.ConfKeys
 import org.ergoplatform.appkit.ErgoValue
-import sigmastate.eval.Colls
+import sigma.Colls
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 import im.paideia.DAOConfigValueSerializer
 import org.ergoplatform.appkit.InputBox
 import scorex.crypto.hash.Blake2b256
-import special.collection.Coll
+import sigma.Coll
 import im.paideia.Paideia
 import scala.collection.JavaConverters._
 
@@ -29,7 +29,7 @@ final case class ActionUpdateConfigBox(
   insert: List[(DAOConfigKey, Array[Byte])]
 ) extends PaideiaBox {
   ctx      = _ctx
-  value    = 1000000L
+  value    = 2000000L
   contract = useContract.contract
 
   override def tokens: List[ErgoToken] = List(

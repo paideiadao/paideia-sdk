@@ -16,15 +16,23 @@ import scala.collection.JavaConverters._
 import org.ergoplatform.appkit.impl.InputBoxImpl
 import im.paideia.Paideia
 import im.paideia.util.Env
-import java.util.HashMap
+import scala.collection.mutable.HashMap
 import im.paideia.util.ConfKeys
 import scorex.crypto.hash.Blake2b256
-import special.sigma.AvlTree
+import sigma.AvlTree
 import scorex.crypto.authds.ADDigest
 import im.paideia.common.events.CreateTransactionsEvent
 import org.ergoplatform.appkit.NetworkType
 import im.paideia.common.transactions.RefundTransaction
-import special.collection.Coll
+import sigma.Coll
+import sigma.ast.ConstantPlaceholder
+import sigma.ast.SCollection
+import sigma.ast.SByte
+import sigma.ast.Constant
+import sigma.ast.SType
+import sigma.ast.ByteArrayConstant
+import sigma.Colls
+import org.ergoplatform.appkit.InputBox
 
 class CastVote(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -39,58 +47,71 @@ class CastVote(contractSignature: PaideiaContractSignature)
     CastVoteBox(ctx, stakeKey, proposalIndex, vote, userAddress, this)
   }
 
-  override lazy val constants: HashMap[String, Object] = {
-    val cons = new HashMap[String, Object]()
-    cons.put(
-      "_IM_PAIDEIA_DAO_PROPOSAL_TOKENID",
-      Paideia
-        .getConfig(contractSignature.daoKey)
-        .getArray[Byte](ConfKeys.im_paideia_dao_proposal_tokenid)
+  override lazy val parameters: Map[String, Constant[SType]] = {
+    val params = new scala.collection.mutable.HashMap[String, Constant[SType]]()
+    params.put(
+      "imPaideiaDaoProposalTokenId",
+      ByteArrayConstant(
+        Colls.fromArray(
+          Paideia
+            .getConfig(contractSignature.daoKey)
+            .getArray[Byte](ConfKeys.im_paideia_dao_proposal_tokenid)
+        )
+      )
     )
-    cons
+    params.toMap
+  }
+
+  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
+    if (inputBox.getErgoTree().bytesHex != ergoTree.bytesHex) return false
+    try {
+      val b = CastVoteBox.fromInputBox(ctx, inputBox)
+      true
+    } catch {
+      case _: Throwable => false
+    }
   }
 
   override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
     val boxSet = getUtxoSet
     val response: PaideiaEventResponse = event match {
       case cte: CreateTransactionsEvent =>
-        PaideiaEventResponse.merge(
-          boxSet.toList
-            .filter { b =>
-              boxes(b)
-                .getRegisters()
-                .size() > 2
-            }
-            .map { b =>
-              PaideiaEventResponse(
-                1,
-                List(
-                  if (boxes(b).getCreationHeight() < cte.height - 30) {
-                    RefundTransaction(
-                      cte.ctx,
-                      boxes(b),
-                      Address.fromPropositionBytes(
-                        NetworkType.MAINNET,
-                        boxes(b)
-                          .getRegisters()
-                          .get(2)
-                          .getValue()
-                          .asInstanceOf[Coll[Byte]]
-                          .toArray
-                      )
-                    )
-                  } else {
-                    CastVoteTransaction(
-                      cte.ctx,
-                      boxes(b),
-                      Paideia.getDAO(contractSignature.daoKey),
-                      Address.create(Env.operatorAddress)
-                    )
-                  }
+        PaideiaEventResponse.merge(boxSet.toList.map { b =>
+          PaideiaEventResponse(
+            1,
+            List(
+              if (boxes(b).getCreationHeight() < cte.height - 30) {
+                RefundTransaction(
+                  cte.ctx,
+                  boxes(b),
+                  Address.fromPropositionBytes(
+                    NetworkType.MAINNET,
+                    boxes(b)
+                      .getRegisters()
+                      .get(2)
+                      .getValue()
+                      .asInstanceOf[Coll[Byte]]
+                      .toArray
+                  )
                 )
-              )
-            }
-        )
+              } else {
+                val castVoteBox = CastVoteBox.fromInputBox(cte.ctx, boxes(b))
+                val unsigned = CastVoteTransaction(
+                  cte.ctx,
+                  castVoteBox.proposalIndex,
+                  castVoteBox.stakeKey,
+                  castVoteBox.vote,
+                  Paideia.getDAO(contractSignature.daoKey),
+                  Address.create(Env.operatorAddress),
+                  castVoteBox.userAddress
+                )
+                val check = unsigned.fundsMissing()
+                unsigned.userInputs = List(boxes(b))
+                unsigned
+              }
+            )
+          )
+        })
       case te: TransactionEvent =>
         PaideiaEventResponse.merge(
           te.tx

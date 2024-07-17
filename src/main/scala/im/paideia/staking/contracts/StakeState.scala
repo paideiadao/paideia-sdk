@@ -3,13 +3,12 @@ package im.paideia.staking.contracts
 import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.appkit.NetworkType
 import im.paideia.common.contracts._
-import sigmastate.Values
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.DAOConfig
 import im.paideia.staking.TotalStakingState
 import org.ergoplatform.sdk.ErgoToken
 import im.paideia.staking.boxes.StakeStateBox
-import java.util.HashMap
+import scala.collection.mutable.HashMap
 import org.ergoplatform.sdk.ErgoId
 import im.paideia.util.ConfKeys
 import im.paideia.DAO
@@ -29,17 +28,26 @@ import scorex.crypto.authds.ADDigest
 import im.paideia.staking.StakingSnapshot
 import org.ergoplatform.appkit.ErgoValue
 import im.paideia.staking.StakingContextVars
-import special.sigma.AvlTree
-import special.collection.Coll
+import sigma.AvlTree
+import sigma.Coll
 import work.lithos.plasma.ByteConversion
 import im.paideia.staking.StakeRecord
 import im.paideia.common.events.CreateTransactionsEvent
 import java.lang
 import im.paideia.staking.ParticipationRecord
+import sigma.ast.Constant
+import sigma.ast.SType
+import sigma.ast.ByteArrayConstant
+import org.ergoplatform.appkit.InputBox
+import im.paideia.util.TxTypes
+import im.paideia.DAOConfigKey
 import im.paideia.DAODefaultedException
 
 class StakeState(contractSignature: PaideiaContractSignature)
-  extends PaideiaContract(contractSignature) {
+  extends PaideiaContract(
+    contractSignature,
+    longLivingKey = ConfKeys.im_paideia_contracts_staking_state.originalKey
+  ) {
 
   def box(
     ctx: BlockchainContextImpl,
@@ -77,16 +85,14 @@ class StakeState(contractSignature: PaideiaContractSignature)
 
   def emptyBox(ctx: BlockchainContextImpl, dao: DAO, stakePoolSize: Long) = {
     val state = TotalStakingState(dao.key)
-    val whiteListedTokens =
-      dao.config.getArray[Array[Object]](ConfKeys.im_paideia_staking_profit_tokenids)
 
-    val emptyProfit = new Array[Long](whiteListedTokens.size + 2).toList
+    val emptyProfit = new Array[Long](2).toList
 
     val emissionDelay = dao.config[Long](ConfKeys.im_paideia_staking_emission_delay)
     box(
       ctx,
       dao.key,
-      1000000L,
+      1000000000L,
       stakePoolSize,
       state.currentStakingState.emissionTime,
       emptyProfit.toArray,
@@ -108,6 +114,16 @@ class StakeState(contractSignature: PaideiaContractSignature)
       0L,
       0L
     )
+  }
+
+  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
+    if (inputBox.getErgoTree().bytesHex != ergoTree.bytesHex) return false
+    try {
+      val b = StakeStateBox.fromInputBox(ctx, inputBox)
+      true
+    } catch {
+      case _: Throwable => false
+    }
   }
 
   override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
@@ -218,7 +234,7 @@ class StakeState(contractSignature: PaideiaContractSignature)
                     else
                       Right(te.height)
                   context(1.toByte) match {
-                    case StakingContextVars.STAKE =>
+                    case TxTypes.STAKE =>
                       val operations =
                         companionContext(1.toByte)
                           .getValue()
@@ -233,7 +249,7 @@ class StakeState(contractSignature: PaideiaContractSignature)
                           )
                       stakingState.state.currentStakingState.stakeRecords
                         .insertWithDigest(operations: _*)(digestOrHeight)
-                    case StakingContextVars.CHANGE_STAKE =>
+                    case TxTypes.CHANGE_STAKE =>
                       val operations =
                         companionContext(1.toByte)
                           .getValue()
@@ -248,7 +264,7 @@ class StakeState(contractSignature: PaideiaContractSignature)
                           )
                       stakingState.state.currentStakingState.stakeRecords
                         .updateWithDigest(operations: _*)(digestOrHeight)
-                    case StakingContextVars.UNSTAKE =>
+                    case TxTypes.UNSTAKE =>
                       val operations =
                         companionContext(1.toByte)
                           .getValue()
@@ -259,7 +275,7 @@ class StakeState(contractSignature: PaideiaContractSignature)
                           )
                       stakingState.state.currentStakingState.stakeRecords
                         .deleteWithDigest(operations: _*)(digestOrHeight)
-                    case StakingContextVars.SNAPSHOT =>
+                    case TxTypes.SNAPSHOT =>
                       if (
                         !stakingState.state.snapshots
                           .contains(stakingState.newNextEmission)
@@ -276,7 +292,7 @@ class StakeState(contractSignature: PaideiaContractSignature)
                           .deleteWithDigest(currentParticipation.toMap.keys.toArray: _*)(
                             participationDigestOrHeight
                           )
-                    case StakingContextVars.COMPOUND =>
+                    case TxTypes.COMPOUND =>
                       val operations =
                         companionContext(1.toByte)
                           .getValue()
@@ -306,7 +322,7 @@ class StakeState(contractSignature: PaideiaContractSignature)
                           else
                             Right(te.height)
                         )
-                    case StakingContextVars.VOTE =>
+                    case TxTypes.VOTE =>
                       val stakeKey =
                         te.tx.getOutputs().get(3).getAssets().get(0).getTokenId()
                       val currentParticipation = stakingState.state.currentStakingState
@@ -353,8 +369,8 @@ class StakeState(contractSignature: PaideiaContractSignature)
                           .insertWithDigest(participationOperations: _*)(
                             participationDigestOrHeight
                           )
-                    case StakingContextVars.PROFIT_SHARE =>
-                    case _                               => ???
+                    case TxTypes.PROFIT_SHARE =>
+                    case _                    => ???
                   }
                   PaideiaEventResponse(2)
                 } else {
@@ -367,24 +383,26 @@ class StakeState(contractSignature: PaideiaContractSignature)
     PaideiaEventResponse.merge(List(super.handleEvent(event), response))
   }
 
-  override def getConfigContext(configDigest: Option[ADDigest]) = {
+  def getConfigContext(configDigest: Option[ADDigest], companionKey: DAOConfigKey) = {
     Paideia
       .getConfig(contractSignature.daoKey)
       .getProof(
         ConfKeys.im_paideia_contracts_staking_state,
-        ConfKeys.im_paideia_contracts_staking_stake,
-        ConfKeys.im_paideia_contracts_staking_changestake,
-        ConfKeys.im_paideia_contracts_staking_unstake,
-        ConfKeys.im_paideia_contracts_staking_snapshot,
-        ConfKeys.im_paideia_contracts_staking_compound,
-        ConfKeys.im_paideia_contracts_staking_profitshare,
-        ConfKeys.im_paideia_contracts_staking_vote
+        companionKey
       )(configDigest)
+  }
+
+  override lazy val parameters: Map[String, Constant[SType]] = {
+    val cons = new HashMap[String, Constant[SType]]()
+    cons.put(
+      "imPaideiaDaoKey",
+      ByteArrayConstant(ErgoId.create(contractSignature.daoKey).getBytes)
+    )
+    cons.toMap
   }
 
   override lazy val constants: HashMap[String, Object] = {
     val cons = new HashMap[String, Object]()
-    cons.put("_IM_PAIDEIA_DAO_KEY", ErgoId.create(contractSignature.daoKey).getBytes)
     cons.put(
       "_IM_PAIDEIA_CONTRACTS_STAKING_STATE",
       ConfKeys.im_paideia_contracts_staking_state.ergoValue.getValue()

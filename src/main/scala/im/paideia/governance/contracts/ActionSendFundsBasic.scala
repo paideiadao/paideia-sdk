@@ -6,23 +6,41 @@ import im.paideia.common.contracts.PaideiaContractSignature
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.governance.boxes.ActionSendFundsBasicBox
 import im.paideia.Paideia
-import special.sigma.Box
+import sigma.Box
 import im.paideia.common.events.PaideiaEvent
 import im.paideia.common.events.PaideiaEventResponse
 import im.paideia.common.events.BlockEvent
 import org.ergoplatform.appkit.InputBox
-import special.collection.Coll
+import sigma.Coll
 import im.paideia.governance.transactions.SendFundsBasicTransaction
-import java.util.HashMap
+import scala.collection.mutable.HashMap
 import org.ergoplatform.sdk.ErgoId
 import im.paideia.util.ConfKeys
 import im.paideia.common.events.CreateTransactionsEvent
 import im.paideia.common.filtering.FilterLeaf
 import im.paideia.common.filtering.FilterType
 import im.paideia.common.filtering.CompareField
+import sigma.ast.Constant
+import sigma.ast.SType
+import sigma.Colls
+import sigma.ast.ByteArrayConstant
+import sigma.ast.ConstantPlaceholder
+import sigma.ast.SCollection
+import sigma.ast.SByte
 
 class ActionSendFundsBasic(contractSignature: PaideiaContractSignature)
-  extends PaideiaContract(contractSignature) {
+  extends PaideiaContract(
+    contractSignature,
+    garbageCollectable = Some(
+      Array(
+        new ErgoId(
+          Paideia
+            .getConfig(contractSignature.daoKey)
+            .getArray(ConfKeys.im_paideia_dao_action_tokenid)
+        )
+      )
+    )
+  ) {
 
   def box(
     ctx: BlockchainContextImpl,
@@ -53,7 +71,7 @@ class ActionSendFundsBasic(contractSignature: PaideiaContractSignature)
           getUtxoSet
             .map(boxes(_))
             .map((b: InputBox) => {
-              val proposalInput = Paideia
+              val proposalInputs = Paideia
                 .getBox(
                   new FilterLeaf[String](
                     FilterType.FTEQ,
@@ -78,9 +96,10 @@ class ActionSendFundsBasic(contractSignature: PaideiaContractSignature)
                     .getValue()
                     .asInstanceOf[Coll[Long]](0)
                     .toInt
-                )(0)
+                )
               if (
-                proposalInput
+                proposalInputs.size > 0 &&
+                proposalInputs(0)
                   .getRegisters()
                   .get(0)
                   .getValue()
@@ -120,18 +139,42 @@ class ActionSendFundsBasic(contractSignature: PaideiaContractSignature)
 
   override lazy val constants: HashMap[String, Object] = {
     val cons = new HashMap[String, Object]()
-    cons.put("_IM_PAIDEIA_DAO_KEY", ErgoId.create(contractSignature.daoKey).getBytes)
     cons.put(
       "_IM_PAIDEIA_CONTRACTS_TREASURY",
       ConfKeys.im_paideia_contracts_treasury.ergoValue.getValue()
     )
-    cons.put(
-      "_IM_PAIDEIA_DAO_PROPOSAL_TOKENID",
-      Paideia
-        .getConfig(contractSignature.daoKey)
-        .getArray[Byte](ConfKeys.im_paideia_dao_proposal_tokenid)
-    )
     cons
+  }
+
+  override lazy val parameters: Map[String, Constant[SType]] = {
+    val cons = new scala.collection.mutable.HashMap[String, Constant[SType]]()
+    cons.put(
+      "imPaideiaDaoKey",
+      ByteArrayConstant(
+        Colls.fromArray(
+          ErgoId.create(contractSignature.daoKey).getBytes
+        )
+      )
+    )
+    cons.put(
+      "imPaideiaDaoProposalTokenId",
+      ByteArrayConstant(
+        Paideia
+          .getConfig(contractSignature.daoKey)
+          .getArray[Byte](ConfKeys.im_paideia_dao_proposal_tokenid)
+      )
+    )
+    cons.toMap
+  }
+
+  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
+    if (inputBox.getErgoTree().bytesHex != ergoTree.bytesHex) return false
+    try {
+      val b = ActionSendFundsBasicBox.fromInputBox(ctx, inputBox)
+      true
+    } catch {
+      case _: Throwable => false
+    }
   }
 }
 

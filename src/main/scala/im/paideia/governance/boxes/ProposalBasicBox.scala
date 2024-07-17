@@ -10,15 +10,15 @@ import org.ergoplatform.appkit.ErgoType
 import org.ergoplatform.appkit.InputBox
 import im.paideia.governance.contracts.ProposalBasic
 import scorex.crypto.hash.Blake2b256
-import special.collection.Coll
+import sigma.Coll
 import im.paideia.Paideia
 import im.paideia.util.Env
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
-import sigmastate.eval.Colls
+import sigma.Colls
 import scorex.crypto.authds.ADDigest
 import java.nio.charset.StandardCharsets
 import scorex.crypto.authds.legacy.avltree.AVLTree
-import special.sigma.AvlTree
+import sigma.AvlTree
 
 case class ProposalBasicBox(
   _ctx: BlockchainContextImpl,
@@ -34,7 +34,7 @@ case class ProposalBasicBox(
   digestOpt: Option[ADDigest] = None
 ) extends PaideiaBox {
   ctx      = _ctx
-  value    = if (passed != -1) 1000000L else 4000000L
+  value    = if (passed != -1) 2000000L else 5000000L
   contract = useContract.contract
 
   override def tokens: List[ErgoToken] = {

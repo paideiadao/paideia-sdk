@@ -4,12 +4,29 @@ import org.ergoplatform.sdk.ErgoToken
 import im.paideia.common.boxes.TreasuryBox
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.DAOConfig
-import java.util.HashMap
+import scala.collection.mutable.HashMap
 import im.paideia.Paideia
 import im.paideia.util.ConfKeys
 import org.ergoplatform.appkit.InputBox
 import im.paideia.util.Env
 import org.ergoplatform.sdk.ErgoId
+import org.ergoplatform.wallet.boxes.DefaultBoxSelector
+import org.ergoplatform.appkit.InputBoxesSelectionException.NotEnoughTokensException
+import org.ergoplatform.appkit.InputBoxesSelectionException.NotEnoughErgsException
+import scala.collection.JavaConverters._
+import sigma.ast.Constant
+import sigma.ast.SType
+import sigma.ast.ByteArrayConstant
+import sigma.Colls
+import sigma.ast.ConstantPlaceholder
+import sigma.ast.SCollection
+import sigma.ast.SByte
+import im.paideia.common.events.{PaideiaEvent, PaideiaEventResponse}
+import im.paideia.common.events.CreateTransactionsEvent
+import im.paideia.common.transactions.ConsolidateTransaction
+import scorex.util.encode.Base16
+import sigma.ast.Tuple
+import _root_.sigma.ast.CollectionConstant
 
 /** Treasury class represents the main contract for the Paideia Treasury which manages and
   * holds assets and tokens of the Paideia DAO treasury on Ergo Blockchain.
@@ -20,7 +37,10 @@ import org.ergoplatform.sdk.ErgoId
   *   \- the signature of the Paideia Contract entity
   */
 class Treasury(contractSignature: PaideiaContractSignature)
-  extends PaideiaContract(contractSignature) {
+  extends PaideiaContract(
+    contractSignature,
+    longLivingKey = ConfKeys.im_paideia_contracts_treasury.originalKey
+  ) {
 
   /** Creates an instance of the TreasuryBox object.
     * @param ctx
@@ -46,6 +66,11 @@ class Treasury(contractSignature: PaideiaContractSignature)
     res
   }
 
+  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
+    if (inputBox.getErgoTree().bytesHex.equals(ergoTree.bytesHex)) true
+    else false
+  }
+
   /** Constants for the Treasury contract are defined here. It can only contain objects
     * that were there during the compilation time (e.g literals).
     *
@@ -54,20 +79,18 @@ class Treasury(contractSignature: PaideiaContractSignature)
   override lazy val constants: HashMap[String, Object] = {
     val cons = new HashMap[String, Object]()
     cons.put(
-      "_IM_PAIDEIA_DAO_ACTION_TOKENID",
-      Paideia
-        .getConfig(contractSignature.daoKey)
-        .getArray[Byte](ConfKeys.im_paideia_dao_action_tokenid)
-    )
-    cons.put("_IM_PAIDEIA_DAO_KEY", ErgoId.create(Env.paideiaDaoKey).getBytes)
-    cons.put("_IM_PAIDEIA_TOKEN_ID", ErgoId.create(Env.paideiaTokenId).getBytes)
-    cons.put(
       "_IM_PAIDEIA_FEE_EMIT_PAIDEIA",
       ConfKeys.im_paideia_fees_emit_paideia.ergoValue.getValue()
     )
     cons.put(
       "_IM_PAIDEIA_FEE_EMIT_OPERATOR_PAIDEIA",
       ConfKeys.im_paideia_fees_emit_operator_paideia.ergoValue.getValue()
+    )
+    cons.put(
+      "_IM_PAIDEIA_CONTRACTS_ACTION",
+      Colls.fromArray(
+        ConfKeys.im_paideia_contracts_action(Array[Byte]()).originalKeyBytes
+      )
     )
     cons.put(
       "_IM_PAIDEIA_CONTRACTS_SPLIT_PROFIT",
@@ -89,7 +112,66 @@ class Treasury(contractSignature: PaideiaContractSignature)
       "_IM_PAIDEIA_CONTRACTS_STAKING_SNAPSHOT",
       ConfKeys.im_paideia_contracts_staking_snapshot.ergoValue.getValue()
     )
+    cons.put(
+      "_IM_PAIDEIA_STAKING_EMISSION",
+      ConfKeys.im_paideia_staking_emission_amount.ergoValue.getValue()
+    )
+    cons.put(
+      "_IM_PAIDEIA_DAO_GOVERNANCE_TOKEN_ID",
+      ConfKeys.im_paideia_dao_tokenid.ergoValue.getValue()
+    )
+    cons.put(
+      "_IM_PAIDEIA_CONTRACTS_TREASURY",
+      ConfKeys.im_paideia_contracts_treasury.ergoValue.getValue()
+    )
     cons
+  }
+
+  override lazy val parameters: Map[String, Constant[SType]] = {
+    val params = new scala.collection.mutable.HashMap[String, Constant[SType]]()
+    params.put(
+      "daoKeyId",
+      ByteArrayConstant(Colls.fromArray(Base16.decode(contractSignature.daoKey).get))
+    )
+    params.put(
+      "daoActionTokenIdAndStakeStateTokenId",
+      ByteArrayConstant(
+        Colls.fromArray(
+          Paideia
+            .getConfig(contractSignature.daoKey)
+            .getArray[Byte](ConfKeys.im_paideia_dao_action_tokenid) ++ Paideia
+            .getConfig(contractSignature.daoKey)
+            .getArray[Byte](ConfKeys.im_paideia_staking_state_tokenid)
+        )
+      )
+    )
+    params.put(
+      "paideiaDaoKey",
+      ByteArrayConstant(Colls.fromArray(ErgoId.create(Env.paideiaDaoKey).getBytes))
+    )
+    params.put(
+      "paideiaTokenId",
+      ByteArrayConstant(Colls.fromArray(ErgoId.create(Env.paideiaTokenId).getBytes))
+    )
+    params.toMap
+  }
+
+  override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
+    val response: PaideiaEventResponse = event match {
+      case cte: CreateTransactionsEvent => {
+        val utxos = getUtxoSet.toList
+        if (utxos.length >= 5) {
+          PaideiaEventResponse(
+            1,
+            List(ConsolidateTransaction(cte.ctx, utxos.map(boxes(_))))
+          )
+        } else {
+          PaideiaEventResponse(0)
+        }
+      }
+      case _: PaideiaEvent => PaideiaEventResponse(0)
+    }
+    PaideiaEventResponse.merge(List(super.handleEvent(event), response))
   }
 
   /** It searches through all the boxes in the blockchain and matches the conditions to
@@ -108,7 +190,7 @@ class Treasury(contractSignature: PaideiaContractSignature)
   ): Option[Array[InputBox]] = {
     var assetsFound  = false
     var nanoErgFound = 0L
-    var tokensFound  = new HashMap[String, Long]()
+    var tokensFound  = new java.util.HashMap[String, Long]()
     var result       = List[InputBox]()
     getUtxoSet
       .map(b => (b, boxes(b)))
@@ -130,9 +212,19 @@ class Treasury(contractSignature: PaideiaContractSignature)
             )
         } else Unit
       })
-    if (assetsFound) {
+    if (result.length > 0 && assetsFound) {
       Some(result.toArray)
     } else {
+      if (nanoErgFound < nanoErgNeeded)
+        throw new NotEnoughErgsException(
+          f"Not enough erg in treasury to cover ${nanoErgNeeded} nanoerg",
+          nanoErgFound
+        )
+      else if (result.length > 0)
+        throw new NotEnoughTokensException(
+          f"Not enough tokens founds to cover ${tokensNeeded}",
+          tokensFound.asScala.map((t: (String, Long)) => (t._1, long2Long(t._2))).asJava
+        )
       None
     }
   }

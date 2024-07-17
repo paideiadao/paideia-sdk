@@ -13,11 +13,11 @@ import org.ergoplatform.sdk.ErgoId
 import im.paideia.util.ConfKeys
 import scorex.crypto.hash.Blake2b256
 import org.ergoplatform.appkit.InputBox
-import sigmastate.eval.Colls
+import sigma.Colls
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 import scorex.crypto.authds.ADDigest
-import special.sigma.AvlTree
-import special.collection.Coll
+import sigma.AvlTree
+import sigma.Coll
 
 case class ProtoDAOBox(
   _ctx: BlockchainContextImpl,

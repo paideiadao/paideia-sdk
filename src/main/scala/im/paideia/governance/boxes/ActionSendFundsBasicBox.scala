@@ -11,9 +11,9 @@ import org.ergoplatform.appkit.InputBox
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 import scorex.crypto.hash.Blake2b256
-import sigmastate.eval.Colls
-import special.collection.Coll
-import special.sigma.Box
+import sigma.Colls
+import sigma.Coll
+import sigma.Box
 
 import scala.collection.mutable.HashMap
 
@@ -49,7 +49,7 @@ final case class ActionSendFundsBasicBox(
   useContract: ActionSendFundsBasic
 ) extends PaideiaBox {
   ctx      = _ctx
-  value    = 1000000L
+  value    = 2000000L
   contract = useContract.contract
 
   /** A list of Ergo tokens within the transaction.

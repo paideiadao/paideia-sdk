@@ -9,7 +9,7 @@ import org.ergoplatform.appkit.Address
 import org.ergoplatform.sdk.ErgoId
 import im.paideia.staking.contracts.StakeProxy
 import im.paideia.util.ConfKeys
-import sigmastate.eval.Colls
+import sigma.Colls
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 import im.paideia.util.Env
 

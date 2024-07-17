@@ -1,4 +1,15 @@
-{
+/** This is my contracts description.
+ * Here is another line describing what it does in more detail.
+ * 
+ * @return
+ */
+@contract def treasury(daoKeyId: Coll[Byte], paideiaDaoKey: Coll[Byte], paideiaTokenId: Coll[Byte], daoActionTokenIdAndStakeStateTokenId: Coll[Byte]) = {
+    #import lib/config/1.0.0/config.es;
+    #import lib/stakeState/1.0.0/stakeState.es;
+    #import lib/txTypes/1.0.0/txTypes.es;
+    #import lib/box/1.0.0/box.es;
+    #import lib/updateOrRefresh/1.0.0/updateOrRefresh.es;
+
     /**
      *
      *  Treasury
@@ -14,10 +25,9 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val daoActionTokenId: Coll[Byte]        = _IM_PAIDEIA_DAO_ACTION_TOKENID
-    val imPaideiaDaoKey: Coll[Byte]         = _IM_PAIDEIA_DAO_KEY
-    val paideiaTokenId: Coll[Byte]          = _IM_PAIDEIA_TOKEN_ID
-    val imPaideiaFeeEmitPaideia: Coll[Byte] = _IM_PAIDEIA_FEE_EMIT_PAIDEIA
+    val imPaideiaFeeEmitPaideia: Coll[Byte]     = _IM_PAIDEIA_FEE_EMIT_PAIDEIA
+    val imPaideiaContractsAction: Coll[Byte]    = _IM_PAIDEIA_CONTRACTS_ACTION
+    val imPaideiaContractsTreasury: Coll[Byte]  = _IM_PAIDEIA_CONTRACTS_TREASURY
 
     val imPaideiaFeeOperatorMaxErg: Coll[Byte] = 
         _IM_PAIDEIA_FEE_OPERATOR_MAX_ERG
@@ -37,20 +47,54 @@
     val imPaideiaContractsStakingSnapshot: Coll[Byte] =
         _IM_PAIDEIA_CONTRACTS_STAKING_SNAPSHOT
 
+    val imPaideiaStakingEmission: Coll[Byte] =
+        _IM_PAIDEIA_STAKING_EMISSION
+
+    val imPaideiaGovernanceTokenId: Coll[Byte] =
+        _IM_PAIDEIA_DAO_GOVERNANCE_TOKEN_ID
+
+    val daoActionTokenId: Coll[Byte] = daoActionTokenIdAndStakeStateTokenId.slice(0,32)
+    val stakeStateTokenId: Coll[Byte] = daoActionTokenIdAndStakeStateTokenId.slice(32,64)
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // Transaction Type                                                      //
+    //                                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    val transactionType: Byte = getVar[Byte](0).get
+
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
     // Intermediate calculations                                             //
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val validAction: Boolean = INPUTS.exists{
-        (box: Box) =>
-        if (box.tokens.size > 0) {
-            box.tokens(0)._1 == daoActionTokenId
-        } else {
-            false
-        }
+    def validUpdateOrRefresh(txType: Byte): Boolean = {
+        if (txType == UPDATE) {
+            val config: Box = filterByTokenId((CONTEXT.dataInputs, daoKeyId))(0)
+            updateOrRefresh((imPaideiaContractsTreasury, config))
+        } else false
     }
+
+    def validAction(txType: Byte): Boolean = 
+        if (txType == TREASURY_SPEND) {
+            val action: Box = filterByTokenId((INPUTS, daoActionTokenId))(0)
+
+            val configProof: Coll[Byte] = getVar[Coll[Byte]](1).get
+
+            val config: Box = filterByTokenId((CONTEXT.dataInputs, daoKeyId))(0)
+
+            val configValues: Coll[Option[Coll[Byte]]] = configTree(config).getMany(
+                Coll(
+                    blake2b256(imPaideiaContractsAction++action.propositionBytes)
+                ),
+                configProof
+            )
+
+            configValues(0).isDefined
+        } else 
+            false
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -58,7 +102,8 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val validStakeOp = if (!validAction) {
+    def validStakeTransaction(txType: Byte): Boolean = {
+        if (txType == SNAPSHOT || txType == COMPOUND) {
         /**
         * Relevant for stake transactions only
         * The treasury funds the off chain actions needed for staking
@@ -68,93 +113,62 @@
         // Inputs                                                            //
         ///////////////////////////////////////////////////////////////////////
 
-        val stakeState: Box = INPUTS(0)
+        val stakeState: Box = filterByTokenId((INPUTS, stakeStateTokenId))(0)
         val treasury: Box   = SELF
 
         ///////////////////////////////////////////////////////////////////////
         // Data Inputs                                                       //
         ///////////////////////////////////////////////////////////////////////
 
-        val config: Box        = CONTEXT.dataInputs(0)
-        val paideiaConfig: Box = CONTEXT.dataInputs(1)
+        val config: Box        = filterByTokenId((CONTEXT.dataInputs, daoKeyId))(0)
+        val paideiaConfig: Box = filterByTokenId((CONTEXT.dataInputs, paideiaDaoKey))(0)
 
         ///////////////////////////////////////////////////////////////////////
         // Outputs                                                           //
         ///////////////////////////////////////////////////////////////////////
 
-        val stakeStateO: Box = OUTPUTS(0)
+        val stakeStateO: Box = filterByTokenId((OUTPUTS, stakeStateTokenId))(0)
 
-        val treasuryO: Box = OUTPUTS.filter{
-            (b: Box) => 
-            b.propositionBytes == treasury.propositionBytes
-        }(0)
-
-        ///////////////////////////////////////////////////////////////////////
-        // Registers                                                         //
-        ///////////////////////////////////////////////////////////////////////
-
-        val stakeStateR5: Coll[Long] = stakeState.R5[Coll[Long]].get
-        val nextSnapshot: Long       = stakeStateR5(0)
-        val totalStaked: Long        = stakeStateR5(1)
-
-        val stakeStateOR5: Coll[Long] = stakeStateO.R5[Coll[Long]].get
-        val nextSnapshotO: Long       = stakeStateOR5(0)
-        val totalStakedO: Long        = stakeStateOR5(1)
-        val stakersO: Long            = stakeStateOR5(2)
-
-        val paideiaConfigTree: AvlTree = paideiaConfig.R4[AvlTree].get
-
-        val configTree: AvlTree = config.R4[AvlTree].get
+        val treasuryO: Box = filterByHash((OUTPUTS, blake2b256(treasury.propositionBytes)))(0)
 
         ///////////////////////////////////////////////////////////////////////
         // Context variables                                                 //
         ///////////////////////////////////////////////////////////////////////
 
-        val paideiaProof: Coll[Byte] = getVar[Coll[Byte]](0).get
-        val configProof: Coll[Byte] = getVar[Coll[Byte]](1).get
+        val paideiaProof: Coll[Byte] = getVar[Coll[Byte]](1).getOrElse(Coll[Byte]())
+        val configProof: Coll[Byte]  = getVar[Coll[Byte]](2).getOrElse(Coll[Byte]())
 
         ///////////////////////////////////////////////////////////////////////
         // DAO Config                                                        //
         ///////////////////////////////////////////////////////////////////////
 
-        val configValues: Coll[Option[Coll[Byte]]] = configTree.getMany(Coll(
+        val configValues: Coll[Option[Coll[Byte]]] = configTree(config).getMany(Coll(
             imPaideiaContractsStakingCompound,
-            imPaideiaContractsStakingSnapshot
+            imPaideiaContractsStakingSnapshot,
+            imPaideiaStakingEmission,
+            imPaideiaGovernanceTokenId
         ), configProof)
 
-        val compoundContractHash: Coll[Byte] = configValues(0).get.slice(1,33)
-        val snapshotContractHash: Coll[Byte] = configValues(1).get.slice(1,33)
+        val compoundContractHash: Coll[Byte] = bytearrayToContractHash(configValues(0))
+        val snapshotContractHash: Coll[Byte] = bytearrayToContractHash(configValues(1))
+        val stakingEmission: Long = byteArrayToLong(configValues(2).get.slice(1,9))
+        val daoTokenId: Coll[Byte] = bytearrayToTokenId(configValues(3))
 
         ///////////////////////////////////////////////////////////////////////
         // Intermediate calculations                                         //
         ///////////////////////////////////////////////////////////////////////
 
-        val treasuryInInput: Coll[Box] = INPUTS.filter{
-            (b: Box) => 
-            b.propositionBytes == treasury.propositionBytes
-        }
+        val treasuryInInput: Coll[Box] = filterByHash((INPUTS, blake2b256(treasury.propositionBytes)))
 
-        val treasuryNerg: Long = treasuryInInput.fold(0L, {
-            (z: Long, b: Box) => z + b.value
-        })
+        val treasuryNerg: Long = ergInBoxes(treasuryInInput)
 
-        def tokensInBoxes(tokenId: Coll[Byte]): Long = 
-            treasuryInInput.flatMap{(b: Box) => b.tokens}
-                .fold(0L, {
-                    (z: Long, token: (Coll[Byte], Long)) => 
-                    z + (if (token._1 == tokenId) token._2 else 0L)
-                })
+        val treasuryPaideia: Long = tokensInBoxes((treasuryInInput, paideiaTokenId))
 
-        val treasuryPaideia: Long = tokensInBoxes(paideiaTokenId)
-
-        val snapshotTx: Boolean = nextSnapshotO > nextSnapshot
+        val treasuryDao: Long = tokensInBoxes((treasuryInInput, daoTokenId))
 
         ///////////////////////////////////////////////////////////////////////
         // Simple conditions                                                 //
         ///////////////////////////////////////////////////////////////////////
-
-        val correctPaideiaConfig: Boolean = 
-            paideiaConfig.tokens(0)._1 == imPaideiaDaoKey
 
         val noMissingTokens: Boolean = treasuryInInput.flatMap{
             (b: Box) => b.tokens
@@ -166,21 +180,26 @@
             }
         }
 
-        val correctTokens: Boolean = treasuryO.tokens.filter{
+        val correctOtherTokens: Boolean = treasuryO.tokens.filter{
             (t: (Coll[Byte], Long)) => 
-            t._1 != paideiaTokenId
+            t._1 != paideiaTokenId && t._1 != daoTokenId
         }.forall{
             (t: (Coll[Byte], Long)) =>
-            t._2 == tokensInBoxes(t._1)
+            t._2 >= tokensInBoxes((treasuryInInput, t._1))
         }
+
+        val treasuryPaideiaO: Long = tokensInBoxes((Coll(treasuryO), paideiaTokenId))
+
+        val treasuryDaoO: Long = tokensInBoxes((Coll(treasuryO), daoTokenId))
 
         ///////////////////////////////////////////////////////////////////////
         // Transaction validity                                              //
         ///////////////////////////////////////////////////////////////////////
 
-        if (snapshotTx) {
+        def validSnapshotTransaction(stakeTxType: Byte): Boolean = {
+            if (stakeTxType == SNAPSHOT) {
             val paideiaConfigValues: Coll[Option[Coll[Byte]]] = 
-                paideiaConfigTree.getMany(Coll(
+                configTree(paideiaConfig).getMany(Coll(
                     imPaideiaFeeEmitPaideia,
                     imPaideiaFeeEmitOperatorPaideia,
                     imPaideiaContractsSplitProfit,
@@ -207,7 +226,7 @@
                 blake2b256(b.propositionBytes) == contractSplitProfitHash
             }(0)
 
-            val paideiaFee: Long = baseFee*stakersO+1L
+            val paideiaFee: Long = baseFee*stakers(stakeStateO)+1L
 
             val snapshotContractPresent: Boolean = 
                 blake2b256(INPUTS(1).propositionBytes) == snapshotContractHash
@@ -215,22 +234,39 @@
             val correctErg: Boolean = 
                 treasuryO.value >= treasuryNerg - maxErgOperator
 
-            val correctPaideia: Boolean = treasuryO.tokens.fold(0L, {
-                    (z: Long, t: (Coll[Byte], Long)) => 
-                    z + (if (t._1 == paideiaTokenId) t._2 else 0L)
-                }) >= treasuryPaideia - paideiaFee - paideiaOperator
+            val paideiaSpent: Long = paideiaFee + paideiaOperator + (
+                if (paideiaTokenId == daoTokenId) 
+                    stakingEmission 
+                else 
+                    0L
+                )
+
+            val correctPaideiaLeft: Boolean = treasuryPaideiaO >= 
+                treasuryPaideia - paideiaSpent
+
+            val correctDaoLeft: Boolean = 
+                if (paideiaTokenId == daoTokenId) 
+                    true 
+                else 
+                    treasuryDaoO >= (treasuryDao - stakingEmission)
                     
             allOf(Coll(
                 correctErg,
-                correctPaideia,
-                correctTokens,
+                correctPaideiaLeft,
+                correctDaoLeft,
+                correctOtherTokens,
                 noMissingTokens,
-                splitProfitOutput.tokens(0)._1 == paideiaTokenId,
-                splitProfitOutput.tokens(0)._2 >= paideiaFee,
+                tokensInBoxes((Coll(splitProfitOutput), paideiaTokenId)) >= paideiaFee,
                 snapshotContractPresent
             ))
-        } else {
-            val paideiaConfigValues = paideiaConfigTree.getMany(Coll(
+            } else {
+                false
+            }
+        } 
+        
+        def validCompoundTransaction(stakeTxType: Byte): Boolean = {
+            if (stakeTxType == COMPOUND) {
+            val paideiaConfigValues = configTree(paideiaConfig).getMany(Coll(
                 imPaideiaFeeCompoundOperatorPaideia,
                 imPaideiaFeeOperatorMaxErg
             ), paideiaProof)
@@ -246,29 +282,95 @@
             val correctErg: Boolean = 
                 treasuryO.value >= treasuryNerg - maxErgOperator
 
-            val correctPaideia: Boolean = treasuryO.tokens.fold(0L, {
-                (z: Long, t: (Coll[Byte], Long)) => 
-                z + (if (t._1 == paideiaTokenId) t._2 else 0L)
-            }) >= treasuryPaideia - paideiaOperator
+            val correctPaideiaLeft: Boolean = treasuryPaideiaO >= 
+                treasuryPaideia - paideiaOperator
                 
+            val correctDaoLeft: Boolean = if (paideiaTokenId == daoTokenId) 
+                    true
+                else
+                    treasuryDaoO >= treasuryDao
 
             val compoundContractPresent: Boolean = 
                 blake2b256(INPUTS(1).propositionBytes) == compoundContractHash
 
             val govTokensSame: Boolean = 
-                stakeStateO.tokens(1)._2 == stakeState.tokens(1)._2
+                govToken(stakeStateO)._2 == govToken(stakeState)._2
 
             allOf(Coll(
                 correctErg,
-                correctPaideia,
-                correctTokens,
+                correctPaideiaLeft,
+                correctDaoLeft,
+                correctOtherTokens,
                 noMissingTokens,
                 compoundContractPresent,
                 govTokensSame
             ))
+            } else {
+                false
+            }
         }
-    } else {
-        false
+
+        anyOf(Coll(
+            validSnapshotTransaction(transactionType),
+            validCompoundTransaction(transactionType)
+        ))
+        } else {
+            false
+        }
+    }
+
+    def validConsolidateTransaction(txType: Byte): Boolean = {
+        if (txType == CONSOLIDATE) {
+
+            ///////////////////////////////////////////////////////////////
+            // INPUTS                                                    //
+            ///////////////////////////////////////////////////////////////
+
+            val treasuryInputs: Coll[Box] = filterByHash((INPUTS, blake2b256(SELF.propositionBytes)))
+
+            ///////////////////////////////////////////////////////////////
+            // OUTPUTS                                                   //
+            ///////////////////////////////////////////////////////////////
+
+            val treasuryOutputs: Coll[Box] = filterByHash((OUTPUTS, blake2b256(SELF.propositionBytes)))
+
+            ///////////////////////////////////////////////////////////////
+            // Intermediate Calculations                                 //
+            ///////////////////////////////////////////////////////////////
+
+            val ergDifference: Long = ergInBoxes(treasuryInputs) - ergInBoxes(treasuryOutputs)
+
+            ///////////////////////////////////////////////////////////////
+            // Simple Conditions                                         //
+            ///////////////////////////////////////////////////////////////
+
+            val enoughInputs: Boolean = treasuryInputs.size >= 5
+
+            val onlyOneOutputs: Boolean = treasuryOutputs.size == 1
+
+            val tokensPreserved: Boolean = treasuryOutputs(0).tokens.forall{
+                (token: (Coll[Byte], Long)) => 
+                tokensInBoxes((treasuryInputs, token._1)) == token._2
+            }
+
+            val enoughErgPreserved: Boolean = ergDifference <= 2000000L
+
+            val usefulConsolidation: Boolean = ergInBoxes(treasuryInputs) >= 2000000L
+
+            ///////////////////////////////////////////////////////////////
+            // Tx Validity                                               //
+            ///////////////////////////////////////////////////////////////
+
+            allOf(Coll(
+                enoughInputs,
+                onlyOneOutputs,
+                tokensPreserved,
+                enoughErgPreserved,
+                usefulConsolidation
+            ))
+        } else {
+            false
+        }
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -280,8 +382,10 @@
     sigmaProp(
         anyOf(
             Coll(
-                validAction,
-                validStakeOp
+                validStakeTransaction(transactionType),
+                validAction(transactionType),
+                validConsolidateTransaction(transactionType),
+                validUpdateOrRefresh(transactionType)
             )
         )
     )

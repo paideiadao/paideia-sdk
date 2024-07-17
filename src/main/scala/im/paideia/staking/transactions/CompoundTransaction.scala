@@ -21,9 +21,10 @@ import org.ergoplatform.appkit.InputBox
 import org.ergoplatform.appkit.OutBox
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import org.ergoplatform.appkit.impl.ErgoTreeContract
-import special.sigma.AvlTree
+import sigma.AvlTree
 import scorex.crypto.authds.ADDigest
 import im.paideia.staking.contracts.StakeCompound
+import im.paideia.util.TxTypes
 
 case class CompoundTransaction(
   _ctx: BlockchainContextImpl,
@@ -106,8 +107,11 @@ case class CompoundTransaction(
   val contextVars = stakingContextVars.stakingStateContextVars
     .::(
       ContextVar.of(
-        0.toByte,
-        stakeStateInputBox.useContract.getConfigContext(Some(configDigest))
+        1.toByte,
+        stakeStateInputBox.useContract.getConfigContext(
+          Some(configDigest),
+          ConfKeys.im_paideia_contracts_staking_compound
+        )
       )
     )
 
@@ -140,18 +144,21 @@ case class CompoundTransaction(
     .build()
 
   val treasuryContextVars = List(
+    ContextVar.of(0.toByte, TxTypes.COMPOUND),
     ContextVar.of(
-      0.toByte,
+      1.toByte,
       paideiaConfig.getProof(
         ConfKeys.im_paideia_fees_compound_operator_paideia,
         ConfKeys.im_paideia_fees_operator_max_erg
       )(Some(paideiaConfigDigest))
     ),
     ContextVar.of(
-      1.toByte,
+      2.toByte,
       config.getProof(
         ConfKeys.im_paideia_contracts_staking_compound,
-        ConfKeys.im_paideia_contracts_staking_snapshot
+        ConfKeys.im_paideia_contracts_staking_snapshot,
+        ConfKeys.im_paideia_staking_emission_amount,
+        ConfKeys.im_paideia_dao_tokenid
       )(Some(configDigest))
     )
   )

@@ -2,7 +2,7 @@ package im.paideia.common.filtering
 
 import org.ergoplatform.appkit.ErgoValue
 import org.ergoplatform.appkit.InputBox
-import special.collection.Coll
+import sigma.Coll
 
 /** FilterLeaf is a subclass of FilterNode that implements the matchBox method to check if
   * a given input box matches the specified filter criteria.

@@ -1,5 +1,11 @@
-{
-
+/** This is my contracts description.
+ * Here is another line describing what it does in more detail.
+ *
+ * @return
+ */
+@contract def splitProfit(imPaideiaDaoKey: Coll[Byte], stakeStateTokenId: Coll[Byte]) = {
+    #import lib/config/1.0.0/config.es;
+    #import lib/box/1.0.0/box.es;
     /**
      *
      *  SplitProfit
@@ -15,12 +21,8 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val daoKey: Coll[Byte] = _IM_PAIDEIA_DAO_KEY 
     val imPaideiaContractsTreasury: Coll[Byte] = _IM_PAIDEIA_CONTRACTS_TREASURY
     val imPaideiaProfitSharingPct: Coll[Byte]  = _IM_PAIDEIA_PROFIT_SHARING_PCT
-
-    val imPaideiaStakingProfitTokenIds: Coll[Byte] = 
-        _IM_PAIDEIA_STAKING_PROFIT_TOKENIDS
 
     val imPaideiaDaoGovernanceTokenId: Coll[Byte] = 
         _IM_PAIDEIA_DAO_GOVERNANCE_TOKENID
@@ -30,37 +32,11 @@
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
-    // Inputs                                                                //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
-
-    //Only relevant for profitsharepct > 0
-    val stakingState: Box = INPUTS(0)
-
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
     // Data Inputs                                                           //
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val config: Box = CONTEXT.dataInputs(0)
-
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
-    // Outputs                                                               //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
-
-    //Only relevant for profitsharepct > 0
-    val stakingStateO: Box = OUTPUTS(0)
-
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
-    // Registers                                                             //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
-
-    val configTree: AvlTree = config.R4[AvlTree].get
+    val config: Box = filterByTokenId((CONTEXT.dataInputs, imPaideiaDaoKey))(0)
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -76,28 +52,20 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val configValues: Coll[Option[Coll[Byte]]] = configTree.getMany(
+    val configValues: Coll[Option[Coll[Byte]]] = configTree(config).getMany(
         Coll(
             imPaideiaContractsTreasury,
             imPaideiaContractsStakingState,
             imPaideiaProfitSharingPct,
-            imPaideiaDaoGovernanceTokenId,
-            imPaideiaStakingProfitTokenIds
+            imPaideiaDaoGovernanceTokenId
         ),
         configProof
     )
 
-    val treasuryContractHash: Coll[Byte]     = configValues(0).get.slice(1,33)
-    val stakingStateContractHash: Coll[Byte] = configValues(1).get.slice(1,33)
+    val treasuryContractHash: Coll[Byte]     = bytearrayToContractHash(configValues(0))
+    val stakingStateContractHash: Coll[Byte] = bytearrayToContractHash(configValues(1))
     val profitSharingPct: Byte               = configValues(2).get(1)
-    val governanceTokenId: Coll[Byte]        = configValues(3).get.slice(6,38)
-
-    val profitTokenIds: Coll[Coll[Byte]] = 
-        configValues(4).get.slice(0,(configValues(4).get.size-6)/37).indices
-        .map{
-            (i: Int) =>
-            configValues(4).get.slice(6+(37*i)+5,6+(37*(i+1)))
-        }
+    val governanceTokenId: Coll[Byte]        = bytearrayToTokenId(configValues(3))
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -105,10 +73,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val treasuryO: Box = OUTPUTS.filter{
-        (b: Box) => 
-        blake2b256(b.propositionBytes) == treasuryContractHash
-    }(0)
+    val treasuryO: Box = filterByHash((OUTPUTS,treasuryContractHash))(0)
 
     val minerO: Box = OUTPUTS.filter{
         (b: Box) => 
@@ -116,26 +81,17 @@
         blake2b256(b.propositionBytes) != stakingStateContractHash
     }(0)
 
-    def countTokens(boxes: Coll[Box]): Long = {
-        boxes.flatMap{(b: Box) => b.tokens}.fold(0L, {(x: Long, t: (Coll[Byte], Long)) => x + t._2})
-    }
-
-    val tokensIn: Long  = countTokens(INPUTS)
-    val tokensOut: Long = countTokens(OUTPUTS)
-
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
     // Simple conditions                                                     //
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val correctConfigTokenId: Boolean = config.tokens(0)._1 == daoKey
-
     val generalConditions: Boolean = allOf(
         Coll(
             minerO.value <= 5000000L,
             minerO.tokens.size == 0,
-            tokensIn == tokensOut,
+            tokensInBoxesAll(INPUTS) == tokensInBoxesAll(OUTPUTS),
             treasuryO.value >= 1000000L
         )
     )
@@ -143,36 +99,14 @@
     val validTx: Boolean = if (profitSharingPct <= 0) {
         OUTPUTS.size == 2
     } else {
-        val tokenSplits: Boolean = Coll(governanceTokenId).append(profitTokenIds)
+        val stakingState: Box = filterByTokenId((INPUTS,stakeStateTokenId))(0)
+        val stakingStateO: Box = filterByTokenId((OUTPUTS, stakeStateTokenId))(0)
+        val tokenSplits: Boolean = Coll(governanceTokenId)
         .forall{
             (tokenId: Coll[Byte]) => {
-                val stakingInputTokens: Long = stakingState.tokens.fold(0L, {
-                    (z: Long, t: (Coll[Byte], Long)) => 
-                    z + (if (t._1 == tokenId) 
-                            t._2 
-                        else 
-                            0L
-                        )
-                    }
-                )
-                val stakingOutputTokens: Long = stakingStateO.tokens.fold(0L, {
-                    (z: Long, t: (Coll[Byte], Long)) => 
-                    z + (if (t._1 == tokenId) 
-                            t._2 
-                        else 
-                            0L
-                        )
-                    }
-                )
-                val treasuryTokens: Long = treasuryO.tokens.fold(0L, {
-                    (z: Long, t: (Coll[Byte], Long)) => 
-                    z + (if (t._1 == tokenId) 
-                            t._2 
-                        else 
-                            0L
-                        )
-                    }
-                )
+                val stakingInputTokens: Long = tokensInBoxes((Coll(stakingState), tokenId))
+                val stakingOutputTokens: Long = tokensInBoxes((Coll(stakingStateO), tokenId))
+                val treasuryTokens: Long = tokensInBoxes((Coll(treasuryO), tokenId))
 
                 (stakingOutputTokens - stakingInputTokens + 
                 treasuryTokens)*profitSharingPct/100 == 
@@ -200,5 +134,5 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    sigmaProp(correctConfigTokenId && validTx)
+    sigmaProp(validTx)
 }

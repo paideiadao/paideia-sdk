@@ -1,13 +1,16 @@
-{
+/** 
+ * 
+ *
+ * @return
+ */
+@contract def addStakeProxy(imPaideiaDaoKey: Coll[Byte]) = {
+    #import lib/validRefund/1.0.0/validRefund.es;
+    #import lib/config/1.0.0/config.es;
+    
     // Refund logic
     sigmaProp(
     if (INPUTS(0).id == SELF.id) {
-        allOf(Coll(
-            OUTPUTS(0).value >= SELF.value - 1000000L,
-            OUTPUTS(0).tokens == SELF.tokens,
-            OUTPUTS(0).propositionBytes == SELF.R4[Coll[Byte]].get,
-            CONTEXT.preHeader.height >= SELF.creationInfo._1 + 30
-        ))
+        validRefund((SELF, (OUTPUTS(0), (SELF.R4[Coll[Byte]].get, 15))))
     } else {
     /**
      *
@@ -24,7 +27,6 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val imPaideiaDaoKey: Coll[Byte]              = _IM_PAIDEIA_DAO_KEY
     val imPaideiaStakingStateTokenId: Coll[Byte] = _IM_PAIDEIA_STAKING_STATE_TOKENID
 
     val stakeInfoOffset: Int = 8
@@ -68,8 +70,6 @@
 
     val stakeStateTreeO: AvlTree = stakeStateO.R4[Coll[AvlTree]].get(0)
 
-    val configTree: AvlTree = config.R4[AvlTree].get
-
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
     // Context variables                                                     //
@@ -89,14 +89,14 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val configValues: Coll[Option[Coll[Byte]]] = configTree.getMany(
+    val configValues: Coll[Option[Coll[Byte]]] = configTree(config).getMany(
         Coll(
             imPaideiaStakingStateTokenId
         ),
         configProof
     )
 
-    val stakeStateTokenId: Coll[Byte] = configValues(0).get.slice(6,38)
+    val stakeStateTokenId: Coll[Byte] = bytearrayToTokenId(configValues(0))
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //

@@ -18,7 +18,7 @@ import im.paideia.governance.contracts.PaideiaOrigin
 import org.ergoplatform.appkit.ContextVar
 import im.paideia.DAOConfig
 import im.paideia.DAO
-import special.collection.Coll
+import sigma.Coll
 import im.paideia.DAOConfigValueSerializer
 import im.paideia.governance.contracts.Mint
 import im.paideia.DAOConfigValueDeserializer
@@ -27,11 +27,11 @@ import org.ergoplatform.sdk.ErgoId
 import im.paideia.util.ConfKeys
 import im.paideia.staking.contracts.SplitProfit
 import work.lithos.plasma.collections.PlasmaMap
-import sigmastate.AvlTreeFlags
+import sigma.data.AvlTreeFlags
 import work.lithos.plasma.PlasmaParameters
 import im.paideia.DAOConfigKey
 import scorex.crypto.authds.ADDigest
-import special.sigma.AvlTree
+import sigma.AvlTree
 import org.ergoplatform.appkit.Address
 
 case class CreateProtoDAOTransaction(

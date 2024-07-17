@@ -6,9 +6,8 @@ import org.ergoplatform.appkit.ErgoValue
 import org.ergoplatform.appkit.ErgoType
 import org.ergoplatform.appkit.InputBox
 import org.ergoplatform.appkit.OutBox
-import special.collection.Coll
-import special.collection.CollBuilder
-import special.collection.CollOverArray
+import sigma.Coll
+import sigma.CollBuilder
 import scala.collection.JavaConverters._
 import scala.collection.mutable.Buffer
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
@@ -19,20 +18,19 @@ import org.ergoplatform.sdk.ErgoToken
 import im.paideia.DAOConfig
 import org.ergoplatform.sdk.ErgoId
 import sigmastate.utils.Helpers
-import sigmastate.Values
 import im.paideia.staking._
 import im.paideia.common.boxes._
-import sigmastate.eval.Colls
+import sigma.Colls
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 import im.paideia.util.ConfKeys
 import scorex.crypto.hash.Blake2b256
 import im.paideia.Paideia
 import scorex.crypto.authds.ADDigest
-import special.sigma.AvlTree
+import sigma.AvlTree
 import work.lithos.plasma.collections.OpResult
 import im.paideia.DAO
 import im.paideia.governance.VoteRecord
-import sigmastate.AvlTreeData
+import sigma.data.AvlTreeData
 import im.paideia.governance.Proposal
 import work.lithos.plasma.collections.ProvenResult
 
@@ -131,11 +129,7 @@ case class StakeStateBox(
     val stakeRecord = StakeRecord(
       amount,
       0L,
-      List.fill(
-        dao.config
-          .getArray[Object](ConfKeys.im_paideia_staking_profit_tokenids)
-          .size + 1
-      )(0L)
+      List.fill(1)(0L)
     )
 
     stakedTokenTotal += amount
@@ -236,11 +230,7 @@ case class StakeStateBox(
               StakeRecord(
                 0,
                 0,
-                List.fill(
-                  dao.config
-                    .getArray[Object](ConfKeys.im_paideia_staking_profit_tokenids)
-                    .size + 1
-                )(0L)
+                List.fill(1)(0L)
               )
           }
         )
@@ -364,15 +354,17 @@ case class StakeStateBox(
   }
 
   def newNextEmission: Long =
-    nextEmission + dao.config[Long](ConfKeys.im_paideia_staking_cyclelength)
+    nextEmission + dao
+      .config[Long](ConfKeys.im_paideia_staking_cyclelength)
+      .max(3600000L)
+      .min(999999999999999L)
 
   def emit(currentTime: Long, tokensInPool: Long): StakingContextVars = {
     if (currentTime < nextEmission) throw new Exception("Not time for new emission yet")
     nextEmission = newNextEmission
-    profit(0) += Math.min(
-      dao.config[Long](ConfKeys.im_paideia_staking_emission_amount),
-      tokensInPool - profit(0)
-    )
+    val emissionAmount = dao.config[Long](ConfKeys.im_paideia_staking_emission_amount)
+    profit(0) += emissionAmount
+    stakedTokenTotal += emissionAmount
     val participationWeight =
       dao.config
         .withDefault[Byte](ConfKeys.im_paideia_staking_weight_participation, 0.toByte)
@@ -474,7 +466,9 @@ case class StakeStateBox(
       updateStakeProof.toProvenResult,
       updateParticipationProof.toProvenResult,
       currentStake,
-      currentParticipation
+      currentParticipation,
+      newVote,
+      stakeKey
     )
   }
 }

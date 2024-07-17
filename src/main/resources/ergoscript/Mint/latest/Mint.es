@@ -1,13 +1,13 @@
-{
-
-    /**
-     *
-     *  Mint
-     *
-     *  During the dao creation process important NFT's and tokens are minted.
-     *  This contract makes sure they land in the correct DAO.
-     *
-     */
+/**
+ * During the dao creation process important NFT's and tokens are minted.
+ * This contract makes sure they land in the correct DAO.
+ *
+ * @param paideiaDaoKey Token ID of the paideia dao key
+ *
+ * @return
+ */
+@contract def mint(paideiaDaoKey: Coll[Byte]) = {
+    #import lib/config/1.0.0/config.es;
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -15,9 +15,8 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val paideiaDaoKey: Coll[Byte]              = _PAIDEIA_DAO_KEY
-    val imPaideiaContractsProtoDao: Coll[Byte] = _IM_PAIDEIA_CONTRACTS_PROTODAO
-    val imPaideiaContractsDao: Coll[Byte]      = _IM_PAIDEIA_CONTRACTS_DAO
+    val imPaideiaContractsProtoDao: Coll[Byte]  = _IM_PAIDEIA_CONTRACTS_PROTODAO
+    val imPaideiaContractsCreateDao: Coll[Byte] = _IM_PAIDEIA_CONTRACTS_CREATEDAO
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -26,7 +25,8 @@
     ///////////////////////////////////////////////////////////////////////////
 
     val protoDAO: Box = INPUTS(0)
-    val mint: Box      = SELF
+    val createDao: Box = INPUTS(1)
+    val mint: Box     = SELF
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -35,24 +35,6 @@
     ///////////////////////////////////////////////////////////////////////////
 
     val paideiaConfig: Box = CONTEXT.dataInputs(0)
-
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
-    // Outputs                                                               //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
-
-    val daoOriginO: Box = OUTPUTS(0)
-
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
-    // Registers                                                             //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
-
-    val paideiaConfigTree: AvlTree = paideiaConfig.R4[AvlTree].get
-
-    val configTree: AvlTree = protoDAO.R4[AvlTree].get
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -71,25 +53,25 @@
     ///////////////////////////////////////////////////////////////////////////
 
     val paideiaConfigValues: Coll[Option[Coll[Byte]]] = 
-        paideiaConfigTree.getMany(
+        configTree(paideiaConfig).getMany(
             Coll(
                 imPaideiaContractsProtoDao,
-                imPaideiaContractsDao
+                imPaideiaContractsCreateDao
             ),
             paideiaConfigProof
         )
 
-    val protoDaoContracctHash: Coll[Byte] = paideiaConfigValues(0).get.slice(1,33)
-    val daoOriginContractHash: Coll[Byte] = paideiaConfigValues(1).get.slice(1,33)
+    val protoDaoContracctHash: Coll[Byte] = bytearrayToContractHash(paideiaConfigValues(0))
+    val createDaoContractHash: Coll[Byte] = bytearrayToContractHash(paideiaConfigValues(1))
 
-    val configValues: Coll[Option[Coll[Byte]]] = configTree.getMany(
+    val configValues: Coll[Option[Coll[Byte]]] = configTree(protoDAO).getMany(
         Coll(
             mintedToken
         ),
         configProof
     )
 
-    val mintedTokenId: Coll[Byte] = configValues(0).get.slice(6,38)
+    val mintedTokenId: Coll[Byte] = bytearrayToTokenId(configValues(0))
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -104,8 +86,8 @@
 
     val validMintedToken: Boolean = mint.tokens(0)._1 == mintedTokenId
 
-    val validDAOOutput: Boolean = 
-        blake2b256(daoOriginO.propositionBytes) == daoOriginContractHash
+    val validCreateDao: Boolean = 
+        blake2b256(createDao.propositionBytes) == createDaoContractHash
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -117,6 +99,6 @@
         correctDataInput,
         validProtoDAO,
         validMintedToken,
-        validDAOOutput
+        validCreateDao
     )))
 }

@@ -11,16 +11,15 @@ import org.ergoplatform.appkit.ErgoValue
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 import im.paideia.DAOConfigValueSerializer
 import org.ergoplatform.sdk.ErgoId
-import special.collection.Coll
+import sigma.Coll
 import org.ergoplatform.appkit.ErgoType
-import special.collection.CollOverArray
 import im.paideia.governance.contracts.ProtoDAOProxy
 import org.ergoplatform.appkit.InputBox
 import im.paideia.DAOConfigValueDeserializer
 import im.paideia.Paideia
 import scorex.crypto.hash.Blake2b256
 import im.paideia.util.ConfKeys
-import sigmastate.eval.Colls
+import sigma.Colls
 import im.paideia.governance.GovernanceType
 import org.ergoplatform.appkit.Address
 import im.paideia.DAOConfigKey
@@ -56,7 +55,7 @@ case class ProtoDAOProxyBox(
   ctx = _ctx
   value = ProtoDAO.tokensToMint.size * 2000000L + paideiaDaoConfig[Long](
     ConfKeys.im_paideia_fees_createdao_erg
-  ) + 10000000L
+  ) + 3000000000L
   contract = useContract.contract
 
   override def registers: List[ErgoValue[_]] = {
@@ -75,31 +74,17 @@ case class ProtoDAOProxyBox(
       Colls.fromArray(DAOConfigValueSerializer(stakingCycleLength)),
       Colls.fromArray(DAOConfigValueSerializer(stakingProfitSharePct)),
       Colls.fromArray(DAOConfigValueSerializer(pureParticipationWeight)),
-      Colls.fromArray(DAOConfigValueSerializer(participationWeight))
-    ) ++
-      (if (useContract.contractSignature.version.startsWith("1.1."))
-         Array(
-           Colls.fromArray(DAOConfigValueSerializer(url)),
-           Colls.fromArray(DAOConfigValueSerializer(description)),
-           Colls.fromArray(DAOConfigValueSerializer(logo)),
-           Colls.fromArray(DAOConfigValueSerializer(minProposalTime)),
-           Colls.fromArray(DAOConfigValueSerializer(banner)),
-           Colls.fromArray(DAOConfigValueSerializer(bannerEnabled)),
-           Colls.fromArray(DAOConfigValueSerializer(footer)),
-           Colls.fromArray(DAOConfigValueSerializer(footerEnabled)),
-           Colls.fromArray(DAOConfigValueSerializer(theme))
-         )
-       else Array[Coll[Byte]]()) ++
-      (if (useContract.contractSignature.version.equals("1.1.2"))
-         Array(
-           Colls.fromArray(
-             DAOConfigValueSerializer(Array[Array[Byte]]())
-           ),
-           Colls.fromArray(
-             DAOConfigValueSerializer(Array(0L, 0L))
-           )
-         )
-       else Array[Coll[Byte]]())
+      Colls.fromArray(DAOConfigValueSerializer(participationWeight)),
+      Colls.fromArray(DAOConfigValueSerializer(url)),
+      Colls.fromArray(DAOConfigValueSerializer(description)),
+      Colls.fromArray(DAOConfigValueSerializer(logo)),
+      Colls.fromArray(DAOConfigValueSerializer(minProposalTime)),
+      Colls.fromArray(DAOConfigValueSerializer(banner)),
+      Colls.fromArray(DAOConfigValueSerializer(bannerEnabled)),
+      Colls.fromArray(DAOConfigValueSerializer(footer)),
+      Colls.fromArray(DAOConfigValueSerializer(footerEnabled)),
+      Colls.fromArray(DAOConfigValueSerializer(theme))
+    )
     List(
       ErgoValueBuilder.buildFor(
         Colls.fromArray(
@@ -187,67 +172,44 @@ case class ProtoDAOProxyBox(
       (
         ConfKeys.im_paideia_staking_weight_participation,
         DAOConfigValueSerializer[Byte](participationWeight)
+      ),
+      (
+        ConfKeys.im_paideia_dao_url,
+        DAOConfigValueSerializer(url)
+      ),
+      (
+        ConfKeys.im_paideia_dao_description,
+        DAOConfigValueSerializer(description)
+      ),
+      (
+        ConfKeys.im_paideia_dao_logo,
+        DAOConfigValueSerializer(logo)
+      ),
+      (
+        ConfKeys.im_paideia_dao_min_proposal_time,
+        DAOConfigValueSerializer(minProposalTime)
+      ),
+      (
+        ConfKeys.im_paideia_dao_banner,
+        DAOConfigValueSerializer(banner)
+      ),
+      (
+        ConfKeys.im_paideia_dao_banner_enabled,
+        DAOConfigValueSerializer(bannerEnabled)
+      ),
+      (
+        ConfKeys.im_paideia_dao_footer,
+        DAOConfigValueSerializer(footer)
+      ),
+      (
+        ConfKeys.im_paideia_dao_footer_enabled,
+        DAOConfigValueSerializer(footerEnabled)
+      ),
+      (
+        ConfKeys.im_paideia_dao_theme,
+        DAOConfigValueSerializer(theme)
       )
-    ) ++ (if (useContract.contractSignature.version.startsWith("1.1."))
-            Array(
-              (
-                ConfKeys.im_paideia_dao_url,
-                DAOConfigValueSerializer(url)
-              ),
-              (
-                ConfKeys.im_paideia_dao_description,
-                DAOConfigValueSerializer(description)
-              ),
-              (
-                ConfKeys.im_paideia_dao_logo,
-                DAOConfigValueSerializer(logo)
-              ),
-              (
-                ConfKeys.im_paideia_dao_min_proposal_time,
-                DAOConfigValueSerializer(minProposalTime)
-              ),
-              (
-                ConfKeys.im_paideia_dao_banner,
-                DAOConfigValueSerializer(banner)
-              ),
-              (
-                ConfKeys.im_paideia_dao_banner_enabled,
-                DAOConfigValueSerializer(bannerEnabled)
-              ),
-              (
-                ConfKeys.im_paideia_dao_footer,
-                DAOConfigValueSerializer(footer)
-              ),
-              (
-                ConfKeys.im_paideia_dao_footer_enabled,
-                DAOConfigValueSerializer(footerEnabled)
-              ),
-              (
-                ConfKeys.im_paideia_dao_theme,
-                DAOConfigValueSerializer(theme)
-              )
-            )
-          else
-            Array[(DAOConfigKey, Array[Byte])]()) ++
-    (if (useContract.contractSignature.version.equals("1.1.2"))
-       Array(
-         (
-           ConfKeys.im_paideia_staking_profit_tokenids,
-           DAOConfigValueSerializer(
-             Array[Array[Byte]]()
-           )
-         ),
-         (
-           ConfKeys.im_paideia_staking_profit_thresholds,
-           DAOConfigValueSerializer(
-             Array(0L, 0L)
-           )
-         )
-       )
-     else
-       Array[
-         (DAOConfigKey, Array[Byte])
-       ]())
+    )
   }
 }
 
@@ -278,20 +240,15 @@ object ProtoDAOProxyBox {
     val stakingProfitSharePct: Byte   = DAOConfigValueDeserializer(byteRegister(8))
     val pureParticipationWeight: Byte = DAOConfigValueDeserializer(byteRegister(9))
     val participationWeight: Byte     = DAOConfigValueDeserializer(byteRegister(10))
-    val v111        = boxContract.contractSignature.version.startsWith("1.1.")
-    val url: String = if (v111) DAOConfigValueDeserializer(byteRegister(11)) else ""
-    val description: String =
-      if (v111) DAOConfigValueDeserializer(byteRegister(12)) else ""
-    val logo: String = if (v111) DAOConfigValueDeserializer(byteRegister(13)) else ""
-    val minProposalTime: Long =
-      if (v111) DAOConfigValueDeserializer(byteRegister(14)) else 0L
-    val banner: String = if (v111) DAOConfigValueDeserializer(byteRegister(15)) else ""
-    val bannerEnabled: Boolean =
-      if (v111) DAOConfigValueDeserializer(byteRegister(16)) else false
-    val footer: String = if (v111) DAOConfigValueDeserializer(byteRegister(17)) else ""
-    val footerEnabled: Boolean =
-      if (v111) DAOConfigValueDeserializer(byteRegister(18)) else false
-    val theme: String = if (v111) DAOConfigValueDeserializer(byteRegister(19)) else ""
+    val url: String                   = DAOConfigValueDeserializer(byteRegister(11))
+    val description: String           = DAOConfigValueDeserializer(byteRegister(12))
+    val logo: String                  = DAOConfigValueDeserializer(byteRegister(13))
+    val minProposalTime: Long         = DAOConfigValueDeserializer(byteRegister(14))
+    val banner: String                = DAOConfigValueDeserializer(byteRegister(15))
+    val bannerEnabled: Boolean        = DAOConfigValueDeserializer(byteRegister(16))
+    val footer: String                = DAOConfigValueDeserializer(byteRegister(17))
+    val footerEnabled: Boolean        = DAOConfigValueDeserializer(byteRegister(18))
+    val theme: String                 = DAOConfigValueDeserializer(byteRegister(19))
 
     ProtoDAOProxyBox(
       ctx,

@@ -10,8 +10,8 @@ import org.ergoplatform.appkit.InputBox
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 import scorex.crypto.hash.Blake2b256
-import sigmastate.eval.Colls
-import special.collection.Coll
+import sigma.Colls
+import sigma.Coll
 import im.paideia.util.Env
 
 /** A box used for casting a vote by a user, extending PaideiaBox class.

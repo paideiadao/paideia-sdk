@@ -47,14 +47,14 @@ organization := "im.paideia"
 
 libraryDependencies ++= Seq(
     //"org.scala-lang.modules" %% "scala-parser-combinators" % "2.1.1",
-    "io.github.k-singh" %% "plasma-toolkit" % "1.0.2",
+    "io.github.k-singh" %% "plasma-toolkit" % "1.0.4",
     "com.typesafe" % "config" % "1.4.0",
     "com.github.tototoshi" %% "scala-csv" % "1.3.10",
     "org.scalatest" %% "scalatest-funsuite" % "3.2.13" % Test,
     "com.squareup.okhttp3" % "mockwebserver" % "3.12.0" % Test
 )
 
-//dependencyOverrides += "org.ergoplatform" %% "ergo-appkit" % "5.0.1"
+dependencyOverrides += "org.scorexfoundation" % "sigma-state_2.12" % "5.0.14-39-8af5260b-SNAPSHOT"
 
 resolvers ++= Seq(
   "Sonatype Releases" at "https://oss.sonatype.org/content/repositories/releases/",

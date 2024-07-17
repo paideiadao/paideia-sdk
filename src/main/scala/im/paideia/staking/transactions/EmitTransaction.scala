@@ -21,9 +21,10 @@ import org.ergoplatform.appkit.InputBox
 import org.ergoplatform.appkit.OutBox
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import org.ergoplatform.appkit.impl.ErgoTreeContract
-import special.sigma.AvlTree
+import sigma.AvlTree
 import scorex.crypto.authds.ADDigest
 import im.paideia.staking.contracts.StakeSnapshot
+import im.paideia.util.TxTypes
 import im.paideia.DAODefaultedException
 
 case class EmitTransaction(
@@ -41,6 +42,8 @@ case class EmitTransaction(
   val state = TotalStakingState(daoKey)
 
   val stakeStateInputBox = StakeStateBox.fromInputBox(ctx, stakeStateInput)
+
+  val daoTokenId: ErgoId = new ErgoId(config.getArray(ConfKeys.im_paideia_dao_tokenid))
 
   val configInput = Paideia.getBox(
     new FilterLeaf[String](
@@ -89,19 +92,40 @@ case class EmitTransaction(
 
   val treasuryAddress = treasuryContract.contract.toAddress()
 
+  val emissionAmount: Long = config(ConfKeys.im_paideia_staking_emission_amount)
+
+  val ergFee = paideiaConfig[Long](ConfKeys.im_paideia_fees_operator_max_erg) + 1000000L
+
+  val paiFee = paideiaConfig[Long](ConfKeys.im_paideia_fees_emit_operator_paideia) +
+    (paideiaConfig[Long](
+      ConfKeys.im_paideia_fees_emit_paideia
+    ) * stakeStateInputBox.state.currentStakingState
+      .size(Some(stakeStateInputBox.stateDigest)) + 1)
+
+  val treasuryTokens = if (Env.paideiaTokenId.equals(daoTokenId.toString())) {
+    Array(
+      new ErgoToken(
+        Env.paideiaTokenId,
+        paiFee + emissionAmount
+      )
+    )
+  } else {
+    Array(
+      new ErgoToken(
+        Env.paideiaTokenId,
+        paiFee
+      ),
+      new ErgoToken(
+        daoTokenId.toString(),
+        emissionAmount
+      )
+    )
+  }
+
   val coveringTreasuryBoxes = treasuryContract
     .findBoxes(
-      paideiaConfig[Long](ConfKeys.im_paideia_fees_operator_max_erg) + 1000000L,
-      Array(
-        new ErgoToken(
-          Env.paideiaTokenId,
-          paideiaConfig[Long](ConfKeys.im_paideia_fees_emit_operator_paideia) +
-            (paideiaConfig[Long](
-              ConfKeys.im_paideia_fees_emit_paideia
-            ) * stakeStateInputBox.state.currentStakingState
-              .size(Some(stakeStateInputBox.stateDigest)) + 1)
-        )
-      )
+      ergFee,
+      treasuryTokens
     )
   if (coveringTreasuryBoxes.isEmpty)
     throw new DAODefaultedException("Failed to pay emit transaction")
@@ -121,8 +145,11 @@ case class EmitTransaction(
   val contextVars = stakingContextVars.stakingStateContextVars
     .::(
       ContextVar.of(
-        0.toByte,
-        stakeStateInputBox.useContract.getConfigContext(Some(configDigest))
+        1.toByte,
+        stakeStateInputBox.useContract.getConfigContext(
+          Some(configDigest),
+          ConfKeys.im_paideia_contracts_staking_snapshot
+        )
       )
     )
 
@@ -179,8 +206,9 @@ case class EmitTransaction(
     .build()
 
   val treasuryContextVars = List(
+    ContextVar.of(0.toByte, TxTypes.SNAPSHOT),
     ContextVar.of(
-      0.toByte,
+      1.toByte,
       paideiaConfig.getProof(
         ConfKeys.im_paideia_fees_emit_paideia,
         ConfKeys.im_paideia_fees_emit_operator_paideia,
@@ -189,10 +217,12 @@ case class EmitTransaction(
       )(Some(paideiaConfigDigest))
     ),
     ContextVar.of(
-      1.toByte,
+      2.toByte,
       config.getProof(
         ConfKeys.im_paideia_contracts_staking_compound,
-        ConfKeys.im_paideia_contracts_staking_snapshot
+        ConfKeys.im_paideia_contracts_staking_snapshot,
+        ConfKeys.im_paideia_staking_emission_amount,
+        ConfKeys.im_paideia_dao_tokenid
       )(Some(configDigest))
     )
   )

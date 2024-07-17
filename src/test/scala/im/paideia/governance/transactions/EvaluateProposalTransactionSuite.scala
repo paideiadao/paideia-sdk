@@ -23,7 +23,6 @@ import org.ergoplatform.restapi.client.Transactions
 import im.paideia.governance.Proposal
 import com.typesafe.config.ConfigList
 import im.paideia.common.events.CreateTransactionsEvent
-import sigmastate.exceptions.InterpreterException
 
 class EvaluateProposalTransactionSuite extends PaideiaTestSuite {
   test("Evaluate basic proposal, quorum met") {
@@ -50,11 +49,9 @@ class EvaluateProposalTransactionSuite extends PaideiaTestSuite {
           ConfKeys.im_paideia_staking_state_tokenid,
           ErgoId.create(stakeStateTokenId).getBytes
         )
-        config.set(ConfKeys.im_paideia_staking_profit_tokenids, Array[Array[Byte]]())
         config.set(ConfKeys.im_paideia_staking_emission_delay, 4L)
         config.set(ConfKeys.im_paideia_staking_emission_amount, 100000L)
         config.set(ConfKeys.im_paideia_staking_cyclelength, 1000000L)
-        config.set(ConfKeys.im_paideia_staking_profit_thresholds, Array(0L, 0L))
         config.set(ConfKeys.im_paideia_dao_quorum, 100L)
         config.set(ConfKeys.im_paideia_dao_threshold, 500L)
         config.set(
@@ -134,11 +131,9 @@ class EvaluateProposalTransactionSuite extends PaideiaTestSuite {
           ConfKeys.im_paideia_staking_state_tokenid,
           ErgoId.create(stakeStateTokenId).getBytes
         )
-        config.set(ConfKeys.im_paideia_staking_profit_tokenids, Array[Array[Byte]]())
         config.set(ConfKeys.im_paideia_staking_emission_delay, 4L)
         config.set(ConfKeys.im_paideia_staking_emission_amount, 100000L)
         config.set(ConfKeys.im_paideia_staking_cyclelength, 1000000L)
-        config.set(ConfKeys.im_paideia_staking_profit_thresholds, Array(0L, 0L))
         config.set(ConfKeys.im_paideia_dao_quorum, 100L)
         config.set(ConfKeys.im_paideia_dao_threshold, 500L)
         config.set(

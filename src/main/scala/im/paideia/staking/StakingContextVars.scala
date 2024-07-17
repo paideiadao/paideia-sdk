@@ -4,12 +4,14 @@ import org.ergoplatform.appkit.ContextVar
 import work.lithos.plasma.ByteConversion
 import org.ergoplatform.appkit.ErgoValue
 import work.lithos.plasma.collections.ProvenResult
-import special.collection.Coll
+import sigma.Coll
 import org.ergoplatform.sdk.ErgoId
 import org.ergoplatform.appkit.ErgoType
 import im.paideia.governance.VoteRecord
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
-import sigmastate.eval.Colls
+import sigma.Colls
+import scorex.util.encode.Base16
+import im.paideia.util.TxTypes._
 
 case class StakingContextVars(
   stakingStateContextVars: List[ContextVar],
@@ -17,14 +19,6 @@ case class StakingContextVars(
 )
 
 object StakingContextVars {
-  val STAKE        = ErgoValue.of(0.toByte)
-  val CHANGE_STAKE = ErgoValue.of(1.toByte)
-  val UNSTAKE      = ErgoValue.of(2.toByte)
-  val SNAPSHOT     = ErgoValue.of(3.toByte)
-  val COMPOUND     = ErgoValue.of(4.toByte)
-  val PROFIT_SHARE = ErgoValue.of(5.toByte)
-  val VOTE         = ErgoValue.of(6.toByte)
-
   val dummyKey: String =
     "ce552663312afc2379a91f803c93e2b10b424f176fbc930055c10def2fd88a5d"
 
@@ -51,7 +45,7 @@ object StakingContextVars {
     )
     StakingContextVars(
       List(
-        new ContextVar(1.toByte, STAKE)
+        new ContextVar(0.toByte, STAKE)
       ),
       List(
         new ContextVar(1.toByte, stakeOperations),
@@ -63,7 +57,7 @@ object StakingContextVars {
   def emit: StakingContextVars = {
     StakingContextVars(
       List(
-        new ContextVar(1.toByte, SNAPSHOT)
+        new ContextVar(0.toByte, SNAPSHOT)
       ),
       List[ContextVar](
       )
@@ -73,7 +67,7 @@ object StakingContextVars {
   def profitShare: StakingContextVars = {
     StakingContextVars(
       List(
-        new ContextVar(1.toByte, PROFIT_SHARE)
+        new ContextVar(0.toByte, PROFIT_SHARE)
       ),
       List[ContextVar](
       )
@@ -107,7 +101,7 @@ object StakingContextVars {
     )
     StakingContextVars(
       List(
-        new ContextVar(1.toByte, COMPOUND)
+        new ContextVar(0.toByte, COMPOUND)
       ),
       List(
         new ContextVar(1.toByte, operations),
@@ -143,7 +137,7 @@ object StakingContextVars {
     )
     StakingContextVars(
       List(
-        new ContextVar(1.toByte, CHANGE_STAKE)
+        new ContextVar(0.toByte, CHANGE_STAKE)
       ),
       List(
         new ContextVar(1.toByte, operations),
@@ -159,11 +153,13 @@ object StakingContextVars {
     updatedStakeProof: ProvenResult[StakeRecord],
     updatedParticipationProof: ProvenResult[ParticipationRecord],
     newStakeRecord: StakeRecord,
-    newParticipationRecord: ParticipationRecord
+    newParticipationRecord: ParticipationRecord,
+    castedVote: VoteRecord,
+    stakeKey: String
   ): StakingContextVars = {
     StakingContextVars(
       List(
-        new ContextVar(1.toByte, VOTE)
+        new ContextVar(0.toByte, VOTE)
       ),
       List(
         new ContextVar(1.toByte, voteProof.proof.ergoValue),
@@ -188,6 +184,24 @@ object StakingContextVars {
               )
             )
           )
+        ),
+        new ContextVar(
+          8.toByte,
+          ErgoValueBuilder.buildFor(
+            Colls.fromArray(
+              VoteRecord.convertsVoteRecord.convertToBytes(
+                castedVote
+              )
+            )
+          )
+        ),
+        new ContextVar(
+          9.toByte,
+          ErgoValueBuilder.buildFor(
+            Colls.fromArray(
+              Base16.decode(stakeKey).get
+            )
+          )
         )
       )
     )
@@ -200,28 +214,18 @@ object StakingContextVars {
   ): StakingContextVars = {
     val stakeRec = proof.response(0).get
     stakeRec.clear
-    val operations = ErgoValue.of(
-      Array[(Coll[java.lang.Byte], Coll[java.lang.Byte])](
-        ErgoValue
-          .pairOf(
-            ErgoValue.of(
-              ByteConversion.convertsId.convertToBytes(ErgoId.create(stakingKey))
-            ),
-            ErgoValue.of(
-              StakeRecord.stakeRecordConversion
-                .convertToBytes(stakeRec)
-            )
+    val operations = ErgoValueBuilder.buildFor(
+      Colls.fromArray(
+        Array(
+          Colls.fromArray(
+            ByteConversion.convertsId.convertToBytes(ErgoId.create(stakingKey))
           )
-          .getValue
-      ),
-      ErgoType.pairType(
-        ErgoType.collType(ErgoType.byteType()),
-        ErgoType.collType(ErgoType.byteType())
+        )
       )
     )
     StakingContextVars(
       List(
-        new ContextVar(1.toByte, UNSTAKE)
+        new ContextVar(0.toByte, UNSTAKE)
       ),
       List(
         new ContextVar(1.toByte, operations),

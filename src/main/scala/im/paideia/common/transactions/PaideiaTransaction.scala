@@ -66,25 +66,22 @@ trait PaideiaTransaction {
     */
   var changeAddress: Address = _
 
-  /** Create an unsigned transaction using inputs, outputs, tokensToBurn, fee, ctx and
-    * changeAddress.
-    *
-    * @return
-    *   an UnsignedTransaction.
-    */
-  def unsigned(): UnsignedTransaction = {
+  def inputBalanceAssets(): (Long, mutable.Map[ModifierId, Long]) = {
     var inputBalance = 0L
     val inputAssets  = mutable.Map[ModifierId, Long]()
 
     // select all input boxes - we only validate here
-    inputs.foreach { box: InputBox =>
+    (this.inputs ++ this.userInputs).foreach { box: InputBox =>
       inputBalance = inputBalance + box.getValue()
       AssetUtils.mergeAssetsMut(
         inputAssets,
         box.getTokens().asScala.map(t => ModifierId @@ t.id.toString -> t.value).toMap
       )
     }
+    (inputBalance, inputAssets)
+  }
 
+  def outputBalanceAssets(): (Long, mutable.Map[ModifierId, Long]) = {
     var outputBalance = fee
     val outputAssets  = mutable.Map[ModifierId, Long]()
 
@@ -103,10 +100,34 @@ trait PaideiaTransaction {
     )
 
     val outputAssetsNoMinted =
-      outputAssets.filter(t => t._1 != inputs(0).getId().toString()).toMap
+      outputAssets.filter(t => t._1 != inputs(0).getId().toString())
+
+    (outputBalance, outputAssetsNoMinted)
+  }
+
+  def fundsMissing(): (Long, mutable.Map[ModifierId, Long]) = {
+    var (inputBalance, inputAssets) = inputBalanceAssets()
+
+    var (outputBalance, outputAssetsNoMinted) = outputBalanceAssets()
+
+    AssetUtils.subtractAssetsMut(outputAssetsNoMinted, inputAssets.toMap)
+
+    (outputBalance - inputBalance, outputAssetsNoMinted)
+  }
+
+  /** Create an unsigned transaction using inputs, outputs, tokensToBurn, fee, ctx and
+    * changeAddress.
+    *
+    * @return
+    *   an UnsignedTransaction.
+    */
+  def unsigned(): UnsignedTransaction = {
+    var (inputBalance, inputAssets) = inputBalanceAssets()
+
+    var (outputBalance, outputAssetsNoMinted) = outputBalanceAssets()
 
     if (inputBalance > outputBalance) {
-      AssetUtils.subtractAssetsMut(inputAssets, outputAssetsNoMinted)
+      AssetUtils.subtractAssetsMut(inputAssets, outputAssetsNoMinted.toMap)
       val changeTokens = inputAssets.map(t => new ErgoToken(t._1, t._2)).toList
       var changeOutput =
         if (changeTokens.size > 0)

@@ -1,4 +1,15 @@
-{
+/** This is my contracts description.
+ * Here is another line describing what it does in more detail.
+ *
+ * @return
+ */
+@contract def stakeState(imPaideiaDaoKey: Coll[Byte]) = {
+    #import lib/config/1.0.0/config.es;
+    #import lib/txTypes/1.0.0/txTypes.es;
+    #import lib/updateOrRefresh/1.0.0/updateOrRefresh.es;
+    #import lib/box/1.0.0/box.es;
+    #import lib/stakeState/1.0.0/stakeState.es;
+
     /**
      *
      *  StakeState
@@ -13,8 +24,6 @@
     // Constants                                                             //
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
-
-    val daoKey: Coll[Byte] = _IM_PAIDEIA_DAO_KEY
 
     val imPaideiaContractsStakeState: Coll[Byte] = 
         _IM_PAIDEIA_CONTRACTS_STAKING_STATE
@@ -40,14 +49,6 @@
     val imPaideiaContractsStakingVote: Coll[Byte] = 
         _IM_PAIDEIA_CONTRACTS_STAKING_VOTE
 
-    val STAKE: Byte        = 0.toByte
-    val CHANGE_STAKE: Byte = 1.toByte
-    val UNSTAKE: Byte      = 2.toByte
-    val SNAPSHOT: Byte     = 3.toByte
-    val COMPOUND: Byte     = 4.toByte
-    val PROFIT_SHARE: Byte = 5.toByte
-    val VOTE: Byte         = 6.toByte
-
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
     // Inputs                                                                //
@@ -55,7 +56,6 @@
     ///////////////////////////////////////////////////////////////////////////
 
     val stakeState: Box = SELF
-    val companion: Box  = INPUTS(1)
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -63,7 +63,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val config: Box = CONTEXT.dataInputs(0)
+    val config: Box = filterByTokenId((CONTEXT.dataInputs, imPaideiaDaoKey))(0)
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -71,15 +71,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val stakeStateO: Box = OUTPUTS(0)
-
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
-    // Registers                                                             //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
-
-    val configTree: AvlTree = config.R4[AvlTree].get
+    val stakeStateO: Box = filterByTokenId((OUTPUTS, stakeStateToken(stakeState)._1))(0)
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -87,37 +79,8 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val configProof: Coll[Byte] = getVar[Coll[Byte]](0).get
-    val transactionType: Byte   = getVar[Byte](1).get
-
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
-    // DAO Config value extraction                                           //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
-
-    val configValues: Coll[Option[Coll[Byte]]] = configTree.getMany(
-        Coll(
-            imPaideiaContractsStakeState,
-            imPaideiaContractsStakingStake,
-            imPaideiaContractsStakingChangeStake,
-            imPaideiaContractsStakingUnstake,
-            imPaideiaContractsStakingSnapshot,
-            imPaideiaContractsStakingCompound,
-            imPaideiaContractsStakingProfitShare,
-            imPaideiaContractsStakingVote
-        ),
-        configProof
-    )
-
-    val stakingStateContractHash: Coll[Byte] = configValues(0).get.slice(1,33)
-    val stakeContractHash: Coll[Byte]        = configValues(1).get.slice(1,33)
-    val changeStakeContractHash: Coll[Byte]  = configValues(2).get.slice(1,33)
-    val unstakeContractHash: Coll[Byte]      = configValues(3).get.slice(1,33)
-    val snapshotContractHash: Coll[Byte]     = configValues(4).get.slice(1,33)
-    val compoundContractHash: Coll[Byte]     = configValues(5).get.slice(1,33)
-    val profitShareContractHash: Coll[Byte]  = configValues(6).get.slice(1,33)
-    val voteContractHash: Coll[Byte]         = configValues(7).get.slice(1,33)
+    val configProof: Coll[Byte] = getVar[Coll[Byte]](1).get
+    val transactionType: Byte   = getVar[Byte](0).get
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -125,38 +88,64 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
+    def validOutput(contractHash: Coll[Byte]): Boolean = allOf(Coll(
+        blake2b256(stakeStateO.propositionBytes) == contractHash,
+        stakeStateToken(stakeStateO) == stakeStateToken(stakeState),
+        govToken(stakeStateO)._1 == govToken(stakeState)._1
+    ))
+
+    def transactionValidation(contractKey: Coll[Byte]): Boolean = {
+        val configValues: Coll[Option[Coll[Byte]]] = configTree(config).getMany(
+            Coll(
+                imPaideiaContractsStakeState,
+                contractKey
+            ),
+            configProof
+        )
+        val stakingStateContractHash: Coll[Byte] = bytearrayToContractHash(configValues(0))
+        val companionContractHash: Coll[Byte]    = bytearrayToContractHash(configValues(1))
+
+        allOf(Coll(
+            filterByHash((INPUTS,companionContractHash)).size == 1,
+            validOutput(stakingStateContractHash)
+        ))
+    }
+
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
     // Simple conditions                                                     //
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val correctConfig: Boolean = config.tokens(0)._1 == daoKey
+    def validStake(txType: Byte): Boolean = if (txType == STAKE) {
+        transactionValidation(imPaideiaContractsStakingStake) 
+    } else 
+            false
+
+    def validUnstake(txType: Byte): Boolean = if (txType == UNSTAKE) transactionValidation(imPaideiaContractsStakingUnstake) else false
+
+    def validChangeStake(txType: Byte): Boolean = if (txType == CHANGE_STAKE) transactionValidation(imPaideiaContractsStakingChangeStake) else false
+
+    def validSnapshot(txType: Byte): Boolean = if (txType == SNAPSHOT) transactionValidation(imPaideiaContractsStakingSnapshot) else false
+
+    def validCompound(txType: Byte): Boolean = if (txType == COMPOUND) transactionValidation(imPaideiaContractsStakingCompound) else false
+
+    def validProfitShare(txType: Byte): Boolean = if (txType == PROFIT_SHARE) transactionValidation(imPaideiaContractsStakingProfitShare) else false
+
+    def validVote(txType: Byte): Boolean = if (txType == VOTE) transactionValidation(imPaideiaContractsStakingVote) else false
+
+    def validUpdate(txType: Byte): Boolean = if (txType == UPDATE) updateOrRefresh((imPaideiaContractsStakeState, config)) else false
+
 
     val validTx: Boolean = anyOf(Coll(
-        transactionType == STAKE && 
-            blake2b256(companion.propositionBytes) == stakeContractHash,
-        transactionType == CHANGE_STAKE && 
-            blake2b256(companion.propositionBytes) == changeStakeContractHash,
-        transactionType == UNSTAKE && 
-            blake2b256(companion.propositionBytes) == unstakeContractHash,
-        transactionType == SNAPSHOT && 
-            blake2b256(companion.propositionBytes) == snapshotContractHash,
-        transactionType == COMPOUND && 
-            blake2b256(companion.propositionBytes) == compoundContractHash,
-        transactionType == PROFIT_SHARE && 
-            blake2b256(companion.propositionBytes) == profitShareContractHash,
-        transactionType == VOTE && 
-            blake2b256(companion.propositionBytes) == voteContractHash
-    ))
-
-    val validTransactionType: Boolean = 
-        transactionType >= 0 && transactionType <= 6
-
-    val validOutput: Boolean = allOf(Coll(
-        blake2b256(stakeStateO.propositionBytes) == stakingStateContractHash,
-        stakeStateO.tokens(0) == stakeState.tokens(0),
-        stakeStateO.tokens(1)._1 == stakeState.tokens(1)._1
+        validStake(transactionType),
+        validUnstake(transactionType),
+        validChangeStake(transactionType),
+        validSnapshot(transactionType),
+        validCompound(transactionType),
+        validProfitShare(transactionType),
+        validVote(transactionType),
+        validUpdate(transactionType)
     ))
 
     ///////////////////////////////////////////////////////////////////////////
@@ -165,10 +154,5 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    sigmaProp(allOf(Coll(
-        correctConfig,
-        validTransactionType,
-        validTx,
-        validOutput
-    )))
+    sigmaProp(validTx)
 }

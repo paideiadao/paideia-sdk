@@ -6,11 +6,8 @@ import work.lithos.plasma.collections.OpResult
 import work.lithos.plasma.ByteConversion
 import scala.util.Failure
 import scala.util.Success
-import special.collection.Coll
-import special.collection.CollOverArrayBuilder
+import sigma.Coll
 import org.ergoplatform.sdk.ErgoId
-import special.collection.PairOfCols
-import special.collection.CollOverArray
 import org.ergoplatform.appkit.ContextVar
 import org.ergoplatform.appkit.ErgoValue
 import org.ergoplatform.appkit.ErgoType
@@ -66,10 +63,10 @@ object TotalStakingState {
     clearAll: Boolean = false
   ): TotalStakingState = {
     if (clearAll) _stakingStates.clear()
-    val daoConfig    = Paideia.getConfig(daoKey)
-    val currentState = StakingState(daoKey, nextEmission, true)
-    val profitTokensSize =
-      daoConfig.getArray[Object](ConfKeys.im_paideia_staking_profit_tokenids).size
+    val daoConfig        = Paideia.getConfig(daoKey)
+    val currentState     = StakingState(daoKey, nextEmission, true)
+    val profitTokensSize = 0
+    // daoConfig.getArray[Object](ConfKeys.im_paideia_staking_profit_tokenids).size
     val cycleLength = daoConfig[Long](ConfKeys.im_paideia_staking_cyclelength)
     val snapshots =
       HashMap[Long, StakingState](
