@@ -2,7 +2,7 @@
 
 #let contractDef = (
   title: "ActionUpdateConfig",
-  version: "latest",
+  version: "1.0.0",
   summary: "This action ensures that if the related proposal passes that the dao config gets updated accordingly",
   parameters: (
     (name: "imPaideiaDaoKey", description: "Token ID of the dao config nft", type: "Coll[Byte]", default: ""),

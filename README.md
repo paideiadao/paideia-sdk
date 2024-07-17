@@ -1,5 +1,19 @@
 # paideia-sdk
 
+This SDK contains the contracts and immediate surrounding off chain code for running Paideia DAO's.
+
+## Bug Bounty
+
+To help ensure the contracts validity and security we have a bug bounty program running up till launch (and potentially afterwards as well). The contracts are located in src/main/resources/ergoscript. Only version 1.0.0 contracts are in scope for this bug bounty. Before reviewing the contracts read about the configuration setup described further down in this document and the overview document in the docs directory.
+If you find an issue create a github issue in this repository describing the issue as detailed as possible. Based on potential negative effects of the issue it will be classified according to the below table. An issue will be rewarded with a certain amount of Paideia or if many issues are found a share of the total bug bounty pool based on the points an issue is awarded.
+
+| Issue type | Description | Max reward |
+| --- | --- | --- |
+| Critical | An issue that can result in significant loss of assets, either by malicious actions or protocol locking. | 10000 Pai |
+| Major | An issue that causes the protocol to not function as intended resulting in unexpected results (for example a proposal being evaluated wrongly) | 5000 Pai |
+| Minor | A smaller issue causing the protocol to behave wrong in edge cases | 1000 Pai |
+| Informational | Lacking documentation, confusing code etc. | 500 Pai |
+
 ## Config value serialization
 To allow for maximum flexibility in the config values stored for a dao and virtually no upper limit to the amount of them they are serialized into byte arrays and stored in an avl tree.
 The off chain code handles the serialization and deserialization mostly automatically, giving you the original values to work with. Sadly this is not possible in ergoscript so to use the values inside a contract knowledge is needed on how the values are serialized.

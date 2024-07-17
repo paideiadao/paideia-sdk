@@ -193,8 +193,8 @@
   )
 )
 
-#show_intro(title: "Coinecta Vesting Contracts", body: "Vesting contracts are a way to guarantee tokens are only released into circulation at a certain rate. This can be beneficial in multiple scenarios, for example if tokens are sold during a presale event with a price under the targeted IDO price any participant in the presale has an unfair advantage and could negatively affect the market.")
+#show_intro(title: "Paideia DAO contracts", body: "The contracts support fully on chain dao creation, profit sharing, proposal creation and treasury management.")
 
-#show_hlr(hlr: HLR, body: "For Coinecta we have the following High Level Requirements (HLR) that we would like the contracts to fulfill.")
+#show_hlr(hlr: HLR, body: "For Paideia we have the following High Level Requirements (HLR) that we would like the contracts to fulfill.")
 
 #show_overview(actors: actors, body: "Test")

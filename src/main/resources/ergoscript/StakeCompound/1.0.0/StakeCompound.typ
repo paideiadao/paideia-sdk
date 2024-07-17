@@ -2,7 +2,7 @@
 
 #let contractDef = (
   title: "StakeCompound",
-  version: "latest",
+  version: "1.0.0",
   summary: "This contract is a companion contract to the main stake contract. It ensures compounding the rewards and profit share is done properly.",
   parameters: (
     (name: "imPaideiaDaoKey", description: "Token ID of the dao config nft", type: "Coll[Byte]", default: ""),

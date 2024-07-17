@@ -2,7 +2,7 @@
 
 #let contractDef = (
   title: "ActionSendFundBasic",
-  version: "latest",
+  version: "1.0.0",
   summary: "This action ensures that if the related proposal passes that the treasury sends funds to the outputs as defined at the time of proposal creation. Any change is sent back to the treasury. If this action is to be repeated a copy is part of the output with 1 repeat less.",
   parameters: (
     (name: "imPaideiaDaoKey", description: "Token ID of the dao config nft", type: "Coll[Byte]", default: ""),
