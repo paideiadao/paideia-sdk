@@ -18,7 +18,7 @@ import sigma.Colls
 import scorex.crypto.authds.ADDigest
 import java.nio.charset.StandardCharsets
 import scorex.crypto.authds.legacy.avltree.AVLTree
-import special.sigma.AvlTree
+import sigma.AvlTree
 
 case class ProposalBasicBox(
   _ctx: BlockchainContextImpl,

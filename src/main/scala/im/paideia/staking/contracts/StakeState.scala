@@ -41,6 +41,7 @@ import sigma.ast.ByteArrayConstant
 import org.ergoplatform.appkit.InputBox
 import im.paideia.util.TxTypes
 import im.paideia.DAOConfigKey
+import im.paideia.DAODefaultedException
 
 class StakeState(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(
