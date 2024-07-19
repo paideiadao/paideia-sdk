@@ -5,7 +5,8 @@
   version: "latest",
   summary: "This contract is a companion contract to the main stake contract. It ensures snapshots are created correctly at the right time.",
   parameters: (
-    (name: "imPaideiaDaoKey", description: "Token ID of the dao config nft", type: "Coll[Byte]", default: ""),),
+    (name: "imPaideiaDaoKey", description: "Token ID of the dao config nft", type: "Coll[Byte]", default: ""),
+    (name: "stakeStateTokenId", description: "Token ID of the stake state nft", type: "Coll[Byte]", default: ""),),
   registers: (),
   assets: (),
   transactions: (
@@ -18,10 +19,6 @@
         description: "Proof for retrieving current DAO Config values"),
       ),
       configs: ((
-        name: "im.paideia.staking.state.tokenid",
-        type: "Coll[Byte]",
-        description: "Token ID of this DAO's stake state token"
-      ),(
         name: "im.paideia.contracts.staking.snapshot",
         type: "PaideiaContractSignature",
         description: "Signature of the stake snapshot contract"

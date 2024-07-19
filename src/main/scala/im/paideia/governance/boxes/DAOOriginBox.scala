@@ -28,12 +28,6 @@ case class DAOOriginBox(
   value    = _value
   contract = useContract.contract
 
-  override def registers: List[ErgoValue[_]] = {
-    List(
-      ErgoValueBuilder.buildFor(Colls.fromArray(ErgoId.create(dao.key).getBytes))
-    )
-  }
-
   override def tokens: List[ErgoToken] = {
     List(
       new ErgoToken(Env.daoTokenId, 1L),
@@ -57,8 +51,7 @@ object DAOOriginBox {
     DAOOriginBox(
       ctx,
       Paideia.getDAO(
-        new ErgoId(inp.getRegisters().get(0).getValue().asInstanceOf[Coll[Byte]].toArray)
-          .toString()
+        contract.contractSignature.daoKey
       ),
       inp.getTokens().get(1).getValue,
       inp.getTokens().get(2).getValue,

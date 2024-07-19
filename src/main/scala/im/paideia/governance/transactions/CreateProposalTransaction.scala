@@ -26,6 +26,8 @@ import sigma.Colls
 import scorex.util.encode.Base16
 import im.paideia.staking.boxes.StakeStateBox
 import im.paideia.util.TxTypes
+import im.paideia.governance.contracts.DAOOrigin
+import im.paideia.common.contracts.PaideiaContractSignature
 
 final case class CreateProposalTransaction(
   _ctx: BlockchainContextImpl,
@@ -54,8 +56,12 @@ final case class CreateProposalTransaction(
         ),
         new FilterLeaf(
           FilterType.FTEQ,
-          ErgoId.create(dao.key).getBytes.toIterable,
-          CompareField.REGISTER,
+          DAOOrigin(
+            dao
+              .config[PaideiaContractSignature](ConfKeys.im_paideia_contracts_dao)
+              .withDaoKey(dao.key)
+          ).ergoTree.bytesHex,
+          CompareField.ERGO_TREE,
           0
         )
       )
