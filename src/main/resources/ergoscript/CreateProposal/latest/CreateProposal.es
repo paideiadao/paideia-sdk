@@ -37,8 +37,6 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val daoOriginKey: Coll[Byte] = daoOrigin.R4[Coll[Byte]].get
-
     val createProposalR4: Coll[Coll[Byte]] = 
         createProposal.R4[Coll[Coll[Byte]]].get
 
@@ -64,8 +62,6 @@
     // Simple conditions                                                     //
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
-
-    val correctDaoOrigin: Boolean = daoOriginKey == imPaideiaDaoKey
 
     val keyReturned: Boolean = tokenExists((userO, stakeKey))
 

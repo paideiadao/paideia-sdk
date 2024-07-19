@@ -61,8 +61,6 @@
 
     val protoDaoKey: Coll[Byte]  = protoDao.R5[Coll[Byte]].get
 
-    val daoKeyO: Coll[Byte] = daoOriginO.R4[Coll[Byte]].get
-
     val configTreeO: AvlTree = configO.R4[AvlTree].get
 
     val stakeStateOTrees: Coll[AvlTree] = stakeStateO.R4[Coll[AvlTree]].get
@@ -371,7 +369,6 @@
         daoOriginO.tokens(2)._1 == actionTokenId,
         daoOriginO.tokens(2)._2 == maxLong,
         daoOriginO.tokens.size == 3,
-        daoKeyO == daoKey
     ))
 
     val correctConfigOutput: Boolean = allOf(Coll(

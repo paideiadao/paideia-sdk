@@ -5,7 +5,8 @@
   version: "latest",
   summary: "This contract is a companion contract to the main stake contract. It ensures properly unstaking assets from the stake state",
   parameters: (
-    (name: "imPaideiaDaoKey", description: "Token ID of the dao config nft", type: "Coll[Byte]", default: ""),),
+    (name: "imPaideiaDaoKey", description: "Token ID of the dao config nft", type: "Coll[Byte]", default: ""),
+    (name: "stakeStateTokenId", description: "Token ID of the stake state nft", type: "Coll[Byte]", default: ""),),
   registers: (),
   assets: (),
   transactions: (
@@ -27,10 +28,6 @@
         description: "Proof for removing the stake")
       ),
       configs: ((
-        name: "im.paideia.staking.state.tokenid",
-        type: "Coll[Byte]",
-        description: "Token ID of this DAO's stake state token"
-      ),(
         name: "im.paideia.contracts.staking.unstake",
         type: "PaideiaContractSignature",
         description: "Signature of the unstake contract"
