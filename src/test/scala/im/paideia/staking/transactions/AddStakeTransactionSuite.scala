@@ -55,6 +55,8 @@ class AddStakeTransactionSuite extends PaideiaTestSuite {
         changeStakeContract.newBox(changeStakeContract.box(ctx).inputBox(), false)
 
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_config, configContract.contractSignature)
 
         val configBox = configContract.box(ctx, dao).inputBox()
         configContract.clearBoxes()
@@ -117,6 +119,8 @@ class AddStakeTransactionSuite extends PaideiaTestSuite {
         changeStakeContract.newBox(changeStakeContract.box(ctx).inputBox(), false)
 
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_config, configContract.contractSignature)
 
         val configBox = configContract.box(ctx, dao).inputBox()
         configContract.clearBoxes()

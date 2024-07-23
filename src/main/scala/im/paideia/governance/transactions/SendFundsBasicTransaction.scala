@@ -12,8 +12,7 @@ import scala.collection.JavaConverters._
 import org.ergoplatform.appkit.OutBox
 import org.ergoplatform.appkit.impl.OutBoxImpl
 import org.ergoplatform.ErgoBoxCandidate
-import special.sigma.Box
-import sigmastate.eval.CostingSigmaDslBuilder
+import sigma.Box
 import org.ergoplatform.sdk.ErgoToken
 import scala.collection.JavaConverters._
 import im.paideia.common.contracts.PaideiaContractSignature
@@ -21,9 +20,11 @@ import org.ergoplatform.appkit.ContextVar
 import im.paideia.Paideia
 import im.paideia.common.filtering._
 import org.ergoplatform.sdk.ErgoId
-import special.collection.Coll
+import sigma.Coll
 import scorex.crypto.authds.ADDigest
-import special.sigma.AvlTree
+import sigma.AvlTree
+import sigma.data.CBox
+import im.paideia.util.TxTypes
 
 final case class SendFundsBasicTransaction(
   _ctx: BlockchainContextImpl,
@@ -69,9 +70,6 @@ final case class SendFundsBasicTransaction(
 
   val fundsNeeded = actionInputBox.fundsNeeded
 
-  val coveringTreasuryBoxes =
-    treasuryContract.findBoxes(fundsNeeded._1, fundsNeeded._2).get
-
   val configDigest =
     ADDigest @@ configInput
       .getRegisters()
@@ -80,6 +78,22 @@ final case class SendFundsBasicTransaction(
       .asInstanceOf[AvlTree]
       .digest
       .toArray
+
+  val coveringTreasuryBoxes =
+    treasuryContract
+      .findBoxes(fundsNeeded._1, fundsNeeded._2)
+      .get
+      .map(ib =>
+        ib.withContextVars(
+          ContextVar.of(0.toByte, TxTypes.TREASURY_SPEND),
+          ContextVar.of(
+            1.toByte,
+            dao.config.getProof(
+              ConfKeys.im_paideia_contracts_action(actionInput.getErgoTree().bytes)
+            )(Some(configDigest))
+          )
+        )
+      )
 
   val selfOutput = if (actionInputBox.repeats > 0) {
     List(
@@ -108,6 +122,10 @@ final case class SendFundsBasicTransaction(
   val context = List(
     ContextVar.of(
       0.toByte,
+      TxTypes.TREASURY_SPEND
+    ),
+    ContextVar.of(
+      1.toByte,
       dao.config.getProof(ConfKeys.im_paideia_contracts_treasury)(Some(configDigest))
     )
   )
@@ -115,7 +133,7 @@ final case class SendFundsBasicTransaction(
   inputs     = List(actionInput.withContextVars(context: _*)) ++ coveringTreasuryBoxes
   dataInputs = List(configInput, proposalInput)
   outputs = actionInputBox.outputs.map { (b: Box) =>
-    val ergoBox = (new CostingSigmaDslBuilder()).toErgoBox(b)
+    val ergoBox = b.asInstanceOf[CBox].ebox
     new OutBoxImpl(
       new ErgoBoxCandidate(
         ergoBox.value,

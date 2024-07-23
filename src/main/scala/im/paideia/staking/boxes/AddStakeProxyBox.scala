@@ -8,7 +8,7 @@ import org.ergoplatform.sdk.ErgoToken
 import im.paideia.util.ConfKeys
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.staking.contracts.AddStakeProxy
-import sigmastate.eval.Colls
+import sigma.Colls
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 import im.paideia.util.Env
 import org.ergoplatform.sdk.ErgoId

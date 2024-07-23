@@ -1,13 +1,16 @@
-{
+/** This is my contracts description.
+ * Here is another line describing what it does in more detail.
+ *
+ * @return
+ */
+@contract def protoDAOProxy(paideiaDaoKey: Coll[Byte]) = {
+    #import lib/validRefund/1.0.0/validRefund.es;
+    #import lib/config/1.0.0/config.es;
+
     // Refund logic
     sigmaProp(
     if (OUTPUTS.size == 2) {
-        allOf(Coll(
-            OUTPUTS(0).value >= SELF.value - 1000000L,
-            OUTPUTS(0).tokens == SELF.tokens,
-            OUTPUTS(0).propositionBytes == SELF.R6[Coll[Byte]].get,
-            CONTEXT.preHeader.height >= SELF.creationInfo._1 + 30
-        ))
+      validRefund((SELF, (OUTPUTS(0), (SELF.R6[Coll[Byte]].get, 15))))
     } else {
     /**
      *
@@ -26,7 +29,6 @@
 
     val imPaideiaContractsProtoDao: Coll[Byte] = _IM_PAIDEIA_CONTRACTS_PROTODAO
     val imPaideiaContractsMint: Coll[Byte]     = _IM_PAIDEIA_CONTRACTS_MINT
-    val paideiaDaoKey: Coll[Byte]              = _PAIDEIA_DAO_KEY
     val emptyConfigDigest: Coll[Byte]          = _EMPTY_CONFIG_DIGEST
     val imPaideiaDaoName: Coll[Byte]           = _IM_PAIDEIA_DAO_NAME
     val imPaideiaDaoKey: Coll[Byte]            = _IM_PAIDEIA_DAO_KEY
@@ -52,6 +54,33 @@
 
     val imPaideiaStakingEmissionAmount: Coll[Byte] = 
         _IM_PAIDEIA_STAKING_EMISSION_AMOUNT
+
+    val imPaideiaDaoUrl: Coll[Byte] = 
+      _IM_PAIDEIA_DAO_URL
+
+    val imPaideiaDaoDescription: Coll[Byte] =
+      _IM_PAIDEIA_DAO_DESCRIPTION
+
+    val imPaideiaDaoLogo: Coll[Byte] =
+      _IM_PAIDEIA_DAO_LOGO
+
+    val imPaideiaDaoMinProposaltime: Coll[Byte] =
+      _IM_PAIDEIA_DAO_MIN_PROPOSAL_TIME
+
+    val imPaideiaDaoBanner: Coll[Byte] =
+      _IM_PAIDEIA_DAO_BANNER
+
+    val imPaideiaDaoBannerEnabled: Coll[Byte] =
+      _IM_PAIDEIA_DAO_BANNER_ENABLED
+
+    val imPaideiaDaoFooter: Coll[Byte] =
+      _IM_PAIDEIA_DAO_FOOTER
+
+    val imPaideiaDaoFooterEnabled: Coll[Byte] =
+      _IM_PAIDEIA_DAO_FOOTER_ENABLED
+
+    val imPaideiaDaoTheme: Coll[Byte] =
+      _IM_PAIDEIA_DAO_THEME
 
     val collBPrefix: Coll[Byte] = 
         Coll(10.toByte,0.toByte,0.toByte,0.toByte,0.toByte,32.toByte)
@@ -129,9 +158,10 @@
         )
 
     val protoDaoContractHash: Coll[Byte] = 
-        paideiaConfigValues(0).get.slice(1,33)
+      bytearrayToContractHash(paideiaConfigValues(0))
 
-    val mintContractHash: Coll[Byte] = paideiaConfigValues(1).get.slice(1,33)
+    val mintContractHash: Coll[Byte] = 
+      bytearrayToContractHash(paideiaConfigValues(1))
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -153,10 +183,19 @@
         (imPaideiaStakingCycleLength,configValues(7)),
         (imPaideiaStakingProfitSharePct,configValues(8)),
         (imPaideiaStakingPureParticipationWeight,configValues(9)),
-        (imPaideiaStakingParticipationWeight,configValues(10))
+        (imPaideiaStakingParticipationWeight,configValues(10)),
+        (imPaideiaDaoUrl,configValues(11)),
+        (imPaideiaDaoDescription,configValues(12)),
+        (imPaideiaDaoLogo,configValues(13)),
+        (imPaideiaDaoMinProposaltime,configValues(14)),
+        (imPaideiaDaoBanner,configValues(15)),
+        (imPaideiaDaoBannerEnabled,configValues(16)),
+        (imPaideiaDaoFooter,configValues(17)),
+        (imPaideiaDaoFooterEnabled,configValues(18)),
+        (imPaideiaDaoTheme,configValues(19))
     ),configInsertProof).get
 
-    val daoName: Coll[Byte] = configValues(0).slice(5,configValues(0).size)
+    val daoName: Coll[Byte] = configValues(0).slice(5, configValues(0).size)
     val daoGovernanceTokenId: Coll[Byte] = configValues(1).slice(6,38)
 
     ///////////////////////////////////////////////////////////////////////////
@@ -173,7 +212,8 @@
         blake2b256(protoDaoO.propositionBytes) == protoDaoContractHash,
         configTreeO.digest == filledOutConfigTree.digest,
         protoDaoO.tokens(1)._1 == daoGovernanceTokenId,
-        protoDaoO.tokens(1)._2 == stakePoolSize + 1L
+        protoDaoO.tokens(1)._2 == stakePoolSize + 1L,
+        protoDaoO.value >= 13000000L
     ))
 
     val validMintOut = allOf(Coll(

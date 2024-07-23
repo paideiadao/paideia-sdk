@@ -11,8 +11,8 @@ import im.paideia.common.events.PaideiaEvent
 import im.paideia.common.events.PaideiaEventResponse
 import im.paideia.common.events.BlockEvent
 import org.ergoplatform.appkit.InputBox
-import special.collection.Coll
-import java.util.HashMap
+import sigma.Coll
+import scala.collection.mutable.HashMap
 import org.ergoplatform.sdk.ErgoId
 import im.paideia.util.ConfKeys
 import im.paideia.governance.transactions.UpdateConfigTransaction
@@ -21,16 +21,34 @@ import scala.collection.JavaConverters._
 import im.paideia.common.events.UpdateConfigEvent
 import im.paideia.common.boxes.ConfigBox
 import im.paideia.common.contracts.Config
-import special.sigma.AvlTree
+import sigma.AvlTree
 import scorex.crypto.authds.ADDigest
 import im.paideia.common.transactions.PaideiaTransaction
 import im.paideia.common.events.CreateTransactionsEvent
 import im.paideia.common.filtering.FilterLeaf
 import im.paideia.common.filtering.FilterType
 import im.paideia.common.filtering.CompareField
+import sigma.ast.Constant
+import sigma.ast.SType
+import sigma.ast.ConstantPlaceholder
+import sigma.ast.ByteArrayConstant
+import sigma.Colls
+import sigma.ast.SCollection
+import sigma.ast.SByte
 
 class ActionUpdateConfig(contractSignature: PaideiaContractSignature)
-  extends PaideiaContract(contractSignature) {
+  extends PaideiaContract(
+    contractSignature,
+    garbageCollectable = Some(
+      Array(
+        new ErgoId(
+          Paideia
+            .getConfig(contractSignature.daoKey)
+            .getArray(ConfKeys.im_paideia_dao_action_tokenid)
+        )
+      )
+    )
+  ) {
 
   def box(
     ctx: BlockchainContextImpl,
@@ -54,6 +72,16 @@ class ActionUpdateConfig(contractSignature: PaideiaContractSignature)
     )
   }
 
+  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
+    if (inputBox.getErgoTree().bytesHex != ergoTree.bytesHex) return false
+    try {
+      val b = ActionUpdateConfigBox.fromInputBox(ctx, inputBox)
+      true
+    } catch {
+      case _: Throwable => false
+    }
+  }
+
   override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
     val response: PaideiaEventResponse = event match {
       case cte: CreateTransactionsEvent => {
@@ -61,7 +89,7 @@ class ActionUpdateConfig(contractSignature: PaideiaContractSignature)
           getUtxoSet
             .map(boxes(_))
             .map((b: InputBox) => {
-              val proposalInput = Paideia
+              val proposalInputs = Paideia
                 .getBox(
                   new FilterLeaf[String](
                     FilterType.FTEQ,
@@ -86,9 +114,10 @@ class ActionUpdateConfig(contractSignature: PaideiaContractSignature)
                     .getValue()
                     .asInstanceOf[Coll[Long]](0)
                     .toInt
-                )(0)
+                )
               if (
-                proposalInput
+                proposalInputs.size > 0 &&
+                proposalInputs(0)
                   .getRegisters()
                   .get(0)
                   .getValue()
@@ -165,18 +194,28 @@ class ActionUpdateConfig(contractSignature: PaideiaContractSignature)
 
   override lazy val constants: HashMap[String, Object] = {
     val cons = new HashMap[String, Object]()
-    cons.put("_IM_PAIDEIA_DAO_KEY", ErgoId.create(contractSignature.daoKey).getBytes)
     cons.put(
       "_IM_PAIDEIA_CONTRACTS_CONFIG",
       ConfKeys.im_paideia_contracts_config.ergoValue.getValue()
     )
-    cons.put(
-      "_IM_PAIDEIA_DAO_PROPOSAL_TOKENID",
-      Paideia
-        .getConfig(contractSignature.daoKey)
-        .getArray[Byte](ConfKeys.im_paideia_dao_proposal_tokenid)
-    )
     cons
+  }
+
+  override lazy val parameters: Map[String, Constant[SType]] = {
+    val params = new scala.collection.mutable.HashMap[String, Constant[SType]]()
+    params.put(
+      "imPaideiaDaoKey",
+      ByteArrayConstant(Colls.fromArray(ErgoId.create(contractSignature.daoKey).getBytes))
+    )
+    params.put(
+      "imPaideiaDaoProposalTokenId",
+      ByteArrayConstant(
+        Paideia
+          .getConfig(contractSignature.daoKey)
+          .getArray[Byte](ConfKeys.im_paideia_dao_proposal_tokenid)
+      )
+    )
+    params.toMap
   }
 }
 

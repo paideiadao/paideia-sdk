@@ -1,13 +1,17 @@
-{
+/** This is my contracts description.
+ * Here is another line describing what it does in more detail.
+ *
+ * @return
+ */
+@contract def unstakeProxy(imPaideiaDaoKey: Coll[Byte]) = {
+    #import lib/validRefund/1.0.0/validRefund.es;
+    #import lib/config/1.0.0/config.es;
+    #import lib/box/1.0.0/box.es;
+
     // Refund logic
     sigmaProp(
     if (INPUTS(0).id == SELF.id) {
-        allOf(Coll(
-            OUTPUTS(0).value >= SELF.value - 1000000L,
-            OUTPUTS(0).tokens == SELF.tokens,
-            OUTPUTS(0).propositionBytes == SELF.R4[Coll[Byte]].get,
-            CONTEXT.preHeader.height >= SELF.creationInfo._1 + 30
-        ))
+        validRefund((SELF, (OUTPUTS(0), (SELF.R4[Coll[Byte]].get, 15))))
     } else {
     /**
      *
@@ -23,13 +27,8 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val daoKey: Coll[Byte] = _IM_PAIDEIA_DAO_KEY
-
     val imPaideiaStakeStateTokenId: Coll[Byte] = 
         _IM_PAIDEIA_STAKING_STATE_TOKENID
-
-    val imPaideiaStakingProfitTokenIds: Coll[Byte] = 
-        _IM_PAIDEIA_STAKING_PROFIT_TOKENIDS
 
     val stakeInfoOffset: Int = 8
 
@@ -65,8 +64,6 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val configTree: AvlTree = config.R4[AvlTree].get
-
     val stakeStateTree: AvlTree = stakeState.R4[Coll[AvlTree]].get(0)
 
     val userProp: Coll[Byte]       = proxy.R4[Coll[Byte]].get
@@ -90,16 +87,14 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val configValues: Coll[Option[Coll[Byte]]] = configTree.getMany(
+    val configValues: Coll[Option[Coll[Byte]]] = configTree(config).getMany(
         Coll(
-            imPaideiaStakeStateTokenId,
-            imPaideiaStakingProfitTokenIds
+            imPaideiaStakeStateTokenId
         ),
         configProof
     )
 
-    val stakeStateTokenId: Coll[Byte] = configValues(0).get.slice(6,38)
-    val profitTokenIds: Coll[Byte]    = configValues(1).get
+    val stakeStateTokenId: Coll[Byte] = bytearrayToTokenId(configValues(0))
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -113,12 +108,6 @@
 
     val longIndices: Coll[Int] = 
         newStakeRecord.slice(0,newStakeRecord.size/8-(stakeInfoOffset/8)).indices
-
-    val whiteListedTokenIds: Coll[Coll[Byte]] = 
-        profitTokenIds.slice(0,(profitTokenIds.size-6)/37).indices.map{
-            (i: Int) =>
-            profitTokenIds.slice(6+(37*i)+5,6+(37*(i+1)))
-        }
 
     val stakeKey: Coll[Byte] = proxy.tokens(0)._1
 
@@ -157,34 +146,16 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val correctConfig: Boolean = config.tokens(0)._1 == daoKey
+    val correctConfig: Boolean = config.tokens(0)._1 == imPaideiaDaoKey
 
     val correctStakeState: Boolean = 
         stakeState.tokens(0)._1 == stakeStateTokenId
 
     val tokensUnstaked: Boolean = 
-        currentStakeAmount - newStakeAmount == userO.tokens.fold(0L, {
-            (z: Long, token: (Coll[Byte], Long)) => 
-            if (token._1 == stakeState.tokens(1)._1) 
-                z + token._2 
-            else 
-                z
-        })
+        currentStakeAmount - newStakeAmount == tokensInBoxes((Coll(userO), stakeState.tokens(1)._1))
 
     val correctErgProfit: Boolean = 
         currentProfits(1) - newProfits(1) == userO.value-1000000L
-
-    val correctTokenProfit: Boolean = 
-        stakeState.tokens.slice(2,stakeState.tokens.size).forall{
-            (token: (Coll[Byte], Long)) =>
-            val profitIndex: Int = whiteListedTokenIds.indexOf(token._1,-3)
-            val tokenAmountInOutput: Long = userO.tokens.fold(0L, {
-                (z: Long, outputToken: (Coll[Byte], Long)) => 
-                if (outputToken._1 == token._1) z + outputToken._2 else z
-            })
-            tokenAmountInOutput == 
-                currentProfits(profitIndex+2) - newProfits(profitIndex+2)
-        }
 
     val keyPresent: Boolean = 
         if (newStake > 0)
@@ -213,7 +184,6 @@
         correctStakeState,
         tokensUnstaked,
         correctErgProfit,
-        correctTokenProfit,
         keyPresent,
         correctNewState,
         correctUserOutput

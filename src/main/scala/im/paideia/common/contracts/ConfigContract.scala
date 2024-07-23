@@ -12,11 +12,19 @@ import org.ergoplatform.sdk.ErgoToken
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import org.ergoplatform.restapi.client.ErgoTransactionInput
 
-import java.util.HashMap
+import scala.collection.mutable.HashMap
 import scala.collection.JavaConverters._
 import scorex.crypto.authds.ADDigest
 import im.paideia.common.events.UpdateConfigEvent
 import im.paideia.common.transactions.PaideiaTransaction
+import sigma.ast.ConstantPlaceholder
+import sigma.ast.SCollection
+import sigma.ast.SByte
+import sigma.ast.Constant
+import sigma.ast.SType
+import sigma.ast.ByteArrayConstant
+import sigma.Colls
+import org.ergoplatform.appkit.InputBox
 
 /** This class represents a configuration contract and extends the PaideiaContract
   * abstract class.
@@ -26,7 +34,10 @@ import im.paideia.common.transactions.PaideiaTransaction
   *   this contract.
   */
 class Config(contractSignature: PaideiaContractSignature)
-  extends PaideiaContract(contractSignature) {
+  extends PaideiaContract(
+    contractSignature,
+    ConfKeys.im_paideia_contracts_config.originalKey
+  ) {
 
   /** Creates a ConfigBox object given a BlockchainContextImpl object and a DAO object.
     *
@@ -42,12 +53,16 @@ class Config(contractSignature: PaideiaContractSignature)
     dao: DAO,
     digestOpt: Option[ADDigest] = None
   ): ConfigBox = {
-    val res = new ConfigBox(dao.config, digestOpt)
-    res.ctx      = ctx
-    res.contract = contract
-    res.value    = 1000000L
-    res.tokens   = List(new ErgoToken(dao.key, 1L))
-    res
+    new ConfigBox(ctx, dao, this, digestOpt)
+  }
+
+  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
+    try {
+      val b = ConfigBox.fromInputBox(ctx, inputBox)
+      true
+    } catch {
+      case _: Throwable => false
+    }
   }
 
   /** Represents the constants defined in this contract. Returns a HashMap object with the
@@ -62,16 +77,31 @@ class Config(contractSignature: PaideiaContractSignature)
   override lazy val constants: HashMap[String, Object] = {
     val cons = new HashMap[String, Object]()
     cons.put(
-      "_IM_PAIDEIA_DAO_ACTION_TOKENID",
-      Paideia
-        .getConfig(contractSignature.daoKey)
-        .getArray[Byte](ConfKeys.im_paideia_dao_action_tokenid)
-    )
-    cons.put(
       "_IM_PAIDEIA_CONTRACTS_CONFIG",
       ConfKeys.im_paideia_contracts_config.ergoValue.getValue()
     )
+    cons.put(
+      "_IM_PAIDEIA_CONTRACTS_ACTION",
+      Colls.fromArray(
+        ConfKeys.im_paideia_contracts_action(Array[Byte]()).originalKeyBytes
+      )
+    )
     cons
+  }
+
+  override lazy val parameters: Map[String, Constant[SType]] = {
+    val params = new scala.collection.mutable.HashMap[String, Constant[SType]]()
+    params.put(
+      "imPaideiaDaoActionTokenId",
+      ByteArrayConstant(
+        Colls.fromArray(
+          Paideia
+            .getConfig(contractSignature.daoKey)
+            .getArray[Byte](ConfKeys.im_paideia_dao_action_tokenid)
+        )
+      )
+    )
+    params.toMap
   }
 }
 

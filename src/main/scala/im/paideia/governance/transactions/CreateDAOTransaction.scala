@@ -25,10 +25,10 @@ import im.paideia.staking.TotalStakingState
 import im.paideia.governance.boxes.ProtoDAOBox
 import im.paideia.common.contracts.Treasury
 import im.paideia.DAOConfigValueSerializer
-import sigmastate.eval.Colls
+import sigma.Colls
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 import scorex.crypto.authds.ADDigest
-import special.sigma.AvlTree
+import sigma.AvlTree
 import org.ergoplatform.sdk.ErgoToken
 import im.paideia.governance.contracts.ActionSendFundsBasic
 import im.paideia.governance.contracts.ActionUpdateConfig
@@ -42,6 +42,11 @@ import im.paideia.staking.contracts.StakeVote
 import im.paideia.staking.contracts.Unstake
 import im.paideia.governance.contracts.CreateDAO
 import org.ergoplatform.appkit.Address
+import scorex.util.encode.Base16
+import sigma.serialization.ErgoTreeSerializer
+import sigma.ast.ByteArrayConstant
+import sigma.ast.ErgoTree
+import org.ergoplatform.appkit.AppkitHelpers
 
 case class CreateDAOTransaction(
   _ctx: BlockchainContextImpl,
@@ -102,9 +107,11 @@ case class CreateDAOTransaction(
 
   val paideiaConfig = Paideia.getConfig(Env.paideiaDaoKey)
 
-  val daoOriginOutput = DAOOrigin(
+  val daoOriginContract = DAOOrigin(
     PaideiaContractSignature(networkType = _ctx.getNetworkType(), daoKey = dao.key)
-  ).box(
+  )
+
+  val daoOriginOutput = daoOriginContract.box(
     _ctx,
     dao,
     Long.MaxValue,
@@ -117,7 +124,7 @@ case class CreateDAOTransaction(
 
   val emissionTime = _ctx.createPreHeader().build().getTimestamp() + dao.config[Long](
     ConfKeys.im_paideia_staking_cyclelength
-  ) - 600000L
+  )
 
   val state = TotalStakingState(
     dao.key,
@@ -131,6 +138,7 @@ case class CreateDAOTransaction(
   val actionSendFundsContract = ActionSendFundsBasic(
     PaideiaContractSignature(daoKey = dao.key)
   )
+
   val actionUpdateConfigContract = ActionUpdateConfig(
     PaideiaContractSignature(daoKey = dao.key)
   )
@@ -179,7 +187,7 @@ case class CreateDAOTransaction(
     paideiaConfig
       .getProof(
         ConfKeys.im_paideia_contracts_protodao,
-        ConfKeys.im_paideia_contracts_dao
+        ConfKeys.im_paideia_contracts_createdao
       )(Some(paideiaConfigDigest))
   )
 
@@ -221,6 +229,8 @@ case class CreateDAOTransaction(
 
   var resultingDigest: Option[ADDigest] = None
 
+  val insertOperations = createDaoContract.getInsertOperations(dao)
+
   val contextVarsCreateDAO = List(
     ContextVar.of(
       0.toByte,
@@ -234,7 +244,7 @@ case class CreateDAOTransaction(
       2.toByte, {
         var result = dao.config
           .insertProof(
-            createDaoContract.getInsertOperations(dao): _*
+            insertOperations: _*
           )(Left(configDigest))
         resultingDigest = Some(result._2)
         result._1
@@ -279,6 +289,9 @@ case class CreateDAOTransaction(
             ),
             Colls.fromArray(
               DAOConfigValueSerializer(stakingUnstakeContract.contractSignature)
+            ),
+            Colls.fromArray(
+              DAOConfigValueSerializer(daoOriginContract.contractSignature)
             )
           )
         )
@@ -295,6 +308,10 @@ case class CreateDAOTransaction(
           )
         )
       )
+    ),
+    ContextVar.of(
+      5.toByte,
+      ErgoValueBuilder.buildFor(createDaoContract.getAvlTreeKeys)
     )
   )
 

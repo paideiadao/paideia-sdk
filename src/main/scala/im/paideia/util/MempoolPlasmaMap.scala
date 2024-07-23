@@ -2,7 +2,7 @@ package im.paideia.util
 
 import work.lithos.plasma.collections.LocalPlasmaBase
 import scorex.crypto.authds.avltree.batch.VersionedAVLStorage
-import sigmastate.AvlTreeFlags
+import sigma.data.AvlTreeFlags
 import work.lithos.plasma.PlasmaParameters
 import work.lithos.plasma.ByteConversion
 import scorex.crypto.hash.Digest32
@@ -22,9 +22,10 @@ import work.lithos.plasma.collections.Proof
 import scorex.crypto.authds.avltree.batch.Update
 import scorex.crypto.authds.avltree.batch.Remove
 import scorex.crypto.authds.avltree.batch.Lookup
-import sigmastate.AvlTreeData
-import special.sigma.AvlTree
+import sigma.data.AvlTreeData
+import sigma.AvlTree
 import org.ergoplatform.appkit.ErgoValue
+import sigma.Colls
 
 class MempoolPlasmaMap[K, V](
   store: VersionedAVLStorage[Digest32],
@@ -51,7 +52,12 @@ class MempoolPlasmaMap[K, V](
   }
 
   def ergoAVLData(digestOpt: Option[ADDigest] = None): AvlTreeData =
-    AvlTreeData(digestOpt.getOrElse(digest), flags, params.keySize, params.valueSizeOpt)
+    AvlTreeData(
+      Colls.fromArray(digestOpt.getOrElse(digest)),
+      flags,
+      params.keySize,
+      params.valueSizeOpt
+    )
 
   def ergoAVLTree(digestOpt: Option[ADDigest] = None): AvlTree =
     sigmastate.eval.avlTreeDataToAvlTree(ergoAVLData(digestOpt))

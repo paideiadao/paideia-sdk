@@ -25,7 +25,7 @@ import im.paideia.Paideia
 import im.paideia.common.events.TransactionEvent
 import im.paideia.common.events.CreateTransactionsEvent
 import im.paideia.common.transactions.RefundTransaction
-import sigmastate.exceptions.InterpreterException
+import sigma.exceptions.InterpreterException
 
 class UnstakeTransactionSuite extends PaideiaTestSuite {
   test("Sign partial unstake tx") {
@@ -61,6 +61,9 @@ class UnstakeTransactionSuite extends PaideiaTestSuite {
         changeStakeContract.newBox(changeStakeContract.box(ctx).inputBox(), false)
 
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
+
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_config, configContract.contractSignature)
 
         val configBox = Config(configContract.contractSignature).box(ctx, dao).inputBox()
         configContract.clearBoxes()
@@ -130,6 +133,8 @@ class UnstakeTransactionSuite extends PaideiaTestSuite {
         unstakeContract.newBox(unstakeContract.box(ctx).inputBox(), false)
 
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_config, configContract.contractSignature)
 
         val configBox = Config(configContract.contractSignature).box(ctx, dao).inputBox()
         configContract.clearBoxes()
@@ -194,6 +199,9 @@ class UnstakeTransactionSuite extends PaideiaTestSuite {
         unstakeContract.newBox(unstakeContract.box(ctx).inputBox(), false)
 
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
+
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_config, configContract.contractSignature)
 
         val configBox = Config(configContract.contractSignature).box(ctx, dao).inputBox()
         configContract.clearBoxes()

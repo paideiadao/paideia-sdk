@@ -62,6 +62,8 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
         val dummyAddress = Address.create("4MQyML64GnzMxZgm")
 
         val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_treasury, treasuryContract.contractSignature)
         treasuryContract.clearBoxes()
         treasuryContract.newBox(
           treasuryContract
@@ -79,6 +81,8 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
         compoundContract.newBox(compoundContract.box(ctx).inputBox(), false)
 
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_config, configContract.contractSignature)
 
         val configBox = Config(configContract.contractSignature).box(ctx, dao).inputBox()
         configContract.clearBoxes()
@@ -109,11 +113,7 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
         PaideiaTestSuite.init(ctx)
         val dao    = StakingTest.testDAO
         val sigUsd = Util.randomKey
-        dao.config.set(
-          ConfKeys.im_paideia_staking_profit_tokenids,
-          Array(ErgoId.create(sigUsd).getBytes)
-        )
-        val state = TotalStakingState(dao.key, 0L)
+        val state  = TotalStakingState(dao.key, 0L)
 
         val stakingContract = StakeState(PaideiaContractSignature(daoKey = dao.key))
         dao.config
@@ -134,8 +134,11 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
         val dummyAddress = Address.create("4MQyML64GnzMxZgm")
 
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
-
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_config, configContract.contractSignature)
         val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_treasury, treasuryContract.contractSignature)
         treasuryContract.clearBoxes()
         treasuryContract.newBox(
           treasuryContract
@@ -209,6 +212,8 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
         val dummyAddress = Address.create("4MQyML64GnzMxZgm")
 
         val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_treasury, treasuryContract.contractSignature)
         treasuryContract.clearBoxes()
         treasuryContract.newBox(
           treasuryContract
@@ -226,7 +231,8 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
         compoundContract.newBox(compoundContract.box(ctx).inputBox(), false)
 
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
-
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_config, configContract.contractSignature)
         val configBox = Config(configContract.contractSignature).box(ctx, dao).inputBox()
         configContract.clearBoxes()
         configContract.newBox(configBox, false)
@@ -286,6 +292,8 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
         val dummyAddress = Address.create("4MQyML64GnzMxZgm")
 
         val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_treasury, treasuryContract.contractSignature)
         treasuryContract.clearBoxes()
         treasuryContract.newBox(
           treasuryContract
@@ -303,7 +311,8 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
         compoundContract.newBox(compoundContract.box(ctx).inputBox(), false)
 
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
-
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_config, configContract.contractSignature)
         val configBox = Config(configContract.contractSignature).box(ctx, dao).inputBox()
         configContract.clearBoxes()
         configContract.newBox(configBox, false)
@@ -358,6 +367,8 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
         val dummyAddress = Address.create("4MQyML64GnzMxZgm")
 
         val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_treasury, treasuryContract.contractSignature)
         treasuryContract.clearBoxes()
         treasuryContract.newBox(
           treasuryContract
@@ -375,7 +386,8 @@ class CompoundTransactionSuite extends PaideiaTestSuite {
         compoundContract.newBox(compoundContract.box(ctx).inputBox(), false)
 
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
-
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_config, configContract.contractSignature)
         val configBox = Config(configContract.contractSignature).box(ctx, dao).inputBox()
         configContract.clearBoxes()
         configContract.newBox(configBox, false)

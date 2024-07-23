@@ -3,7 +3,7 @@ package im.paideia.staking.transactions
 import im.paideia.common.transactions._
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import org.ergoplatform.appkit.InputBox
-import special.sigma.AvlTree
+import sigma.AvlTree
 import org.ergoplatform.ErgoAddress
 import org.ergoplatform.appkit.Eip4Token
 import org.ergoplatform.appkit.OutBox
@@ -17,7 +17,6 @@ import im.paideia.staking._
 import im.paideia.staking.contracts._
 import im.paideia.staking.boxes._
 import im.paideia.DAO
-import sigmastate.Values
 import org.ergoplatform.appkit.Address
 import im.paideia.common.filtering.FilterType
 import im.paideia.Paideia
@@ -26,18 +25,20 @@ import im.paideia.common.filtering.CompareField
 import im.paideia.util.ConfKeys
 import org.ergoplatform.sdk.ErgoId
 import im.paideia.common.contracts.PaideiaContractSignature
-import special.collection.Coll
+import sigma.Coll
 import scorex.crypto.authds.ADDigest
 
 case class AddStakeTransaction(
   _ctx: BlockchainContextImpl,
-  addStakeProxyInput: InputBox,
+  amount: Long,
+  stakingKey: String,
   _changeAddress: Address,
-  daoKey: String
+  userAddress: Address,
+  daoKey: String,
+  var stakingContextVars: StakingContextVars
 ) extends PaideiaTransaction {
-  val stakingKey = addStakeProxyInput.getTokens().get(0).getId.toString()
-  val amount     = addStakeProxyInput.getRegisters().get(1).getValue().asInstanceOf[Long]
-  val config     = Paideia.getConfig(daoKey)
+
+  val config = Paideia.getConfig(daoKey)
 
   val state = TotalStakingState(daoKey)
 
@@ -74,14 +75,17 @@ case class AddStakeTransaction(
   if (!configDigest.sameElements(config._config.digest))
     throw new Exception("Config not synced correctly")
 
-  val stakingContextVars = stakeStateInputBox
+  stakingContextVars = stakeStateInputBox
     .addStake(stakingKey, amount)
 
   val contextVars = stakingContextVars.stakingStateContextVars
     .::(
       ContextVar.of(
-        0.toByte,
-        stakeStateInputBox.useContract.getConfigContext(Some(configDigest))
+        1.toByte,
+        stakeStateInputBox.useContract.getConfigContext(
+          Some(configDigest),
+          ConfKeys.im_paideia_contracts_staking_changestake
+        )
       )
     )
 
@@ -100,17 +104,6 @@ case class AddStakeTransaction(
       )
     )
 
-  val proxyContextVars = List(
-    ContextVar.of(
-      0.toByte,
-      config.getProof(
-        ConfKeys.im_paideia_staking_state_tokenid
-      )(Some(configDigest))
-    ),
-    ContextVar.of(1.toByte, stakingContextVars.companionContextVars(0).getValue()),
-    ContextVar.of(2.toByte, stakingContextVars.companionContextVars(1).getValue())
-  )
-
   val userOutput = _ctx
     .newTxBuilder()
     .outBoxBuilder()
@@ -119,17 +112,7 @@ case class AddStakeTransaction(
       new ErgoToken(stakingKey, 1L)
     )
     .contract(
-      Address
-        .fromPropositionBytes(
-          _ctx.getNetworkType(),
-          addStakeProxyInput
-            .getRegisters()
-            .get(0)
-            .getValue()
-            .asInstanceOf[Coll[Byte]]
-            .toArray
-        )
-        .toErgoContract
+      userAddress.toErgoContract
     )
     .build()
 
@@ -138,8 +121,7 @@ case class AddStakeTransaction(
   changeAddress = _changeAddress
   inputs = List[InputBox](
     stakeStateInput.withContextVars(contextVars: _*),
-    changeStakeInput.withContextVars(changeStakeContextVars: _*),
-    addStakeProxyInput.withContextVars(proxyContextVars: _*)
+    changeStakeInput.withContextVars(changeStakeContextVars: _*)
   )
   dataInputs = List[InputBox](configInput)
   outputs = List[OutBox](

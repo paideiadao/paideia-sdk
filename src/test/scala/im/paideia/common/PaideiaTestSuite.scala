@@ -33,6 +33,7 @@ import im.paideia.staking.contracts.StakeSnapshot
 import im.paideia.staking.contracts.StakeVote
 import im.paideia.staking.contracts.Unstake
 import im.paideia.governance.contracts.CreateDAO
+import sigma.ast.ErgoTree
 
 class PaideiaTestSuite extends AnyFunSuite with HttpClientTesting {}
 
@@ -52,6 +53,10 @@ object PaideiaTestSuite {
       )
       paideiaConfig.set(
         ConfKeys.im_paideia_dao_action_tokenid,
+        ErgoId.create(Util.randomKey).getBytes
+      )
+      paideiaConfig.set(
+        ConfKeys.im_paideia_staking_state_tokenid,
         ErgoId.create(Util.randomKey).getBytes
       )
       Paideia.addDAO(DAO(Env.paideiaDaoKey, paideiaConfig))
@@ -85,7 +90,7 @@ object PaideiaTestSuite {
         PaideiaContractSignature(daoKey = Env.paideiaDaoKey)
       )
       val proposalBasicContract = ProposalBasic(
-        PaideiaContractSignature(daoKey = Util.randomKey)
+        PaideiaContractSignature(daoKey = Env.paideiaDaoKey)
       )
       val stakingChangeContract = ChangeStake(
         PaideiaContractSignature(daoKey = Env.paideiaDaoKey)
@@ -143,6 +148,11 @@ object PaideiaTestSuite {
         ConfKeys.im_paideia_contracts_split_profit,
         splitProfitContract.contractSignature
       )
+      paideiaConfig.set(ConfKeys.im_paideia_default_dao, daoContract.ergoTree.bytes)
+      paideiaConfig.set(
+        ConfKeys.im_paideia_default_dao_signature,
+        daoContract.contractSignature
+      )
       paideiaConfig.set(ConfKeys.im_paideia_fees_createproposal_paideia, 10000L)
       paideiaConfig.set(
         ConfKeys.im_paideia_default_treasury,
@@ -161,6 +171,7 @@ object PaideiaTestSuite {
         ConfKeys.im_paideia_default_action_sendfunds,
         actionSendFundsContract.ergoTree.bytes
       )
+
       paideiaConfig.set(
         ConfKeys.im_paideia_default_action_sendfunds_signature,
         actionSendFundsContract.contractSignature

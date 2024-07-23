@@ -12,27 +12,32 @@ import im.paideia.Paideia
 import im.paideia.util.ConfKeys
 import org.ergoplatform.sdk.ErgoToken
 import im.paideia.common.contracts.PaideiaContractSignature
-import special.collection.Coll
+import sigma.Coll
 import org.ergoplatform.appkit.ContextVar
 import im.paideia.staking.TotalStakingState
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
-import special.sigma.AvlTree
+import sigma.AvlTree
 import scorex.crypto.authds.ADDigest
 import im.paideia.staking.boxes.StakeStateBox
 import scorex.crypto.hash.Blake2b256
 import im.paideia.staking.contracts.StakeVote
+import im.paideia.governance.VoteRecord
+import sigma.Colls
+import scorex.util.encode.Base16
+import im.paideia.util.TxTypes
 
 final case class CastVoteTransaction(
   _ctx: BlockchainContextImpl,
-  castVoteInput: InputBox,
+  proposalIndex: Int,
+  stakeKey: String,
+  vote: VoteRecord,
   dao: DAO,
-  _changeAddress: Address
+  _changeAddress: Address,
+  userAddress: Address
 ) extends PaideiaTransaction {
   ctx           = _ctx
   fee           = 1850000L
   changeAddress = _changeAddress
-
-  val castVoteBox = CastVoteBox.fromInputBox(ctx, castVoteInput)
 
   val proposalInput = Paideia
     .getBox(
@@ -49,7 +54,7 @@ final case class CastVoteTransaction(
         .getRegisters()
         .get(0)
         .getValue()
-        .asInstanceOf[Coll[Int]](0) == castVoteBox.proposalIndex
+        .asInstanceOf[Coll[Int]](0) == proposalIndex
     )(0)
 
   val proposalDigest =
@@ -86,8 +91,8 @@ final case class CastVoteTransaction(
     .getProposalContract(Blake2b256(proposalInput.getErgoTree().bytes).array.toList)
 
   val currentVote = proposalContract.getVote(
-    castVoteBox.stakeKey,
-    castVoteBox.proposalIndex,
+    stakeKey,
+    proposalIndex,
     Left(proposalDigest)
   )
 
@@ -95,8 +100,8 @@ final case class CastVoteTransaction(
     .castVote(
       ctx,
       proposalInput,
-      castVoteBox.vote,
-      castVoteBox.stakeKey,
+      vote,
+      stakeKey,
       Left(proposalDigest)
     )
 
@@ -111,17 +116,6 @@ final case class CastVoteTransaction(
       .digest
       .toArray
 
-  val configContext = List(
-    ContextVar.of(
-      0.toByte,
-      dao.config.getProof(
-        ConfKeys.im_paideia_dao_quorum,
-        ConfKeys.im_paideia_dao_threshold,
-        ConfKeys.im_paideia_staking_state_tokenid
-      )(Some(configDigest))
-    )
-  )
-
   val stakeVoteContract = StakeVote(
     dao
       .config[PaideiaContractSignature](ConfKeys.im_paideia_contracts_staking_vote)
@@ -131,19 +125,20 @@ final case class CastVoteTransaction(
     stakeVoteContract.boxes(stakeVoteContract.getUtxoSet.toArray.apply(0))
 
   val getProof = TotalStakingState(dao.key).currentStakingState
-    .getStakes(List(castVoteBox.stakeKey), Some(stakeStateInputBox.stateDigest))
+    .getStakes(List(stakeKey), Some(stakeStateInputBox.stateDigest))
 
   val stakingContextVars = stakeStateInputBox.vote(
-    castVoteBox.stakeKey,
+    stakeKey,
     proposalInput.getRegisters().get(1).getValue().asInstanceOf[Coll[Long]](0),
     currentVote,
-    castVoteBox.vote
+    vote
   )
 
   val stakeStateContextVars = stakingContextVars.stakingStateContextVars.::(
     ContextVar.of(
-      0.toByte,
-      stakeStateInputBox.useContract.getConfigContext(Some(configDigest))
+      1.toByte,
+      stakeStateInputBox.useContract
+        .getConfigContext(Some(configDigest), ConfKeys.im_paideia_contracts_staking_vote)
     )
   )
 
@@ -155,29 +150,41 @@ final case class CastVoteTransaction(
       )
     )
 
-  val extraContext = List(
+  val proposalContext = List(
+    ContextVar.of(0.toByte, TxTypes.VOTE),
     ContextVar.of(
       3.toByte,
       getProof.proof.ergoValue
     ),
-    ContextVar.of(4.toByte, ErgoValueBuilder.buildFor(0, 0L))
-  )
+    ContextVar.of(10.toByte, ErgoValueBuilder.buildFor(0, 0L)),
+    ContextVar.of(
+      4.toByte,
+      ErgoValueBuilder.buildFor(
+        Colls.fromArray(VoteRecord.convertsVoteRecord.convertToBytes(vote))
+      )
+    ),
+    ContextVar.of(
+      5.toByte,
+      ErgoValueBuilder.buildFor(
+        Colls.fromArray(Base16.decode(stakeKey).get)
+      )
+    )
+  ) ++ result._1
 
   val userOutput = _ctx
     .newTxBuilder()
     .outBoxBuilder()
     .value(1000000L)
     .tokens(
-      new ErgoToken(castVoteBox.stakeKey, 1L)
+      new ErgoToken(stakeKey, 1L)
     )
-    .contract(castVoteBox.userAddress.toErgoContract)
+    .contract(userAddress.toErgoContract)
     .build()
 
   inputs = List(
     stakeStateInput.withContextVars(stakeStateContextVars: _*),
     stakeVoteInput.withContextVars(stakeVoteContextVars: _*),
-    proposalInput.withContextVars(configContext ++ result._1 ++ extraContext: _*),
-    castVoteInput
+    proposalInput.withContextVars(proposalContext: _*)
   )
   dataInputs = List(configInput)
   outputs = List(

@@ -1,13 +1,17 @@
-{
+/** This is my contracts description.
+ * Here is another line describing what it does in more detail.
+ *
+ * @return
+ */
+@contract def stakeProxy(imPaideiaDaoKey: Coll[Byte]) = {
+    #import lib/validRefund/1.0.0/validRefund.es;
+    #import lib/config/1.0.0/config.es;
+    #import lib/box/1.0.0/box.es;
+    
     // Refund logic
     sigmaProp(
     if (INPUTS(0).id == SELF.id) {
-        allOf(Coll(
-            OUTPUTS(0).value >= SELF.value - 1000000L,
-            OUTPUTS(0).tokens == SELF.tokens,
-            OUTPUTS(0).propositionBytes == SELF.R4[Coll[Byte]].get,
-            CONTEXT.preHeader.height >= SELF.creationInfo._1 + 30
-        ))
+        validRefund((SELF,(OUTPUTS(0), (SELF.R4[Coll[Byte]].get, 15))))
     } else {
     /**
      *
@@ -24,7 +28,6 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val daoKey: Coll[Byte]               = _IM_PAIDEIA_DAO_KEY
     val imPaideiaDaoName: Coll[Byte]     = _IM_PAIDEIA_DAO_NAME
     val stakeKeyText: Coll[Byte]         = _STAKE_KEY
     val poweredByPaideiaText: Coll[Byte] = _POWERED_BY_PAIDEIA
@@ -70,8 +73,6 @@
     val userProp: Coll[Byte] = stakeProxy.R4[Coll[Byte]].get
     val stakeAmount: Long    = stakeProxy.R5[Long].get
 
-    val configTree: AvlTree = config.R4[AvlTree].get
-
     val stakeStateTree: AvlTree  = stakeState.R4[Coll[AvlTree]].get(0)
     val stakeStateR5: Coll[Long] = stakeState.R5[Coll[Long]].get
     val totalStaked: Long        = stakeStateR5(1)
@@ -101,7 +102,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val configValues: Coll[Option[Coll[Byte]]] = configTree.getMany(
+    val configValues: Coll[Option[Coll[Byte]]] = configTree(config).getMany(
         Coll(
             imPaideiaStakeStateTokenId,
             imPaideiaDaoName
@@ -109,10 +110,8 @@
         configProof
     )
 
-    val stakeStateTokenId: Coll[Byte] = configValues(0).get.slice(6,38)
-
-    val daoName: Coll[Byte] = 
-        configValues(1).get.slice(5,configValues(1).get.size)
+    val stakeStateTokenId: Coll[Byte] = bytearrayToTokenId(configValues(0))
+    val daoName: Coll[Byte]           = bytearrayToString(configValues(1))
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -139,7 +138,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val correctConfig: Boolean = config.tokens(0)._1 == daoKey
+    val correctConfig: Boolean = config.tokens(0)._1 == imPaideiaDaoKey
 
     val correctStakeState: Boolean = 
         stakeState.tokens(0)._1 == stakeStateTokenId
@@ -155,11 +154,7 @@
         mintDecimals == decimals0
     ))
 
-    val correctAmountMinted: Boolean = OUTPUTS.flatMap{(b: Box) => b.tokens}
-        .fold(0L, {
-            (z: Long, token: (Coll[Byte], Long)) => 
-            if (token._1==stakeState.id) z + token._2 else z
-        }) == 1L
+    val correctAmountMinted: Boolean = tokensInBoxes((OUTPUTS, stakeState.id)) == 1L
 
     val tokensStaked: Boolean = allOf(Coll(
         stakeAmount == (stakeStateO.tokens(1)._2 - stakeState.tokens(1)._2),

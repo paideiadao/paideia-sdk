@@ -10,27 +10,23 @@ import im.paideia.common.contracts.PaideiaContractSignature
 import im.paideia.util._
 import im.paideia._
 import org.ergoplatform.appkit.InputBox
-import special.collection.Coll
-import sigmastate.eval.Colls
+import sigma.Coll
+import sigma.Colls
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
+import scorex.crypto.hash.Blake2b256
 
 case class DAOOriginBox(
   _ctx: BlockchainContextImpl,
   dao: DAO,
   propTokens: Long,
   actionTokens: Long,
-  useContract: DAOOrigin
+  useContract: DAOOrigin,
+  _value: Long = 1000000000L
 ) extends PaideiaBox {
 
   ctx      = _ctx
-  value    = 1000000L
+  value    = _value
   contract = useContract.contract
-
-  override def registers: List[ErgoValue[_]] = {
-    List(
-      ErgoValueBuilder.buildFor(Colls.fromArray(ErgoId.create(dao.key).getBytes))
-    )
-  }
 
   override def tokens: List[ErgoToken] = {
     List(
@@ -48,17 +44,19 @@ case class DAOOriginBox(
 }
 
 object DAOOriginBox {
-  def fromInput(ctx: BlockchainContextImpl, inp: InputBox): DAOOriginBox = {
-    val contract = DAOOrigin(PaideiaContractSignature(daoKey = Env.paideiaDaoKey))
+  def fromInputBox(ctx: BlockchainContextImpl, inp: InputBox): DAOOriginBox = {
+    val contract = DAOOrigin
+      .contractInstances(Blake2b256(inp.getErgoTree().bytes).array.toList)
+      .asInstanceOf[DAOOrigin]
     DAOOriginBox(
       ctx,
       Paideia.getDAO(
-        new ErgoId(inp.getRegisters().get(0).getValue().asInstanceOf[Coll[Byte]].toArray)
-          .toString()
+        contract.contractSignature.daoKey
       ),
       inp.getTokens().get(1).getValue,
       inp.getTokens().get(2).getValue,
-      contract
+      contract,
+      inp.getValue()
     )
   }
 }

@@ -1,13 +1,17 @@
-{
+/** This is my contracts description.
+ * Here is another line describing what it does in more detail.
+ *
+ * @return
+ */
+@contract def createProposal(imPaideiaDaoKey: Coll[Byte]) = {
+    #import lib/validRefund/1.0.0/validRefund.es;
+    #import lib/box/1.0.0/box.es;
+    #import lib/bytesWithoutCreationInfo/1.0.0/bytesWithoutCreationInfo.es;
+
     // Refund logic
     sigmaProp(
     if (INPUTS(0).id == SELF.id) {
-        allOf(Coll(
-            OUTPUTS(0).value >= SELF.value - 1000000L,
-            OUTPUTS(0).tokens == SELF.tokens,
-            OUTPUTS(0).propositionBytes == SELF.R4[Coll[Coll[Byte]]].get(0),
-            CONTEXT.preHeader.height >= SELF.creationInfo._1 + 30
-        ))
+        validRefund((SELF, (OUTPUTS(0), (SELF.R4[Coll[Coll[Byte]]].get(0), 15))))
     } else {
     /**
      *
@@ -17,13 +21,6 @@
      *
      */
 
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
-    // Constants                                                             //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
-
-    val imPaideiaDaoKey: Coll[Byte] = _IM_PAIDEIA_DAO_KEY
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -39,8 +36,6 @@
     // Registers                                                             //
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
-
-    val daoOriginKey: Coll[Byte] = daoOrigin.R4[Coll[Byte]].get
 
     val createProposalR4: Coll[Coll[Byte]] = 
         createProposal.R4[Coll[Coll[Byte]]].get
@@ -62,44 +57,18 @@
 
     val stakeKey: Coll[Byte] = createProposal.tokens(0)._1
 
-    def vlqByteSize(l: Long): Int = {
-        if(l < 128L) 1
-        else if(l < 16384L) 2
-        else if(l < 2097152L) 3
-        else if(l < 268435456L) 4
-        else if(l < 34359738368L) 5
-        else if(l < 4398046511104L) 6
-        else if(l < 562949953421312L) 7
-        else if(l < 72057594037927936L) 8
-        else 9
-    }
-
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
     // Simple conditions                                                     //
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val correctDaoOrigin: Boolean = daoOriginKey == imPaideiaDaoKey
-
-    val keyReturned: Boolean = anyOf(
-        userO.flatMap{
-            (b: Box) =>
-            b.tokens
-        }.map{
-            (t: (Coll[Byte], Long)) =>
-            t._1 == stakeKey
-        }
-    )
+    val keyReturned: Boolean = tokenExists((userO, stakeKey))
 
     val boxesCreated: Boolean = 
         requestedBoxes.zip(OUTPUTS.slice(1,requestedBoxes.size)).forall{
             (boxes: (Box, Box)) =>
-            val valueByteSize = vlqByteSize(boxes._1.value)
-            val creationByteSize1 = vlqByteSize(boxes._1.creationInfo._1.toLong)
-            val creationByteSize2 = vlqByteSize(boxes._2.creationInfo._1.toLong)
-            boxes._1.bytesWithoutRef.slice(0,valueByteSize+boxes._1.propositionBytes.size) == boxes._2.bytesWithoutRef.slice(0,valueByteSize+boxes._1.propositionBytes.size) &&
-            boxes._1.bytesWithoutRef.slice(valueByteSize+boxes._1.propositionBytes.size+creationByteSize1, boxes._1.bytesWithoutRef.size) == boxes._2.bytesWithoutRef.slice(valueByteSize+boxes._1.propositionBytes.size+creationByteSize2, boxes._2.bytesWithoutRef.size)
+            bytesWithoutCreationInfo(boxes._1) == bytesWithoutCreationInfo(boxes._2)
         }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -110,7 +79,8 @@
 
     allOf(Coll(
         keyReturned,
-        correctDaoOrigin,
-        boxesCreated
+        true,
+        // correctDaoOrigin,
+        // boxesCreated
     ))})
 }

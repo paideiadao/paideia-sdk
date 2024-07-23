@@ -1,13 +1,13 @@
-{
-
-    /**
-     *
-     *  CastVote
-     *
-     *  This contract ensures the is added correctly to the proposal tally and
-     *  the stake key is returned to the user.
-     *
-     */
+/**
+ * Ensures newly created DAOs are paying the correct fees to the paideia DAO
+ *
+ * @param paideiaDaoKey Token ID of the paideia dao key
+ * @param paideiaTokenId Token ID of the paideia token
+ *
+ * @return
+ */
+@contract def paideiaOrigin(paideiaDaoKey: Coll[Byte], paideiaTokenId: Coll[Byte]) = {
+    #import lib/config/1.0.0/config.es;
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -15,8 +15,6 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val paideiaDaoKey: Coll[Byte]              = _PAIDEIA_DAO_KEY
-    val paideiaTokenId: Coll[Byte]             = _PAIDEIA_TOKEN_ID
     val imPaideiaFeesCreateDaoErg: Coll[Byte]  = _IM_PAIDEIA_FEES_CREATEDAO_ERG
     val imPaideiaFeesCreateDaoPai: Coll[Byte]  = _IM_PAIDEIA_FEES_CREATEDAO_PAIDEIA
     val imPaideiaContractsProtoDao: Coll[Byte] = _IM_PAIDEIA_CONTRACTS_PROTODAO
@@ -56,14 +54,6 @@
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
-    // Registers                                                             //
-    //                                                                       //
-    ///////////////////////////////////////////////////////////////////////////
-
-    val paideiaConfigTree: AvlTree = paideiaConfig.R4[AvlTree].get
-
-    ///////////////////////////////////////////////////////////////////////////
-    //                                                                       //
     // Context variables                                                     //
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
@@ -76,7 +66,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val configValues: Coll[Option[Coll[Byte]]] = paideiaConfigTree.getMany(
+    val configValues: Coll[Option[Coll[Byte]]] = configTree(paideiaConfig).getMany(
         Coll(
             imPaideiaFeesCreateDaoErg,
             imPaideiaFeesCreateDaoPai,
@@ -92,9 +82,9 @@
     val createDAOFeePaideia: Long = 
         byteArrayToLong(configValues(1).get.slice(1,9))
 
-    val protoDAOContractHash: Coll[Byte]      = configValues(2).get.slice(1,33)
-    val protoDAOProxyContractHash: Coll[Byte] = configValues(3).get.slice(1,33)
-    val profitShareContractHash: Coll[Byte]   = configValues(4).get.slice(1,33)
+    val protoDAOContractHash: Coll[Byte]      = bytearrayToContractHash(configValues(2))
+    val protoDAOProxyContractHash: Coll[Byte] = bytearrayToContractHash(configValues(3))
+    val profitShareContractHash: Coll[Byte]   = bytearrayToContractHash(configValues(4))
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //

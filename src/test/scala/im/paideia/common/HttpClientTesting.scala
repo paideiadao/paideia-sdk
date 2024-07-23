@@ -6,6 +6,8 @@ import java.lang.{String => JString}
 import org.apache.commons.io.FileUtils
 import java.io.File
 import java.nio.charset.Charset
+import org.ergoplatform.appkit.impl.ScalaBridge
+import scala.collection.JavaConverters._
 
 trait HttpClientTesting {
   val responsesDir = "src/test/resources"
@@ -51,8 +53,8 @@ trait HttpClientTesting {
     ) ++ data.nodeResponses
     val explorerResponses: IndexedSeq[String] = data.explorerResponses.toIndexedSeq
     new FileMockedErgoClient(
-      nodeResponses.convertTo[JList[JString]],
-      explorerResponses.convertTo[JList[JString]],
+      nodeResponses.map(new JString(_)).asJava,
+      explorerResponses.map(new JString(_)).asJava,
       nodeOnlyMode
     )
   }

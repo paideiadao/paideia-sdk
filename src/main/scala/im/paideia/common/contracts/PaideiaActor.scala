@@ -12,6 +12,8 @@ import scala.collection.mutable.HashMap
 import scala.util.Success
 import scala.util.Try
 import scala.util.Failure
+import scorex.crypto.hash.Blake2b256
+import sigma.ast.ErgoTree
 
 /** Trait representing a Paideia Actor.
   */
@@ -53,6 +55,11 @@ trait PaideiaActor {
     contractInstances(contractInstance.contractSignature.contractHash) = contractInstance
     Paideia.instantiateActor(contractInstance.contractSignature)
     contractInstance
+  }
+
+  def getContractInstanceFromTree[T <: PaideiaContract](ergoTree: ErgoTree): T = {
+    contractInstances(Blake2b256(ergoTree.bytes).array.toList)
+      .asInstanceOf[T]
   }
 
   /** Handles incoming PaideiaEvent by merging responses from all registered Paideia

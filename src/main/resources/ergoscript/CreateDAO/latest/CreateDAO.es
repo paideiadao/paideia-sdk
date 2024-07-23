@@ -1,11 +1,14 @@
-{
-    /**
-     *
-     *  CreateDAO
-     *
-     *  Ensures the DAO is created correctly
-     *
-     */
+/**
+ * Ensures the DAO is created correctly
+ *
+ * @param paideiaDaoKey Token ID of the paideia dao key
+ *
+ * @return
+ */
+@contract def createDAO(paideiaDaoKey: Coll[Byte]) = {
+    #import lib/maxLong/1.0.0/maxLong.es;
+    #import lib/emptyDigest/1.0.0/emptyDigest.es;
+    #import lib/config/1.0.0/config.es;
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -13,104 +16,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val paideiaDaoKey: Coll[Byte]              = _PAIDEIA_DAO_KEY
-    val imPaideiaDaoActionTokenId: Coll[Byte]  = _IM_PAIDEIA_DAO_ACTION_TOKENID
-    val imPaideiaContractsDao: Coll[Byte]      = _IM_PAIDEIA_CONTRACTS_DAO
-    val imPaideiaDefaultConfig: Coll[Byte]     = _IM_PAIDEIA_DEFAULT_CONFIG
-    val imPaideiaDefaultTreasury: Coll[Byte]   = _IM_PAIDEIA_DEFAULT_TREASURY
-    val imPaideiaDaoKey: Coll[Byte]            = _IM_PAIDEIA_DAO_KEY
-    val imPaideiaContractsTreasury: Coll[Byte] = _IM_PAIDEIA_CONTRACTS_TREASURY
-    val imPaideiaContractsConfig: Coll[Byte]   = _IM_PAIDEIA_CONTRACTS_CONFIG
-
-    val imPaideiaDefaultConfigSig: Coll[Byte] = 
-        _IM_PAIDEIA_DEFAULT_CONFIG_SIGNATURE
-
-    val imPaideiaDefaultTreasurySig: Coll[Byte] = 
-        _IM_PAIDEIA_DEFAULT_TREASURY_SIGNATURE
-
-    val imPaideiaStakingStateTokenId: Coll[Byte] = 
-        _IM_PAIDEIA_STAKING_STATE_TOKENID
-
-    val imPaideiaDaoProposalTokenId: Coll[Byte] = 
-        _IM_PAIDEIA_DAO_PROPOSAL_TOKENID
-
-    val imPaideiaDefaultActionSendFunds: Coll[Byte] = 
-        _IM_PAIDEIA_DEFAULT_ACTION_SEND_FUNDS
-    val imPaideiaDefaultActionSendFundsSig: Coll[Byte] = 
-        _IM_PAIDEIA_DEFAULT_ACTION_SEND_FUNDS_SIG
-    val imPaideiaDefaultActionUpdateConfig: Coll[Byte] = 
-        _IM_PAIDEIA_DEFAULT_ACTION_UPDATE_CONFIG
-    val imPaideiaDefaultActionUpdateConfigSig: Coll[Byte] = 
-        _IM_PAIDEIA_DEFAULT_ACTION_UPDATE_CONFIG_SIG
-    val imPaideiaDefaultProposalBasic: Coll[Byte] = 
-        _IM_PAIDEIA_DEFAULT_PROPOSAL_BASIC
-    val imPaideiaDefaultProposalBasicSig: Coll[Byte] = 
-        _IM_PAIDEIA_DEFAULT_PROPOSAL_BASIC_SIG
-    val imPaideiaDefaultStakingChange: Coll[Byte] = 
-        _IM_PAIDEIA_DEFAULT_STAKING_CHANGE
-    val imPaideiaDefaultStakingChangeSig: Coll[Byte] = 
-        _IM_PAIDEIA_DEFAULT_STAKING_CHANGE_SIG
-    val imPaideiaDefaultStakingStake: Coll[Byte] = 
-        _IM_PAIDEIA_DEFAULT_STAKE_STAKE
-    val imPaideiaDefaultStakingStakeSig: Coll[Byte] = 
-        _IM_PAIDEIA_DEFAULT_STAKING_STAKE_SIG
-    val imPaideiaDefaultStakingCompound: Coll[Byte] = 
-        _IM_PAIDEIA_DEFAULT_STAKING_COMPOUND
-    val imPaideiaDefaultStakingCompoundSig: Coll[Byte] = 
-        _IM_PAIDEIA_DEFAULT_STAKING_COMPOUND_SIG
-    val imPaideiaDefaultStakingProfitShare: Coll[Byte] = 
-        _IM_PAIDEIA_DEFAULT_STAKING_PROFITSHARE
-    val imPaideiaDefaultStakingProfitShareSig: Coll[Byte] = 
-        _IM_PAIDEIA_DEFAULT_STAKING_PROFITSHARE_SIG
-    val imPaideiaDefaultStakingSnapshot: Coll[Byte] = 
-        _IM_PAIDEIA_DEFAULT_STAKING_SNAPSHOT
-    val imPaideiaDefaultStakingSnapshotSig: Coll[Byte] = 
-        _IM_PAIDEIA_DEFAULT_STAKING_SNAPSHOT_SIG
-    val imPaideiaDefaultStakingState: Coll[Byte] = 
-        _IM_PAIDEIA_DEFAULT_STAKING_STATE
-    val imPaideiaDefaultStakingStateSig: Coll[Byte] = 
-        _IM_PAIDEIA_DEFAULT_STAKING_STATE_SIG
-    val imPaideiaDefaultStakingVote: Coll[Byte] = 
-        _IM_PAIDEIA_DEFAULT_STAKING_VOTE
-    val imPaideiaDefaultStakingVoteSig: Coll[Byte] = 
-        _IM_PAIDEIA_DEFAULT_STAKING_VOTE_SIG
-    val imPaideiaDefaultStakingUnstake: Coll[Byte] = 
-        _IM_PAIDEIA_DEFAULT_STAKING_UNSTAKE
-    val imPaideiaDefaultStakingUnstakeSig: Coll[Byte] = 
-        _IM_PAIDEIA_DEFAULT_STAKING_UNSTAKE_SIG
-
-    val imPaideiaAction: Coll[Byte] = 
-        _IM_PAIDEIA_ACTION
-    val imPaideiaProposal: Coll[Byte] = 
-        _IM_PAIDEIA_PROPOSAL
-    val imPaideiaContractsStakingChange: Coll[Byte] = 
-        _IM_PAIDEIA_CONTRACTS_STAKING_CHANGE
-    val imPaideiaContractsStakingStake: Coll[Byte] = 
-        _IM_PAIDEIA_CONTRACTS_STAKING_STAKE
-    val imPaideiaContractsStakingCompound: Coll[Byte] = 
-        _IM_PAIDEIA_CONTRACTS_STAKING_COMPOUND
-    val imPaideiaContractsStakingProfitShare: Coll[Byte] = 
-        _IM_PAIDEIA_CONTRACTS_STAKING_PROFIT_SHARE
-    val imPaideiaContractsStakingSnapshot: Coll[Byte] = 
-        _IM_PAIDEIA_CONTRACTS_STAKING_SNAPSHOT
-    val imPaideiaContractsStakingState: Coll[Byte] = 
-        _IM_PAIDEIA_CONTRACTS_STAKING_STATE
-    val imPaideiaContractsStakingVote: Coll[Byte] = 
-        _IM_PAIDEIA_CONTRACTS_STAKING_VOTE
-    val imPaideiaContractsStakingUnstake: Coll[Byte] = 
-        _IM_PAIDEIA_CONTRACTS_STAKING_UNSTAKE
-
-    val imPaideiaStakingCycleLength: Coll[Byte] = 
-        _IM_PAIDEIA_STAKING_CYCLELENGTH
-
-    val maxLong: Long = 9223372036854775807L
-
-    val emptyDigest: Coll[Byte] = Coll(78.toByte,-58.toByte,31.toByte,
-        72.toByte,91.toByte,-104.toByte,-21.toByte,-121.toByte,21.toByte,
-        63.toByte,124.toByte,87.toByte,-37.toByte,79.toByte,94.toByte,
-        -51.toByte,117.toByte,85.toByte,111.toByte,-35.toByte,-68.toByte,
-        64.toByte,59.toByte,65.toByte,-84.toByte,-8.toByte,68.toByte,31.toByte,
-        -34.toByte,-114.toByte,22.toByte,9.toByte,0.toByte)
+    val avlTreeKeysHash: Coll[Byte] = _AVL_TREE_KEYS_HASH
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -153,12 +59,7 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val configTree: AvlTree      = protoDao.R4[AvlTree].get
     val protoDaoKey: Coll[Byte]  = protoDao.R5[Coll[Byte]].get
-
-    val paideiaConfigTree: AvlTree = paideiaConfig.R4[AvlTree].get
-
-    val daoKeyO: Coll[Byte] = daoOriginO.R4[Coll[Byte]].get
 
     val configTreeO: AvlTree = configO.R4[AvlTree].get
 
@@ -184,6 +85,11 @@
 
     val actionProposalContracts: Coll[Coll[Byte]] = 
         getVar[Coll[Coll[Byte]]](4).get
+
+    val avlTreeKeys: Coll[Coll[Coll[Byte]]] = getVar[Coll[Coll[Coll[Byte]]]](5).get
+    val paideiaConfigKeys: Coll[Coll[Byte]] = avlTreeKeys(0)
+    val configKeys: Coll[Coll[Byte]]        = avlTreeKeys(1)
+    val insertKeys: Coll[Coll[Byte]]        = avlTreeKeys(2)
     
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
@@ -192,41 +98,10 @@
     ///////////////////////////////////////////////////////////////////////////        
 
     val paideiaConfigValues: Coll[Option[Coll[Byte]]] = 
-        paideiaConfigTree.getMany(
-            Coll(
-                imPaideiaContractsDao,
-                imPaideiaDefaultConfig,
-                imPaideiaDefaultConfigSig,
-                imPaideiaDefaultTreasury,
-                imPaideiaDefaultTreasurySig,
-                imPaideiaDefaultActionSendFunds,
-                imPaideiaDefaultActionSendFundsSig,
-                imPaideiaDefaultActionUpdateConfig,
-                imPaideiaDefaultActionUpdateConfigSig,
-                imPaideiaDefaultProposalBasic,
-                imPaideiaDefaultProposalBasicSig,
-                imPaideiaDefaultStakingChange,
-                imPaideiaDefaultStakingChangeSig,
-                imPaideiaDefaultStakingStake,
-                imPaideiaDefaultStakingStakeSig,
-                imPaideiaDefaultStakingCompound,
-                imPaideiaDefaultStakingCompoundSig,
-                imPaideiaDefaultStakingProfitShare,
-                imPaideiaDefaultStakingProfitShareSig,
-                imPaideiaDefaultStakingSnapshot,
-                imPaideiaDefaultStakingSnapshotSig,
-                imPaideiaDefaultStakingState,
-                imPaideiaDefaultStakingStateSig,
-                imPaideiaDefaultStakingVote,
-                imPaideiaDefaultStakingVoteSig,
-                imPaideiaDefaultStakingUnstake,
-                imPaideiaDefaultStakingUnstakeSig
-            ),
+        configTree(paideiaConfig).getMany(
+            paideiaConfigKeys,
             paideiaConfigProof
         )
-
-    val daoOriginContractHash: Coll[Byte] = 
-        paideiaConfigValues(0).get.slice(1,33)
 
     val defaultConfigContract: Coll[Byte] = 
         paideiaConfigValues(1).get.slice(6,paideiaConfigValues(1).get.size)
@@ -293,21 +168,19 @@
 
     val defaultStakingUnstakeSig: Coll[Byte] = paideiaConfigValues(26).get
 
-    val configValues: Coll[Option[Coll[Byte]]] = configTree.getMany(
-        Coll(
-            imPaideiaDaoProposalTokenId,
-            imPaideiaDaoActionTokenId,
-            imPaideiaDaoKey,
-            imPaideiaStakingStateTokenId,
-            imPaideiaStakingCycleLength
-        ),
+    val defaultDaoContract: Coll[Byte] = paideiaConfigValues(0).get.slice(6,paideiaConfigValues(0).get.size)
+
+    val defaultDaoSig: Coll[Byte] = paideiaConfigValues(27).get
+
+    val configValues: Coll[Option[Coll[Byte]]] = configTree(protoDao).getMany(
+        configKeys,
         configProof
     )
 
-    val proposalTokenId: Coll[Byte]   = configValues(0).get.slice(6,38)
-    val actionTokenId: Coll[Byte]     = configValues(1).get.slice(6,38)
-    val daoKey: Coll[Byte]            = configValues(2).get.slice(6,38)
-    val stakeStateTokenId: Coll[Byte] = configValues(3).get.slice(6,38)
+    val proposalTokenId: Coll[Byte]   = bytearrayToTokenId(configValues(0))
+    val actionTokenId: Coll[Byte]     = bytearrayToTokenId(configValues(1))
+    val daoKey: Coll[Byte]            = bytearrayToTokenId(configValues(2))
+    val stakeStateTokenId: Coll[Byte] = bytearrayToTokenId(configValues(3))
     val cycleLength: Long             = 
         byteArrayToLong(configValues(4).get.slice(1,9))        
 
@@ -330,6 +203,7 @@
     val stakingStateSignature: Coll[Byte]       = insertValues(10)
     val stakingVoteSignature: Coll[Byte]        = insertValues(11)
     val stakingUnstakeSignature: Coll[Byte]     = insertValues(12)
+    val daoOriginSignature: Coll[Byte]          = insertValues(13)
 
     val actionSendFundsContract: Coll[Byte]    = actionProposalContracts(0)
     val actionUpdateConfigContract: Coll[Byte] = actionProposalContracts(1)
@@ -342,22 +216,24 @@
     val stakingSnapshotHash: Coll[Byte]    = stakingSnapshotSignature.slice(1,33)
     val stakingVoteHash: Coll[Byte]        = stakingVoteSignature.slice(1,33)
     val stakingUnstakeHash: Coll[Byte]     = stakingUnstakeSignature.slice(1,33)
+    val daoOriginHash: Coll[Byte]          = daoOriginSignature.slice(1,33)
 
-    val finalConfig: AvlTree = configTree.insert(
+    val finalConfig: AvlTree = configTree(protoDao).insert(
         Coll(
-            (imPaideiaContractsTreasury,treasuryContractSignature),
-            (imPaideiaContractsConfig,configContractSignature),
-            (blake2b256(imPaideiaAction++actionSendFundsContract),actionSendFundsSignature),
-            (blake2b256(imPaideiaAction++actionUpdateConfigContract),actionUpdateConfigSignature),
-            (blake2b256(imPaideiaProposal++proposalBasicContract),proposalBasicSignature),
-            (imPaideiaContractsStakingChange,stakingChangeSignature),
-            (imPaideiaContractsStakingStake,stakingStakeSignature),
-            (imPaideiaContractsStakingCompound,stakingCompoundSignature),
-            (imPaideiaContractsStakingProfitShare,stakingProfitShareSignature),
-            (imPaideiaContractsStakingSnapshot,stakingSnapshotSignature),
-            (imPaideiaContractsStakingState,stakingStateSignature),
-            (imPaideiaContractsStakingVote,stakingVoteSignature),
-            (imPaideiaContractsStakingUnstake,stakingUnstakeSignature)
+            (insertKeys(0),treasuryContractSignature),
+            (insertKeys(1),configContractSignature),
+            (blake2b256(insertKeys(2)++actionSendFundsContract),actionSendFundsSignature),
+            (blake2b256(insertKeys(2)++actionUpdateConfigContract),actionUpdateConfigSignature),
+            (blake2b256(insertKeys(3)++proposalBasicContract),proposalBasicSignature),
+            (insertKeys(4),stakingChangeSignature),
+            (insertKeys(5),stakingStakeSignature),
+            (insertKeys(6),stakingCompoundSignature),
+            (insertKeys(7),stakingProfitShareSignature),
+            (insertKeys(8),stakingSnapshotSignature),
+            (insertKeys(9),stakingStateSignature),
+            (insertKeys(10),stakingVoteSignature),
+            (insertKeys(11),stakingUnstakeSignature),
+            (insertKeys(12),daoOriginSignature)
         ),
         insertProof
     ).get
@@ -365,7 +241,7 @@
     val correctConfigContract: Coll[Byte] = blake2b256(
         substConstants(
             defaultConfigContract,
-            Coll(7),
+            Coll(0),
             Coll(actionTokenId)
         )
     )
@@ -373,15 +249,15 @@
     val correctTreasuryContract: Coll[Byte] = blake2b256(
         substConstants(
             defaultTreasuryContract,
-            Coll(2),
-            Coll(actionTokenId)
+            Coll(0,3),
+            Coll(daoKey,actionTokenId++stakeStateTokenId)
         )
     )
 
     val correctActionSendFundsContract: Coll[Byte] = blake2b256(
         substConstants(
             defaultActionSendFundsContract,
-            Coll(33,35),
+            Coll(0,1),
             Coll(daoKey,proposalTokenId)
         )
     )
@@ -389,7 +265,7 @@
     val correctActionUpdateConfigContract: Coll[Byte] = blake2b256(
         substConstants(
             defaultActionUpdateConfigContract,
-            Coll(7,9),
+            Coll(0,1),
             Coll(daoKey,proposalTokenId)
         )
     )
@@ -397,55 +273,55 @@
     val correctProposalBasicContract: Coll[Byte] = blake2b256(
         substConstants(
             defaultProposalBasicContract,
-            Coll(11),
-            Coll(daoKey)
+            Coll(0,3),
+            Coll(daoKey,stakeStateTokenId)
         )
     )
 
     val correctStakingChangeContract: Coll[Byte] = blake2b256(
         substConstants(
             defaultStakingChangeContract,
-            Coll(31),
-            Coll(daoKey)
+            Coll(0,1),
+            Coll(daoKey,stakeStateTokenId)
         )
     )
 
     val correctStakingStakeContract: Coll[Byte] = blake2b256(
         substConstants(
             defaultStakingStakeContract,
-            Coll(28),
-            Coll(daoKey)
+            Coll(0,1),
+            Coll(daoKey,stakeStateTokenId)
         )
     )
 
     val correctStakingCompoundContract: Coll[Byte] = blake2b256(
         substConstants(
             defaultStakingCompoundContract,
-            Coll(70),
-            Coll(daoKey)
+            Coll(0,1),
+            Coll(daoKey,stakeStateTokenId)
         )
     )
 
     val correctStakingProfitShareContract: Coll[Byte] = blake2b256(
         substConstants(
             defaultStakingProfitShareContract,
-            Coll(24),
-            Coll(daoKey)
+            Coll(0,1),
+            Coll(daoKey,stakeStateTokenId)
         )
     )
 
     val correctStakingSnapshotContract: Coll[Byte] = blake2b256(
         substConstants(
             defaultStakingSnapshotContract,
-            Coll(135),
-            Coll(daoKey)
+            Coll(0,1),
+            Coll(daoKey,stakeStateTokenId)
         )
     )
 
     val correctStakingStateContract: Coll[Byte] = blake2b256(
         substConstants(
             defaultStakingStateContract,
-            Coll(12),
+            Coll(0),
             Coll(daoKey)
         )
     )
@@ -453,19 +329,29 @@
     val correctStakingVoteContract: Coll[Byte] = blake2b256(
         substConstants(
             defaultStakingVoteContract,
-            Coll(63),
-            Coll(daoKey)
+            Coll(0,1),
+            Coll(daoKey,stakeStateTokenId)
         )
     )
 
     val correctStakingUnstakeContract: Coll[Byte] = blake2b256(
         substConstants(
             defaultStakingUnstakeContract,
-            Coll(27),
-            Coll(daoKey)
+            Coll(0,1),
+            Coll(daoKey,stakeStateTokenId)
         )
     )
+
+    val correctDaoOriginContract: Coll[Byte] = blake2b256(
+        substConstants(
+            defaultDaoContract,
+            Coll(0,3),
+            Coll(daoKey, stakeStateTokenId)
+        )
+    )
+
     val currentTime: Long = CONTEXT.preHeader.timestamp
+    
     val correctNextEmission: Long = currentTime + cycleLength
 
     ///////////////////////////////////////////////////////////////////////////
@@ -475,7 +361,7 @@
     ///////////////////////////////////////////////////////////////////////////
 
     val correctDAOOutput: Boolean = allOf(Coll(
-        blake2b256(daoOriginO.propositionBytes) == daoOriginContractHash,
+        blake2b256(daoOriginO.propositionBytes) == daoOriginHash,
         daoOriginO.value >= 1000000L,
         daoOriginO.tokens(0) == protoDao.tokens(0),
         daoOriginO.tokens(1)._1 == proposalTokenId,
@@ -483,7 +369,6 @@
         daoOriginO.tokens(2)._1 == actionTokenId,
         daoOriginO.tokens(2)._2 == maxLong,
         daoOriginO.tokens.size == 3,
-        daoKeyO == daoKey
     ))
 
     val correctConfigOutput: Boolean = allOf(Coll(
@@ -502,8 +387,8 @@
         stakeStateO.tokens(1) == protoDao.tokens(1),
         stakeStateO.tokens.size == 2,
         stakeStateOTrees.forall{(t: AvlTree) => t.digest == emptyDigest},
-        nextEmissionO > currentTime,
-        nextEmissionO < correctNextEmission,
+        nextEmissionO >= correctNextEmission - 3600000L,
+        nextEmissionO < correctNextEmission + 3600000L,
         restR5O.forall{(l: Long) => l == 0L},
         stakeStateOR6.flatMap{(cl: Coll[Long]) => cl}.forall{(l: Long) => l == 0L},
         stakeStateOR7.forall{(tt: (AvlTree, AvlTree)) => (tt._1.digest == emptyDigest && tt._2.digest == emptyDigest)},
@@ -512,9 +397,9 @@
 
     val correctContracts: Boolean = allOf(Coll(
         defaultConfigContractSig.patch(1,correctConfigContract,32) 
-            == configContractSignature,
+           == configContractSignature,
         defaultTreasuryContractSig.patch(1,correctTreasuryContract,32) 
-            == treasuryContractSignature,
+           == treasuryContractSignature,
         defaultActionSendFundsSig.patch(1,correctActionSendFundsContract,32)
             == actionSendFundsSignature,
         defaultActionUpdateConfigSig.patch(1,correctActionUpdateConfigContract,32)
@@ -535,8 +420,9 @@
             == stakingStateSignature,
         defaultStakingUnstakeSig.patch(1,correctStakingUnstakeContract,32)
             == stakingUnstakeSignature,
-        defaultStakingVoteSig.patch(1,correctStakingVoteContract,32)
-            == stakingVoteSignature,
+         defaultStakingVoteSig.patch(1,correctStakingVoteContract,32)
+             == stakingVoteSignature,
+        defaultDaoSig.patch(1,correctDaoOriginContract,32) == daoOriginSignature
     ))
 
     val correctConfig: Boolean = paideiaConfig.tokens(0)._1 == paideiaDaoKey
@@ -563,6 +449,8 @@
         selfO.propositionBytes == createDao.propositionBytes
     ))
 
+    val correctAvlTreeKeys: Boolean = avlTreeKeysHash == blake2b256(avlTreeKeys.flatMap{(f: Coll[Coll[Byte]]) => f}.flatMap{(f: Coll[Byte]) => f})
+
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
     // Final contract result                                                 //
@@ -571,6 +459,7 @@
 
     sigmaProp(allOf(
         Coll(
+            correctAvlTreeKeys,
             correctConfig,
             correctContracts,
             correctDAOOutput,

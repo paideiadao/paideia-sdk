@@ -18,7 +18,6 @@ import im.paideia.common.contracts.Config
 import org.ergoplatform.sdk.ErgoToken
 import im.paideia.governance.contracts.ActionSendFundsBasic
 import org.ergoplatform.appkit.impl.InputBoxImpl
-import sigmastate.eval.CostingBox
 import org.ergoplatform.restapi.client.FullBlock
 import org.ergoplatform.restapi.client.BlockHeader
 import org.ergoplatform.restapi.client.BlockTransactions
@@ -29,9 +28,9 @@ import im.paideia.DAOConfigKey
 import im.paideia.DAOConfigValueSerializer
 import im.paideia.util.Env
 import im.paideia.common.events.CreateTransactionsEvent
-import sigmastate.eval.CostingSigmaDslBuilder
 import org.ergoplatform.appkit.impl.OutBoxImpl
 import org.ergoplatform.ErgoBoxCandidate
+import sigma.data.CBox
 
 class PerformActionTransactionSuite extends PaideiaTestSuite {
   test("Send funds") {
@@ -56,12 +55,12 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
           ErgoId.create(proposalTokenId).getBytes
         )
         config.set(
-          ConfKeys.im_paideia_dao_action_tokenid,
-          ErgoId.create(actionTokenId).getBytes
+          ConfKeys.im_paideia_staking_state_tokenid,
+          ErgoId.create(stakeStateTokenId).getBytes
         )
         config.set(
-          ConfKeys.im_paideia_dao_vote_tokenid,
-          ErgoId.create(voteTokenId).getBytes
+          ConfKeys.im_paideia_dao_action_tokenid,
+          ErgoId.create(actionTokenId).getBytes
         )
         config.set(ConfKeys.im_paideia_dao_key, ErgoId.create(daoKey).getBytes)
         val dao = new DAO(daoKey, config)
@@ -129,7 +128,7 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
           1,
           ctx.createPreHeader().build().getTimestamp() - 3600000,
           Array(
-            CostingBox(
+            CBox(
               ctx
                 .newTxBuilder()
                 .outBoxBuilder()
@@ -143,10 +142,24 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
             )
           )
         )
+        val actionInputBox = treasuryContract
+          .box(
+            ctx,
+            dao.config,
+            2000000L,
+            List(new ErgoToken(testToken, 20L), new ErgoToken(Util.randomKey, 10L))
+          )
+          .inputBox()
+          .getErgoTree()
         actionContract.clearBoxes()
         actionContract.newBox(actionBox.inputBox(), false)
+        config.set(
+          ConfKeys.im_paideia_contracts_action(actionContract.ergoTree.bytes),
+          actionContract.contractSignature
+        )
 
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
+        config.set(ConfKeys.im_paideia_contracts_config, configContract.contractSignature)
         configContract.newBox(configContract.box(ctx, dao).inputBox(), false)
 
         val eventResponse = Paideia.handleEvent(
@@ -174,7 +187,6 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
         val daoGovTokenId     = Util.randomKey
         val proposalTokenId   = Util.randomKey
         val actionTokenId     = Util.randomKey
-        val voteTokenId       = Util.randomKey
         val stakeStateTokenId = Util.randomKey
         config.set(ConfKeys.im_paideia_dao_name, "Test DAO")
         config
@@ -188,8 +200,8 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
           ErgoId.create(actionTokenId).getBytes
         )
         config.set(
-          ConfKeys.im_paideia_dao_vote_tokenid,
-          ErgoId.create(voteTokenId).getBytes
+          ConfKeys.im_paideia_staking_state_tokenid,
+          ErgoId.create(stakeStateTokenId).getBytes
         )
         config.set(ConfKeys.im_paideia_dao_key, ErgoId.create(daoKey).getBytes)
         val dao = new DAO(daoKey, config)
@@ -227,7 +239,7 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
           List[(DAOConfigKey, Array[Byte])](),
           List(
             (
-              ConfKeys.im_paideia_staking_profit_tokenids,
+              DAOConfigKey("My own dao config key"),
               DAOConfigValueSerializer(
                 Array(ErgoId.create(Env.paideiaTokenId).getBytes)
               )
@@ -236,6 +248,10 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
         )
         actionContract.clearBoxes()
         actionContract.newBox(actionBox.inputBox(), false)
+        config.set(
+          ConfKeys.im_paideia_contracts_action(actionContract.ergoTree.bytes),
+          actionContract.contractSignature
+        )
 
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
         config
@@ -280,8 +296,8 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
           ErgoId.create(actionTokenId).getBytes
         )
         config.set(
-          ConfKeys.im_paideia_dao_vote_tokenid,
-          ErgoId.create(voteTokenId).getBytes
+          ConfKeys.im_paideia_staking_state_tokenid,
+          ErgoId.create(stakeStateTokenId).getBytes
         )
         config.set(ConfKeys.im_paideia_dao_key, ErgoId.create(daoKey).getBytes)
         val dao = new DAO(daoKey, config)
@@ -328,6 +344,10 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
         )
         actionContract.clearBoxes()
         actionContract.newBox(actionBox.inputBox(), false)
+        config.set(
+          ConfKeys.im_paideia_contracts_action(actionContract.ergoTree.bytes),
+          actionContract.contractSignature
+        )
 
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
         config
@@ -372,8 +392,8 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
           ErgoId.create(actionTokenId).getBytes
         )
         config.set(
-          ConfKeys.im_paideia_dao_vote_tokenid,
-          ErgoId.create(voteTokenId).getBytes
+          ConfKeys.im_paideia_staking_state_tokenid,
+          ErgoId.create(stakeStateTokenId).getBytes
         )
         config.set(ConfKeys.im_paideia_dao_key, ErgoId.create(daoKey).getBytes)
         val dao = new DAO(daoKey, config)
@@ -413,6 +433,10 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
         )
         actionContract.clearBoxes()
         actionContract.newBox(actionBox.inputBox(), false)
+        config.set(
+          ConfKeys.im_paideia_contracts_action(actionContract.ergoTree.bytes),
+          actionContract.contractSignature
+        )
 
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
         config

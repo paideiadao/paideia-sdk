@@ -16,12 +16,13 @@ import org.ergoplatform.sdk.ErgoId
 import org.ergoplatform.appkit.InputBox
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
-import sigmastate.eval.Colls
-import special.collection.Coll
+import sigma.Colls
+import sigma.Coll
 
 import scala.collection.JavaConverters._
 import scorex.crypto.authds.ADDigest
-import special.sigma.AvlTree
+import sigma.AvlTree
+import im.paideia.util.TxTypes
 
 /** A transaction that updates configuration of the Paideia DAO and creates a new Config
   * box while consuming an existing `configInput` box and an `actionInput` box which
@@ -44,7 +45,7 @@ final case class UpdateConfigTransaction(
 
   ctx = _ctx
 
-  fee = 1000000L
+  fee = 2000000L
 
   // Create ActionUpdateConfigBox from the input
   val actionInputBox = ActionUpdateConfigBox.fromInputBox(ctx, actionInput)
@@ -100,8 +101,9 @@ final case class UpdateConfigTransaction(
 
   // Create action context variables
   val actionContext = List(
+    ContextVar.of(0.toByte, TxTypes.CHANGE_CONFIG),
     ContextVar.of(
-      1.toByte,
+      2.toByte,
       if (actionInputBox.remove.size > 0) {
         val result =
           dao.config.removeProof(actionInputBox.remove: _*)(Left(resultingDigest.get))
@@ -110,7 +112,7 @@ final case class UpdateConfigTransaction(
       } else ErgoValueBuilder.buildFor(Colls.fromArray(Array[Byte]()))
     ),
     ContextVar.of(
-      2.toByte,
+      3.toByte,
       if (actionInputBox.update.size > 0) {
         val result =
           dao.config.updateProof(actionInputBox.update: _*)(Left(resultingDigest.get))
@@ -119,7 +121,7 @@ final case class UpdateConfigTransaction(
       } else ErgoValueBuilder.buildFor(Colls.fromArray(Array[Byte]()))
     ),
     ContextVar.of(
-      3.toByte,
+      4.toByte,
       if (actionInputBox.insert.size > 0) {
         val result =
           dao.config.insertProof(actionInputBox.insert: _*)(Left(resultingDigest.get))
@@ -129,17 +131,27 @@ final case class UpdateConfigTransaction(
     )
   )
 
+  val configProof =
+    dao.config.getProof(
+      ConfKeys.im_paideia_contracts_config,
+      ConfKeys.im_paideia_contracts_action(actionInput.getErgoTree().bytes)
+    )(resultingDigest)
+
   // Create context variables
   val context = List(
     ContextVar.of(
-      0.toByte,
-      dao.config.getProof(ConfKeys.im_paideia_contracts_config)(resultingDigest)
+      1.toByte,
+      configProof
     )
   )
 
   // Set inputs, dataInputs, outputs and changeAddress
   inputs = List(
-    configInput.withContextVars(context: _*),
+    configInput
+      .withContextVars(
+        ContextVar.of(1.toByte, configProof),
+        ContextVar.of(0.toByte, TxTypes.CHANGE_CONFIG)
+      ),
     actionInput.withContextVars((context ++ actionContext): _*)
   )
   dataInputs = List(proposalInput)

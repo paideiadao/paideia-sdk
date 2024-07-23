@@ -1,4 +1,9 @@
-{
+/** This is my contracts description.
+ * Here is another line describing what it does in more detail.
+ *
+ * @return
+ */
+@contract def protoDAO(paideiaDaoKey: Coll[Byte]) = {
     /**
      *
      *  ProtoDAO
@@ -14,7 +19,6 @@
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    val paideiaDaoKey: Coll[Byte]              = _PAIDEIA_DAO_KEY
     val imPaideiaContractsProtoDao: Coll[Byte] = _IM_PAIDEIA_CONTRACTS_PROTODAO
     val imPaideiaContractsMint: Coll[Byte]     = _IM_PAIDEIA_CONTRACTS_MINT
     val imPaideiaDaoName: Coll[Byte]           = _IM_PAIDEIA_DAO_NAME
@@ -183,7 +187,8 @@
             mintO.tokens(0)._2 == mintInfo._2,
             mintOName == mintInfo._1,
             mintODesc == mintOName,
-            mintODecimals == decimals0
+            mintODecimals == decimals0,
+            mintO.value >= 1000000L
         ))
 
         val validProtoDAOOut = allOf(Coll(
@@ -229,7 +234,7 @@
 
         val createDaoHash: Coll[Byte] = paideiaConfigValues(0).get.slice(1,33)
 
-        blake2b256(createDao.propositionBytes) == createDaoHash
+        blake2b256(createDao.propositionBytes) == createDaoHash        
     }
 
     ///////////////////////////////////////////////////////////////////////////
