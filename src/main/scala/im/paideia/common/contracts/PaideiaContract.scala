@@ -264,18 +264,22 @@ class PaideiaContract(
     *   true if the box was successfully removed otherwise false.
     */
   def spendBox(boxId: String, mempool: Boolean, rollback: Boolean = false): Boolean = {
-    if (rollback) {
-      if (mempool) {
-        mspent.remove(boxId)
+    if (boxes.contains(boxId)) {
+      if (rollback) {
+        if (mempool) {
+          mspent.remove(boxId)
+        } else {
+          utxos.add(boxId)
+        }
       } else {
-        utxos.add(boxId)
+        if (mempool) {
+          mspent.add(boxId)
+        } else {
+          utxos.remove(boxId) || mspent.remove(boxId)
+        }
       }
     } else {
-      if (mempool) {
-        mspent.add(boxId)
-      } else {
-        utxos.remove(boxId) || mspent.remove(boxId)
-      }
+      false
     }
   }
 
