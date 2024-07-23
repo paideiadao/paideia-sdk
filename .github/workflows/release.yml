@@ -7,10 +7,10 @@ jobs:
   publish:
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3.0.2
+      - uses: actions/checkout@v4.1.7
         with:
           fetch-depth: 0
-      - uses: olafurpg/setup-scala@v13
+      - uses: olafurpg/setup-scala@v14
         with:
           java-version: openjdk@1.11
       - run: sbt ci-release
