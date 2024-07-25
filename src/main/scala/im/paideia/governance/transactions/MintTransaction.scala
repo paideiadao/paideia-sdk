@@ -70,12 +70,7 @@ final case class MintTransaction(
       throw new Exception("Unknown token to mint: %s".format(tokenToMint))
   }
 
-  val mintOutput = Mint(
-    PaideiaContractSignature(
-      networkType = _ctx.getNetworkType(),
-      daoKey      = Env.paideiaDaoKey
-    )
-  ).box(
+  val mintOutput = Mint(ConfKeys.im_paideia_contracts_mint, Env.paideiaDaoKey).box(
     _ctx,
     protoDAOInput.getId().toString(),
     tokenInfo._2,
@@ -113,18 +108,14 @@ final case class MintTransaction(
     )
   )
 
-  val protoDAOOutput = ProtoDAO(
-    PaideiaContractSignature(
-      networkType = _ctx.getNetworkType(),
-      daoKey      = Env.paideiaDaoKey
+  val protoDAOOutput =
+    ProtoDAO(ConfKeys.im_paideia_contracts_protodao, Env.paideiaDaoKey).box(
+      _ctx,
+      dao,
+      protoDAOInputBox.stakePool,
+      resultingDigest,
+      protoDAOInputBox.value - 2000000L
     )
-  ).box(
-    _ctx,
-    dao,
-    protoDAOInputBox.stakePool,
-    resultingDigest,
-    protoDAOInputBox.value - 2000000L
-  )
   ctx           = _ctx
   fee           = 1000000
   changeAddress = _changeAddress

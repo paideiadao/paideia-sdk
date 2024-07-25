@@ -59,13 +59,15 @@ class EmitTransactionSuite extends PaideiaTestSuite {
         val snapshotContract = StakeSnapshot(PaideiaContractSignature(daoKey = dao.key))
         snapshotContract.newBox(snapshotContract.box(ctx).inputBox(), false)
 
-        val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
+        val configContract   = Config(PaideiaContractSignature(daoKey = dao.key))
+        val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_treasury, treasuryContract.contractSignature)
 
         val configBox = Config(configContract.contractSignature).box(ctx, dao).inputBox()
         configContract.clearBoxes()
         configContract.newBox(configBox, false)
 
-        val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
         treasuryContract.clearBoxes()
         treasuryContract.newBox(
           treasuryContract
@@ -135,6 +137,8 @@ class EmitTransactionSuite extends PaideiaTestSuite {
         stakingState.stake(Util.randomKey, 100000L)
 
         val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_treasury, treasuryContract.contractSignature)
         treasuryContract.clearBoxes()
         treasuryContract.newBox(
           treasuryContract
@@ -213,6 +217,8 @@ class EmitTransactionSuite extends PaideiaTestSuite {
         stakingState.stake(Util.randomKey, 100000L)
 
         val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_treasury, treasuryContract.contractSignature)
         treasuryContract.clearBoxes()
         treasuryContract.newBox(
           treasuryContract
@@ -301,6 +307,8 @@ class EmitTransactionSuite extends PaideiaTestSuite {
         stakingState.vote(stakeKey, 12676873625498375L, currentVoteProof, voteRecord)
 
         val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_treasury, treasuryContract.contractSignature)
         treasuryContract.clearBoxes()
         treasuryContract.newBox(
           treasuryContract
@@ -391,6 +399,8 @@ class EmitTransactionSuite extends PaideiaTestSuite {
         stakingState.vote(stakeKey, 12676873625498375L, currentVoteProof, voteRecord)
 
         val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_treasury, treasuryContract.contractSignature)
         treasuryContract.clearBoxes()
         treasuryContract.newBox(
           treasuryContract
@@ -479,6 +489,8 @@ class EmitTransactionSuite extends PaideiaTestSuite {
         stakingState.vote(stakeKey, 12676873625498375L, currentVoteProof, voteRecord)
 
         val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_treasury, treasuryContract.contractSignature)
         treasuryContract.clearBoxes()
         treasuryContract.newBox(
           treasuryContract

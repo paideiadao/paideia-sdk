@@ -113,7 +113,7 @@ class ProtoDAO(contractSignature: PaideiaContractSignature)
                         )
                         PaideiaEventResponse(2, List(newTx))
                       } catch {
-                        case _: Exception => PaideiaEventResponse(0)
+                        case e: Exception => PaideiaEventResponse(0)
                       }
                     }
                   } else {
@@ -203,13 +203,10 @@ class ProtoDAO(contractSignature: PaideiaContractSignature)
                     Right(te.height),
                   Array[DAOConfigKey](),
                   Array[(DAOConfigKey, Array[Byte])](),
-                  CreateDAO(PaideiaContractSignature(daoKey = Env.paideiaDaoKey))
+                  CreateDAO(ConfKeys.im_paideia_contracts_createdao, Env.paideiaDaoKey)
                     .getInsertOperations(protoDAOBox.dao)
                 )
               )
-            val castVoteContract = CastVote(
-              PaideiaContractSignature(daoKey = protoDAOBox.dao.key)
-            )
             // If the staking state does not exist we need to initiate it and any contractinstances in the output
             if (!TotalStakingState._stakingStates.contains(protoDAOBox.dao.key)) {
               val stakeStateBox = te.tx.getOutputs().get(2)
@@ -220,61 +217,73 @@ class ProtoDAO(contractSignature: PaideiaContractSignature)
                   .getValue()
                   .asInstanceOf[Coll[Long]](0)
               )
-              DAOOrigin(PaideiaContractSignature(daoKey = protoDAOBox.dao.key))
+              DAOOrigin(ConfKeys.im_paideia_contracts_dao, protoDAOBox.dao.key)
                 .newBox(
                   new InputBoxImpl(te.tx.getOutputs().get(0)),
                   te.mempool,
                   te.rollback
                 )
-              Config(PaideiaContractSignature(daoKey = protoDAOBox.dao.key))
+              Config(ConfKeys.im_paideia_contracts_config, protoDAOBox.dao.key)
                 .newBox(
                   new InputBoxImpl(te.tx.getOutputs().get(1)),
                   te.mempool,
                   te.rollback
                 )
-              StakeState(PaideiaContractSignature(daoKey = protoDAOBox.dao.key))
+              StakeState(ConfKeys.im_paideia_contracts_staking_state, protoDAOBox.dao.key)
                 .newBox(
                   new InputBoxImpl(te.tx.getOutputs().get(2)),
                   te.mempool,
                   te.rollback
                 )
-              ChangeStake(PaideiaContractSignature(daoKey = protoDAOBox.dao.key))
+              ChangeStake(
+                ConfKeys.im_paideia_contracts_staking_changestake,
+                protoDAOBox.dao.key
+              )
                 .newBox(
                   new InputBoxImpl(te.tx.getOutputs().get(3)),
                   te.mempool,
                   te.rollback
                 )
-              Stake(PaideiaContractSignature(daoKey = protoDAOBox.dao.key))
+              Stake(ConfKeys.im_paideia_contracts_staking_stake, protoDAOBox.dao.key)
                 .newBox(
                   new InputBoxImpl(te.tx.getOutputs().get(4)),
                   te.mempool,
                   te.rollback
                 )
-              Unstake(PaideiaContractSignature(daoKey = protoDAOBox.dao.key))
+              Unstake(ConfKeys.im_paideia_contracts_staking_unstake, protoDAOBox.dao.key)
                 .newBox(
                   new InputBoxImpl(te.tx.getOutputs().get(5)),
                   te.mempool,
                   te.rollback
                 )
-              StakeCompound(PaideiaContractSignature(daoKey = protoDAOBox.dao.key))
+              StakeCompound(
+                ConfKeys.im_paideia_contracts_staking_compound,
+                protoDAOBox.dao.key
+              )
                 .newBox(
                   new InputBoxImpl(te.tx.getOutputs().get(6)),
                   te.mempool,
                   te.rollback
                 )
-              StakeSnapshot(PaideiaContractSignature(daoKey = protoDAOBox.dao.key))
+              StakeSnapshot(
+                ConfKeys.im_paideia_contracts_staking_snapshot,
+                protoDAOBox.dao.key
+              )
                 .newBox(
                   new InputBoxImpl(te.tx.getOutputs().get(7)),
                   te.mempool,
                   te.rollback
                 )
-              StakeVote(PaideiaContractSignature(daoKey = protoDAOBox.dao.key))
+              StakeVote(ConfKeys.im_paideia_contracts_staking_vote, protoDAOBox.dao.key)
                 .newBox(
                   new InputBoxImpl(te.tx.getOutputs().get(8)),
                   te.mempool,
                   te.rollback
                 )
-              StakeProfitShare(PaideiaContractSignature(daoKey = protoDAOBox.dao.key))
+              StakeProfitShare(
+                ConfKeys.im_paideia_contracts_staking_profitshare,
+                protoDAOBox.dao.key
+              )
                 .newBox(
                   new InputBoxImpl(te.tx.getOutputs().get(9)),
                   te.mempool,
@@ -377,7 +386,12 @@ class ProtoDAO(contractSignature: PaideiaContractSignature)
 }
 
 object ProtoDAO extends PaideiaActor {
-
+  override def apply(
+    configKey: DAOConfigKey,
+    daoKey: String,
+    digest: Option[ADDigest] = None
+  ): ProtoDAO =
+    contractFromConfig(configKey, daoKey, digest)
   override def apply(contractSignature: PaideiaContractSignature): ProtoDAO =
     getContractInstance[ProtoDAO](contractSignature, new ProtoDAO(contractSignature))
 

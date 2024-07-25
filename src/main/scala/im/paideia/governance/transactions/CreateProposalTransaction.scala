@@ -56,11 +56,7 @@ final case class CreateProposalTransaction(
         ),
         new FilterLeaf(
           FilterType.FTEQ,
-          DAOOrigin(
-            dao
-              .config[PaideiaContractSignature](ConfKeys.im_paideia_contracts_dao)
-              .withDaoKey(dao.key)
-          ).ergoTree.bytesHex,
+          DAOOrigin(ConfKeys.im_paideia_contracts_dao, dao.key).ergoTree.bytesHex,
           CompareField.ERGO_TREE,
           0
         )

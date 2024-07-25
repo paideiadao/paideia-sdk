@@ -16,6 +16,7 @@ import sigma.ast.SType
 import sigma.ast.ByteArrayConstant
 import org.ergoplatform.appkit.InputBox
 import sigma.Colls
+import im.paideia.DAOConfigKey
 
 class StakeSnapshot(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -98,6 +99,12 @@ class StakeSnapshot(contractSignature: PaideiaContractSignature)
 }
 
 object StakeSnapshot extends PaideiaActor {
+  override def apply(
+    configKey: DAOConfigKey,
+    daoKey: String,
+    digest: Option[ADDigest] = None
+  ): StakeSnapshot =
+    contractFromConfig(configKey, daoKey, digest)
 
   override def apply(contractSignature: PaideiaContractSignature): StakeSnapshot =
     getContractInstance[StakeSnapshot](

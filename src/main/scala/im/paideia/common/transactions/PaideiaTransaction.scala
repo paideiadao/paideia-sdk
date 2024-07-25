@@ -17,6 +17,8 @@ import org.ergoplatform.appkit.Address
 import org.ergoplatform.appkit.impl.UnsignedTransactionImpl
 import org.ergoplatform.ErgoLikeTransaction
 import org.ergoplatform.UnsignedErgoLikeTransaction
+import org.ergoplatform.sdk.BoxSelection.NotEnoughErgsError
+import org.ergoplatform.appkit.InputBoxesSelectionException.NotEnoughErgsException
 
 /** Trait representing a transaction with inputs, outputs, fees and other information
   * needed for signing.
@@ -125,6 +127,9 @@ trait PaideiaTransaction {
     var (inputBalance, inputAssets) = inputBalanceAssets()
 
     var (outputBalance, outputAssetsNoMinted) = outputBalanceAssets()
+
+    if (inputBalance < outputBalance)
+      throw new NotEnoughErgsException("Not enough ergs in input boxes", inputBalance)
 
     if (inputBalance > outputBalance) {
       AssetUtils.subtractAssetsMut(inputAssets, outputAssetsNoMinted.toMap)

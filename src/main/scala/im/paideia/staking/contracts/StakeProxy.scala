@@ -28,6 +28,10 @@ import sigma.ast.Constant
 import sigma.ast.SType
 import sigma.ast.ByteArrayConstant
 import org.ergoplatform.appkit.InputBox
+import org.ergoplatform.appkit.ContextVar
+import scorex.crypto.authds.ADDigest
+import sigma.AvlTree
+import im.paideia.DAOConfigKey
 
 class StakeProxy(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -80,12 +84,57 @@ class StakeProxy(contractSignature: PaideiaContractSignature)
                       )
                     )
                   } else {
-                    StakeTransaction(
+                    val amount =
+                      boxes(b).getRegisters().get(1).getValue().asInstanceOf[Long]
+                    val userAddress = Address
+                      .fromPropositionBytes(
+                        cte.ctx.getNetworkType(),
+                        boxes(b)
+                          .getRegisters()
+                          .get(0)
+                          .getValue()
+                          .asInstanceOf[Coll[Byte]]
+                          .toArray
+                      )
+                    val st = StakeTransaction(
                       cte.ctx,
-                      boxes(b),
+                      amount,
+                      userAddress,
                       Address.create(Env.operatorAddress),
                       contractSignature.daoKey
                     )
+                    val proxyContextVars = List(
+                      ContextVar.of(
+                        0.toByte,
+                        Paideia
+                          .getConfig(contractSignature.daoKey)
+                          .getProof(
+                            ConfKeys.im_paideia_staking_state_tokenid,
+                            ConfKeys.im_paideia_dao_name
+                          )(
+                            Some(
+                              ADDigest @@ st
+                                .dataInputs(0)
+                                .getRegisters()
+                                .get(0)
+                                .getValue()
+                                .asInstanceOf[AvlTree]
+                                .digest
+                                .toArray
+                            )
+                          )
+                      ),
+                      ContextVar.of(
+                        1.toByte,
+                        st.stakingContextVars.companionContextVars(0).getValue()
+                      ),
+                      ContextVar.of(
+                        2.toByte,
+                        st.stakingContextVars.companionContextVars(1).getValue()
+                      )
+                    )
+                    st.userInputs = List(boxes(b).withContextVars(proxyContextVars: _*))
+                    st
                   }
                 )
               )
@@ -123,6 +172,12 @@ class StakeProxy(contractSignature: PaideiaContractSignature)
 }
 
 object StakeProxy extends PaideiaActor {
+  override def apply(
+    configKey: DAOConfigKey,
+    daoKey: String,
+    digest: Option[ADDigest] = None
+  ): StakeProxy =
+    contractFromConfig(configKey, daoKey, digest)
 
   override def apply(contractSignature: PaideiaContractSignature): StakeProxy =
     getContractInstance[StakeProxy](contractSignature, new StakeProxy(contractSignature))

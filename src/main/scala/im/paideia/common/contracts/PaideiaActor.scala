@@ -14,6 +14,8 @@ import scala.util.Try
 import scala.util.Failure
 import scorex.crypto.hash.Blake2b256
 import sigma.ast.ErgoTree
+import im.paideia.DAOConfigKey
+import scorex.crypto.authds.ADDigest
 
 /** Trait representing a Paideia Actor.
   */
@@ -31,7 +33,23 @@ trait PaideiaActor {
     contractInstances = HashMap[List[Byte], PaideiaContract]()
   }
 
-  def apply(contractSignature: PaideiaContractSignature): PaideiaContract = ???
+  def contractFromConfig[T <: PaideiaContract](
+    configKey: DAOConfigKey,
+    daoKey: String,
+    digest: Option[ADDigest]
+  ): T = {
+    apply(
+      Paideia
+        .getConfig(daoKey)[PaideiaContractSignature](configKey, digest)
+        .withDaoKey(daoKey)
+    ).asInstanceOf[T]
+  }
+  def apply(
+    configKey: DAOConfigKey,
+    daoKey: String,
+    digest: Option[ADDigest] = None
+  ): PaideiaContract
+  def apply(contractSignature: PaideiaContractSignature): PaideiaContract
 
   /** Gets an instance of provided T by creating or getting a cached instance of the
     * contract from the contractInstances map.

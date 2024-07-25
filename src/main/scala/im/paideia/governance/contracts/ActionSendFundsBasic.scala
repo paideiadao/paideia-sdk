@@ -27,6 +27,8 @@ import sigma.ast.ByteArrayConstant
 import sigma.ast.ConstantPlaceholder
 import sigma.ast.SCollection
 import sigma.ast.SByte
+import im.paideia.DAOConfigKey
+import scorex.crypto.authds.ADDigest
 
 class ActionSendFundsBasic(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(
@@ -179,7 +181,12 @@ class ActionSendFundsBasic(contractSignature: PaideiaContractSignature)
 }
 
 object ActionSendFundsBasic extends PaideiaActor {
-
+  override def apply(
+    configKey: DAOConfigKey,
+    daoKey: String,
+    digest: Option[ADDigest] = None
+  ): ActionSendFundsBasic =
+    contractFromConfig[ActionSendFundsBasic](configKey, daoKey, digest)
   override def apply(contractSignature: PaideiaContractSignature): ActionSendFundsBasic =
     getContractInstance[ActionSendFundsBasic](
       contractSignature,

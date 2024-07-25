@@ -33,6 +33,7 @@ import im.paideia.DAOConfigKey
 import scorex.crypto.authds.ADDigest
 import sigma.AvlTree
 import org.ergoplatform.appkit.Address
+import im.paideia.util.TxTypes
 
 case class CreateProtoDAOTransaction(
   _ctx: BlockchainContextImpl,
@@ -62,16 +63,12 @@ case class CreateProtoDAOTransaction(
   )(0)
 
   val paideiaOriginOutput = PaideiaOrigin(
-    PaideiaContractSignature(
-      networkType = _ctx.getNetworkType(),
-      daoKey      = Env.paideiaDaoKey
-    )
+    ConfKeys.im_paideia_contracts_paideia_origin,
+    Env.paideiaDaoKey
   ).box(_ctx, paideiaConfig, paideiaOriginInput.getTokens().get(1).getValue - 1L)
 
-  val paideiaSplitProfitContractSig = paideiaConfig[PaideiaContractSignature](
-    ConfKeys.im_paideia_contracts_split_profit
-  ).withDaoKey(Env.paideiaDaoKey)
-  val paideiaSplitProfitContract = SplitProfit(paideiaSplitProfitContractSig)
+  val paideiaSplitProfitContract =
+    SplitProfit(ConfKeys.im_paideia_contracts_split_profit, Env.paideiaDaoKey)
 
   val paideiaSplitProfitOutput = paideiaSplitProfitContract.box(
     _ctx,
@@ -79,12 +76,7 @@ case class CreateProtoDAOTransaction(
     List(new ErgoToken(Env.paideiaTokenId, paideiaFee))
   )
 
-  val mintOutput = Mint(
-    PaideiaContractSignature(
-      networkType = _ctx.getNetworkType(),
-      daoKey      = Env.paideiaDaoKey
-    )
-  ).box(
+  val mintOutput = Mint(ConfKeys.im_paideia_contracts_mint, Env.paideiaDaoKey).box(
     _ctx,
     protoDAOProxyInput.getId().toString(),
     1L,
@@ -102,15 +94,18 @@ case class CreateProtoDAOTransaction(
       .digest
       .toArray
 
-  val contextVarPaideiaOrigin = ContextVar.of(
-    0.toByte,
-    paideiaConfig.getProof(
-      ConfKeys.im_paideia_fees_createdao_erg,
-      ConfKeys.im_paideia_fees_createdao_paideia,
-      ConfKeys.im_paideia_contracts_protodao,
-      ConfKeys.im_paideia_contracts_protodaoproxy,
-      ConfKeys.im_paideia_contracts_split_profit
-    )(Some(paideiaConfigDigest))
+  val contextVarPaideiaOrigin = List(
+    ContextVar.of(0.toByte, TxTypes.CREATE_PROTO_DAO),
+    ContextVar.of(
+      1.toByte,
+      paideiaConfig.getProof(
+        ConfKeys.im_paideia_fees_createdao_erg,
+        ConfKeys.im_paideia_fees_createdao_paideia,
+        ConfKeys.im_paideia_contracts_protodao,
+        ConfKeys.im_paideia_contracts_protodaoproxy,
+        ConfKeys.im_paideia_contracts_split_profit
+      )(Some(paideiaConfigDigest))
+    )
   )
 
   var resultingDigest: Option[ADDigest] = None
@@ -122,8 +117,9 @@ case class CreateProtoDAOTransaction(
     ContextVar.of(
       0.toByte,
       paideiaConfig.getProof(
-        "im.paideia.contracts.protodao",
-        "im.paideia.contracts.mint"
+        ConfKeys.im_paideia_contracts_protodao,
+        ConfKeys.im_paideia_contracts_mint,
+        ConfKeys.im_paideia_contracts_paideia_origin
       )(Some(paideiaConfigDigest))
     ),
     ContextVar.of(1.toByte, newDAOConfig._config.ergoValue()),
@@ -139,7 +135,7 @@ case class CreateProtoDAOTransaction(
     )
   )
 
-  val protoDAOOutput = ProtoDAO(PaideiaContractSignature(daoKey = Env.paideiaDaoKey))
+  val protoDAOOutput = ProtoDAO(ConfKeys.im_paideia_contracts_protodao, Env.paideiaDaoKey)
     .box(
       _ctx,
       newDAO,
@@ -152,7 +148,7 @@ case class CreateProtoDAOTransaction(
   changeAddress = _changeAddress
   inputs = List[InputBox](
     protoDAOProxyInput.withContextVars(contextVarsProtoDAOProxy: _*),
-    paideiaOriginInput.withContextVars(contextVarPaideiaOrigin)
+    paideiaOriginInput.withContextVars(contextVarPaideiaOrigin: _*)
   )
   dataInputs = List[InputBox](paideiaConfigBox)
   outputs = List[OutBox](

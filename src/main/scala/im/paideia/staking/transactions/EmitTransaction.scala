@@ -86,7 +86,7 @@ case class EmitTransaction(
 
   val paideiaConfig = Paideia.getConfig(Env.paideiaDaoKey)
 
-  val treasuryContract = Treasury(PaideiaContractSignature(daoKey = daoKey))
+  val treasuryContract = Treasury(ConfKeys.im_paideia_contracts_treasury, daoKey)
 
   val maxMinerOperatorErg: Long = paideiaConfig(ConfKeys.im_paideia_fees_operator_max_erg)
 
@@ -153,10 +153,9 @@ case class EmitTransaction(
       )
     )
 
-  val snapshotContract = StakeSnapshot(
-    config[PaideiaContractSignature](ConfKeys.im_paideia_contracts_staking_compound)
-      .withDaoKey(daoKey)
-  )
+  val snapshotContract =
+    StakeSnapshot(ConfKeys.im_paideia_contracts_staking_compound, daoKey)
+
   val snapshotInput =
     snapshotContract.boxes(snapshotContract.getUtxoSet.toArray.apply(0))
 
@@ -181,12 +180,9 @@ case class EmitTransaction(
     )
     .build()
 
-  val paideiaSplitProfitContractSignature =
-    paideiaConfig[PaideiaContractSignature](ConfKeys.im_paideia_contracts_split_profit)
-      .withDaoKey(Env.paideiaDaoKey)
-
   val paideiaSplitProfitContract = SplitProfit(
-    paideiaSplitProfitContractSignature
+    ConfKeys.im_paideia_contracts_split_profit,
+    Env.paideiaDaoKey
   )
 
   val paideiaSplitProfitOutput = ctx

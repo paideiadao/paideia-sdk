@@ -25,13 +25,13 @@ import scorex.crypto.authds.ADDigest
 
 case class StakeTransaction(
   _ctx: BlockchainContextImpl,
-  stakeProxyInput: InputBox,
+  amount: Long,
+  userAddress: Address,
   _changeAddress: Address,
   daoKey: String
 ) extends PaideiaTransaction {
 
   ctx = _ctx
-  val amount = stakeProxyInput.getRegisters().get(1).getValue().asInstanceOf[Long]
   val config = Paideia.getConfig(daoKey)
 
   val state = TotalStakingState(daoKey)
@@ -84,10 +84,8 @@ case class StakeTransaction(
       )
     )
 
-  val stakeContract = Stake(
-    config[PaideiaContractSignature](ConfKeys.im_paideia_contracts_staking_stake)
-      .withDaoKey(daoKey)
-  )
+  val stakeContract = Stake(ConfKeys.im_paideia_contracts_staking_stake, daoKey)
+
   val stakeInput =
     stakeContract.boxes(stakeContract.getUtxoSet.toArray.apply(0))
 
@@ -98,18 +96,6 @@ case class StakeTransaction(
         stakeContract.getConfigContext(Some(configDigest))
       )
     )
-
-  val proxyContextVars = List(
-    ContextVar.of(
-      0.toByte,
-      config.getProof(
-        ConfKeys.im_paideia_staking_state_tokenid,
-        ConfKeys.im_paideia_dao_name
-      )(Some(configDigest))
-    ),
-    ContextVar.of(1.toByte, stakingContextVars.companionContextVars(0).getValue()),
-    ContextVar.of(2.toByte, stakingContextVars.companionContextVars(1).getValue())
-  )
 
   val userOutput = ctx
     .newTxBuilder()
@@ -125,16 +111,7 @@ case class StakeTransaction(
     )
     .value(1000000L)
     .contract(
-      Address
-        .fromPropositionBytes(
-          ctx.getNetworkType(),
-          stakeProxyInput
-            .getRegisters()
-            .get(0)
-            .getValue()
-            .asInstanceOf[Coll[Byte]]
-            .toArray
-        )
+      userAddress
         .toErgoContract()
     )
     .build()
@@ -142,8 +119,7 @@ case class StakeTransaction(
   fee = 2350000L
   inputs = List[InputBox](
     stakeStateInput.withContextVars(contextVars: _*),
-    stakeInput.withContextVars(stakeContextVars: _*),
-    stakeProxyInput.withContextVars(proxyContextVars: _*)
+    stakeInput.withContextVars(stakeContextVars: _*)
   )
   dataInputs = List[InputBox](configInput)
   outputs =

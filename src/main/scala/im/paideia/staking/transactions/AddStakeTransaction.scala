@@ -89,10 +89,9 @@ case class AddStakeTransaction(
       )
     )
 
-  val changeStakeContract = ChangeStake(
-    config[PaideiaContractSignature](ConfKeys.im_paideia_contracts_staking_changestake)
-      .withDaoKey(daoKey)
-  )
+  val changeStakeContract =
+    ChangeStake(ConfKeys.im_paideia_contracts_staking_changestake, daoKey)
+
   val changeStakeInput =
     changeStakeContract.boxes(changeStakeContract.getUtxoSet.toArray.apply(0))
 

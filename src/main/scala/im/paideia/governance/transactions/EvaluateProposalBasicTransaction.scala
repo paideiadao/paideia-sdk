@@ -97,35 +97,33 @@ final case class EvaluateProposalBasicTransaction(
     * @return
     *   The resulting proposal basic output.
     */
-  val proposalBasicOut = ProposalBasic(PaideiaContractSignature(daoKey = dao.key)).box(
-    _ctx,
-    proposalInputBox.name,
-    proposalInputBox.proposalIndex,
-    proposalInputBox.voteCount,
-    proposalInputBox.totalVotes,
-    proposalInputBox.endTime,
-    if (quorumMet && thresholdMet)
-      winningVoteIndex
-    else
-      -2
-  )
+  val proposalBasicOut =
+    proposalInputBox.useContract.box(
+      _ctx,
+      proposalInputBox.name,
+      proposalInputBox.proposalIndex,
+      proposalInputBox.voteCount,
+      proposalInputBox.totalVotes,
+      proposalInputBox.endTime,
+      if (quorumMet && thresholdMet)
+        winningVoteIndex
+      else
+        -2
+    )
 
   val paideiaConfig = Paideia.getConfig(Env.paideiaDaoKey)
 
-  val paideiaSplitProfitContractSig = paideiaConfig[PaideiaContractSignature](
-    ConfKeys.im_paideia_contracts_split_profit
-  ).withDaoKey(Env.paideiaDaoKey)
-
-  val splitProfitOut = SplitProfit(paideiaSplitProfitContractSig).box(
-    ctx,
-    1000000L,
-    List(
-      new ErgoToken(
-        Env.paideiaTokenId,
-        paideiaConfig(ConfKeys.im_paideia_fees_createproposal_paideia)
+  val splitProfitOut =
+    SplitProfit(ConfKeys.im_paideia_contracts_split_profit, Env.paideiaDaoKey).box(
+      ctx,
+      1000000L,
+      List(
+        new ErgoToken(
+          Env.paideiaTokenId,
+          paideiaConfig(ConfKeys.im_paideia_fees_createproposal_paideia)
+        )
       )
     )
-  )
 
   val configDigest =
     ADDigest @@ configInput

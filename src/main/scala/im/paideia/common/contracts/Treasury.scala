@@ -27,6 +27,8 @@ import im.paideia.common.transactions.ConsolidateTransaction
 import scorex.util.encode.Base16
 import sigma.ast.Tuple
 import _root_.sigma.ast.CollectionConstant
+import im.paideia.DAOConfigKey
+import scorex.crypto.authds.ADDigest
 
 /** Treasury class represents the main contract for the Paideia Treasury which manages and
   * holds assets and tokens of the Paideia DAO treasury on Ergo Blockchain.
@@ -233,6 +235,12 @@ class Treasury(contractSignature: PaideiaContractSignature)
 /** Companion Treasury object which extends Paideia Actor.
   */
 object Treasury extends PaideiaActor {
+  override def apply(
+    configKey: DAOConfigKey,
+    daoKey: String,
+    digest: Option[ADDigest] = None
+  ): Treasury =
+    contractFromConfig[Treasury](configKey, daoKey, digest)
 
   /** The apply method creates and returns the Treasury contract's instance.
     * @param contractSignature

@@ -17,6 +17,11 @@ import im.paideia.common.transactions.RefundTransaction
 import org.ergoplatform.appkit.Address
 import im.paideia.util.ConfKeys
 import im.paideia.common.contracts.Config
+import org.ergoplatform.appkit.SignedInput
+import org.ergoplatform.restapi.client.ErgoTransactionInput
+import org.ergoplatform.appkit.impl.SignedTransactionImpl
+import org.ergoplatform.appkit.impl.ScalaBridge._
+import org.ergoplatform.appkit.impl.ScalaBridge
 
 class CreateProtoDAOTransactionSuite extends PaideiaTestSuite {
   test("Refund proto DAO") {
@@ -63,7 +68,7 @@ class CreateProtoDAOTransactionSuite extends PaideiaTestSuite {
         val eventResponse = Paideia.handleEvent(CreateTransactionsEvent(ctx, 0L, 50L))
         assert(eventResponse.unsignedTransactions.size === 1)
         assert(eventResponse.unsignedTransactions(0).isInstanceOf[RefundTransaction])
-        ctx
+        val signed = ctx
           .newProverBuilder()
           .build()
           .sign(eventResponse.unsignedTransactions(0).unsigned)
@@ -126,15 +131,66 @@ class CreateProtoDAOTransactionSuite extends PaideiaTestSuite {
           .ergoTransactionOutput()
         val dummyTx = (new ErgoTransaction()).addOutputsItem(protoDAOProxyBox)
         Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
-        val eventResponse = Paideia.handleEvent(CreateTransactionsEvent(ctx, 0L, 0L))
+        var eventResponse = Paideia.handleEvent(CreateTransactionsEvent(ctx, 0L, 0L))
         assert(eventResponse.unsignedTransactions.size === 1)
         assert(
           eventResponse.unsignedTransactions(0).isInstanceOf[CreateProtoDAOTransaction]
         )
-        ctx
+        var signed = ctx
           .newProverBuilder()
           .build()
           .sign(eventResponse.unsignedTransactions(0).unsigned)
+          .asInstanceOf[SignedTransactionImpl]
+        var followUp: ErgoTransaction =
+          ScalaBridge.isoErgoTransaction.from(signed.getTx())
+        Paideia.handleEvent(TransactionEvent(ctx, false, followUp))
+        eventResponse = Paideia.handleEvent(CreateTransactionsEvent(ctx, 0L, 0L))
+        assert(eventResponse.unsignedTransactions.size === 1)
+        assert(
+          eventResponse.unsignedTransactions(0).isInstanceOf[MintTransaction]
+        )
+        signed = ctx
+          .newProverBuilder()
+          .build()
+          .sign(eventResponse.unsignedTransactions(0).unsigned)
+          .asInstanceOf[SignedTransactionImpl]
+        followUp = ScalaBridge.isoErgoTransaction.from(signed.getTx())
+        Paideia.handleEvent(TransactionEvent(ctx, false, followUp))
+        eventResponse = Paideia.handleEvent(CreateTransactionsEvent(ctx, 0L, 0L))
+        assert(eventResponse.unsignedTransactions.size === 1)
+        assert(
+          eventResponse.unsignedTransactions(0).isInstanceOf[MintTransaction]
+        )
+        signed = ctx
+          .newProverBuilder()
+          .build()
+          .sign(eventResponse.unsignedTransactions(0).unsigned)
+          .asInstanceOf[SignedTransactionImpl]
+        followUp = ScalaBridge.isoErgoTransaction.from(signed.getTx())
+        Paideia.handleEvent(TransactionEvent(ctx, false, followUp))
+        eventResponse = Paideia.handleEvent(CreateTransactionsEvent(ctx, 0L, 0L))
+        assert(eventResponse.unsignedTransactions.size === 1)
+        assert(
+          eventResponse.unsignedTransactions(0).isInstanceOf[MintTransaction]
+        )
+        signed = ctx
+          .newProverBuilder()
+          .build()
+          .sign(eventResponse.unsignedTransactions(0).unsigned)
+          .asInstanceOf[SignedTransactionImpl]
+        followUp = ScalaBridge.isoErgoTransaction.from(signed.getTx())
+        Paideia.handleEvent(TransactionEvent(ctx, false, followUp))
+        eventResponse = Paideia.handleEvent(CreateTransactionsEvent(ctx, 0L, 0L))
+        assert(eventResponse.unsignedTransactions.size === 1)
+        assert(
+          eventResponse.unsignedTransactions(0).isInstanceOf[CreateDAOTransaction]
+        )
+        signed = ctx
+          .newProverBuilder()
+          .build()
+          .sign(eventResponse.unsignedTransactions(0).unsigned)
+          .asInstanceOf[SignedTransactionImpl]
+        followUp = ScalaBridge.isoErgoTransaction.from(signed.getTx())
       }
     })
   }
