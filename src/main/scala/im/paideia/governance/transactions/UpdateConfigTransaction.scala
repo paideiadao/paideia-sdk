@@ -51,11 +51,11 @@ final case class UpdateConfigTransaction(
   val actionInputBox = ActionUpdateConfigBox.fromInputBox(ctx, actionInput)
 
   // Instantiate a treasury contract and get its address
-  val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
+  val treasuryContract = Treasury(ConfKeys.im_paideia_contracts_treasury, dao.key)
   val treasuryAddress  = treasuryContract.contract.toAddress()
 
   // Create a config contract instance and retrieve Config box using indexed tokens from DAO
-  val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
+  val configContract = Config(ConfKeys.im_paideia_contracts_config, dao.key)
 
   val configInput = Paideia.getBox(
     new FilterLeaf[String](

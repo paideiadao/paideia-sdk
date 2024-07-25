@@ -113,28 +113,17 @@ case class UnstakeTransaction(
 
   val companionContract =
     if (contextVars(1).getValue.getValue.equals(TxTypes.UNSTAKE.getValue()))
-      Unstake(
-        config[PaideiaContractSignature](ConfKeys.im_paideia_contracts_staking_unstake)
-          .withDaoKey(daoKey)
-      )
+      Unstake(ConfKeys.im_paideia_contracts_staking_unstake, daoKey)
     else
-      ChangeStake(
-        config[PaideiaContractSignature](
-          ConfKeys.im_paideia_contracts_staking_changestake
-        ).withDaoKey(daoKey)
-      )
+      ChangeStake(ConfKeys.im_paideia_contracts_staking_changestake, daoKey)
+
   val companionOutput =
     if (contextVars(1).getValue.getValue.equals(TxTypes.UNSTAKE.getValue()))
-      Unstake(
-        config[PaideiaContractSignature](ConfKeys.im_paideia_contracts_staking_unstake)
-          .withDaoKey(daoKey)
-      ).box(ctx).outBox
+      Unstake(ConfKeys.im_paideia_contracts_staking_unstake, daoKey)
+        .box(ctx)
+        .outBox
     else
-      ChangeStake(
-        config[PaideiaContractSignature](
-          ConfKeys.im_paideia_contracts_staking_changestake
-        ).withDaoKey(daoKey)
-      )
+      ChangeStake(ConfKeys.im_paideia_contracts_staking_changestake, daoKey)
         .box(ctx)
         .outBox
 

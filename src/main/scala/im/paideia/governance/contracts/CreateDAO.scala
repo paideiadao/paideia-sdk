@@ -114,34 +114,77 @@ class CreateDAO(contractSignature: PaideiaContractSignature)
   }
 
   def getInsertOperations(dao: DAO) = {
+    val paideiaConfig = Paideia.getConfig(Env.paideiaDaoKey)
     val configContract = Config(
-      PaideiaContractSignature(daoKey = dao.key)
+      paideiaConfig[PaideiaContractSignature](
+        ConfKeys.im_paideia_default_config_signature
+      ).withDaoKey(dao.key)
     )
-    val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
+    val treasuryContract = Treasury(
+      paideiaConfig[PaideiaContractSignature](
+        ConfKeys.im_paideia_default_treasury_signature
+      ).withDaoKey(dao.key)
+    )
     val actionSendFundsContract = ActionSendFundsBasic(
-      PaideiaContractSignature(daoKey = dao.key)
+      paideiaConfig[PaideiaContractSignature](
+        ConfKeys.im_paideia_default_action_sendfunds_signature
+      ).withDaoKey(dao.key)
     )
     val actionUpdateConfigContract = ActionUpdateConfig(
-      PaideiaContractSignature(daoKey = dao.key)
+      paideiaConfig[PaideiaContractSignature](
+        ConfKeys.im_paideia_default_action_updateconfig_signature
+      ).withDaoKey(dao.key)
     )
     val proposalBasicContract = ProposalBasic(
-      PaideiaContractSignature(daoKey = dao.key)
+      paideiaConfig[PaideiaContractSignature](
+        ConfKeys.im_paideia_default_proposal_basic_signature
+      ).withDaoKey(dao.key)
     )
-    val stakingChangeContract = ChangeStake(PaideiaContractSignature(daoKey = dao.key))
-    val stakingStakeContract  = Stake(PaideiaContractSignature(daoKey = dao.key))
+    val stakingChangeContract = ChangeStake(
+      paideiaConfig[PaideiaContractSignature](
+        ConfKeys.im_paideia_default_staking_change_signature
+      ).withDaoKey(dao.key)
+    )
+    val stakingStakeContract = Stake(
+      paideiaConfig[PaideiaContractSignature](
+        ConfKeys.im_paideia_default_staking_stake_signature
+      ).withDaoKey(dao.key)
+    )
     val stakingCompoundContract = StakeCompound(
-      PaideiaContractSignature(daoKey = dao.key)
+      paideiaConfig[PaideiaContractSignature](
+        ConfKeys.im_paideia_default_staking_compound_signature
+      ).withDaoKey(dao.key)
     )
     val stakingProfitShareContract = StakeProfitShare(
-      PaideiaContractSignature(daoKey = dao.key)
+      paideiaConfig[PaideiaContractSignature](
+        ConfKeys.im_paideia_default_staking_profitshare_signature
+      ).withDaoKey(dao.key)
     )
     val stakingSnapshotContract = StakeSnapshot(
-      PaideiaContractSignature(daoKey = dao.key)
+      paideiaConfig[PaideiaContractSignature](
+        ConfKeys.im_paideia_default_staking_snapshot_signature
+      ).withDaoKey(dao.key)
     )
-    val stakingVoteContract    = StakeVote(PaideiaContractSignature(daoKey = dao.key))
-    val stakingUnstakeContract = Unstake(PaideiaContractSignature(daoKey = dao.key))
-    val stakeStateContract     = StakeState(PaideiaContractSignature(daoKey = dao.key))
-    val daoOriginContract      = DAOOrigin(PaideiaContractSignature(daoKey = dao.key))
+    val stakingVoteContract = StakeVote(
+      paideiaConfig[PaideiaContractSignature](
+        ConfKeys.im_paideia_default_staking_vote_signature
+      ).withDaoKey(dao.key)
+    )
+    val stakingUnstakeContract = Unstake(
+      paideiaConfig[PaideiaContractSignature](
+        ConfKeys.im_paideia_default_staking_unstake_signature
+      ).withDaoKey(dao.key)
+    )
+    val stakeStateContract = StakeState(
+      paideiaConfig[PaideiaContractSignature](
+        ConfKeys.im_paideia_default_staking_state_signature
+      ).withDaoKey(dao.key)
+    )
+    val daoOriginContract = DAOOrigin(
+      paideiaConfig[PaideiaContractSignature](
+        ConfKeys.im_paideia_default_dao_signature
+      ).withDaoKey(dao.key)
+    )
     Array(
       (
         ConfKeys.im_paideia_contracts_treasury,
@@ -266,6 +309,12 @@ class CreateDAO(contractSignature: PaideiaContractSignature)
 }
 
 object CreateDAO extends PaideiaActor {
+  override def apply(
+    configKey: DAOConfigKey,
+    daoKey: String,
+    digest: Option[ADDigest] = None
+  ): CreateDAO =
+    contractFromConfig(configKey, daoKey, digest)
   override def apply(contractSignature: PaideiaContractSignature): CreateDAO =
     getContractInstance[CreateDAO](
       contractSignature,

@@ -314,11 +314,21 @@ class ProtoDAOProxy(contractSignature: PaideiaContractSignature)
       "_IM_PAIDEIA_DAO_THEME",
       ConfKeys.im_paideia_dao_theme.ergoValue.getValue()
     )
+    cons.put(
+      "_IM_PAIDEIA_CONTRACTS_PAIDEIA_ORIGIN",
+      ConfKeys.im_paideia_contracts_paideia_origin.ergoValue.getValue()
+    )
     cons
   }
 }
 
 object ProtoDAOProxy extends PaideiaActor {
+  override def apply(
+    configKey: DAOConfigKey,
+    daoKey: String,
+    digest: Option[ADDigest] = None
+  ): ProtoDAOProxy =
+    contractFromConfig(configKey, daoKey, digest)
 
   override def apply(contractSignature: PaideiaContractSignature): ProtoDAOProxy =
     getContractInstance[ProtoDAOProxy](

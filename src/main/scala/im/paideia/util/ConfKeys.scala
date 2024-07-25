@@ -102,10 +102,13 @@ object ConfKeys {
   val im_paideia_contracts_protodaoproxy = DAOConfigKey(
     "im.paideia.contracts.protodaoproxy"
   )
-  val im_paideia_contracts_mint      = DAOConfigKey("im.paideia.contracts.mint")
-  val im_paideia_contracts_dao       = DAOConfigKey("im.paideia.contracts.dao")
-  val im_paideia_contracts_config    = DAOConfigKey("im.paideia.contracts.config")
-  val im_paideia_contracts_treasury  = DAOConfigKey("im.paideia.contracts.treasury")
+  val im_paideia_contracts_mint     = DAOConfigKey("im.paideia.contracts.mint")
+  val im_paideia_contracts_dao      = DAOConfigKey("im.paideia.contracts.dao")
+  val im_paideia_contracts_config   = DAOConfigKey("im.paideia.contracts.config")
+  val im_paideia_contracts_treasury = DAOConfigKey("im.paideia.contracts.treasury")
+  val im_paideia_contracts_paideia_origin = DAOConfigKey(
+    "im.paideia.contracts.paideia.origin"
+  )
   val im_paideia_contracts_createdao = DAOConfigKey("im.paideia.contracts.createdao")
   val im_paideia_contracts_staking_state = DAOConfigKey(
     "im.paideia.contracts.staking.state"

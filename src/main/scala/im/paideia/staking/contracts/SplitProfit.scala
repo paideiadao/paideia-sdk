@@ -19,6 +19,8 @@ import org.ergoplatform.appkit.InputBox
 import sigma.ast.Constant
 import sigma.ast.SType
 import sigma.ast.ByteArrayConstant
+import im.paideia.DAOConfigKey
+import scorex.crypto.authds.ADDigest
 
 class SplitProfit(contractSig: PaideiaContractSignature)
   extends PaideiaContract(contractSig) {
@@ -119,6 +121,12 @@ class SplitProfit(contractSig: PaideiaContractSignature)
 }
 
 object SplitProfit extends PaideiaActor {
+  override def apply(
+    configKey: DAOConfigKey,
+    daoKey: String,
+    digest: Option[ADDigest] = None
+  ): SplitProfit =
+    contractFromConfig(configKey, daoKey, digest)
 
   override def apply(contractSignature: PaideiaContractSignature): SplitProfit =
     getContractInstance[SplitProfit](

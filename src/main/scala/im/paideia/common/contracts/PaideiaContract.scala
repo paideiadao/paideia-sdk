@@ -197,7 +197,9 @@ class PaideiaContract(
     val templatePath = Paths.get(ergoScriptURL.getPath().replace(".es", ".json"))
     if (Files.exists(templatePath)) {
       val lastCompile = Files.getLastModifiedTime(templatePath)
-      if (lastCompile.compareTo(ergoScript._2) < 0) {
+      if (
+        _contractSignature.version == "latest" && lastCompile.compareTo(ergoScript._2) < 0
+      ) {
         compileContract(templatePath)
       }
       val templateString = Files.readString(templatePath)

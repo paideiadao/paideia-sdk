@@ -21,9 +21,13 @@ import sigma.ast.Constant
 import sigma.ast.SType
 import sigma.ast.ByteArrayConstant
 import org.ergoplatform.appkit.InputBox
+import scorex.crypto.authds.ADDigest
 
 class PaideiaOrigin(contractSignature: PaideiaContractSignature)
-  extends PaideiaContract(contractSignature) {
+  extends PaideiaContract(
+    contractSignature,
+    longLivingKey = ConfKeys.im_paideia_contracts_paideia_origin.originalKey
+  ) {
 
   def box(
     ctx: BlockchainContextImpl,
@@ -68,6 +72,10 @@ class PaideiaOrigin(contractSignature: PaideiaContractSignature)
       "_IM_PAIDEIA_CONTRACTS_SPLIT_PROFIT",
       ConfKeys.im_paideia_contracts_split_profit.ergoValue.getValue()
     )
+    cons.put(
+      "_IM_PAIDEIA_CONTRACTS_PAIDEIA_ORIGIN",
+      ConfKeys.im_paideia_contracts_paideia_origin.ergoValue.getValue()
+    )
     cons
   }
 
@@ -86,7 +94,12 @@ class PaideiaOrigin(contractSignature: PaideiaContractSignature)
 }
 
 object PaideiaOrigin extends PaideiaActor {
-
+  override def apply(
+    configKey: DAOConfigKey,
+    daoKey: String,
+    digest: Option[ADDigest] = None
+  ): PaideiaOrigin =
+    contractFromConfig(configKey, daoKey, digest)
   override def apply(contractSignature: PaideiaContractSignature): PaideiaOrigin =
     getContractInstance[PaideiaOrigin](
       contractSignature,

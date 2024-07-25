@@ -40,7 +40,7 @@ case class CompoundTransaction(
 
   val state = TotalStakingState(daoKey)
 
-  val treasuryContract = Treasury(PaideiaContractSignature(daoKey = daoKey))
+  val treasuryContract = Treasury(ConfKeys.im_paideia_contracts_treasury, daoKey)
 
   val treasuryAddress = treasuryContract.contract.toAddress()
 
@@ -115,10 +115,8 @@ case class CompoundTransaction(
       )
     )
 
-  val compoundContract = StakeCompound(
-    config[PaideiaContractSignature](ConfKeys.im_paideia_contracts_staking_compound)
-      .withDaoKey(daoKey)
-  )
+  val compoundContract =
+    StakeCompound(ConfKeys.im_paideia_contracts_staking_compound, daoKey)
   val compoundInput =
     compoundContract.boxes(compoundContract.getUtxoSet.toArray.apply(0))
 

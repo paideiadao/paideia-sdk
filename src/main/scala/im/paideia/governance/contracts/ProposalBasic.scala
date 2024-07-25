@@ -30,6 +30,7 @@ import sigma.Colls
 import sigma.ast.ConstantPlaceholder
 import sigma.ast.SCollection
 import sigma.ast.SByte
+import im.paideia.DAOConfigKey
 
 class ProposalBasic(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(
@@ -258,6 +259,12 @@ class ProposalBasic(contractSignature: PaideiaContractSignature)
 
 object ProposalBasic extends PaideiaActor {
 
+  override def apply(
+    configKey: DAOConfigKey,
+    daoKey: String,
+    digest: Option[ADDigest] = None
+  ): ProposalBasic =
+    contractFromConfig(configKey, daoKey, digest)
   override def apply(contractSignature: PaideiaContractSignature): ProposalBasic =
     getContractInstance[ProposalBasic](
       contractSignature,

@@ -158,9 +158,9 @@ class ActionUpdateConfig(contractSignature: PaideiaContractSignature)
               te.ctx,
               boxes(te.tx.getInputs().get(1).getBoxId())
             )
-            val configInput = Config(
-              PaideiaContractSignature(daoKey = contractSignature.daoKey)
-            ).boxes(te.tx.getInputs().get(0).getBoxId())
+            val configInput =
+              Config(ConfKeys.im_paideia_contracts_config, contractSignature.daoKey)
+                .boxes(te.tx.getInputs().get(0).getBoxId())
             Paideia
               .getConfig(contractSignature.daoKey)
               .handleUpdateEvent(
@@ -220,7 +220,12 @@ class ActionUpdateConfig(contractSignature: PaideiaContractSignature)
 }
 
 object ActionUpdateConfig extends PaideiaActor {
-
+  override def apply(
+    configKey: DAOConfigKey,
+    daoKey: String,
+    digest: Option[ADDigest] = None
+  ): ActionUpdateConfig =
+    contractFromConfig[ActionUpdateConfig](configKey, daoKey, digest)
   override def apply(contractSignature: PaideiaContractSignature): ActionUpdateConfig =
     getContractInstance[ActionUpdateConfig](
       contractSignature,

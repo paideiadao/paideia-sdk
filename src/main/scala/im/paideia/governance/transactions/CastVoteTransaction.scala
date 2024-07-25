@@ -116,11 +116,9 @@ final case class CastVoteTransaction(
       .digest
       .toArray
 
-  val stakeVoteContract = StakeVote(
-    dao
-      .config[PaideiaContractSignature](ConfKeys.im_paideia_contracts_staking_vote)
-      .withDaoKey(dao.key)
-  )
+  val stakeVoteContract =
+    StakeVote(ConfKeys.im_paideia_contracts_staking_vote, dao.key)
+
   val stakeVoteInput =
     stakeVoteContract.boxes(stakeVoteContract.getUtxoSet.toArray.apply(0))
 

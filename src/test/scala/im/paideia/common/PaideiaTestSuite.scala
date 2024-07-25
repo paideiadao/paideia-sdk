@@ -120,6 +120,10 @@ object PaideiaTestSuite {
         PaideiaContractSignature(daoKey = Env.paideiaDaoKey)
       )
       paideiaConfig.set(
+        ConfKeys.im_paideia_contracts_paideia_origin,
+        paideiaOriginContract.contractSignature
+      )
+      paideiaConfig.set(
         ConfKeys.im_paideia_contracts_createdao,
         createDaoContract.contractSignature
       )

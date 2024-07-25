@@ -25,6 +25,7 @@ import sigma.ast.SType
 import sigma.ast.ByteArrayConstant
 import sigma.Colls
 import org.ergoplatform.appkit.InputBox
+import im.paideia.DAOConfigKey
 
 /** This class represents a configuration contract and extends the PaideiaContract
   * abstract class.
@@ -108,6 +109,12 @@ class Config(contractSignature: PaideiaContractSignature)
 /** This object represents a Paideia contract configuration.
   */
 object Config extends PaideiaActor {
+  override def apply(
+    configKey: DAOConfigKey,
+    daoKey: String,
+    digest: Option[ADDigest] = None
+  ): Config =
+    contractFromConfig[Config](configKey, daoKey, digest)
 
   /** Instantiates and returns a new instance of Config.
     * @param contractSignature

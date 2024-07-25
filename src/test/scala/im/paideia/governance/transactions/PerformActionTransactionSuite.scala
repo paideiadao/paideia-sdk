@@ -212,6 +212,11 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
 
         dao.newProposal(0, "test")
 
+        dao.config.set(
+          ConfKeys.im_paideia_contracts_treasury,
+          Treasury(PaideiaContractSignature(daoKey = dao.key)).contractSignature
+        )
+
         val proposalContract = ProposalBasic(PaideiaContractSignature(daoKey = dao.key))
         val proposalBox = proposalContract.box(
           ctx,
@@ -299,6 +304,7 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
           ConfKeys.im_paideia_staking_state_tokenid,
           ErgoId.create(stakeStateTokenId).getBytes
         )
+
         config.set(ConfKeys.im_paideia_dao_key, ErgoId.create(daoKey).getBytes)
         val dao = new DAO(daoKey, config)
 
@@ -307,6 +313,11 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
         Paideia.addDAO(dao)
 
         dao.newProposal(0, "test")
+
+        dao.config.set(
+          ConfKeys.im_paideia_contracts_treasury,
+          Treasury(PaideiaContractSignature(daoKey = dao.key)).contractSignature
+        )
 
         val proposalContract = ProposalBasic(PaideiaContractSignature(daoKey = dao.key))
         val proposalBox = proposalContract.box(
@@ -403,6 +414,11 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
         Paideia.addDAO(dao)
 
         dao.newProposal(0, "test")
+
+        dao.config.set(
+          ConfKeys.im_paideia_contracts_treasury,
+          Treasury(PaideiaContractSignature(daoKey = dao.key)).contractSignature
+        )
 
         val proposalContract = ProposalBasic(PaideiaContractSignature(daoKey = dao.key))
         val proposalBox = proposalContract.box(

@@ -107,60 +107,9 @@ case class CreateDAOTransaction(
 
   val paideiaConfig = Paideia.getConfig(Env.paideiaDaoKey)
 
-  val daoOriginContract = DAOOrigin(
-    PaideiaContractSignature(networkType = _ctx.getNetworkType(), daoKey = dao.key)
-  )
+  val createDaoContract =
+    CreateDAO(ConfKeys.im_paideia_contracts_createdao, Env.paideiaDaoKey)
 
-  val daoOriginOutput = daoOriginContract.box(
-    _ctx,
-    dao,
-    Long.MaxValue,
-    Long.MaxValue
-  )
-
-  val configContract = Config(
-    PaideiaContractSignature(networkType = _ctx.getNetworkType(), daoKey = dao.key)
-  )
-
-  val emissionTime = _ctx.createPreHeader().build().getTimestamp() + dao.config[Long](
-    ConfKeys.im_paideia_staking_cyclelength
-  )
-
-  val state = TotalStakingState(
-    dao.key,
-    emissionTime
-  )
-
-  val stakeStateOutput = StakeState(PaideiaContractSignature(daoKey = dao.key))
-    .emptyBox(_ctx, dao, protoDAOInputBox.stakePool)
-
-  val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
-  val actionSendFundsContract = ActionSendFundsBasic(
-    PaideiaContractSignature(daoKey = dao.key)
-  )
-
-  val actionUpdateConfigContract = ActionUpdateConfig(
-    PaideiaContractSignature(daoKey = dao.key)
-  )
-  val proposalBasicContract = ProposalBasic(
-    PaideiaContractSignature(daoKey = dao.key)
-  )
-  val stakingChangeContract   = ChangeStake(PaideiaContractSignature(daoKey = dao.key))
-  val stakingStakeContract    = Stake(PaideiaContractSignature(daoKey = dao.key))
-  val stakingCompoundContract = StakeCompound(PaideiaContractSignature(daoKey = dao.key))
-  val stakingProfitShareContract = StakeProfitShare(
-    PaideiaContractSignature(daoKey = dao.key)
-  )
-  val stakingSnapshotContract = StakeSnapshot(PaideiaContractSignature(daoKey = dao.key))
-  val stakingVoteContract     = StakeVote(PaideiaContractSignature(daoKey = dao.key))
-  val stakingUnstakeContract  = Unstake(PaideiaContractSignature(daoKey = dao.key))
-
-  val createDaoContract = CreateDAO(
-    paideiaConfig[PaideiaContractSignature](
-      ConfKeys.im_paideia_contracts_createdao
-    )
-      .withDaoKey(Env.paideiaDaoKey)
-  )
   val createDaoInput =
     createDaoContract.boxes(createDaoContract.getUtxoSet.toArray.apply(0))
 
@@ -231,6 +180,83 @@ case class CreateDAOTransaction(
 
   val insertOperations = createDaoContract.getInsertOperations(dao)
 
+  val emissionTime = _ctx.createPreHeader().build().getTimestamp() + dao.config[Long](
+    ConfKeys.im_paideia_staking_cyclelength
+  )
+
+  val state = TotalStakingState(
+    dao.key,
+    emissionTime
+  )
+
+  var result = dao.config
+    .insertProof(
+      insertOperations: _*
+    )(Left(configDigest))
+  resultingDigest = Some(result._2)
+
+  val daoOriginContract =
+    DAOOrigin(ConfKeys.im_paideia_contracts_dao, dao.key, resultingDigest)
+
+  val daoOriginOutput = daoOriginContract.box(
+    _ctx,
+    dao,
+    Long.MaxValue,
+    Long.MaxValue
+  )
+
+  val configContract =
+    Config(ConfKeys.im_paideia_contracts_config, dao.key, resultingDigest)
+
+  val stakeStateOutput =
+    StakeState(ConfKeys.im_paideia_contracts_staking_state, dao.key, resultingDigest)
+      .emptyBox(_ctx, dao, protoDAOInputBox.stakePool)
+
+  val treasuryContract =
+    Treasury(ConfKeys.im_paideia_contracts_treasury, dao.key, resultingDigest)
+  val actionSendFundsContract = ActionSendFundsBasic(
+    paideiaConfig[PaideiaContractSignature](
+      ConfKeys.im_paideia_default_action_sendfunds_signature
+    ).withDaoKey(dao.key)
+  )
+
+  val actionUpdateConfigContract = ActionUpdateConfig(
+    paideiaConfig[PaideiaContractSignature](
+      ConfKeys.im_paideia_default_action_updateconfig_signature
+    ).withDaoKey(dao.key)
+  )
+  val proposalBasicContract = ProposalBasic(
+    paideiaConfig[PaideiaContractSignature](
+      ConfKeys.im_paideia_default_proposal_basic_signature
+    ).withDaoKey(dao.key)
+  )
+  val stakingChangeContract = ChangeStake(
+    ConfKeys.im_paideia_contracts_staking_changestake,
+    dao.key,
+    resultingDigest
+  )
+  val stakingStakeContract =
+    Stake(ConfKeys.im_paideia_contracts_staking_stake, dao.key, resultingDigest)
+  val stakingCompoundContract = StakeCompound(
+    ConfKeys.im_paideia_contracts_staking_compound,
+    dao.key,
+    resultingDigest
+  )
+  val stakingProfitShareContract = StakeProfitShare(
+    ConfKeys.im_paideia_contracts_staking_profitshare,
+    dao.key,
+    resultingDigest
+  )
+  val stakingSnapshotContract = StakeSnapshot(
+    ConfKeys.im_paideia_contracts_staking_snapshot,
+    dao.key,
+    resultingDigest
+  )
+  val stakingVoteContract =
+    StakeVote(ConfKeys.im_paideia_contracts_staking_vote, dao.key, resultingDigest)
+  val stakingUnstakeContract =
+    Unstake(ConfKeys.im_paideia_contracts_staking_unstake, dao.key, resultingDigest)
+
   val contextVarsCreateDAO = List(
     ContextVar.of(
       0.toByte,
@@ -241,14 +267,8 @@ case class CreateDAOTransaction(
       createDaoContract.getDAOConfigContext(dao.config, Some(configDigest))
     ),
     ContextVar.of(
-      2.toByte, {
-        var result = dao.config
-          .insertProof(
-            insertOperations: _*
-          )(Left(configDigest))
-        resultingDigest = Some(result._2)
-        result._1
-      }
+      2.toByte,
+      result._1
     ),
     ContextVar.of(
       3.toByte,

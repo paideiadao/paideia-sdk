@@ -37,7 +37,8 @@ final case class SendFundsBasicTransaction(
 
   val actionInputBox = ActionSendFundsBasicBox.fromInputBox(ctx, actionInput)
 
-  val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
+  val treasuryContract =
+    Treasury(ConfKeys.im_paideia_contracts_treasury, daoKey = dao.key)
 
   val treasuryAddress = treasuryContract.contract.toAddress()
 
@@ -106,7 +107,7 @@ final case class SendFundsBasicTransaction(
         actionInputBox.activationTime + actionInputBox.repeatDelay,
         actionInputBox.repeatDelay,
         actionInputBox.outputs,
-        ActionSendFundsBasic(PaideiaContractSignature(daoKey = dao.key))
+        actionInputBox.useContract
       ).outBox
     )
   } else {

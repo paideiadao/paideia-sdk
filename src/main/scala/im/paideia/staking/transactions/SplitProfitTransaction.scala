@@ -41,7 +41,7 @@ object SplitProfitTransaction {
   ): SplitProfitTransaction = {
     val profitSharePct: Byte = dao.config(ConfKeys.im_paideia_staking_profit_share_pct)
 
-    val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
+    val treasuryContract = Treasury(ConfKeys.im_paideia_contracts_treasury, dao.key)
 
     val totalErg =
       splitProfitInputs.foldLeft(0L)((z, spi) => z + spi.getValue()) - 2500000L
@@ -128,13 +128,9 @@ object SplitProfitTransaction {
           )
         )
 
-      val profitShareContract = StakeProfitShare(
-        dao
-          .config[PaideiaContractSignature](
-            ConfKeys.im_paideia_contracts_staking_profitshare
-          )
-          .withDaoKey(dao.key)
-      )
+      val profitShareContract =
+        StakeProfitShare(ConfKeys.im_paideia_contracts_staking_profitshare, dao.key)
+
       val profitShareInput =
         profitShareContract.boxes(profitShareContract.getUtxoSet.toArray.apply(0))
 
