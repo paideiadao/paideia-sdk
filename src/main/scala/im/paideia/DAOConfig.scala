@@ -32,6 +32,12 @@ import org.ergoplatform.restapi.client.ErgoTransactionOutput
 import im.paideia.common.events.UpdateConfigEvent
 import im.paideia.common.contracts.PaideiaContractSignature
 import sigma.data.AvlTreeFlags
+import im.paideia.common.filtering.FilterLeaf
+import im.paideia.common.filtering.FilterType.FilterType
+import im.paideia.common.filtering
+import im.paideia.governance.boxes.MintBox
+import im.paideia.common.boxes.ConfigBox
+import sigma.AvlTree
 
 case class DAOConfig(
   val _config: MempoolPlasmaMap[DAOConfigKey, Array[Byte]],
@@ -43,8 +49,46 @@ case class DAOConfig(
     apply[T](DAOConfigKey(key))
   }
 
+  def getLatestDigest: Option[ADDigest] = {
+    val potentialBoxes = Paideia.getBox(
+      new filtering.FilterNode(
+        filtering.FilterType.FTANY,
+        List(
+          new FilterLeaf[String](
+            filtering.FilterType.FTEQ,
+            daoKey,
+            filtering.CompareField.ASSET,
+            0
+          ),
+          new FilterLeaf[Iterable[Byte]](
+            filtering.FilterType.FTEQ,
+            ErgoId.create(daoKey).getBytes.toIterable,
+            filtering.CompareField.REGISTER,
+            1
+          )
+        )
+      )
+    )
+
+    try {
+      Some(
+        ADDigest @@ potentialBoxes
+          .filter(b => b.getRegisters().get(0).getValue().isInstanceOf[AvlTree])(0)
+          .getRegisters()
+          .get(0)
+          .getValue()
+          .asInstanceOf[AvlTree]
+          .digest
+          .toArray
+      )
+    } catch {
+      case e: Exception => None
+    }
+  }
+
   def apply[T](key: DAOConfigKey, digestOpt: Option[ADDigest] = None): T = {
-    val check = _config.lookUpWithDigest(key)(digestOpt).response.head.tryOp.get.get
+    val digest = if (digestOpt.isEmpty) getLatestDigest else digestOpt
+    val check  = _config.lookUpWithDigest(key)(digest).response.head.tryOp.get.get
     DAOConfigValueDeserializer.deserialize(check)
   }
 

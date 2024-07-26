@@ -78,46 +78,47 @@ class ProtoDAO(contractSignature: PaideiaContractSignature)
                   ).toString()
                 )
                 val config = dao.config
-                if (
-                  config._config.ergoAVLTree().digest == iBox
-                    .getRegisters()
-                    .get(0)
-                    .getValue()
-                    .asInstanceOf[AvlTree]
-                    .digest
-                ) {
-                  val tokensToMint = ProtoDAO.tokensToMint.filter((s: DAOConfigKey) =>
-                    config._config.lookUp(s).response(0).tryOp.get == None
-                  )
-                  if (iBox.getValue() > 6000000L) {
-                    if (tokensToMint.size > 0) {
-                      PaideiaEventResponse(
-                        2,
-                        List(
-                          MintTransaction(
-                            cte.ctx,
-                            iBox,
-                            dao,
-                            tokensToMint(0),
-                            Address.create(Env.operatorAddress)
-                          )
-                        )
-                      )
-                    } else {
-                      try {
-                        val newTx = CreateDAOTransaction(
+                val configDigest = ADDigest @@ iBox
+                  .getRegisters()
+                  .get(0)
+                  .getValue()
+                  .asInstanceOf[AvlTree]
+                  .digest
+                  .toArray
+                val tokensToMint = ProtoDAO.tokensToMint.filter((s: DAOConfigKey) =>
+                  config._config
+                    .lookUpWithDigest(s)(Some(configDigest))
+                    .response
+                    .head
+                    .tryOp
+                    .get == None
+                )
+                if (iBox.getValue() > 6000000L) {
+                  if (tokensToMint.size > 0) {
+                    PaideiaEventResponse(
+                      2,
+                      List(
+                        MintTransaction(
                           cte.ctx,
                           iBox,
                           dao,
+                          tokensToMint(0),
                           Address.create(Env.operatorAddress)
                         )
-                        PaideiaEventResponse(2, List(newTx))
-                      } catch {
-                        case e: Exception => PaideiaEventResponse(0)
-                      }
-                    }
+                      )
+                    )
                   } else {
-                    PaideiaEventResponse(0)
+                    try {
+                      val newTx = CreateDAOTransaction(
+                        cte.ctx,
+                        iBox,
+                        dao,
+                        Address.create(Env.operatorAddress)
+                      )
+                      PaideiaEventResponse(2, List(newTx))
+                    } catch {
+                      case e: Exception => PaideiaEventResponse(0)
+                    }
                   }
                 } else {
                   PaideiaEventResponse(0)

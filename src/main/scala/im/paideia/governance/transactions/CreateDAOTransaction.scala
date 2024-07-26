@@ -57,6 +57,17 @@ case class CreateDAOTransaction(
   ctx = _ctx
   val protoDAOInputBox = ProtoDAOBox.fromInputBox(_ctx, protoDAOInput)
 
+  val configDigest =
+    Some(
+      ADDigest @@ protoDAOInput
+        .getRegisters()
+        .get(0)
+        .getValue()
+        .asInstanceOf[AvlTree]
+        .digest
+        .toArray
+    )
+
   val paideiaConfigBox = Paideia.getBox(
     new FilterLeaf[String](
       FilterType.FTEQ,
@@ -69,7 +80,9 @@ case class CreateDAOTransaction(
   val actionMintBox = Paideia.getBox(
     new FilterLeaf[String](
       FilterType.FTEQ,
-      new ErgoId(dao.config.getArray[Byte](ConfKeys.im_paideia_dao_action_tokenid))
+      new ErgoId(
+        dao.config.getArray[Byte](ConfKeys.im_paideia_dao_action_tokenid, configDigest)
+      )
         .toString(),
       CompareField.ASSET,
       0
@@ -79,7 +92,9 @@ case class CreateDAOTransaction(
   val proposalMintBox = Paideia.getBox(
     new FilterLeaf[String](
       FilterType.FTEQ,
-      new ErgoId(dao.config.getArray[Byte](ConfKeys.im_paideia_dao_proposal_tokenid))
+      new ErgoId(
+        dao.config.getArray[Byte](ConfKeys.im_paideia_dao_proposal_tokenid, configDigest)
+      )
         .toString(),
       CompareField.ASSET,
       0
@@ -89,7 +104,8 @@ case class CreateDAOTransaction(
   val daoKeyMintBox = Paideia.getBox(
     new FilterLeaf[String](
       FilterType.FTEQ,
-      new ErgoId(dao.config.getArray[Byte](ConfKeys.im_paideia_dao_key)).toString(),
+      new ErgoId(dao.config.getArray[Byte](ConfKeys.im_paideia_dao_key, configDigest))
+        .toString(),
       CompareField.ASSET,
       0
     )
@@ -98,7 +114,9 @@ case class CreateDAOTransaction(
   val stakeStateMintBox = Paideia.getBox(
     new FilterLeaf[String](
       FilterType.FTEQ,
-      new ErgoId(dao.config.getArray[Byte](ConfKeys.im_paideia_staking_state_tokenid))
+      new ErgoId(
+        dao.config.getArray[Byte](ConfKeys.im_paideia_staking_state_tokenid, configDigest)
+      )
         .toString(),
       CompareField.ASSET,
       0
@@ -112,15 +130,6 @@ case class CreateDAOTransaction(
 
   val createDaoInput =
     createDaoContract.boxes(createDaoContract.getUtxoSet.toArray.apply(0))
-
-  val configDigest =
-    ADDigest @@ protoDAOInput
-      .getRegisters()
-      .get(0)
-      .getValue()
-      .asInstanceOf[AvlTree]
-      .digest
-      .toArray
 
   val paideiaConfigDigest =
     ADDigest @@ paideiaConfigBox
@@ -145,7 +154,7 @@ case class CreateDAOTransaction(
     ContextVar
       .of(
         1.toByte,
-        dao.config.getProof(ConfKeys.im_paideia_dao_proposal_tokenid)(Some(configDigest))
+        dao.config.getProof(ConfKeys.im_paideia_dao_proposal_tokenid)(configDigest)
       ),
     ContextVar.of(2.toByte, ConfKeys.im_paideia_dao_proposal_tokenid.ergoValue)
   )
@@ -154,7 +163,7 @@ case class CreateDAOTransaction(
     mintPaideiaConfigProof,
     ContextVar.of(
       1.toByte,
-      dao.config.getProof(ConfKeys.im_paideia_dao_action_tokenid)(Some(configDigest))
+      dao.config.getProof(ConfKeys.im_paideia_dao_action_tokenid)(configDigest)
     ),
     ContextVar.of(2.toByte, ConfKeys.im_paideia_dao_action_tokenid.ergoValue)
   )
@@ -162,7 +171,7 @@ case class CreateDAOTransaction(
   val daoKeyMintContext = List(
     mintPaideiaConfigProof,
     ContextVar
-      .of(1.toByte, dao.config.getProof(ConfKeys.im_paideia_dao_key)(Some(configDigest))),
+      .of(1.toByte, dao.config.getProof(ConfKeys.im_paideia_dao_key)(configDigest)),
     ContextVar.of(2.toByte, ConfKeys.im_paideia_dao_key.ergoValue)
   )
 
@@ -171,7 +180,7 @@ case class CreateDAOTransaction(
     ContextVar
       .of(
         1.toByte,
-        dao.config.getProof(ConfKeys.im_paideia_staking_state_tokenid)(Some(configDigest))
+        dao.config.getProof(ConfKeys.im_paideia_staking_state_tokenid)(configDigest)
       ),
     ContextVar.of(2.toByte, ConfKeys.im_paideia_staking_state_tokenid.ergoValue)
   )
@@ -181,7 +190,8 @@ case class CreateDAOTransaction(
   val insertOperations = createDaoContract.getInsertOperations(dao)
 
   val emissionTime = _ctx.createPreHeader().build().getTimestamp() + dao.config[Long](
-    ConfKeys.im_paideia_staking_cyclelength
+    ConfKeys.im_paideia_staking_cyclelength,
+    configDigest
   )
 
   val state = TotalStakingState(
@@ -192,7 +202,7 @@ case class CreateDAOTransaction(
   var result = dao.config
     .insertProof(
       insertOperations: _*
-    )(Left(configDigest))
+    )(Left(configDigest.get))
   resultingDigest = Some(result._2)
 
   val daoOriginContract =
@@ -264,7 +274,7 @@ case class CreateDAOTransaction(
     ),
     ContextVar.of(
       1.toByte,
-      createDaoContract.getDAOConfigContext(dao.config, Some(configDigest))
+      createDaoContract.getDAOConfigContext(dao.config, configDigest)
     ),
     ContextVar.of(
       2.toByte,
