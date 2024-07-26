@@ -155,7 +155,7 @@ class CreateProtoDAOTransactionSuite extends PaideiaTestSuite {
           .sign(eventResponse.unsignedTransactions(0).unsigned)
           .asInstanceOf[SignedTransactionImpl]
         followUp = ScalaBridge.isoErgoTransaction.from(signed.getTx())
-        Paideia.handleEvent(TransactionEvent(ctx, false, followUp))
+        Paideia.handleEvent(TransactionEvent(ctx, true, followUp))
         eventResponse = Paideia.handleEvent(CreateTransactionsEvent(ctx, 0L, 0L))
         assert(eventResponse.unsignedTransactions.size === 1)
         assert(
@@ -167,7 +167,7 @@ class CreateProtoDAOTransactionSuite extends PaideiaTestSuite {
           .sign(eventResponse.unsignedTransactions(0).unsigned)
           .asInstanceOf[SignedTransactionImpl]
         followUp = ScalaBridge.isoErgoTransaction.from(signed.getTx())
-        Paideia.handleEvent(TransactionEvent(ctx, false, followUp))
+        Paideia.handleEvent(TransactionEvent(ctx, true, followUp))
         eventResponse = Paideia.handleEvent(CreateTransactionsEvent(ctx, 0L, 0L))
         assert(eventResponse.unsignedTransactions.size === 1)
         assert(
@@ -179,7 +179,7 @@ class CreateProtoDAOTransactionSuite extends PaideiaTestSuite {
           .sign(eventResponse.unsignedTransactions(0).unsigned)
           .asInstanceOf[SignedTransactionImpl]
         followUp = ScalaBridge.isoErgoTransaction.from(signed.getTx())
-        Paideia.handleEvent(TransactionEvent(ctx, false, followUp))
+        Paideia.handleEvent(TransactionEvent(ctx, true, followUp))
         eventResponse = Paideia.handleEvent(CreateTransactionsEvent(ctx, 0L, 0L))
         assert(eventResponse.unsignedTransactions.size === 1)
         assert(
