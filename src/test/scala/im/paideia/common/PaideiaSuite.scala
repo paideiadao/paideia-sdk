@@ -13,7 +13,8 @@ import org.ergoplatform.sdk.ErgoId
 
 class PaideiaSuite extends AnyFunSuite {
   test("Test PaideiaActor instantiation") {
-    val paideiaRef    = Paideia._actorList
+    val paideiaRef = Paideia._actorList
+    println(paideiaRef.size)
     val paideiaConfig = DAOConfig(Env.paideiaDaoKey)
     paideiaConfig.set(
       ConfKeys.im_paideia_dao_action_tokenid,
