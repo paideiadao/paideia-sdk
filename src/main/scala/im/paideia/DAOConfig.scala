@@ -37,7 +37,6 @@ import im.paideia.common.filtering.FilterType.FilterType
 import im.paideia.common.filtering
 import im.paideia.governance.boxes.MintBox
 import im.paideia.common.boxes.ConfigBox
-import scorex.crypto.authds.legacy.avltree.AVLTree
 import sigma.AvlTree
 
 case class DAOConfig(
