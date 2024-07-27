@@ -95,10 +95,12 @@ class PaideiaContract(
     */
   val boxes: HashMap[String, InputBox] = HashMap[String, InputBox]()
 
+  def sourcePath(extension: String): String = "/ergoscript/" + getClass
+    .getSimpleName() + "/" + _contractSignature.version + "/" + getClass
+    .getSimpleName() + extension
+
   lazy val ergoScriptURL: URL = getClass.getResource(
-    "/ergoscript/" + getClass
-      .getSimpleName() + "/" + _contractSignature.version + "/" + getClass
-      .getSimpleName() + ".es"
+    sourcePath(".es")
   )
 
   /** The ErgoScript code of this contract.
@@ -215,7 +217,7 @@ class PaideiaContract(
       }
     } else {
       val templateString =
-        Source.fromResource(ergoScriptURL.getPath().replace(".es", ".json")).mkString
+        Source.fromResource(sourcePath(".json")).mkString
       val templateJson = parse(templateString).right.get
       val res          = ContractTemplate.jsonEncoder.decoder(templateJson.hcursor)
       res.right.get
