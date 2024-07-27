@@ -95,12 +95,13 @@ class PaideiaContract(
     */
   val boxes: HashMap[String, InputBox] = HashMap[String, InputBox]()
 
-  def sourcePath(extension: String): String = "/ergoscript/" + getClass
+  def sourcePath(extension: String): String = "ergoscript/" + getClass
     .getSimpleName() + "/" + _contractSignature.version + "/" + getClass
     .getSimpleName() + extension
 
   lazy val ergoScriptURL: URL = getClass.getResource(
-    sourcePath(".es")
+    "/" +
+      sourcePath(".es")
   )
 
   /** The ErgoScript code of this contract.
