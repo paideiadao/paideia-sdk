@@ -194,21 +194,31 @@ class PaideiaContract(
     contractTemplate.applyTemplate(Some(0), parameters)
 
   lazy val contractTemplate: ContractTemplate = {
-    val templatePath = Paths.get(ergoScriptURL.getPath().replace(".es", ".json"))
-    if (Files.exists(templatePath)) {
-      val lastCompile = Files.getLastModifiedTime(templatePath)
-      if (
-        _contractSignature.version == "latest" && lastCompile.compareTo(ergoScript._2) < 0
-      ) {
+    if (_contractSignature.version == "latest") {
+      val templatePath = Paths.get(ergoScriptURL.getPath().replace(".es", ".json"))
+      if (Files.exists(templatePath)) {
+        val lastCompile = Files.getLastModifiedTime(templatePath)
+        if (
+          _contractSignature.version == "latest" && lastCompile.compareTo(
+            ergoScript._2
+          ) < 0
+        ) {
+          compileContract(templatePath)
+        }
+        val templateString = Files.readString(templatePath)
+        val templateJson   = parse(templateString).right.get
+        val res            = ContractTemplate.jsonEncoder.decoder(templateJson.hcursor)
+        res.right.get
+      } else {
+        Files.createFile(templatePath)
         compileContract(templatePath)
       }
-      val templateString = Files.readString(templatePath)
-      val templateJson   = parse(templateString).right.get
-      val res            = ContractTemplate.jsonEncoder.decoder(templateJson.hcursor)
-      res.right.get
     } else {
-      Files.createFile(templatePath)
-      compileContract(templatePath)
+      val templateString =
+        Source.fromResource(ergoScriptURL.getPath().replace(".es", ".json")).mkString
+      val templateJson = parse(templateString).right.get
+      val res          = ContractTemplate.jsonEncoder.decoder(templateJson.hcursor)
+      res.right.get
     }
   }
 
