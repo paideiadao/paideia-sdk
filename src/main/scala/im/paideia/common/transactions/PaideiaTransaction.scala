@@ -131,7 +131,7 @@ trait PaideiaTransaction {
     if (inputBalance < outputBalance)
       throw new NotEnoughErgsException("Not enough ergs in input boxes", inputBalance)
 
-    if (inputBalance > outputBalance) {
+    if (inputBalance > outputBalance && (minimizeChangeBox || outputs.size == 0)) {
       AssetUtils.subtractAssetsMut(inputAssets, outputAssetsNoMinted.toMap)
       val changeTokens = inputAssets.map(t => new ErgoToken(t._1, t._2)).toList
       var changeOutput =
@@ -185,7 +185,7 @@ trait PaideiaTransaction {
       .build()
       .asInstanceOf[UnsignedTransactionImpl]
 
-    if (inputBalance > outputBalance) {
+    if (inputBalance > outputBalance && (minimizeChangeBox || outputs.size == 0)) {
       val newOutputList = unsignedTx
         .getTx()
         .outputCandidates
