@@ -233,7 +233,7 @@ class StakeState(contractSignature: PaideiaContractSignature)
                       )
                     else
                       Right(te.height)
-                  context(1.toByte) match {
+                  context(0.toByte) match {
                     case TxTypes.STAKE =>
                       val operations =
                         companionContext(1.toByte)
