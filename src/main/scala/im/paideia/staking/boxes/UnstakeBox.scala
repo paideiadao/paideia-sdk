@@ -17,7 +17,7 @@ final case class UnstakeBox(
 
 object UnstakeBox {
   def fromInputBox(ctx: BlockchainContextImpl, inp: InputBox): UnstakeBox = {
-    val contract = Unstake.getContractInstanceFromTree(inp.getErgoTree())
+    val contract = Unstake.getContractInstanceFromTree[Unstake](inp.getErgoTree())
     UnstakeBox(ctx, contract, inp.getValue())
   }
 }

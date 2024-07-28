@@ -24,7 +24,8 @@ final case class PaideiaOriginBox(
 
 object PaideiaOriginBox {
   def fromInputBox(ctx: BlockchainContextImpl, inp: InputBox): PaideiaOriginBox = {
-    val contract  = PaideiaOrigin.getContractInstanceFromTree(inp.getErgoTree())
+    val contract =
+      PaideiaOrigin.getContractInstanceFromTree[PaideiaOrigin](inp.getErgoTree())
     val nft       = inp.getTokens().get(0)
     val daoTokens = inp.getTokens().get(1)
     if (!nft.id.toString().equals(Env.paideiaOriginNFT))

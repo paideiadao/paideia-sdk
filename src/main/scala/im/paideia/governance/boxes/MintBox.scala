@@ -44,7 +44,7 @@ final case class MintBox(
 
 object MintBox {
   def fromInputBox(ctx: BlockchainContextImpl, inp: InputBox): MintBox = {
-    val contract    = Mint.getContractInstanceFromTree(inp.getErgoTree())
+    val contract    = Mint.getContractInstanceFromTree[Mint](inp.getErgoTree())
     val mintedToken = inp.getTokens().get(0)
     val tokenName = new String(
       inp.getRegisters().get(0).getValue().asInstanceOf[Coll[Byte]].toArray,

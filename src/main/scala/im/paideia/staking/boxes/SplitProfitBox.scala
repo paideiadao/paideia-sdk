@@ -28,7 +28,7 @@ final case class SplitProfitBox(
 
 object SplitProfitBox {
   def fromInputBox(ctx: BlockchainContextImpl, inp: InputBox): SplitProfitBox = {
-    val contract = SplitProfit.getContractInstanceFromTree(inp.getErgoTree)
+    val contract = SplitProfit.getContractInstanceFromTree[SplitProfit](inp.getErgoTree)
     SplitProfitBox(ctx, inp.getValue, inp.getTokens().asScala.toList, contract)
   }
 }

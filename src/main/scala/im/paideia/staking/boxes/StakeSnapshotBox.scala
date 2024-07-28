@@ -17,7 +17,8 @@ final case class StakeSnapshotBox(
 
 object StakeSnapshotBox {
   def fromInputBox(ctx: BlockchainContextImpl, inp: InputBox): StakeSnapshotBox = {
-    val contract = StakeSnapshot.getContractInstanceFromTree(inp.getErgoTree())
+    val contract =
+      StakeSnapshot.getContractInstanceFromTree[StakeSnapshot](inp.getErgoTree())
     StakeSnapshotBox(ctx, contract, inp.getValue())
   }
 }

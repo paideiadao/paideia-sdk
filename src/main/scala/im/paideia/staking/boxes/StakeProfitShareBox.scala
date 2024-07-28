@@ -17,7 +17,8 @@ final case class StakeProfitShareBox(
 
 object StakeProfitShareBox {
   def fromInputBox(ctx: BlockchainContextImpl, inp: InputBox): StakeProfitShareBox = {
-    val contract = StakeProfitShare.getContractInstanceFromTree(inp.getErgoTree())
+    val contract =
+      StakeProfitShare.getContractInstanceFromTree[StakeProfitShare](inp.getErgoTree())
     StakeProfitShareBox(ctx, contract, inp.getValue())
   }
 }
