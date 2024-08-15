@@ -268,10 +268,10 @@ class StakeState(contractSignature: PaideiaContractSignature)
                       val operations =
                         companionContext(1.toByte)
                           .getValue()
-                          .asInstanceOf[Coll[(Coll[Byte], Coll[Byte])]]
+                          .asInstanceOf[Coll[Coll[Byte]]]
                           .toArray
-                          .map((kv: (Coll[Byte], Coll[Byte])) =>
-                            ByteConversion.convertsId.convertFromBytes(kv._1.toArray)
+                          .map((kv: Coll[Byte]) =>
+                            ByteConversion.convertsId.convertFromBytes(kv.toArray)
                           )
                       stakingState.state.currentStakingState.stakeRecords
                         .deleteWithDigest(operations: _*)(digestOrHeight)
