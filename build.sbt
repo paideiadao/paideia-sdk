@@ -60,7 +60,8 @@ resolvers ++= Seq(
   "Sonatype Releases" at "https://oss.sonatype.org/content/repositories/releases/",
   "SonaType" at "https://oss.sonatype.org/content/groups/public",
   "Sonatype Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/",
-  "Bintray" at "https://jcenter.bintray.com/"
+  "Bintray" at "https://jcenter.bintray.com/",
+  "Spring" at "	https://repo.spring.io/plugins-release/"
 )
 
 testOptions in Test += Tests.Argument("-oDF")
