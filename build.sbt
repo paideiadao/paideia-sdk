@@ -61,7 +61,7 @@ resolvers ++= Seq(
   "SonaType" at "https://oss.sonatype.org/content/groups/public",
   "Sonatype Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/",
   "Bintray" at "https://jcenter.bintray.com/",
-  "Spring" at "	https://repo.spring.io/plugins-release/"
+  "SCIJava" at "https://maven.scijava.org/content/repositories/public/"
 )
 
 testOptions in Test += Tests.Argument("-oDF")
