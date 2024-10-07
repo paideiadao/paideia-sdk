@@ -417,7 +417,8 @@ case class StakeStateBox(
     stakeKey: String,
     proposalExpiration: Long,
     voteProof: ProvenResult[VoteRecord],
-    newVote: VoteRecord
+    newVote: VoteRecord,
+    configProof: Coll[Byte]
   ): StakingContextVars = {
     val previousVote = voteProof.response.head.tryOp.get
     val voteChange = newVote.voteCount - previousVote
@@ -468,7 +469,8 @@ case class StakeStateBox(
       currentStake,
       currentParticipation,
       newVote,
-      stakeKey
+      stakeKey,
+      configProof
     )
   }
 }

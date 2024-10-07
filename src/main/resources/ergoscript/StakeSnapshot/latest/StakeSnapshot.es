@@ -136,6 +136,8 @@
             participationWeight))
 
     val newSnapshotIndex: Int = snapshotStaked(stakeStateO).size - 1
+
+    val previousEmissionDelay: Int = snapshotStaked(stakeState).size
         
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //

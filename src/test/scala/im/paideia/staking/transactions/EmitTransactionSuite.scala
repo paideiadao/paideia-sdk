@@ -31,6 +31,7 @@ import im.paideia.common.contracts.Treasury
 import im.paideia.util.Env
 import im.paideia.common.events.CreateTransactionsEvent
 import im.paideia.governance.VoteRecord
+import sigma.Colls
 
 class EmitTransactionSuite extends PaideiaTestSuite {
   test("Sign emit tx on empty state") {
@@ -304,7 +305,13 @@ class EmitTransactionSuite extends PaideiaTestSuite {
         prop.votes.insertWithDigest((ErgoId.create(stakeKey), voteRecord))(Right(10000))
 
         stakingState.stake(stakeKey, 100000L)
-        stakingState.vote(stakeKey, 12676873625498375L, currentVoteProof, voteRecord)
+        stakingState.vote(
+          stakeKey,
+          12676873625498375L,
+          currentVoteProof,
+          voteRecord,
+          Colls.fromArray(Array[Byte]())
+        )
 
         val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
         dao.config
@@ -396,7 +403,13 @@ class EmitTransactionSuite extends PaideiaTestSuite {
         prop.votes.insertWithDigest((ErgoId.create(stakeKey), voteRecord))(Right(10000))
 
         stakingState.stake(stakeKey, 100000L)
-        stakingState.vote(stakeKey, 12676873625498375L, currentVoteProof, voteRecord)
+        stakingState.vote(
+          stakeKey,
+          12676873625498375L,
+          currentVoteProof,
+          voteRecord,
+          Colls.fromArray(Array[Byte]())
+        )
 
         val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
         dao.config
@@ -486,7 +499,13 @@ class EmitTransactionSuite extends PaideiaTestSuite {
         prop.votes.insertWithDigest((ErgoId.create(stakeKey), voteRecord))(Right(10000))
 
         stakingState.stake(stakeKey, 100000L)
-        stakingState.vote(stakeKey, 12676873625498375L, currentVoteProof, voteRecord)
+        stakingState.vote(
+          stakeKey,
+          12676873625498375L,
+          currentVoteProof,
+          voteRecord,
+          Colls.fromArray(Array[Byte]())
+        )
 
         val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
         dao.config

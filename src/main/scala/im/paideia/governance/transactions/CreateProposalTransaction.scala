@@ -28,6 +28,7 @@ import im.paideia.staking.boxes.StakeStateBox
 import im.paideia.util.TxTypes
 import im.paideia.governance.contracts.DAOOrigin
 import im.paideia.common.contracts.PaideiaContractSignature
+import sigma.Coll
 
 final case class CreateProposalTransaction(
   _ctx: BlockchainContextImpl,
@@ -141,44 +142,50 @@ final case class CreateProposalTransaction(
     ContextVar.of(0.toByte, TxTypes.CREATE_PROPOSAL),
     ContextVar.of(
       1.toByte,
-      Paideia
-        .getConfig(Env.paideiaDaoKey)
-        .getProof(
-          ConfKeys.im_paideia_fees_createproposal_paideia
-        )(Some(paideiaConfigDigest))
+      ErgoValueBuilder.buildFor(
+        Colls.fromArray(
+          Array[Coll[Byte]](
+            Paideia
+              .getConfig(Env.paideiaDaoKey)
+              .getProof(
+                ConfKeys.im_paideia_fees_createproposal_paideia
+              )(Some(paideiaConfigDigest))
+              .getValue()
+              .map(_.toByte),
+            dao.config
+              .getProof(
+                List(
+                  ConfKeys.im_paideia_contracts_dao,
+                  ConfKeys.im_paideia_dao_min_proposal_time,
+                  ConfKeys.im_paideia_dao_min_stake_proposal,
+                  ConfKeys.im_paideia_contracts_proposal(
+                    proposalOutput.getErgoTree().bytes
+                  )
+                ) ++
+                  actionOutputs.map((ao: OutBox) =>
+                    ConfKeys.im_paideia_contracts_action(ao.getErgoTree().bytes)
+                  ): _*
+              )(Some(configDigest))
+              .getValue()
+              .map(_.toByte),
+            Colls.fromArray(Base16.decode(voteKey).get),
+            Colls.fromArray(
+              TotalStakingState(dao.key).currentStakingState
+                .getStakes(List(voteKey), Some(stakeStateBox.stateDigest))
+                .proof
+                .bytes
+            )
+          )
+        )
+      )
     ),
     ContextVar.of(
       2.toByte,
-      dao.config.getProof(
-        List(
-          ConfKeys.im_paideia_contracts_dao,
-          ConfKeys.im_paideia_dao_min_proposal_time,
-          ConfKeys.im_paideia_dao_min_stake_proposal,
-          ConfKeys.im_paideia_contracts_proposal(proposalOutput.getErgoTree().bytes)
-        ) ++
-          actionOutputs.map((ao: OutBox) =>
-            ConfKeys.im_paideia_contracts_action(ao.getErgoTree().bytes)
-          ): _*
-      )(Some(configDigest))
-    ),
-    ContextVar.of(
-      3.toByte,
       ErgoValueBuilder.buildFor(proposalBox)
     ),
     ContextVar.of(
-      4.toByte,
+      3.toByte,
       ErgoValueBuilder.buildFor(Colls.fromArray(actionBoxes))
-    ),
-    ContextVar.of(
-      5.toByte,
-      Base16.decode(voteKey).get
-    ),
-    ContextVar.of(
-      6.toByte,
-      TotalStakingState(dao.key).currentStakingState
-        .getStakes(List(voteKey), Some(stakeStateBox.stateDigest))
-        .proof
-        .bytes
     )
   )
 

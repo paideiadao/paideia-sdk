@@ -48,17 +48,17 @@
     // Context variables                                                     //
     //                                                                       //
     ///////////////////////////////////////////////////////////////////////////
-
-    val configProof: Coll[Byte]              = getVar[Coll[Byte]](0).get
-    val currentVoteProof: Coll[Byte]         = getVar[Coll[Byte]](1).get
-    val stakeProof: Coll[Byte]               = getVar[Coll[Byte]](2).get
-    val updateStakeProof: Coll[Byte]         = getVar[Coll[Byte]](3).get
-    val participationProof: Coll[Byte]       = getVar[Coll[Byte]](4).get
-    val updateParticipationProof: Coll[Byte] = getVar[Coll[Byte]](5).get
-    val newStakeRecord: Coll[Byte]           = getVar[Coll[Byte]](6).get
-    val newParticipationRecord: Coll[Byte]   = getVar[Coll[Byte]](7).get
-    val castedVote: Coll[Byte]               = getVar[Coll[Byte]](8).get
-    val stakeKey: Coll[Byte]                 = getVar[Coll[Byte]](9).get
+    val collByteVars: Coll[Coll[Byte]]       = getVar[Coll[Coll[Byte]]](0).get
+    val configProof: Coll[Byte]              = collByteVars(0)
+    val currentVoteProof: Coll[Byte]         = collByteVars(1)
+    val stakeProof: Coll[Byte]               = collByteVars(2)
+    val updateStakeProof: Coll[Byte]         = collByteVars(3)
+    val participationProof: Coll[Byte]       = collByteVars(4)
+    val updateParticipationProof: Coll[Byte] = collByteVars(5)
+    val newStakeRecord: Coll[Byte]           = collByteVars(6)
+    val newParticipationRecord: Coll[Byte]   = collByteVars(7)
+    val castedVote: Coll[Byte]               = collByteVars(8)
+    val stakeKey: Coll[Byte]                 = collByteVars(9)
 
     ///////////////////////////////////////////////////////////////////////////
     //                                                                       //
