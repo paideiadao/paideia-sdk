@@ -373,7 +373,20 @@ case class StakeStateBox(
       .withDefault[Byte](ConfKeys.im_paideia_staking_weight_pureparticipation, 0.toByte)
       .toLong
     val emissionDelay: Long = dao.config(ConfKeys.im_paideia_staking_emission_delay)
-    snapshots = snapshots.slice(1, snapshots.size.min(emissionDelay.toInt)) ++ Array(
+    snapshots = snapshots.slice(1, snapshots.size.min(emissionDelay.toInt)) ++ Range(
+      0,
+      (emissionDelay.toInt - snapshots.size).max(0)
+    ).map(i =>
+      StakingSnapshot(
+        snapshots.last.totalStaked,
+        0L,
+        0L,
+        snapshots.last.stakeDigest,
+        snapshots.last.participationDigest,
+        snapshots.last.pureParticipationWeight,
+        snapshots.last.participationWeight
+      )
+    ) ++ Array(
       StakingSnapshot(
         state.currentStakingState.totalStaked(Some(stateDigest)),
         voted,

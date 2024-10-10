@@ -179,26 +179,52 @@
     val correctProfitAddedToSnapshot: Boolean = 
         snapshotProfit(stakeStateO).slice(1,profit(stakeState).size).indices.forall{
             (i: Int) => snapshotProfit(stakeStateO)(i+1) == profit(stakeState)(i+1)}
-        
 
+    val sharedEmissionDelay: Int = min(snapshotTrees(stakeState).size,emissionDelay)
+        
     // When a staker gets rewarded for the staking period his entry gets 
     // removed from the snapshot. An empty snapshot is proof of having handled 
     // all staker rewards for that period.
     val correctHistoryShift = allOf(Coll( 
         snapshotTrees(stakeState)(0)._1.digest == emptyDigest,
-        snapshotTrees(stakeStateO).slice(0,emissionDelay-1) == 
-            snapshotTrees(stakeState).slice(1,emissionDelay),
-        snapshotVoted(stakeStateO).slice(0,emissionDelay-1) == 
-            snapshotVoted(stakeState).slice(1,emissionDelay),
-        snapshotVotesCast(stakeStateO).slice(0,emissionDelay-1) == 
-            snapshotVotesCast(stakeState).slice(1,emissionDelay),
-        snapshotPureParticipationWeight(stakeStateO).slice(0,emissionDelay-1) == 
-            snapshotPureParticipationWeight(stakeState).slice(1,emissionDelay),
-        snapshotParticipationWeight(stakeStateO).slice(0,emissionDelay-1) == 
-            snapshotParticipationWeight(stakeState).slice(1,emissionDelay),
-        snapshotStaked(stakeStateO).slice(0,emissionDelay-1) == 
-            snapshotStaked(stakeState).slice(1,emissionDelay)
+        snapshotTrees(stakeStateO).slice(0,sharedEmissionDelay-1) == 
+            snapshotTrees(stakeState).slice(1,sharedEmissionDelay),
+        snapshotVoted(stakeStateO).slice(0,sharedEmissionDelay-1) == 
+            snapshotVoted(stakeState).slice(1,sharedEmissionDelay),
+        snapshotVotesCast(stakeStateO).slice(0,sharedEmissionDelay-1) == 
+            snapshotVotesCast(stakeState).slice(1,sharedEmissionDelay),
+        snapshotPureParticipationWeight(stakeStateO).slice(0,sharedEmissionDelay-1) == 
+            snapshotPureParticipationWeight(stakeState).slice(1,sharedEmissionDelay),
+        snapshotParticipationWeight(stakeStateO).slice(0,sharedEmissionDelay-1) == 
+            snapshotParticipationWeight(stakeState).slice(1,sharedEmissionDelay),
+        snapshotStaked(stakeStateO).slice(0,sharedEmissionDelay-1) == 
+            snapshotStaked(stakeState).slice(1,sharedEmissionDelay)
     ))
+
+    // If the emissiondelay has increased since last snapshot we need to pad the history 
+    // with "empty" snpshots
+    val correctPadding: Boolean = if (emissionDelay > sharedEmissionDelay) {
+        snapshotTrees(stakeStateO).slice(0,emissionDelay - sharedEmissionDelay-1).indices.forall{
+            (i: Int) => {
+                allOf(Coll(
+                    snapshotTrees(stakeStateO)(sharedEmissionDelay+i) == 
+                        snapshotTrees(stakeState)(sharedEmissionDelay-1),
+                    snapshotVoted(stakeStateO)(sharedEmissionDelay+i) == 
+                        0L,
+                    snapshotVotesCast(stakeStateO)(sharedEmissionDelay+i) == 
+                        0L,
+                    snapshotPureParticipationWeight(stakeStateO)(sharedEmissionDelay+i) == 
+                        snapshotPureParticipationWeight(stakeState)(sharedEmissionDelay-1),
+                    snapshotParticipationWeight(stakeStateO)(sharedEmissionDelay+i) == 
+                        snapshotParticipationWeight(stakeState)(sharedEmissionDelay-1),
+                    snapshotStaked(stakeStateO)(sharedEmissionDelay+i) == 
+                        snapshotStaked(stakeState)(sharedEmissionDelay-1)
+                ))
+            }
+        }
+    } else {
+        true
+    }
 
     //A new staking epoch starts with 0 profit
     val profitReset: Boolean = profit(stakeStateO).indices.forall{(p: Int) => profit(stakeStateO)(p) == snapshotProfit(stakeStateO)(p)}
@@ -230,6 +256,7 @@
         correctStakeState,
         correctStakeStateTokens,
         correctNewSnapshot,
+        correctPadding,
         correctHistoryShift,
         correctProfitAddedToSnapshot,
         correctSize,

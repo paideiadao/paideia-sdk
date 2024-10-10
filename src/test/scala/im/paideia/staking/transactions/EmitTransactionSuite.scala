@@ -671,4 +671,107 @@ class EmitTransactionSuite extends PaideiaTestSuite {
       }
     })
   }
+
+  test(
+    "Sign emit tx on non-empty state with profit and participation up to compound and increased emission delay"
+  ) {
+    val ergoClient = createMockedErgoClient(MockData(Nil, Nil))
+    ergoClient.execute(new java.util.function.Function[BlockchainContext, Unit] {
+      override def apply(_ctx: BlockchainContext): Unit = {
+        val ctx = _ctx.asInstanceOf[BlockchainContextImpl]
+        PaideiaTestSuite.init(ctx)
+        val dao        = StakingTest.testDAO
+        val state      = TotalStakingState(dao.key, 0L)
+        val prop       = dao.newProposal(0, "test")
+        val voteRecord = VoteRecord(Array(0L, 100000L))
+
+        val stakeKey = Util.randomKey
+
+        val stakingContract = StakeState(PaideiaContractSignature(daoKey = dao.key))
+        dao.config
+          .set(
+            ConfKeys.im_paideia_contracts_staking_state,
+            stakingContract.contractSignature
+          )
+
+        val stakingState = stakingContract
+          .emptyBox(
+            ctx,
+            dao,
+            100000000L
+          )
+
+        val currentVoteProof = prop.votes.lookUp(ErgoId.create(stakeKey))
+        prop.votes.insertWithDigest((ErgoId.create(stakeKey), voteRecord))(Right(10000))
+
+        stakingState.stake(stakeKey, 100000L)
+        stakingState.vote(
+          stakeKey,
+          12676873625498375L,
+          currentVoteProof,
+          voteRecord,
+          Colls.fromArray(Array[Byte]())
+        )
+
+        val treasuryContract = Treasury(PaideiaContractSignature(daoKey = dao.key))
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_treasury, treasuryContract.contractSignature)
+        treasuryContract.clearBoxes()
+        treasuryContract.newBox(
+          treasuryContract
+            .box(
+              ctx,
+              dao.config,
+              1000000000L,
+              List(new ErgoToken(Env.paideiaTokenId, 10000000L))
+            )
+            .inputBox(),
+          false
+        )
+        val daoTokenId = new ErgoId(dao.config.getArray(ConfKeys.im_paideia_dao_tokenid))
+        treasuryContract.newBox(
+          treasuryContract
+            .box(
+              ctx,
+              dao.config,
+              10000000L,
+              List(new ErgoToken(daoTokenId, 100000000000L))
+            )
+            .inputBox(),
+          false
+        )
+
+        stakingState
+          .profitShare(
+            List(10000L, 1000L, 1000L),
+            List()
+          )
+
+        stakingState.emit(9999999999999999L, 99999999999L)
+
+        val snapshotContract = StakeSnapshot(PaideiaContractSignature(daoKey = dao.key))
+        snapshotContract.newBox(snapshotContract.box(ctx).inputBox(), false)
+        val stakingStateBox = stakingState
+          .inputBox()
+        stakingContract.clearBoxes()
+        stakingContract.newBox(stakingStateBox, false)
+        val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
+
+        dao.config.set(ConfKeys.im_paideia_staking_emission_delay, 6L)
+
+        val configBox = Config(configContract.contractSignature).box(ctx, dao).inputBox()
+        configContract.clearBoxes()
+        configContract.newBox(configBox, false)
+
+        val eventResponse = Paideia.handleEvent(
+          CreateTransactionsEvent(ctx, stakingState.nextEmission + 3600000L, 0L)
+        )
+        assert(eventResponse.unsignedTransactions.size === 1)
+        ctx
+          .newProverBuilder()
+          .build()
+          .sign(eventResponse.unsignedTransactions(0).unsigned)
+      }
+    })
+  }
 }
