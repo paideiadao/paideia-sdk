@@ -129,7 +129,8 @@ final case class CastVoteTransaction(
     stakeKey,
     proposalInput.getRegisters().get(1).getValue().asInstanceOf[Coll[Long]](0),
     currentVote,
-    vote
+    vote,
+    stakeVoteContract.getConfigContext(Some(configDigest)).getValue().map(_.toByte)
   )
 
   val stakeStateContextVars = stakingContextVars.stakingStateContextVars.::(
@@ -141,33 +142,24 @@ final case class CastVoteTransaction(
   )
 
   val stakeVoteContextVars = stakingContextVars.companionContextVars
-    .::(
-      ContextVar.of(
-        0.toByte,
-        stakeVoteContract.getConfigContext(Some(configDigest))
-      )
-    )
 
   val proposalContext = List(
     ContextVar.of(0.toByte, TxTypes.VOTE),
     ContextVar.of(
-      3.toByte,
-      getProof.proof.ergoValue
-    ),
-    ContextVar.of(10.toByte, ErgoValueBuilder.buildFor(0, 0L)),
-    ContextVar.of(
-      4.toByte,
+      1.toByte,
       ErgoValueBuilder.buildFor(
-        Colls.fromArray(VoteRecord.convertsVoteRecord.convertToBytes(vote))
-      )
-    ),
-    ContextVar.of(
-      5.toByte,
-      ErgoValueBuilder.buildFor(
-        Colls.fromArray(Base16.decode(stakeKey).get)
+        Colls.fromArray(
+          Array(
+            result._1(0),
+            result._1(1),
+            Colls.fromArray(getProof.proof.bytes),
+            Colls.fromArray(VoteRecord.convertsVoteRecord.convertToBytes(vote)),
+            Colls.fromArray(Base16.decode(stakeKey).get)
+          )
+        )
       )
     )
-  ) ++ result._1
+  )
 
   val userOutput = _ctx
     .newTxBuilder()

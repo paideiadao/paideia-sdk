@@ -75,12 +75,13 @@
             // Context variables                                                     //
             //                                                                       //
             ///////////////////////////////////////////////////////////////////////////
-            val paideiaConfigProof: Coll[Byte] = getVar[Coll[Byte]](1).get
-            val configProof: Coll[Byte]        = getVar[Coll[Byte]](2).get
-            val proposalBox: Box               = getVar[Box](3).get
-            val actionBoxes: Coll[Box]         = getVar[Coll[Box]](4).get
-            val stakeKey: Coll[Byte]           = getVar[Coll[Byte]](5).get
-            val stakeProof: Coll[Byte]         = getVar[Coll[Byte]](6).get
+            val collBytesVars: Coll[Coll[Byte]] = getVar[Coll[Coll[Byte]]](1).get
+            val paideiaConfigProof: Coll[Byte] = collBytesVars(0)
+            val configProof: Coll[Byte]        = collBytesVars(1)
+            val proposalBox: Box               = getVar[Box](2).get
+            val actionBoxes: Coll[Box]         = getVar[Coll[Box]](3).get
+            val stakeKey: Coll[Byte]           = collBytesVars(2)
+            val stakeProof: Coll[Byte]         = collBytesVars(3)
 
             ///////////////////////////////////////////////////////////////////////////
             //                                                                       //

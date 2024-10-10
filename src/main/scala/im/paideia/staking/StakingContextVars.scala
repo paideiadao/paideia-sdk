@@ -12,6 +12,7 @@ import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 import sigma.Colls
 import scorex.util.encode.Base16
 import im.paideia.util.TxTypes._
+import im.paideia.DAOConfigValue
 
 case class StakingContextVars(
   stakingStateContextVars: List[ContextVar],
@@ -155,51 +156,43 @@ object StakingContextVars {
     newStakeRecord: StakeRecord,
     newParticipationRecord: ParticipationRecord,
     castedVote: VoteRecord,
-    stakeKey: String
+    stakeKey: String,
+    configProof: Coll[Byte]
   ): StakingContextVars = {
     StakingContextVars(
       List(
         new ContextVar(0.toByte, VOTE)
       ),
       List(
-        new ContextVar(1.toByte, voteProof.proof.ergoValue),
-        new ContextVar(2.toByte, stakeProof.proof.ergoValue),
-        new ContextVar(3.toByte, updatedStakeProof.proof.ergoValue),
-        new ContextVar(4.toByte, participationProof.proof.ergoValue),
-        new ContextVar(5.toByte, updatedParticipationProof.proof.ergoValue),
         new ContextVar(
-          6.toByte,
+          0.toByte,
           ErgoValueBuilder.buildFor(
             Colls.fromArray(
-              StakeRecord.stakeRecordConversion.convertToBytes(newStakeRecord)
-            )
-          )
-        ),
-        new ContextVar(
-          7.toByte,
-          ErgoValueBuilder.buildFor(
-            Colls.fromArray(
-              ParticipationRecord.participationRecordConversion.convertToBytes(
-                newParticipationRecord
+              Array[Coll[Byte]](
+                configProof,
+                voteProof.proof.ergoValue.getValue().map(_.toByte),
+                stakeProof.proof.ergoValue.getValue().map(_.toByte),
+                updatedStakeProof.proof.ergoValue.getValue().map(_.toByte),
+                participationProof.proof.ergoValue.getValue().map(_.toByte),
+                updatedParticipationProof.proof.ergoValue.getValue().map(_.toByte),
+                Colls
+                  .fromArray(
+                    StakeRecord.stakeRecordConversion.convertToBytes(newStakeRecord)
+                  ),
+                Colls.fromArray(
+                  ParticipationRecord.participationRecordConversion.convertToBytes(
+                    newParticipationRecord
+                  )
+                ),
+                Colls.fromArray(
+                  VoteRecord.convertsVoteRecord.convertToBytes(
+                    castedVote
+                  )
+                ),
+                Colls.fromArray(
+                  Base16.decode(stakeKey).get
+                )
               )
-            )
-          )
-        ),
-        new ContextVar(
-          8.toByte,
-          ErgoValueBuilder.buildFor(
-            Colls.fromArray(
-              VoteRecord.convertsVoteRecord.convertToBytes(
-                castedVote
-              )
-            )
-          )
-        ),
-        new ContextVar(
-          9.toByte,
-          ErgoValueBuilder.buildFor(
-            Colls.fromArray(
-              Base16.decode(stakeKey).get
             )
           )
         )

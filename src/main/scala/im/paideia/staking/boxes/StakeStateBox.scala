@@ -372,7 +372,21 @@ case class StakeStateBox(
     val pureParticipationWeight = dao.config
       .withDefault[Byte](ConfKeys.im_paideia_staking_weight_pureparticipation, 0.toByte)
       .toLong
-    snapshots = snapshots.slice(1, snapshots.size) ++ Array(
+    val emissionDelay: Long = dao.config(ConfKeys.im_paideia_staking_emission_delay)
+    snapshots = snapshots.slice(1, snapshots.size.min(emissionDelay.toInt)) ++ Range(
+      0,
+      (emissionDelay.toInt - snapshots.size).max(0)
+    ).map(i =>
+      StakingSnapshot(
+        snapshots.last.totalStaked,
+        0L,
+        0L,
+        snapshots.last.stakeDigest,
+        snapshots.last.participationDigest,
+        snapshots.last.pureParticipationWeight,
+        snapshots.last.participationWeight
+      )
+    ) ++ Array(
       StakingSnapshot(
         state.currentStakingState.totalStaked(Some(stateDigest)),
         voted,
@@ -417,7 +431,8 @@ case class StakeStateBox(
     stakeKey: String,
     proposalExpiration: Long,
     voteProof: ProvenResult[VoteRecord],
-    newVote: VoteRecord
+    newVote: VoteRecord,
+    configProof: Coll[Byte]
   ): StakingContextVars = {
     val previousVote = voteProof.response.head.tryOp.get
     val voteChange = newVote.voteCount - previousVote
@@ -468,7 +483,8 @@ case class StakeStateBox(
       currentStake,
       currentParticipation,
       newVote,
-      stakeKey
+      stakeKey,
+      configProof
     )
   }
 }
