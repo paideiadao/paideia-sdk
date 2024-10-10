@@ -199,12 +199,12 @@ class ProposalBasic(contractSignature: PaideiaContractSignature)
     vote: VoteRecord,
     voteKey: String,
     digestOrHeight: Either[ADDigest, Int]
-  ): (List[ContextVar], PaideiaBox) = {
+  ): (List[Coll[Byte]], PaideiaBox) = {
     val inp      = ProposalBasicBox.fromInputBox(ctx, inputBox)
     val proposal = Paideia.getDAO(contractSignature.daoKey).proposals(inp.proposalIndex)
     val voteId   = ErgoId.create(voteKey)
     val lookUp   = proposal.votes.lookUpWithDigest(voteId)(digestOrHeight.left.toOption)
-    val lookUpProof = ContextVar.of(1.toByte, lookUp.proof.ergoValue)
+    val lookUpProof = Colls.fromArray(lookUp.proof.bytes)
     val currentVote = lookUp.response(0).tryOp.get
     currentVote match {
       case None => {
@@ -212,7 +212,7 @@ class ProposalBasic(contractSignature: PaideiaContractSignature)
         (
           List(
             lookUpProof,
-            ContextVar.of(2.toByte, insert.proof.ergoValue)
+            Colls.fromArray(insert.proof.bytes)
           ),
           box(
             ctx,
@@ -236,7 +236,7 @@ class ProposalBasic(contractSignature: PaideiaContractSignature)
         (
           List(
             lookUpProof,
-            ContextVar.of(2.toByte, update.proof.ergoValue)
+            Colls.fromArray(update.proof.bytes)
           ),
           box(
             ctx,

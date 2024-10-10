@@ -53,11 +53,12 @@
         // Context variables                                                 //
         ///////////////////////////////////////////////////////////////////////
 
-        val currentVoteProof: Coll[Byte] = getVar[Coll[Byte]](1).get
-        val newVoteProof: Coll[Byte]     = getVar[Coll[Byte]](2).get
-        val stakeProof: Coll[Byte]       = getVar[Coll[Byte]](3).get
-        val voteCast: Coll[Byte]         = getVar[Coll[Byte]](4).get
-        val voteKey: Coll[Byte]          = getVar[Coll[Byte]](5).get
+        val collBytesVars: Coll[Coll[Byte]] = getVar[Coll[Coll[Byte]]](1).get
+        val currentVoteProof: Coll[Byte] = collBytesVars(0)
+        val newVoteProof: Coll[Byte]     = collBytesVars(1)
+        val stakeProof: Coll[Byte]       = collBytesVars(2)
+        val voteCast: Coll[Byte]         = collBytesVars(3)
+        val voteKey: Coll[Byte]          = collBytesVars(4)
         
         ///////////////////////////////////////////////////////////////////////
         // Intermediate calculations                                         //

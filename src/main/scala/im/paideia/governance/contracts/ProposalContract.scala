@@ -7,6 +7,7 @@ import org.ergoplatform.appkit.InputBox
 import im.paideia.governance.VoteRecord
 import scorex.crypto.authds.ADDigest
 import work.lithos.plasma.collections.ProvenResult
+import sigma.Coll
 
 abstract trait ProposalContract {
 
@@ -16,7 +17,7 @@ abstract trait ProposalContract {
     vote: VoteRecord,
     voteKey: String,
     digestOrHeight: Either[ADDigest, Int]
-  ): (List[ContextVar], PaideiaBox)
+  ): (List[Coll[Byte]], PaideiaBox)
 
   def getVote(
     voteKey: String,
