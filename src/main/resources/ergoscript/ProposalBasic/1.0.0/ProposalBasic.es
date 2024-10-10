@@ -52,6 +52,7 @@
         ///////////////////////////////////////////////////////////////////////
         // Context variables                                                 //
         ///////////////////////////////////////////////////////////////////////
+
         val collBytesVars: Coll[Coll[Byte]] = getVar[Coll[Coll[Byte]]](1).get
         val currentVoteProof: Coll[Byte] = collBytesVars(0)
         val newVoteProof: Coll[Byte]     = collBytesVars(1)
