@@ -66,15 +66,7 @@ class DAOOrigin(contractSignature: PaideiaContractSignature)
             StandardCharsets.UTF_8
           )
           Paideia
-            .getDAO(
-              new ErgoId(
-                ErgoValue
-                  .fromHex(te.tx.getOutputs().get(0).getAdditionalRegisters().get("R4"))
-                  .getValue()
-                  .asInstanceOf[Coll[Byte]]
-                  .toArray
-              ).toString()
-            )
+            .getDAO(contractSignature.daoKey)
             .newProposal(proposalIndex.toInt, proposalName)
           PaideiaEventResponse(1)
         } else {
