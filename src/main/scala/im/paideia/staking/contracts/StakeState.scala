@@ -338,9 +338,10 @@ class StakeState(contractSignature: PaideiaContractSignature)
                           ErgoId.create(stakeKey),
                           StakeRecord.stakeRecordConversion
                             .convertFromBytes(
-                              companionContext(6.toByte)
+                              companionContext(0.toByte)
                                 .getValue()
-                                .asInstanceOf[Coll[Byte]]
+                                .asInstanceOf[Coll[Coll[Byte]]]
+                                .apply(6)
                                 .toArray
                             )
                         )
@@ -350,9 +351,10 @@ class StakeState(contractSignature: PaideiaContractSignature)
                           ErgoId.create(stakeKey),
                           ParticipationRecord.participationRecordConversion
                             .convertFromBytes(
-                              companionContext(7.toByte)
+                              companionContext(0.toByte)
                                 .getValue()
-                                .asInstanceOf[Coll[Byte]]
+                                .asInstanceOf[Coll[Coll[Byte]]]
+                                .apply(7)
                                 .toArray
                             )
                         )
