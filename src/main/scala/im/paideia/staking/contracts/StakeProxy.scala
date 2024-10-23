@@ -162,10 +162,15 @@ class StakeProxy(contractSignature: PaideiaContractSignature)
       ConfKeys.im_paideia_staking_state_tokenid.ergoValue.getValue()
     )
     cons.put("_IM_PAIDEIA_DAO_NAME", ConfKeys.im_paideia_dao_name.ergoValue.getValue())
-    cons.put("_STAKE_KEY", Colls.fromArray(" Stake Key".getBytes(StandardCharsets.UTF_8)))
+    cons.put(
+      "_STAKE_KEY",
+      Colls.fromArray(" Membership".getBytes(StandardCharsets.UTF_8))
+    )
     cons.put(
       "_POWERED_BY_PAIDEIA",
-      Colls.fromArray("Powered by Paideia".getBytes(StandardCharsets.UTF_8))
+      Colls.fromArray(
+        " - Powered by Paideia - https://app.paideia.im".getBytes(StandardCharsets.UTF_8)
+      )
     )
     cons
   }
