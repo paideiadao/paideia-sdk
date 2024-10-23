@@ -150,7 +150,7 @@
         stakeState.id == mintedKey._1,
         stakeState.id == stakeOperations(0)._1,
         mintName == daoName++stakeKeyText,
-        mintDesc == poweredByPaideiaText,
+        mintDesc == daoName++poweredByPaideiaText,
         mintDecimals == decimals0
     ))
 

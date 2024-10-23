@@ -104,8 +104,10 @@ case class StakeTransaction(
       new Eip4Token(
         stakeKey,
         1L,
-        config[String](ConfKeys.im_paideia_dao_name) ++ " Stake Key",
-        "Powered by Paideia",
+        config[String](ConfKeys.im_paideia_dao_name) ++ " Membership",
+        config[String](
+          ConfKeys.im_paideia_dao_name
+        ) ++ " - Powered by Paideia - https://app.paideia.im",
         0
       )
     )
