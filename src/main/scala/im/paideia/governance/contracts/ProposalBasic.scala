@@ -31,6 +31,12 @@ import sigma.ast.ConstantPlaceholder
 import sigma.ast.SCollection
 import sigma.ast.SByte
 import im.paideia.DAOConfigKey
+import im.paideia.common.events.TransactionEvent
+import scala.collection.JavaConverters._
+import sigma.AvlTree
+import org.ergoplatform.appkit.ErgoValue
+import im.paideia.util.TxTypes
+import org.bouncycastle.util.encoders.Hex
 
 class ProposalBasic(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(
@@ -118,6 +124,54 @@ class ProposalBasic(contractSignature: PaideiaContractSignature)
             .toList
         )
       }
+      case te: TransactionEvent =>
+        PaideiaEventResponse.merge(
+          te.tx
+            .getInputs()
+            .asScala
+            .map(eti =>
+              if (getUtxoSet.contains(eti.getBoxId())) {
+                val proposalBox = boxes(eti.getBoxId())
+                val context = eti
+                  .getSpendingProof()
+                  .getExtension()
+                  .asScala
+                  .map((kv: (String, String)) => (kv._1.toByte, ErgoValue.fromHex(kv._2)))
+                  .toMap[Byte, ErgoValue[_]]
+                context.get(0.toByte) match {
+                  case Some(txType) =>
+                    if (txType == TxTypes.VOTE) {
+                      val byteArrays =
+                        context(1.toByte).getValue().asInstanceOf[Coll[Coll[Byte]]]
+                      castVote(
+                        te.ctx,
+                        proposalBox,
+                        VoteRecord.convertsVoteRecord
+                          .convertFromBytes(byteArrays(3).toArray),
+                        Hex.toHexString(byteArrays(4).toArray),
+                        if (te.mempool)
+                          Left(
+                            ADDigest @@ proposalBox
+                              .getRegisters()
+                              .get(2)
+                              .getValue()
+                              .asInstanceOf[AvlTree]
+                              .digest
+                              .toArray
+                          )
+                        else Right(te.height)
+                      )
+                      PaideiaEventResponse(2)
+                    } else {
+                      PaideiaEventResponse(0)
+                    }
+                  case _ => PaideiaEventResponse(0)
+                }
+              } else {
+                PaideiaEventResponse(0)
+              }
+            )
+        )
       case _ => PaideiaEventResponse(0)
     }
     PaideiaEventResponse.merge(List(super.handleEvent(event), response))
