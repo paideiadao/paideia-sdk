@@ -113,46 +113,6 @@ class CastVote(contractSignature: PaideiaContractSignature)
             )
           )
         })
-      case te: TransactionEvent =>
-        PaideiaEventResponse.merge(
-          te.tx
-            .getInputs()
-            .asScala
-            .map(eti =>
-              if (te.tx.getInputs().size() > 1 && boxSet.contains(eti.getBoxId())) {
-                val castVoteBox = CastVoteBox.fromInputBox(te.ctx, boxes(eti.getBoxId()))
-                val proposalContract = Paideia
-                  .getProposalContract(
-                    Blake2b256(
-                      new InputBoxImpl(te.tx.getOutputs().get(2)).getErgoTree().bytes
-                    ).array.toList
-                  )
-                val proposalBox = proposalContract
-                  .asInstanceOf[PaideiaContract]
-                  .boxes(te.tx.getInputs().get(2).getBoxId())
-                proposalContract.castVote(
-                  te.ctx,
-                  proposalBox,
-                  castVoteBox.vote,
-                  castVoteBox.stakeKey,
-                  if (te.mempool)
-                    Left(
-                      ADDigest @@ proposalBox
-                        .getRegisters()
-                        .get(2)
-                        .getValue()
-                        .asInstanceOf[AvlTree]
-                        .digest
-                        .toArray
-                    )
-                  else Right(te.height)
-                )
-                PaideiaEventResponse(2)
-              } else {
-                PaideiaEventResponse(0)
-              }
-            )
-        )
       case _ => PaideiaEventResponse(0)
     }
     PaideiaEventResponse.merge(List(super.handleEvent(event), response))
