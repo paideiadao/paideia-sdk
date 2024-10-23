@@ -140,7 +140,7 @@ class ProposalBasic(contractSignature: PaideiaContractSignature)
                   .toMap[Byte, ErgoValue[_]]
                 context.get(0.toByte) match {
                   case Some(txType) =>
-                    if (txType == TxTypes.VOTE) {
+                    if (txType.getValue == TxTypes.VOTE.getValue()) {
                       val byteArrays =
                         context(1.toByte).getValue().asInstanceOf[Coll[Coll[Byte]]]
                       castVote(
