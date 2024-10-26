@@ -26,6 +26,9 @@ import sigma.ast.ByteArrayConstant
 import sigma.Colls
 import org.ergoplatform.appkit.InputBox
 import im.paideia.DAOConfigKey
+import im.paideia.governance.boxes.ActionUpdateConfigBox
+import im.paideia.governance.contracts.ActionUpdateConfig
+import sigma.AvlTree
 
 /** This class represents a configuration contract and extends the PaideiaContract
   * abstract class.
@@ -88,6 +91,46 @@ class Config(contractSignature: PaideiaContractSignature)
       )
     )
     cons
+  }
+
+  override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
+    val response: PaideiaEventResponse = event match {
+      case te: TransactionEvent =>
+        if (te.tx.getInputs().size() > 1)
+          if (boxes.contains(te.tx.getInputs().get(0).getBoxId())) {
+            val actionBox = ActionUpdateConfigBox.fromInputBox(
+              te.ctx,
+              Paideia.getBoxById(te.tx.getInputs().get(1).getBoxId()).get
+            )
+            Paideia
+              .getConfig(contractSignature.daoKey)
+              .handleUpdateEvent(
+                UpdateConfigEvent(
+                  te.ctx,
+                  contractSignature.daoKey,
+                  if (te.mempool)
+                    Left(
+                      ADDigest @@ boxes(te.tx.getInputs().get(0).getBoxId())
+                        .getRegisters()
+                        .get(0)
+                        .getValue()
+                        .asInstanceOf[AvlTree]
+                        .digest
+                        .toArray
+                    )
+                  else
+                    Right(te.height),
+                  actionBox.remove.toArray,
+                  actionBox.update.toArray,
+                  actionBox.insert.toArray
+                )
+              )
+            PaideiaEventResponse(2, List[PaideiaTransaction]())
+          } else PaideiaEventResponse(0)
+        else PaideiaEventResponse(0)
+      case _ => PaideiaEventResponse(0)
+    }
+    PaideiaEventResponse.merge(List(super.handleEvent(event), response))
   }
 
   override lazy val parameters: Map[String, Constant[SType]] = {
