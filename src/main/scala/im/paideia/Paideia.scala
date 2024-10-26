@@ -78,4 +78,11 @@ object Paideia {
       .getProposalContract(contractHash)
       .get
   }
+
+  def getBoxById(boxId: String): Option[InputBox] = {
+    _actorList.values
+      .flatMap(_.contractInstances.values)
+      .find(_.getBoxes.contains(boxId))
+      .flatMap(_.boxes.get(boxId))
+  }
 }

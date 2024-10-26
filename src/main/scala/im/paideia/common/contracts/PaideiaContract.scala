@@ -95,6 +95,8 @@ class PaideiaContract(
     */
   val boxes: HashMap[String, InputBox] = HashMap[String, InputBox]()
 
+  def getBoxes = boxes
+
   def sourcePath(extension: String): String = "ergoscript/" + getClass
     .getSimpleName() + "/" + _contractSignature.version + "/" + getClass
     .getSimpleName() + extension

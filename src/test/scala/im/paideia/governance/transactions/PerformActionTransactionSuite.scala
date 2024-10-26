@@ -31,6 +31,9 @@ import im.paideia.common.events.CreateTransactionsEvent
 import org.ergoplatform.appkit.impl.OutBoxImpl
 import org.ergoplatform.ErgoBoxCandidate
 import sigma.data.CBox
+import im.paideia.common.events.TransactionEvent
+import org.ergoplatform.appkit.impl.ScalaBridge
+import org.ergoplatform.appkit.impl.SignedTransactionImpl
 
 class PerformActionTransactionSuite extends PaideiaTestSuite {
   test("Send funds") {
@@ -167,10 +170,19 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
         )
         eventResponse.exceptions.map(e => throw e)
         assert(eventResponse.unsignedTransactions.size === 1)
-        ctx
+        val signed = ctx
           .newProverBuilder()
           .build()
           .sign(eventResponse.unsignedTransactions(0).unsigned)
+        val followUpResponse = Paideia.handleEvent(
+          TransactionEvent(
+            ctx,
+            false,
+            ScalaBridge.isoErgoTransaction
+              .from(signed.asInstanceOf[SignedTransactionImpl].getTx())
+          )
+        )
+        assert(followUpResponse.exceptions.size === 0)
       }
     })
   }
@@ -267,10 +279,19 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
           CreateTransactionsEvent(ctx, proposalBox.endTime + 1000L, 0L)
         )
         assert(eventResponse.unsignedTransactions.size === 1)
-        ctx
+        val signed = ctx
           .newProverBuilder()
           .build()
           .sign(eventResponse.unsignedTransactions(0).unsigned)
+        val followUpResponse = Paideia.handleEvent(
+          TransactionEvent(
+            ctx,
+            false,
+            ScalaBridge.isoErgoTransaction
+              .from(signed.asInstanceOf[SignedTransactionImpl].getTx())
+          )
+        )
+        assert(followUpResponse.exceptions.size === 0)
       }
     })
   }
@@ -369,10 +390,19 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
           CreateTransactionsEvent(ctx, proposalBox.endTime + 1000L, 0L)
         )
         assert(eventResponse.unsignedTransactions.size === 1)
-        ctx
+        val signed = ctx
           .newProverBuilder()
           .build()
           .sign(eventResponse.unsignedTransactions(0).unsigned)
+        val followUpResponse = Paideia.handleEvent(
+          TransactionEvent(
+            ctx,
+            false,
+            ScalaBridge.isoErgoTransaction
+              .from(signed.asInstanceOf[SignedTransactionImpl].getTx())
+          )
+        )
+        assert(followUpResponse.exceptions.size === 0)
       }
     })
   }
@@ -463,10 +493,19 @@ class PerformActionTransactionSuite extends PaideiaTestSuite {
           CreateTransactionsEvent(ctx, proposalBox.endTime + 1000L, 0L)
         )
         assert(eventResponse.unsignedTransactions.size === 1)
-        ctx
+        val signed = ctx
           .newProverBuilder()
           .build()
           .sign(eventResponse.unsignedTransactions(0).unsigned)
+        val followUpResponse = Paideia.handleEvent(
+          TransactionEvent(
+            ctx,
+            false,
+            ScalaBridge.isoErgoTransaction
+              .from(signed.asInstanceOf[SignedTransactionImpl].getTx())
+          )
+        )
+        assert(followUpResponse.exceptions.size === 0)
       }
     })
   }
