@@ -16,6 +16,8 @@ import im.paideia.common.events.TransactionEvent
 import im.paideia.governance.contracts.Mint
 import im.paideia.util.Env
 import im.paideia.common.events.CreateTransactionsEvent
+import org.ergoplatform.appkit.impl.ScalaBridge
+import org.ergoplatform.appkit.impl.SignedTransactionImpl
 
 class CreateDAOTransactionSuite extends PaideiaTestSuite {
   test("Create DAO") {
@@ -105,10 +107,19 @@ class CreateDAOTransactionSuite extends PaideiaTestSuite {
         val eventResponse = Paideia.handleEvent(CreateTransactionsEvent(ctx, 0L, 0L))
         eventResponse.exceptions.map(e => throw e)
         assert(eventResponse.unsignedTransactions.size === 1)
-        ctx
+        val signed = ctx
           .newProverBuilder()
           .build()
           .sign(eventResponse.unsignedTransactions(0).unsigned)
+        val followUpResponse = Paideia.handleEvent(
+          TransactionEvent(
+            ctx,
+            false,
+            ScalaBridge.isoErgoTransaction
+              .from(signed.asInstanceOf[SignedTransactionImpl].getTx())
+          )
+        )
+        assert(followUpResponse.exceptions.size === 0)
       }
     })
   }
