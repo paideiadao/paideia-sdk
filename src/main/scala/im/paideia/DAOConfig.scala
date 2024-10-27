@@ -73,7 +73,21 @@ case class DAOConfig(
     try {
       Some(
         ADDigest @@ potentialBoxes
-          .filter(b => b.getRegisters().get(0).getValue().isInstanceOf[AvlTree])(0)
+          .filter(b =>
+            b.getRegisters().get(0).getValue().isInstanceOf[AvlTree] && _config
+              .getMap(
+                Some(
+                  ADDigest @@ b
+                    .getRegisters()
+                    .get(0)
+                    .getValue()
+                    .asInstanceOf[AvlTree]
+                    .digest
+                    .toArray
+                )
+              )
+              .isDefined
+          )(0)
           .getRegisters()
           .get(0)
           .getValue()
