@@ -120,7 +120,7 @@ final case class EvaluateProposalBasicTransaction(
       List(
         new ErgoToken(
           Env.paideiaTokenId,
-          paideiaConfig(ConfKeys.im_paideia_fees_createproposal_paideia)
+          proposalInputBox.paideiaTokens
         )
       )
     )

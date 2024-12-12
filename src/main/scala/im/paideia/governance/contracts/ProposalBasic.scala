@@ -61,15 +61,16 @@ class ProposalBasic(contractSignature: PaideiaContractSignature)
     totalVotes: Long,
     endTime: Long,
     passed: Int,
-    digestOpt: Option[ADDigest] = None
+    digestOpt: Option[ADDigest] = None,
+    feeTokens: Long = Paideia.getConfig(Env.paideiaDaoKey)(
+      ConfKeys.im_paideia_fees_createproposal_paideia
+    )
   ): ProposalBasicBox = {
     ProposalBasicBox(
       ctx,
       Paideia.getDAO(contractSignature.daoKey),
       name,
-      Paideia.getConfig(Env.paideiaDaoKey)(
-        ConfKeys.im_paideia_fees_createproposal_paideia
-      ),
+      feeTokens,
       proposalIndex,
       voteCount,
       totalVotes,
@@ -302,7 +303,8 @@ class ProposalBasic(contractSignature: PaideiaContractSignature)
             inp.totalVotes + voteChange.voteCount,
             inp.endTime,
             inp.passed,
-            Some(update.digest)
+            Some(update.digest),
+            inp.paideiaTokens
           )
         )
       }
