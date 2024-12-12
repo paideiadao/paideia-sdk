@@ -279,7 +279,8 @@ class ProposalBasic(contractSignature: PaideiaContractSignature)
             inp.totalVotes + vote.voteCount,
             inp.endTime,
             inp.passed,
-            Some(insert.digest)
+            Some(insert.digest),
+            inp.paideiaTokens
           )
         )
       }
