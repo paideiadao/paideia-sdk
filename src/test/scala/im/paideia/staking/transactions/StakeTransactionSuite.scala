@@ -217,4 +217,64 @@ class StakeTransactionSuite extends PaideiaTestSuite {
       }
     })
   }
+
+  test("Fail stake tx on negative stake amount") {
+    val thiefAddress =
+      Address.create("9hyDXH72HoNTiG2pvxFQwxAhWBU8CrbvwtJDtnYoa4jfpaSk1d3")
+    val ergoClient = createMockedErgoClient(MockData(Nil, Nil))
+    ergoClient.execute(new java.util.function.Function[BlockchainContext, Unit] {
+      override def apply(_ctx: BlockchainContext): Unit = {
+        val ctx = _ctx.asInstanceOf[BlockchainContextImpl]
+        PaideiaTestSuite.init(ctx)
+        val dao   = StakingTest.testDAO
+        val state = TotalStakingState(dao.key, 0L)
+
+        val dummyAddress = Address.create("4MQyML64GnzMxZgm")
+
+        val stakingContract = StakeState(PaideiaContractSignature(daoKey = dao.key))
+        dao.config
+          .set(
+            ConfKeys.im_paideia_contracts_staking_state,
+            stakingContract.contractSignature
+          )
+
+        val stakingState = stakingContract
+          .emptyBox(
+            ctx,
+            dao,
+            100000000L
+          )
+
+        val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
+        dao.config
+          .set(ConfKeys.im_paideia_contracts_config, configContract.contractSignature)
+
+        val configBox = Config(configContract.contractSignature).box(ctx, dao).inputBox()
+        configContract.clearBoxes()
+        configContract.newBox(configBox, false)
+
+        val stakingStateBox = stakingState
+          .inputBox()
+        stakingContract.clearBoxes()
+        stakingContract.newBox(stakingStateBox, false)
+
+        val stakeContract = Stake(PaideiaContractSignature(daoKey = dao.key))
+        stakeContract.newBox(stakeContract.box(ctx).inputBox(), false)
+
+        val stakeProxyContract = StakeProxy(PaideiaContractSignature(daoKey = dao.key))
+        val stakeProxyBox = stakeProxyContract
+          .box(ctx, dummyAddress.toString(), -10000L, 10001L)
+          .ergoTransactionOutput()
+        val dummyTx = (new ErgoTransaction()).addOutputsItem(stakeProxyBox)
+        Paideia.handleEvent(TransactionEvent(ctx, false, dummyTx))
+        val eventResponse = Paideia.handleEvent(CreateTransactionsEvent(ctx, 0L, 0L))
+        assert(eventResponse.unsignedTransactions.size === 1)
+        val falseUnsignedTx = eventResponse.unsignedTransactions(0).unsigned()
+        val thrown = intercept[InterpreterException] {
+          ctx.newProverBuilder().build().sign(falseUnsignedTx)
+        }
+        assert(thrown.getMessage === "Script reduced to false")
+      }
+    })
+  }
 }

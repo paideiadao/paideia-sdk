@@ -18,7 +18,8 @@ case class StakeProxyBox(
   useContract: StakeProxy,
   daoConfig: DAOConfig,
   userAddress: String,
-  stakeAmount: Long
+  stakeAmount: Long,
+  actualTokenDiff: Long = 0L
 ) extends PaideiaBox {
 
   ctx      = _ctx
@@ -39,14 +40,14 @@ case class StakeProxyBox(
     val paideiaTokenId = ErgoId.create(Env.paideiaTokenId)
     if (!daoTokenId.equals(paideiaTokenId))
       List(
-        new ErgoToken(daoTokenId, stakeAmount),
+        new ErgoToken(daoTokenId, stakeAmount + actualTokenDiff),
         new ErgoToken(Env.paideiaTokenId, Env.defaultBotFee)
       )
     else
       List(
         new ErgoToken(
           daoTokenId,
-          stakeAmount + Env.defaultBotFee
+          stakeAmount + actualTokenDiff + Env.defaultBotFee
         )
       )
   }
