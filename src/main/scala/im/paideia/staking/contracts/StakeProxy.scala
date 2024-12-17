@@ -39,14 +39,16 @@ class StakeProxy(contractSignature: PaideiaContractSignature)
   def box(
     ctx: BlockchainContextImpl,
     userAddress: String,
-    stakeAmount: Long
+    stakeAmount: Long,
+    stakeDiff: Long = 0L
   ): StakeProxyBox = {
     StakeProxyBox(
       ctx,
       this,
       Paideia.getConfig(contractSignature.daoKey),
       userAddress,
-      stakeAmount
+      stakeAmount,
+      stakeDiff
     )
   }
 

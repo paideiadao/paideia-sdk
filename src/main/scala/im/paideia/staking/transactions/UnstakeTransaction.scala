@@ -138,16 +138,19 @@ case class UnstakeTransaction(
       )
     )
 
-  val govTokenUnstake = if (currentStakeRecord.stake > newStakeRecord.stake) {
-    List(
-      new ErgoToken(
-        config.getArray[Byte](ConfKeys.im_paideia_dao_tokenid),
-        currentStakeRecord.stake - newStakeRecord.stake
+  val govTokenUnstake =
+    if (
+      currentStakeRecord.stake > newStakeRecord.stake && currentStakeRecord.stake - newStakeRecord.stake > 0L
+    ) {
+      List(
+        new ErgoToken(
+          config.getArray[Byte](ConfKeys.im_paideia_dao_tokenid),
+          currentStakeRecord.stake - newStakeRecord.stake
+        )
       )
-    )
-  } else {
-    List[ErgoToken]()
-  }
+    } else {
+      List[ErgoToken]()
+    }
 
   // val profitTokenUnstake = currentStakeRecord.rewards.indices
   //   .slice(0, currentStakeRecord.rewards.size - 1)
