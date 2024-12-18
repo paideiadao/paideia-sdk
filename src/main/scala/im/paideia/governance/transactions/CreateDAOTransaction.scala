@@ -360,7 +360,7 @@ case class CreateDAOTransaction(
   val configOutput = configContract.box(_ctx, dao, resultingDigest)
 
   val stakeChangeO      = stakingChangeContract.box(_ctx).outBox
-  val stakeStakeO       = stakingStakeContract.box(_ctx).outBox
+  val stakeStakeO       = stakingStakeContract.box(_ctx, 1000000L).outBox
   val stakeUnstakeO     = stakingUnstakeContract.box(_ctx).outBox
   val stakeCompoundO    = stakingCompoundContract.box(_ctx).outBox
   val stakeSnapshotO    = stakingSnapshotContract.box(_ctx).outBox

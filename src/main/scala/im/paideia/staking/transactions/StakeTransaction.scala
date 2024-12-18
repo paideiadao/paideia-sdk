@@ -124,7 +124,10 @@ case class StakeTransaction(
     stakeInput.withContextVars(stakeContextVars: _*)
   )
   dataInputs = List[InputBox](configInput)
-  outputs =
-    List[OutBox](stakeStateInputBox.outBox, stakeContract.box(ctx).outBox, userOutput)
+  outputs = List[OutBox](
+    stakeStateInputBox.outBox,
+    stakeContract.box(ctx, stakeInput.getValue()).outBox,
+    userOutput
+  )
   changeAddress = _changeAddress
 }

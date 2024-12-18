@@ -54,7 +54,7 @@ class StakeTransactionSuite extends PaideiaTestSuite {
           )
 
         val stakeContract = Stake(PaideiaContractSignature(daoKey = dao.key))
-        stakeContract.newBox(stakeContract.box(ctx).inputBox(), false)
+        stakeContract.newBox(stakeContract.box(ctx, 1000000L).inputBox(), false)
 
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
         dao.config
@@ -112,7 +112,7 @@ class StakeTransactionSuite extends PaideiaTestSuite {
           )
 
         val stakeContract = Stake(PaideiaContractSignature(daoKey = dao.key))
-        stakeContract.newBox(stakeContract.box(ctx).inputBox(), false)
+        stakeContract.newBox(stakeContract.box(ctx, 1000000L).inputBox(), false)
 
         val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
         dao.config
@@ -186,7 +186,7 @@ class StakeTransactionSuite extends PaideiaTestSuite {
         stakingContract.newBox(stakingStateBox, false)
 
         val stakeContract = Stake(PaideiaContractSignature(daoKey = dao.key))
-        stakeContract.newBox(stakeContract.box(ctx).inputBox(), false)
+        stakeContract.newBox(stakeContract.box(ctx, 1000000L).inputBox(), false)
 
         val stakeProxyContract = StakeProxy(PaideiaContractSignature(daoKey = dao.key))
         val stakeProxyBox = stakeProxyContract
@@ -259,7 +259,7 @@ class StakeTransactionSuite extends PaideiaTestSuite {
         stakingContract.newBox(stakingStateBox, false)
 
         val stakeContract = Stake(PaideiaContractSignature(daoKey = dao.key))
-        stakeContract.newBox(stakeContract.box(ctx).inputBox(), false)
+        stakeContract.newBox(stakeContract.box(ctx, 1000000L).inputBox(), false)
 
         val stakeProxyContract = StakeProxy(PaideiaContractSignature(daoKey = dao.key))
         val stakeProxyBox = stakeProxyContract
