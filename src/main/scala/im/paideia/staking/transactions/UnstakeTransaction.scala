@@ -183,17 +183,18 @@ case class UnstakeTransaction(
 
   val tokens = stakeKeyReturned ++ govTokenUnstake // ++ profitTokenUnstake
 
-  val userOutput = ctx
+  var userOutputBuilder = ctx
     .newTxBuilder()
     .outBoxBuilder()
     .value(1000000L + currentStakeRecord.rewards(0) - newStakeRecord.rewards(0))
-    .tokens(
-      tokens: _*
-    )
     .contract(
       userAddress.toErgoContract
     )
-    .build()
+
+  if (tokens.length > 0)
+    userOutputBuilder = userOutputBuilder.tokens(tokens: _*)
+
+  val userOutput = userOutputBuilder.build()
 
   changeAddress = _changeAddress
   fee           = 2350000L
