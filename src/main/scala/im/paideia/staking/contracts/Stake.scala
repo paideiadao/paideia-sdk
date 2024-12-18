@@ -21,7 +21,7 @@ import im.paideia.DAOConfigKey
 class Stake(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
 
-  def box(ctx: BlockchainContextImpl) = StakeBox(ctx, this)
+  def box(ctx: BlockchainContextImpl, value: Long) = StakeBox(ctx, this, value)
 
   override lazy val parameters: Map[String, Constant[SType]] = {
     val params = new HashMap[String, Constant[SType]]()
