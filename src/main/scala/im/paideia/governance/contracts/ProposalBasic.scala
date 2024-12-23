@@ -131,7 +131,7 @@ class ProposalBasic(contractSignature: PaideiaContractSignature)
             .getInputs()
             .asScala
             .map(eti =>
-              if (getUtxoSet.contains(eti.getBoxId())) {
+              if (boxes.contains(eti.getBoxId())) {
                 val proposalBox = boxes(eti.getBoxId())
                 val context = eti
                   .getSpendingProof()
