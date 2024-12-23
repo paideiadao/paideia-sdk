@@ -54,7 +54,7 @@ class DAOOrigin(contractSignature: PaideiaContractSignature)
   override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
     val response: PaideiaEventResponse = event match {
       case te: TransactionEvent => {
-        if (!te.mempool && getUtxoSet.contains(te.tx.getInputs().get(0).getBoxId())) {
+        if (boxes.contains(te.tx.getInputs().get(0).getBoxId())) {
           val proposalIndex =
             Long.MaxValue - te.tx.getOutputs().get(0).getAssets().get(1).getAmount() - 1
           val proposalName = new String(
