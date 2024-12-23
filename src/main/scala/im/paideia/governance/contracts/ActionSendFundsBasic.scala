@@ -72,65 +72,69 @@ class ActionSendFundsBasic(contractSignature: PaideiaContractSignature)
         PaideiaEventResponse.merge(
           getUtxoSet
             .map(boxes(_))
-            .map((b: InputBox) => {
-              val proposalInputs = Paideia
-                .getBox(
-                  new FilterLeaf[String](
-                    FilterType.FTEQ,
-                    new ErgoId(
-                      Paideia
-                        .getConfig(contractSignature.daoKey)
-                        .getArray(ConfKeys.im_paideia_dao_proposal_tokenid)
+            .map((b: InputBox) =>
+              try {
+                val proposalInputs = Paideia
+                  .getBox(
+                    new FilterLeaf[String](
+                      FilterType.FTEQ,
+                      new ErgoId(
+                        Paideia
+                          .getConfig(contractSignature.daoKey)
+                          .getArray(ConfKeys.im_paideia_dao_proposal_tokenid)
+                      )
+                        .toString(),
+                      CompareField.ASSET,
+                      0
                     )
-                      .toString(),
-                    CompareField.ASSET,
-                    0
                   )
-                )
-                .filter((box: InputBox) =>
-                  box
+                  .filter((box: InputBox) =>
+                    box
+                      .getRegisters()
+                      .get(0)
+                      .getValue()
+                      .asInstanceOf[Coll[Int]](0) == b
+                      .getRegisters()
+                      .get(0)
+                      .getValue()
+                      .asInstanceOf[Coll[Long]](0)
+                      .toInt
+                  )
+                if (
+                  proposalInputs.size > 0 &&
+                  proposalInputs(0)
                     .getRegisters()
                     .get(0)
                     .getValue()
-                    .asInstanceOf[Coll[Int]](0) == b
+                    .asInstanceOf[Coll[Int]](1) == b
                     .getRegisters()
                     .get(0)
                     .getValue()
-                    .asInstanceOf[Coll[Long]](0)
-                    .toInt
-                )
-              if (
-                proposalInputs.size > 0 &&
-                proposalInputs(0)
-                  .getRegisters()
-                  .get(0)
-                  .getValue()
-                  .asInstanceOf[Coll[Int]](1) == b
-                  .getRegisters()
-                  .get(0)
-                  .getValue()
-                  .asInstanceOf[Coll[Long]](1)
-                  .toInt &&
-                cte.currentTime > b
-                  .getRegisters()
-                  .get(0)
-                  .getValue()
-                  .asInstanceOf[Coll[Long]](3)
-              ) {
-                PaideiaEventResponse(
-                  1,
-                  List(
-                    SendFundsBasicTransaction(
-                      cte.ctx,
-                      Paideia.getDAO(contractSignature.daoKey),
-                      b
+                    .asInstanceOf[Coll[Long]](1)
+                    .toInt &&
+                  cte.currentTime > b
+                    .getRegisters()
+                    .get(0)
+                    .getValue()
+                    .asInstanceOf[Coll[Long]](3)
+                ) {
+                  PaideiaEventResponse(
+                    1,
+                    List(
+                      SendFundsBasicTransaction(
+                        cte.ctx,
+                        Paideia.getDAO(contractSignature.daoKey),
+                        b
+                      )
                     )
                   )
-                )
-              } else {
-                PaideiaEventResponse(0)
+                } else {
+                  PaideiaEventResponse(0)
+                }
+              } catch {
+                case e: Exception => PaideiaEventResponse(-1, exceptions = List(e))
               }
-            })
+            )
             .toList
         )
       }
