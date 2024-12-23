@@ -198,7 +198,7 @@ class StakeState(contractSignature: PaideiaContractSignature)
               .getInputs()
               .asScala
               .map(eti =>
-                if (getUtxoSet.contains(eti.getBoxId())) {
+                if (boxes.contains(eti.getBoxId())) {
                   val stakingState =
                     StakeStateBox.fromInputBox(te.ctx, boxes(eti.getBoxId()))
                   val companionContext = te.tx

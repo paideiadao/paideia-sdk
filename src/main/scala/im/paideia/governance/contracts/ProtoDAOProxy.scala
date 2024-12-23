@@ -148,7 +148,7 @@ class ProtoDAOProxy(contractSignature: PaideiaContractSignature)
       case te: TransactionEvent => {
 
         if (
-          te.tx.getInputs().size() > 0 && getUtxoSet.contains(
+          te.tx.getInputs().size() > 0 && boxes.contains(
             te.tx.getInputs().get(0).getBoxId()
           ) && te.tx
             .getInputs()
