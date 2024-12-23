@@ -132,7 +132,7 @@ class ProtoDAO(contractSignature: PaideiaContractSignature)
 
         if (
           te.tx.getInputs().size() > 0 &&
-          te.tx.getInputs().size() < 4 && getUtxoSet.contains(
+          te.tx.getInputs().size() < 4 && boxes.contains(
             te.tx.getInputs().get(0).getBoxId()
           )
         ) {
@@ -179,7 +179,7 @@ class ProtoDAO(contractSignature: PaideiaContractSignature)
           PaideiaEventResponse(1)
         } else {
           if (
-            te.tx.getInputs().size() > 4 && getUtxoSet.contains(
+            te.tx.getInputs().size() > 4 && boxes.contains(
               te.tx.getInputs().get(0).getBoxId()
             )
           ) {
