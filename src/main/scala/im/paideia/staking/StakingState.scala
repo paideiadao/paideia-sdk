@@ -146,10 +146,7 @@ class StakingState(
       newFolder.mkdirs()
       FileUtils.copyDirectory(folder, newFolder)
       val ldbStore = new LDBVersionedStore(newFolder, 10)
-      new VersionedLDBAVLStorage[Digest32](
-        ldbStore,
-        PlasmaParameters.default.toNodeParams
-      )(Blake2b256)
+      new VersionedLDBAVLStorage(ldbStore)
     })
 
     new StakingState(
@@ -177,10 +174,7 @@ object StakingState {
       )
       folder.mkdirs()
       val ldbStore = new LDBVersionedStore(folder, 10)
-      new VersionedLDBAVLStorage[Digest32](
-        ldbStore,
-        PlasmaParameters.default.toNodeParams
-      )(Blake2b256)
+      new VersionedLDBAVLStorage(ldbStore)
     })
     new StakingState(
       emissionTime,

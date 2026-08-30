@@ -47,22 +47,25 @@ organization := "im.paideia"
 
 libraryDependencies ++= Seq(
     //"org.scala-lang.modules" %% "scala-parser-combinators" % "2.1.1",
-    "io.github.k-singh" %% "plasma-toolkit" % "1.0.4",
+    "io.github.k-singh" %% "plasma-toolkit" % "1.1.0",
+    "org.ergoplatform" %% "ergo-appkit" % "6.0.1",
+    // org.ethereum:leveldbjni-all (pulled in transitively) is not on any public repo;
+    // io.github.tronprotocol publishes the same fork.
+    "io.github.tronprotocol" % "leveldbjni-all" % "1.18.3",
     "com.typesafe" % "config" % "1.4.0",
+    "commons-io" % "commons-io" % "2.11.0",
     "com.github.tototoshi" %% "scala-csv" % "1.3.10",
     "org.scalatest" %% "scalatest-funsuite" % "3.2.13" % Test,
     "com.squareup.okhttp3" % "mockwebserver" % "3.12.0" % Test
 )
 
-dependencyOverrides += "org.scorexfoundation" % "sigma-state_2.12" % "5.0.14-39-8af5260b-SNAPSHOT"
 
-resolvers ++= Seq(
-  "Sonatype Releases" at "https://oss.sonatype.org/content/repositories/releases/",
-  "SonaType" at "https://oss.sonatype.org/content/groups/public",
-  "Sonatype Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/",
-  "Bintray" at "https://jcenter.bintray.com/",
-  "SCIJava" at "https://maven.scijava.org/content/repositories/public/"
-)
+excludeDependencies += ExclusionRule("org.ethereum", "leveldbjni-all")
+
+// ergo-wallet 6.0.0 declares circe 0.13 while sigma-state 6.0.6 declares 0.14; upstream appkit ships that mix.
+ThisBuild / evictionErrorLevel := Level.Warn
+
+resolvers += "SCIJava" at "https://maven.scijava.org/content/repositories/public/"
 
 testOptions in Test += Tests.Argument("-oDF")
 

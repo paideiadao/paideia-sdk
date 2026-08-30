@@ -38,7 +38,7 @@ class MempoolPlasmaMap[K, V](
 )(implicit val convertKey: ByteConversion[K], convertVal: ByteConversion[V])
   extends LocalPlasmaBase[K, V] {
 
-  val localMap = new LocalPlasmaMap[K, V](store, flags, params)
+  val localMap = new LocalPlasmaMap[K, V](store, flags)
 
   override val prover: PersistentBatchAVLProver[Digest32, Blake2b256.type] =
     localMap.prover
@@ -238,6 +238,8 @@ class MempoolPlasmaMap[K, V](
   def lookUp(keys: K*): ProvenResult[V] =
     lookUpWithDigest(keys: _*)(None)
   def persistentItems: Seq[(K, V)] = ???
+
+  def insertOrUpdate(keyVals: (K, V)*): ProvenResult[V] = ???
 
   override val storage: VersionedAVLStorage[Digest32] = store
   def toMap: Map[K, V]                                = ???

@@ -24,7 +24,6 @@ import im.paideia.util.ConfKeys
 import im.paideia.common.filtering.CompareField
 import im.paideia.common.contracts.Treasury
 import im.paideia.common.contracts.PaideiaContractSignature
-import org.ergoplatform.appkit.commands.ErgoIdPType
 import org.ergoplatform.appkit.ContextVar
 import scorex.crypto.authds.ADDigest
 

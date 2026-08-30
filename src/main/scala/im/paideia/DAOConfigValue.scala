@@ -6,7 +6,6 @@ import java.nio.charset.StandardCharsets
 import scala.reflect.runtime.universe._
 import scala.reflect.runtime.universe.weakTypeTag
 import shapeless.Lazy
-import com.google.j2objc.annotations.Weak
 import im.paideia.common.contracts.PaideiaContractSignature
 import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.appkit.NetworkType

@@ -25,10 +25,7 @@ object Proposal {
     val folder = new File("./proposals/" ++ daoKey ++ "/" ++ proposalIndex.toString())
     folder.mkdirs()
     val ldbStore = new LDBVersionedStore(folder, 10)
-    val avlStorage = new VersionedLDBAVLStorage[Digest32](
-      ldbStore,
-      PlasmaParameters.default.toNodeParams
-    )(Blake2b256)
+    val avlStorage = new VersionedLDBAVLStorage(ldbStore)
 
     new Proposal(
       daoKey,
