@@ -50,8 +50,9 @@ libraryDependencies ++= Seq(
     "io.github.k-singh" %% "plasma-toolkit" % "1.1.0",
     "org.ergoplatform" %% "ergo-appkit" % "6.0.1",
     // org.ethereum:leveldbjni-all (pulled in transitively) is not on any public repo;
-    // io.github.tronprotocol publishes the same fork.
-    "io.github.tronprotocol" % "leveldbjni-all" % "1.18.3",
+    // com.halibobor bundles LevelDB 1.23, which reads the .ldb files written by the org.ethereum build (1.18)
+    // that production ran; io.github.tronprotocol bundles an older LevelDB that only knows .sst files.
+    "com.halibobor" % "leveldbjni-all" % "1.23.2",
     "com.typesafe" % "config" % "1.4.0",
     "commons-io" % "commons-io" % "2.11.0",
     "com.github.tototoshi" %% "scala-csv" % "1.3.10",
