@@ -33,7 +33,7 @@ import sigma.ast.ErgoTree
 import sigma.Coll
 import sigma.Colls
 import org.ergoplatform.sdk.ContractTemplate
-import sigmastate.lang.SigmaTemplateCompiler
+import sigma.compiler.SigmaTemplateCompiler
 import sigma.ast.Constant
 import sigma.ast.SType
 import java.net.URL

@@ -188,7 +188,7 @@ case class DAOConfig(
     digestOpt: Option[ADDigest]
   )(implicit dummy: DummyImplicit): ErgoValue[Coll[java.lang.Byte]] = {
     val provRes = _config.lookUpWithDigest(keys: _*)(digestOpt)
-    provRes.proof.ergoValue
+    provRes.proof.ergoValue.asInstanceOf[ErgoValue[Coll[java.lang.Byte]]]
   }
 
   def insertProof(operations: (String, Array[Byte])*)(
@@ -205,7 +205,7 @@ case class DAOConfig(
     digestOrHeight: Either[ADDigest, Int]
   )(implicit dummy: DummyImplicit): (ErgoValue[Coll[java.lang.Byte]], ADDigest) = {
     val provRes = _config.insertWithDigest(operations: _*)(digestOrHeight)
-    (provRes.proof.ergoValue, provRes.digest)
+    (provRes.proof.ergoValue.asInstanceOf[ErgoValue[Coll[java.lang.Byte]]], provRes.digest)
   }
 
   def removeProof(
@@ -214,7 +214,7 @@ case class DAOConfig(
     digestOrHeight: Either[ADDigest, Int]
   )(implicit dummy: DummyImplicit): (ErgoValue[Coll[java.lang.Byte]], ADDigest) = {
     val provRes = _config.deleteWithDigest(operations: _*)(digestOrHeight)
-    (provRes.proof.ergoValue, provRes.digest)
+    (provRes.proof.ergoValue.asInstanceOf[ErgoValue[Coll[java.lang.Byte]]], provRes.digest)
   }
 
   def updateProof(
@@ -223,7 +223,7 @@ case class DAOConfig(
     digestOrHeight: Either[ADDigest, Int]
   )(implicit dummy: DummyImplicit): (ErgoValue[Coll[java.lang.Byte]], ADDigest) = {
     val provRes = _config.updateWithDigest(operations: _*)(digestOrHeight)
-    (provRes.proof.ergoValue, provRes.digest)
+    (provRes.proof.ergoValue.asInstanceOf[ErgoValue[Coll[java.lang.Byte]]], provRes.digest)
   }
 
 }
@@ -234,10 +234,7 @@ object DAOConfig {
     val folder = new File("./daoconfigs/" ++ daoKey)
     folder.mkdirs()
     val ldbStore = new LDBVersionedStore(folder, 10)
-    val avlStorage = new VersionedLDBAVLStorage[Digest32](
-      ldbStore,
-      PlasmaParameters.default.toNodeParams
-    )(Blake2b256)
+    val avlStorage = new VersionedLDBAVLStorage(ldbStore)
 
     new DAOConfig(
       new MempoolPlasmaMap[DAOConfigKey, Array[Byte]](

@@ -170,11 +170,11 @@ object StakingContextVars {
             Colls.fromArray(
               Array[Coll[Byte]](
                 configProof,
-                voteProof.proof.ergoValue.getValue().map(_.toByte),
-                stakeProof.proof.ergoValue.getValue().map(_.toByte),
-                updatedStakeProof.proof.ergoValue.getValue().map(_.toByte),
-                participationProof.proof.ergoValue.getValue().map(_.toByte),
-                updatedParticipationProof.proof.ergoValue.getValue().map(_.toByte),
+                voteProof.proof.ergoValue.getValue(),
+                stakeProof.proof.ergoValue.getValue(),
+                updatedStakeProof.proof.ergoValue.getValue(),
+                participationProof.proof.ergoValue.getValue(),
+                updatedParticipationProof.proof.ergoValue.getValue(),
                 Colls
                   .fromArray(
                     StakeRecord.stakeRecordConversion.convertToBytes(newStakeRecord)

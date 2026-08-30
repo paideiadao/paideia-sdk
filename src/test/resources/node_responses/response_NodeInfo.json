@@ -5,7 +5,7 @@
   "stateType": "utxo",
   "difficulty": 755,
   "bestFullHeaderId": "6fdd4b1c5b89972ca4032d5dd7b5c954a90bff2a160ad409fa4746c67b736632",
-  "bestHeaderId": "6fdd4b1c5b89972ca4032d5dd7b5c954a90bff2a160ad409fa4746c67b736632",
+  "bestHeaderId": "54b9ecbd5c08253e0d270f82a87244cd1f58cb847ab54cdd191c4b6eccda33b8",
   "peersCount": 0,
   "unconfirmedCount": 0,
   "appVersion": "4.0.36-28-bed7eafa-SNAPSHOT",
