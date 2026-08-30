@@ -29,6 +29,7 @@ import sigma.ast.Tuple
 import _root_.sigma.ast.CollectionConstant
 import im.paideia.DAOConfigKey
 import scorex.crypto.authds.ADDigest
+import org.ergoplatform.appkit.Address
 
 /** Treasury class represents the main contract for the Paideia Treasury which manages and
   * holds assets and tokens of the Paideia DAO treasury on Ergo Blockchain.
@@ -161,11 +162,13 @@ class Treasury(contractSignature: PaideiaContractSignature)
   override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
     val response: PaideiaEventResponse = event match {
       case cte: CreateTransactionsEvent => {
-        val utxos = getUtxoSet.toList
-        if (utxos.length >= 5) {
+        val utxos      = getUtxoSet.toList
+        val candidates = utxos.map(boxes(_))
+        val selection  = selectConsolidationSubset(cte.ctx, candidates)
+        if (selection.length >= 5) {
           PaideiaEventResponse(
             1,
-            List(ConsolidateTransaction(cte.ctx, utxos.map(boxes(_))))
+            List(ConsolidateTransaction(cte.ctx, selection))
           )
         } else {
           PaideiaEventResponse(0)
@@ -174,6 +177,103 @@ class Treasury(contractSignature: PaideiaContractSignature)
       case _: PaideiaEvent => PaideiaEventResponse(0)
     }
     PaideiaEventResponse.merge(List(super.handleEvent(event), response))
+  }
+
+  /** Selects a subset of the given candidate treasury boxes that can be safely
+    * consolidated into a single output box without exceeding the node's box size limit.
+    *
+    * The candidates are sorted deterministically by number of tokens ascending (tiebreak
+    * by box id), then greedily accumulated. After each box is tentatively added, a
+    * candidate merged output box is built and checked against the node's box size limit,
+    * the maximum number of distinct tokens per box, and the minimum box value. As soon as
+    * a tentative addition would violate one of those checks, accumulation stops - since
+    * boxes are visited in ascending token-count order, any box visited later would only
+    * make things worse.
+    *
+    * @param ctx
+    *   \- The context of the blockchain, used to build candidate output boxes.
+    * @param candidates
+    *   \- The treasury input boxes eligible for consolidation.
+    * @return
+    *   The (possibly empty) prefix of the sorted candidates that can be safely
+    *   consolidated. Callers should check the length of the result (the on-chain
+    *   contract requires at least 5 inputs) and whether the accumulated value covers the
+    *   consolidation fee before firing a ConsolidateTransaction.
+    */
+  private def selectConsolidationSubset(
+    ctx: BlockchainContextImpl,
+    candidates: List[InputBox]
+  ): List[InputBox] = {
+    val sortedCandidates: List[InputBox] =
+      candidates.sortBy((box: InputBox) =>
+        (box.getTokens().size(), box.getId().toString())
+      )
+
+    var mergedTokens: HashMap[String, Long] = new HashMap[String, Long]()
+    var totalValue: Long                    = 0L
+    var selection: List[InputBox]           = List[InputBox]()
+    var stillFits: Boolean                  = true
+
+    sortedCandidates.foreach { (candidateBox: InputBox) =>
+      if (stillFits) {
+        val tentativeTokens: HashMap[String, Long] = mergedTokens.clone()
+        candidateBox
+          .getTokens()
+          .forEach((token: ErgoToken) =>
+            tentativeTokens.put(
+              token.getId.toString(),
+              token.getValue + tentativeTokens.getOrElse(token.getId.toString(), 0L)
+            )
+          )
+        val tentativeValue: Long = totalValue + candidateBox.getValue()
+
+        val fits: Boolean =
+          if (tentativeTokens.size > 255) {
+            false
+          } else if (tentativeValue - 2000000L <= 0) {
+            // Not enough accumulated value yet to build a valid output box - accept
+            // the box tentatively, value only grows as more boxes are added.
+            true
+          } else {
+            val firstBox: InputBox =
+              if (selection.isEmpty) candidateBox else selection.head
+            val tokensList: List[ErgoToken] =
+              tentativeTokens
+                .map { case (tokenId: String, amount: Long) =>
+                  new ErgoToken(tokenId, amount)
+                }
+                .toList
+            val outBoxBuilder = ctx
+              .newTxBuilder()
+              .outBoxBuilder()
+              .contract(
+                Address
+                  .fromErgoTree(firstBox.getErgoTree(), ctx.getNetworkType())
+                  .toErgoContract()
+              )
+              .value(tentativeValue - 2000000L)
+            val candidateOutBox =
+              if (tokensList.nonEmpty) outBoxBuilder.tokens(tokensList: _*).build()
+              else outBoxBuilder.build()
+
+            candidateOutBox.getBytesWithNoRef().size + 34 <= 4000 &&
+            tentativeValue - 2000000L >= (candidateOutBox
+              .getBytesWithNoRef()
+              .size + 33) * 360L
+          }
+
+        if (fits) {
+          selection = selection :+ candidateBox
+          mergedTokens = tentativeTokens
+          totalValue = tentativeValue
+        } else {
+          stillFits = false
+        }
+      }
+    }
+
+    if (selection.length >= 5 && totalValue - 2000000L > 0) selection
+    else List[InputBox]()
   }
 
   /** It searches through all the boxes in the blockchain and matches the conditions to
