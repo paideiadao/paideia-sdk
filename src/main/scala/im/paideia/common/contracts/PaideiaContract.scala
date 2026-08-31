@@ -106,16 +106,42 @@ class PaideiaContract(
       sourcePath(".es")
   )
 
+  /** Whether this contract's resources (`.es` sources and their sibling `.json`
+    * templates) live on the filesystem, as they do in a dev checkout, versus inside a
+    * packaged JAR. When resources are packaged, mtimes and filesystem writes are
+    * meaningless (and impossible), so [[ergoScript]], [[resolveDependencies]] and
+    * [[contractTemplate]] take classpath-only code paths instead.
+    */
+  protected def resourcesOnFilesystem: Boolean = ergoScriptURL.getProtocol == "file"
+
+  /** Reads a classpath resource fully into a String, closing the underlying stream. Used
+    * for the JAR-safe code paths where resources cannot be addressed as filesystem paths.
+    */
+  private def readClasspathResource(resourcePath: String): String = {
+    val stream = getClass.getResourceAsStream("/" + resourcePath)
+    try {
+      Source.fromInputStream(stream).mkString
+    } finally {
+      stream.close()
+    }
+  }
+
   /** The ErgoScript code of this contract.
     *
     * Reads from file "ergoscript/{Simple Class Name of this contract}/{The version
     * specified in the contract signature}.
     */
   lazy val ergoScript: (String, FileTime) = {
-    val modified = Files.getLastModifiedTime(Paths.get(ergoScriptURL.getPath()))
-    val baseScript = Source
-      .fromFile(ergoScriptURL.getPath())
-      .mkString
+    val (baseScript, modified) =
+      if (resourcesOnFilesystem) {
+        val modified = Files.getLastModifiedTime(Paths.get(ergoScriptURL.getPath()))
+        val baseScript = Source
+          .fromFile(ergoScriptURL.getPath())
+          .mkString
+        (baseScript, modified)
+      } else {
+        (readClasspathResource(sourcePath(".es")), FileTime.fromMillis(0))
+      }
     val resolved       = resolveDependencies(baseScript, modified)
     var resolvedScript = resolved._1
 
@@ -152,19 +178,25 @@ class PaideiaContract(
       case Some(importMatch) => {
         val matched = importMatch.subgroups(0)
         if (!matches.contains(matched)) {
-          val importPath = Paths.get(
-            getClass
-              .getResource(
-                "/ergoscript/" + matched
+          val (importScript, importModified) =
+            if (resourcesOnFilesystem) {
+              val importPath = Paths.get(
+                getClass
+                  .getResource(
+                    "/ergoscript/" + matched
+                  )
+                  .getPath()
               )
-              .getPath()
-          )
-          val importModified = Files.getLastModifiedTime(importPath)
-          val importScript = Source
-            .fromFile(
-              importPath.toString()
-            )
-            .mkString
+              val modified = Files.getLastModifiedTime(importPath)
+              val script = Source
+                .fromFile(
+                  importPath.toString()
+                )
+                .mkString
+              (script, modified)
+            } else {
+              (readClasspathResource("ergoscript/" + matched), FileTime.fromMillis(0))
+            }
           matches.add(matched)
           val resolvedImport = resolveDependencies(importScript, importModified, matches)
           resolveDependencies(
@@ -204,36 +236,59 @@ class PaideiaContract(
     */
   lazy val ergoTreeHex: String = ergoTree.bytesHex
 
+  /** Decodes a serialised [[ContractTemplate]] from its JSON string form. Shared by every
+    * code path that loads a precompiled template from the classpath (as opposed to
+    * compiling one in-memory via [[compileContract]]).
+    */
+  private def decodeTemplateJson(templateString: String): ContractTemplate = {
+    val templateJson = parse(templateString).right.get
+    val res          = ContractTemplate.jsonEncoder.decoder(templateJson.hcursor)
+    res.right.get
+  }
+
   lazy val contractTemplate: ContractTemplate = {
     if (_contractSignature.version == "latest") {
-      val templatePath = Paths.get(ergoScriptURL.getPath().replace(".es", ".json"))
-      // The compiled template is a file shared by every instance of this contract class
-      // in the JVM (and, with parallel test suites, by every session at once). The
-      // stale-check + recompile + read below must therefore be serialised per template
-      // path: without it, one thread's recompile (which rewrites the .json) races another
-      // thread's read of the same file and the reader sees a truncated/partial JSON. On a
-      // fresh git checkout every .json can look stale (git doesn't preserve mtimes), so
-      // CI hits this on the first test run while a warmed-up local checkout never does.
-      PaideiaContract.templateLock(templatePath).synchronized {
-        if (Files.exists(templatePath)) {
-          val lastCompile = Files.getLastModifiedTime(templatePath)
-          if (lastCompile.compareTo(ergoScript._2) < 0) {
+      if (resourcesOnFilesystem) {
+        val templatePath = Paths.get(ergoScriptURL.getPath().replace(".es", ".json"))
+        // The compiled template is a file shared by every instance of this contract class
+        // in the JVM (and, with parallel test suites, by every session at once). The
+        // stale-check + recompile + read below must therefore be serialised per template
+        // path: without it, one thread's recompile (which rewrites the .json) races another
+        // thread's read of the same file and the reader sees a truncated/partial JSON. On a
+        // fresh git checkout every .json can look stale (git doesn't preserve mtimes), so
+        // CI hits this on the first test run while a warmed-up local checkout never does.
+        PaideiaContract.templateLock(templatePath).synchronized {
+          if (Files.exists(templatePath)) {
+            val lastCompile = Files.getLastModifiedTime(templatePath)
+            if (lastCompile.compareTo(ergoScript._2) < 0) {
+              compileContract(templatePath)
+            }
+            decodeTemplateJson(Files.readString(templatePath))
+          } else {
             compileContract(templatePath)
           }
-          val templateString = Files.readString(templatePath)
-          val templateJson   = parse(templateString).right.get
-          val res            = ContractTemplate.jsonEncoder.decoder(templateJson.hcursor)
-          res.right.get
+        }
+      } else {
+        // Packaged (JAR) mode: never touch the filesystem. Every latest/*.es ships a
+        // precompiled sibling .json in resources, so this is the common case; the
+        // in-memory compile below only covers a template missing from the classpath
+        // (e.g. a not-yet-committed contract), and is memoized process-wide so repeated
+        // instantiations don't recompile it on every call.
+        val templateResourcePath = sourcePath(".json")
+        if (getClass.getResource("/" + templateResourcePath) != null) {
+          decodeTemplateJson(readClasspathResource(templateResourcePath))
         } else {
-          compileContract(templatePath)
+          PaideiaContract.compiledTemplateCache.getOrElseUpdate(
+            templateResourcePath, {
+              SigmaTemplateCompiler(
+                _contractSignature.networkType.networkPrefix
+              ).compile(ergoScript._1)
+            }
+          )
         }
       }
     } else {
-      val templateString =
-        Source.fromResource(sourcePath(".json")).mkString
-      val templateJson = parse(templateString).right.get
-      val res          = ContractTemplate.jsonEncoder.decoder(templateJson.hcursor)
-      res.right.get
+      decodeTemplateJson(Source.fromResource(sourcePath(".json")).mkString)
     }
   }
 
@@ -508,4 +563,11 @@ object PaideiaContract {
     */
   def templateLock(templatePath: Path): AnyRef =
     templateLocks.computeIfAbsent(templatePath.toAbsolutePath.normalize, _ => new Object)
+
+  /** Process-global memo of templates compiled in-memory for packaged (JAR) instances
+    * whose precompiled .json is missing from the classpath, keyed by the classpath
+    * resource path the .json would live at. See contractTemplate.
+    */
+  private[contracts] val compiledTemplateCache =
+    scala.collection.concurrent.TrieMap[String, ContractTemplate]()
 }
