@@ -116,15 +116,8 @@ class StakeState(contractSignature: PaideiaContractSignature)
     )
   }
 
-  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
-    if (inputBox.getErgoTree().bytesHex != ergoTreeHex) return false
-    try {
-      val b = StakeStateBox.fromInputBox(ctx, inputBox)
-      true
-    } catch {
-      case _: Throwable => false
-    }
-  }
+  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean =
+    validateBoxWith(ctx, inputBox)(StakeStateBox.fromInputBox(ctx, inputBox))
 
   override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
     val response: PaideiaEventResponse =
@@ -441,16 +434,4 @@ class StakeState(contractSignature: PaideiaContractSignature)
   }
 }
 
-object StakeState extends PaideiaActor {
-  override def apply(
-    configKey: DAOConfigKey,
-    daoKey: String,
-    digest: Option[ADDigest] = None
-  ): StakeState =
-    contractFromConfig(configKey, daoKey, digest)
-  override def apply(contractSignature: PaideiaContractSignature): StakeState =
-    getContractInstance[StakeState](
-      contractSignature,
-      new StakeState(contractSignature)
-    )
-}
+object StakeState extends TypedPaideiaActor[StakeState](new StakeState(_))

@@ -3,7 +3,7 @@ package im.paideia.staking.contracts
 import scorex.crypto.authds.ADDigest
 import im.paideia.common.contracts.PaideiaContractSignature
 import im.paideia.common.contracts.PaideiaContract
-import im.paideia.common.contracts.PaideiaActor
+import im.paideia.common.contracts.TypedPaideiaActor
 import scala.collection.mutable.HashMap
 import org.ergoplatform.sdk.ErgoId
 import im.paideia.util.ConfKeys
@@ -39,15 +39,8 @@ class ChangeStake(contractSignature: PaideiaContractSignature)
     cons
   }
 
-  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
-    if (inputBox.getErgoTree().bytesHex != ergoTreeHex) return false
-    try {
-      val b = ChangeStakeBox.fromInputBox(ctx, inputBox)
-      true
-    } catch {
-      case _: Throwable => false
-    }
-  }
+  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean =
+    validateBoxWith(ctx, inputBox)(ChangeStakeBox.fromInputBox(ctx, inputBox))
 
   override lazy val parameters: Map[String, Constant[SType]] = {
     val params = new scala.collection.mutable.HashMap[String, Constant[SType]]()
@@ -80,17 +73,4 @@ class ChangeStake(contractSignature: PaideiaContractSignature)
     )(configDigest)
 }
 
-object ChangeStake extends PaideiaActor {
-  override def apply(
-    configKey: DAOConfigKey,
-    daoKey: String,
-    digest: Option[ADDigest] = None
-  ): ChangeStake =
-    contractFromConfig(configKey, daoKey, digest)
-
-  override def apply(contractSignature: PaideiaContractSignature): ChangeStake =
-    getContractInstance[ChangeStake](
-      contractSignature,
-      new ChangeStake(contractSignature)
-    )
-}
+object ChangeStake extends TypedPaideiaActor[ChangeStake](new ChangeStake(_))

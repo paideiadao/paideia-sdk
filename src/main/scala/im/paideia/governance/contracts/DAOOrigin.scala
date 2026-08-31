@@ -2,7 +2,7 @@ package im.paideia.governance.contracts
 
 import im.paideia.common.contracts.PaideiaContractSignature
 import im.paideia.common.contracts.PaideiaContract
-import im.paideia.common.contracts.PaideiaActor
+import im.paideia.common.contracts.TypedPaideiaActor
 import im.paideia.governance.boxes.DAOOriginBox
 import im.paideia.DAOConfig
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
@@ -41,15 +41,8 @@ class DAOOrigin(contractSignature: PaideiaContractSignature)
     DAOOriginBox(ctx, dao, propTokens, actionTokens, this)
   }
 
-  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
-    if (inputBox.getErgoTree().bytesHex != ergoTreeHex) return false
-    try {
-      val b = DAOOriginBox.fromInputBox(ctx, inputBox)
-      true
-    } catch {
-      case _: Throwable => false
-    }
-  }
+  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean =
+    validateBoxWith(ctx, inputBox)(DAOOriginBox.fromInputBox(ctx, inputBox))
 
   override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
     val response: PaideiaEventResponse = event match {
@@ -139,13 +132,4 @@ class DAOOrigin(contractSignature: PaideiaContractSignature)
   }
 }
 
-object DAOOrigin extends PaideiaActor {
-  override def apply(
-    configKey: DAOConfigKey,
-    daoKey: String,
-    digest: Option[ADDigest] = None
-  ): DAOOrigin =
-    contractFromConfig(configKey, daoKey, digest)
-  override def apply(contractSignature: PaideiaContractSignature): DAOOrigin =
-    getContractInstance[DAOOrigin](contractSignature, new DAOOrigin(contractSignature))
-}
+object DAOOrigin extends TypedPaideiaActor[DAOOrigin](new DAOOrigin(_))

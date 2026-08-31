@@ -151,20 +151,4 @@ class Config(contractSignature: PaideiaContractSignature)
 
 /** This object represents a Paideia contract configuration.
   */
-object Config extends PaideiaActor {
-  override def apply(
-    configKey: DAOConfigKey,
-    daoKey: String,
-    digest: Option[ADDigest] = None
-  ): Config =
-    contractFromConfig[Config](configKey, daoKey, digest)
-
-  /** Instantiates and returns a new instance of Config.
-    * @param contractSignature
-    *   The signature of the Paideia contract.
-    * @return
-    *   The newly instantiated Config object.
-    */
-  override def apply(contractSignature: PaideiaContractSignature): Config =
-    getContractInstance[Config](contractSignature, new Config(contractSignature))
-}
+object Config extends TypedPaideiaActor[Config](new Config(_))

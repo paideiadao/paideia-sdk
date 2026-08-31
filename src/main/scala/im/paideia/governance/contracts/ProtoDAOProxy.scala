@@ -100,15 +100,8 @@ class ProtoDAOProxy(contractSignature: PaideiaContractSignature)
     )
   }
 
-  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
-    if (inputBox.getErgoTree().bytesHex != ergoTreeHex) return false
-    try {
-      val b = ProtoDAOProxyBox.fromInputBox(ctx, inputBox)
-      true
-    } catch {
-      case _: Throwable => false
-    }
-  }
+  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean =
+    validateBoxWith(ctx, inputBox)(ProtoDAOProxyBox.fromInputBox(ctx, inputBox))
 
   override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
     val response: PaideiaEventResponse = event match {
@@ -322,17 +315,4 @@ class ProtoDAOProxy(contractSignature: PaideiaContractSignature)
   }
 }
 
-object ProtoDAOProxy extends PaideiaActor {
-  override def apply(
-    configKey: DAOConfigKey,
-    daoKey: String,
-    digest: Option[ADDigest] = None
-  ): ProtoDAOProxy =
-    contractFromConfig(configKey, daoKey, digest)
-
-  override def apply(contractSignature: PaideiaContractSignature): ProtoDAOProxy =
-    getContractInstance[ProtoDAOProxy](
-      contractSignature,
-      new ProtoDAOProxy(contractSignature)
-    )
-}
+object ProtoDAOProxy extends TypedPaideiaActor[ProtoDAOProxy](new ProtoDAOProxy(_))

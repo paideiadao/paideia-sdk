@@ -2,7 +2,7 @@ package im.paideia.governance.contracts
 
 import im.paideia.common.contracts.PaideiaContract
 import im.paideia.common.contracts.PaideiaContractSignature
-import im.paideia.common.contracts.PaideiaActor
+import im.paideia.common.contracts.TypedPaideiaActor
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.governance.boxes.MintBox
 import scala.collection.mutable.HashMap
@@ -12,7 +12,6 @@ import org.ergoplatform.sdk.ErgoId
 import sigma.ast.Constant
 import sigma.ast.SType
 import sigma.ast.ByteArrayConstant
-import org.ergoplatform.appkit.InputBox
 import im.paideia.DAOConfigKey
 import scorex.crypto.authds.ADDigest
 
@@ -51,24 +50,6 @@ class Mint(contractSignature: PaideiaContractSignature)
     cons.toMap
   }
 
-  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
-    if (inputBox.getErgoTree().bytesHex != ergoTreeHex) return false
-    try {
-      // val b = MintBox.fromInputBox(ctx, inputBox)
-      true
-    } catch {
-      case _: Throwable => false
-    }
-  }
 }
 
-object Mint extends PaideiaActor {
-  override def apply(
-    configKey: DAOConfigKey,
-    daoKey: String,
-    digest: Option[ADDigest] = None
-  ): Mint =
-    contractFromConfig(configKey, daoKey, digest)
-  override def apply(contractSignature: PaideiaContractSignature): Mint =
-    getContractInstance[Mint](contractSignature, new Mint(contractSignature))
-}
+object Mint extends TypedPaideiaActor[Mint](new Mint(_))

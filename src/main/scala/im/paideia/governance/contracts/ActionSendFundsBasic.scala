@@ -1,7 +1,7 @@
 package im.paideia.governance.contracts
 
 import im.paideia.common.contracts.PaideiaContract
-import im.paideia.common.contracts.PaideiaActor
+import im.paideia.common.contracts.TypedPaideiaActor
 import im.paideia.common.contracts.PaideiaContractSignature
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.governance.boxes.ActionSendFundsBasicBox
@@ -173,27 +173,9 @@ class ActionSendFundsBasic(contractSignature: PaideiaContractSignature)
     cons.toMap
   }
 
-  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
-    if (inputBox.getErgoTree().bytesHex != ergoTreeHex) return false
-    try {
-      val b = ActionSendFundsBasicBox.fromInputBox(ctx, inputBox)
-      true
-    } catch {
-      case _: Throwable => false
-    }
-  }
+  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean =
+    validateBoxWith(ctx, inputBox)(ActionSendFundsBasicBox.fromInputBox(ctx, inputBox))
 }
 
-object ActionSendFundsBasic extends PaideiaActor {
-  override def apply(
-    configKey: DAOConfigKey,
-    daoKey: String,
-    digest: Option[ADDigest] = None
-  ): ActionSendFundsBasic =
-    contractFromConfig[ActionSendFundsBasic](configKey, daoKey, digest)
-  override def apply(contractSignature: PaideiaContractSignature): ActionSendFundsBasic =
-    getContractInstance[ActionSendFundsBasic](
-      contractSignature,
-      new ActionSendFundsBasic(contractSignature)
-    )
-}
+object ActionSendFundsBasic
+  extends TypedPaideiaActor[ActionSendFundsBasic](new ActionSendFundsBasic(_))

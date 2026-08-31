@@ -37,15 +37,8 @@ class PaideiaOrigin(contractSignature: PaideiaContractSignature)
     PaideiaOriginBox(ctx, 1000000L, daoTokensRemaining, this)
   }
 
-  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
-    if (inputBox.getErgoTree().bytesHex != ergoTreeHex) return false
-    try {
-      val b = PaideiaOriginBox.fromInputBox(ctx, inputBox)
-      true
-    } catch {
-      case _: Throwable => false
-    }
-  }
+  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean =
+    validateBoxWith(ctx, inputBox)(PaideiaOriginBox.fromInputBox(ctx, inputBox))
 
   override lazy val constants: HashMap[String, Object] = {
     val cons       = new HashMap[String, Object]()
@@ -93,16 +86,4 @@ class PaideiaOrigin(contractSignature: PaideiaContractSignature)
   }
 }
 
-object PaideiaOrigin extends PaideiaActor {
-  override def apply(
-    configKey: DAOConfigKey,
-    daoKey: String,
-    digest: Option[ADDigest] = None
-  ): PaideiaOrigin =
-    contractFromConfig(configKey, daoKey, digest)
-  override def apply(contractSignature: PaideiaContractSignature): PaideiaOrigin =
-    getContractInstance[PaideiaOrigin](
-      contractSignature,
-      new PaideiaOrigin(contractSignature)
-    )
-}
+object PaideiaOrigin extends TypedPaideiaActor[PaideiaOrigin](new PaideiaOrigin(_))

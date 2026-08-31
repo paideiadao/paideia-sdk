@@ -2,7 +2,7 @@ package im.paideia.governance.contracts
 
 import im.paideia.common.contracts.PaideiaContract
 import im.paideia.common.contracts.PaideiaContractSignature
-import im.paideia.common.contracts.PaideiaActor
+import im.paideia.common.contracts.TypedPaideiaActor
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.governance.boxes.CastVoteBox
 import im.paideia.governance.VoteRecord
@@ -63,15 +63,8 @@ class CastVote(contractSignature: PaideiaContractSignature)
     params.toMap
   }
 
-  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
-    if (inputBox.getErgoTree().bytesHex != ergoTreeHex) return false
-    try {
-      val b = CastVoteBox.fromInputBox(ctx, inputBox)
-      true
-    } catch {
-      case _: Throwable => false
-    }
-  }
+  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean =
+    validateBoxWith(ctx, inputBox)(CastVoteBox.fromInputBox(ctx, inputBox))
 
   override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
     val boxSet = getUtxoSet
@@ -119,13 +112,4 @@ class CastVote(contractSignature: PaideiaContractSignature)
   }
 }
 
-object CastVote extends PaideiaActor {
-  override def apply(
-    configKey: DAOConfigKey,
-    daoKey: String,
-    digest: Option[ADDigest] = None
-  ): CastVote =
-    contractFromConfig(configKey, daoKey, digest)
-  override def apply(contractSignature: PaideiaContractSignature): CastVote =
-    getContractInstance(contractSignature, new CastVote(contractSignature))
-}
+object CastVote extends TypedPaideiaActor[CastVote](new CastVote(_))

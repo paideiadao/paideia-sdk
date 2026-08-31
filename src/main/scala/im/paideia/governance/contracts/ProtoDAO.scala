@@ -299,15 +299,8 @@ class ProtoDAO(contractSignature: PaideiaContractSignature)
     PaideiaEventResponse.merge(List(super.handleEvent(event), response))
   }
 
-  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
-    if (inputBox.getErgoTree().bytesHex != ergoTreeHex) return false
-    try {
-      val b = ProtoDAOBox.fromInputBox(ctx, inputBox)
-      true
-    } catch {
-      case _: Throwable => false
-    }
-  }
+  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean =
+    validateBoxWith(ctx, inputBox)(ProtoDAOBox.fromInputBox(ctx, inputBox))
 
   override lazy val constants: HashMap[String, Object] = {
     val cons = new HashMap[String, Object]()
@@ -382,16 +375,7 @@ class ProtoDAO(contractSignature: PaideiaContractSignature)
 
 }
 
-object ProtoDAO extends PaideiaActor {
-  override def apply(
-    configKey: DAOConfigKey,
-    daoKey: String,
-    digest: Option[ADDigest] = None
-  ): ProtoDAO =
-    contractFromConfig(configKey, daoKey, digest)
-  override def apply(contractSignature: PaideiaContractSignature): ProtoDAO =
-    getContractInstance[ProtoDAO](contractSignature, new ProtoDAO(contractSignature))
-
+object ProtoDAO extends TypedPaideiaActor[ProtoDAO](new ProtoDAO(_)) {
   val tokensToMint = List(
     ConfKeys.im_paideia_dao_proposal_tokenid,
     ConfKeys.im_paideia_dao_action_tokenid,

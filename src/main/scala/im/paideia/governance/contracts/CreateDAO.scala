@@ -2,7 +2,7 @@ package im.paideia.governance.contracts
 
 import im.paideia.common.contracts.PaideiaContract
 import im.paideia.common.contracts.PaideiaContractSignature
-import im.paideia.common.contracts.PaideiaActor
+import im.paideia.common.contracts.TypedPaideiaActor
 import im.paideia.DAOConfig
 import scorex.crypto.authds.ADDigest
 import im.paideia.util.ConfKeys
@@ -29,7 +29,6 @@ import im.paideia.staking.contracts.StakeState
 import sigma.ast.Constant
 import sigma.ast.SType
 import sigma.ast.ByteArrayConstant
-import org.ergoplatform.appkit.InputBox
 import im.paideia.DAOConfigKey
 import scorex.util.encode.Base16
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
@@ -49,11 +48,6 @@ class CreateDAO(contractSignature: PaideiaContractSignature)
       ByteArrayConstant(ErgoId.create(Env.paideiaDaoKey).getBytes)
     )
     cons.toMap
-  }
-
-  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
-    if (inputBox.getErgoTree().bytesHex != ergoTreeHex) false
-    else true
   }
 
   override lazy val constants: HashMap[String, Object] = {
@@ -308,16 +302,4 @@ class CreateDAO(contractSignature: PaideiaContractSignature)
 
 }
 
-object CreateDAO extends PaideiaActor {
-  override def apply(
-    configKey: DAOConfigKey,
-    daoKey: String,
-    digest: Option[ADDigest] = None
-  ): CreateDAO =
-    contractFromConfig(configKey, daoKey, digest)
-  override def apply(contractSignature: PaideiaContractSignature): CreateDAO =
-    getContractInstance[CreateDAO](
-      contractSignature,
-      new CreateDAO(contractSignature)
-    )
-}
+object CreateDAO extends TypedPaideiaActor[CreateDAO](new CreateDAO(_))

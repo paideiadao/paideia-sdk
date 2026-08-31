@@ -2,7 +2,7 @@ package im.paideia.governance.contracts
 
 import im.paideia.common.contracts.PaideiaContractSignature
 import im.paideia.common.contracts.PaideiaContract
-import im.paideia.common.contracts.PaideiaActor
+import im.paideia.common.contracts.TypedPaideiaActor
 import im.paideia.governance.boxes.ActionUpdateConfigBox
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.DAOConfigKey
@@ -72,15 +72,8 @@ class ActionUpdateConfig(contractSignature: PaideiaContractSignature)
     )
   }
 
-  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
-    if (inputBox.getErgoTree().bytesHex != ergoTreeHex) return false
-    try {
-      val b = ActionUpdateConfigBox.fromInputBox(ctx, inputBox)
-      true
-    } catch {
-      case _: Throwable => false
-    }
-  }
+  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean =
+    validateBoxWith(ctx, inputBox)(ActionUpdateConfigBox.fromInputBox(ctx, inputBox))
 
   override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
     val response: PaideiaEventResponse = event match {
@@ -186,16 +179,5 @@ class ActionUpdateConfig(contractSignature: PaideiaContractSignature)
   }
 }
 
-object ActionUpdateConfig extends PaideiaActor {
-  override def apply(
-    configKey: DAOConfigKey,
-    daoKey: String,
-    digest: Option[ADDigest] = None
-  ): ActionUpdateConfig =
-    contractFromConfig[ActionUpdateConfig](configKey, daoKey, digest)
-  override def apply(contractSignature: PaideiaContractSignature): ActionUpdateConfig =
-    getContractInstance[ActionUpdateConfig](
-      contractSignature,
-      new ActionUpdateConfig(contractSignature)
-    )
-}
+object ActionUpdateConfig
+  extends TypedPaideiaActor[ActionUpdateConfig](new ActionUpdateConfig(_))

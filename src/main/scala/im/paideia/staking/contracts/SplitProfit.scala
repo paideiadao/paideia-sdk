@@ -1,6 +1,6 @@
 package im.paideia.staking.contracts
 
-import im.paideia.common.contracts.PaideiaActor
+import im.paideia.common.contracts.TypedPaideiaActor
 import im.paideia.common.contracts.PaideiaContractSignature
 import im.paideia.common.contracts.PaideiaContract
 import im.paideia.staking.boxes.SplitProfitBox
@@ -35,15 +35,8 @@ class SplitProfit(contractSig: PaideiaContractSignature)
     SplitProfitBox(ctx, value, tokens, this)
   }
 
-  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
-    if (inputBox.getErgoTree().bytesHex != ergoTreeHex) return false
-    try {
-      val b = SplitProfitBox.fromInputBox(ctx, inputBox)
-      true
-    } catch {
-      case _: Throwable => false
-    }
-  }
+  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean =
+    validateBoxWith(ctx, inputBox)(SplitProfitBox.fromInputBox(ctx, inputBox))
 
   override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
     val response: PaideiaEventResponse = event match {
@@ -120,17 +113,4 @@ class SplitProfit(contractSig: PaideiaContractSignature)
   }
 }
 
-object SplitProfit extends PaideiaActor {
-  override def apply(
-    configKey: DAOConfigKey,
-    daoKey: String,
-    digest: Option[ADDigest] = None
-  ): SplitProfit =
-    contractFromConfig(configKey, daoKey, digest)
-
-  override def apply(contractSignature: PaideiaContractSignature): SplitProfit =
-    getContractInstance[SplitProfit](
-      contractSignature,
-      new SplitProfit(contractSignature)
-    )
-}
+object SplitProfit extends TypedPaideiaActor[SplitProfit](new SplitProfit(_))
