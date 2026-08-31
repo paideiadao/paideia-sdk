@@ -28,8 +28,8 @@ class PlasmaMapWithMap[K, V](
 
   /** Cache of the last `toMap` result. Self-invalidating: `toMap` only ever serves this
     * when `cachedDigest` still matches the tree's current digest, so a stale read is
-    * impossible by construction - a cache miss (digest changed, or this is unset)
-    * always rebuilds from the manifest and re-populates both fields.
+    * impossible by construction - a cache miss (digest changed, or this is unset) always
+    * rebuilds from the manifest and re-populates both fields.
     *
     * External `= None` assignments (MempoolPlasmaMap does this after mutating a
     * confirmed-height map) are legacy no-ops kept for source/binary compatibility with
@@ -42,7 +42,7 @@ class PlasmaMapWithMap[K, V](
 
   def toMap: Map[K, V] = {
     implicit val logger: Logger = Logger.Default
-    val d = digest.toList
+    val d                       = digest.toList
     if (cachedMap.isDefined && cachedDigest.contains(d)) {
       cachedMap.get
     } else {
@@ -73,7 +73,7 @@ class PlasmaMapWithMap[K, V](
       val result =
         collectLeafs(treeManifest.get.root, mutable.ArrayBuffer[(K, V)]())
           .toMap[K, V]
-      cachedMap = Some(result)
+      cachedMap    = Some(result)
       cachedDigest = Some(d)
       result
     }

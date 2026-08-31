@@ -54,8 +54,8 @@ class TotalStakingState(
 
 object TotalStakingState {
 
-  /** Facade over Paideia.current.stakingStates, kept for source compatibility with
-    * every existing caller.
+  /** Facade over Paideia.current.stakingStates, kept for source compatibility with every
+    * existing caller.
     */
   def _stakingStates: HashMap[String, TotalStakingState] = Paideia.current.stakingStates
 

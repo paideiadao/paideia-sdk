@@ -15,9 +15,9 @@ import java.io.File
   *
   * `Paideia.current` resolves to whatever session was bound with `withSession` for the
   * currently executing thread (via a `DynamicVariable`, so it composes correctly with
-  * nested calls and is automatically restored on exit), falling back to
-  * `Paideia.default` - a single lazily-created `PaideiaSession()` shared by any code
-  * that never opts into an explicit session (i.e. all of today's production code).
+  * nested calls and is automatically restored on exit), falling back to `Paideia.default`
+  * \- a single lazily-created `PaideiaSession()` shared by any code that never opts into
+  * an explicit session (i.e. all of today's production code).
   *
   * See PaideiaSession for what used to be here: every `_daoMap`/`_actorList`/
   * `lastRestoreError` field and every `addDAO`/`getDAO`/`initialize`/.../`persistState`/
@@ -36,8 +36,8 @@ object Paideia {
 
   /** Lazily creates a single process-wide `PaideiaSession()` (env = PaideiaEnv.load(),
     * storeRoot = new File(".")) the first time it's needed, and returns that same
-    * instance on every subsequent call unless replaced via setDefault. This is what
-    * every existing caller - never having opted into a session - transparently uses.
+    * instance on every subsequent call unless replaced via setDefault. This is what every
+    * existing caller - never having opted into a session - transparently uses.
     */
   def default: PaideiaSession = {
     if (_default == null) {
@@ -60,9 +60,9 @@ object Paideia {
     */
   def withSession[T](s: PaideiaSession)(body: => T): T = dyn.withValue(Some(s))(body)
 
-  def _daoMap: HashMap[String, DAO]                     = current.daoMap
-  def _actorList: HashMap[String, PaideiaActor]         = current.actorList
-  def lastRestoreError: Option[String]                  = current.lastRestoreError
+  def _daoMap: HashMap[String, DAO]             = current.daoMap
+  def _actorList: HashMap[String, PaideiaActor] = current.actorList
+  def lastRestoreError: Option[String]          = current.lastRestoreError
 
   def clear: Unit = current.clear
 
