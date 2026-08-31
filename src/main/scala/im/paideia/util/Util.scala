@@ -1,6 +1,7 @@
 package im.paideia.util
 
 import scala.util.Random
+import scorex.util.encode.Base16
 
 object Util {
 
@@ -10,6 +11,8 @@ object Util {
       case _    => bytes.map("%02x".format(_)).mkString(sep.get)
     }
   }
+
+  def hex2bytes(hex: String): Array[Byte] = Base16.decode(hex).get
 
   def randomKey: String = {
     val key = new Array[Byte](32)

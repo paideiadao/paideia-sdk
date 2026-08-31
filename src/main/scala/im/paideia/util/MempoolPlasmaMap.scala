@@ -455,6 +455,12 @@ object MempoolPlasmaMap {
     maps.size
   }
 
+  /** Closes every live MempoolPlasmaMap's underlying LevelDB handle (see
+    * MempoolPlasmaMap.close()), releasing every LOCK file so the same directories can be
+    * reopened by fresh stores afterwards. See Paideia.clearRegistries.
+    */
+  def closeAll(): Unit = live.asScala.toList.foreach(_.close())
+
   def apply[K, V](
     store: VersionedAVLStorage[Digest32],
     flags: AvlTreeFlags,
