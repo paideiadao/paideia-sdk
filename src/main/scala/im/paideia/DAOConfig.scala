@@ -43,7 +43,17 @@ case class DAOConfig(
   val _config: MempoolPlasmaMap[DAOConfigKey, Array[Byte]],
   val daoKey: String
 ) {
-  var keys = mutable.Set[String]()
+
+  /** Original-key names are not persisted (and dynamic keys, e.g. the per-proposal
+    * im.paideia.contracts.proposal.<bytes> keys, never had one), so keys is tracked by
+    * hashedKey instead: it's what's actually stored in the tree and what set() needs to
+    * decide insert vs. update. Repopulated from the persisted tree below so a restored
+    * DAOConfig doesn't wrongly insert on every set() after a restart.
+    */
+  var keys: mutable.Set[List[Byte]] = mutable.Set[List[Byte]]()
+  if (_config.storage.nonEmpty) {
+    keys ++= _config.initiate().toMap.keys.map(_.hashedKey.toList)
+  }
 
   def apply[T](key: String): T = {
     apply[T](DAOConfigKey(key))
@@ -128,12 +138,12 @@ case class DAOConfig(
   def set[T](key: DAOConfigKey, value: T, height: Int = 0)(implicit
     enc: DAOConfigValueSerializer[T]
   ) = {
-    if (keys.contains(key.originalKey.getOrElse(""))) {
+    if (keys.contains(key.hashedKey.toList)) {
       _config.updateWithDigest((key, enc.serialize(value, true, key.readOnly).toArray))(
         Right(height)
       )
     } else {
-      keys.add(key.originalKey.getOrElse(""))
+      keys.add(key.hashedKey.toList)
       _config.insertWithDigest((key, enc.serialize(value, true, key.readOnly).toArray))(
         Right(height)
       )
