@@ -7,6 +7,7 @@ import org.ergoplatform.appkit.NetworkType
 import im.paideia.common.contracts.Config
 import im.paideia.common.contracts.PaideiaActor
 import im.paideia.util.Env
+import im.paideia.util.MempoolPlasmaMap
 import im.paideia.common.events.PaideiaEvent
 import im.paideia.common.events.PaideiaEventResponse
 import scala.reflect.runtime.{universe => ru}
@@ -30,6 +31,14 @@ object Paideia {
     FileUtils.deleteDirectory(new File("./proposals"))
     FileUtils.deleteDirectory(new File("./stakingStates"))
   }
+
+  /** Commits every live MempoolPlasmaMap (DAOConfig, Proposal vote records,
+    * StakingState stake/participation records, ...), draining their queued confirmed
+    * mutations into the versioned AVL+ prover so they're actually persisted to disk.
+    * Call once per confirmed block, after all of that block's transactions have been
+    * handled. Returns the number of maps committed.
+    */
+  def commit(): Int = MempoolPlasmaMap.commitAll()
 
   def addDAO(dao: DAO): Unit = _daoMap.put(dao.key, dao)
 

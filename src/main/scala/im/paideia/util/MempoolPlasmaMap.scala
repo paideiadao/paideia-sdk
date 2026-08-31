@@ -6,12 +6,13 @@ import sigma.data.AvlTreeFlags
 import work.lithos.plasma.PlasmaParameters
 import work.lithos.plasma.ByteConversion
 import scorex.crypto.hash.Digest32
-import scala.collection.mutable.HashMap
 import scorex.crypto.authds.ADDigest
 import work.lithos.plasma.collections.PlasmaMap
 import work.lithos.plasma.collections.LocalPlasmaMap
 import scorex.crypto.authds.avltree.batch.PersistentBatchAVLProver
+import scala.collection.mutable.LinkedHashMap
 import scala.collection.mutable.Queue
+import scala.collection.JavaConverters._
 import scorex.crypto.hash.Blake2b256
 import work.lithos.plasma.collections.Operations._
 import work.lithos.plasma.collections.ProvenResult
@@ -22,6 +23,10 @@ import work.lithos.plasma.collections.Proof
 import scorex.crypto.authds.avltree.batch.Update
 import scorex.crypto.authds.avltree.batch.Remove
 import scorex.crypto.authds.avltree.batch.Lookup
+import scorex.crypto.authds.avltree.batch.ProverNodes
+import scorex.crypto.authds.avltree.batch.InternalProverNode
+import scorex.crypto.authds.avltree.batch.VersionedLDBAVLStorage
+import scorex.db.LDBVersionedStore
 import sigma.data.AvlTreeData
 import sigma.AvlTree
 import org.ergoplatform.appkit.ErgoValue
@@ -31,10 +36,11 @@ class MempoolPlasmaMap[K, V](
   store: VersionedAVLStorage[Digest32],
   override val flags: AvlTreeFlags,
   override val params: PlasmaParameters,
-  mempoolMaps: HashMap[List[Byte], PlasmaMapWithMap[K, V]] =
-    new HashMap[List[Byte], PlasmaMapWithMap[K, V]](),
+  mempoolMaps: LinkedHashMap[List[Byte], PlasmaMapWithMap[K, V]] =
+    new LinkedHashMap[List[Byte], PlasmaMapWithMap[K, V]](),
   private var newlyConfirmedMap: Option[PlasmaMapWithMap[K, V]] = None,
-  opQueue: Queue[(Int, BatchOperation[K, V])] = Queue.empty[(Int, BatchOperation[K, V])]
+  opQueue: Queue[(Int, BatchOperation[K, V])] = Queue.empty[(Int, BatchOperation[K, V])],
+  val maxMempoolMaps: Int = 256
 )(implicit val convertKey: ByteConversion[K], convertVal: ByteConversion[V])
   extends LocalPlasmaBase[K, V] {
 
@@ -42,6 +48,23 @@ class MempoolPlasmaMap[K, V](
 
   override val prover: PersistentBatchAVLProver[Digest32, Blake2b256.type] =
     localMap.prover
+
+  MempoolPlasmaMap.live.add(this)
+
+  /** Records a mempool fork under its tree digest, evicting the oldest entry (by
+    * insertion order) once the map exceeds maxMempoolMaps. Unbounded growth here was a
+    * latent leak: every mempool fork parks a full BatchAVLProver and nothing but the
+    * inPlace branch ever removed one.
+    */
+  private def putMempoolMap(key: List[Byte], value: PlasmaMapWithMap[K, V]): Unit = {
+    mempoolMaps.put(key, value)
+    while (mempoolMaps.size > maxMempoolMaps) {
+      val oldestKey = mempoolMaps.iterator.next()._1
+      mempoolMaps.remove(oldestKey)
+    }
+  }
+
+  def clearMempoolMaps(): Unit = mempoolMaps.clear()
 
   override def digest: ADDigest =
     newlyConfirmedMap.map(_.prover.digest).getOrElse(prover.digest)
@@ -103,7 +126,7 @@ class MempoolPlasmaMap[K, V](
         opQueue.enqueue((i, InsertBatch(keyVals)))
         map.cachedMap = None
       case Left(onDigest) =>
-        mempoolMaps(map.prover.digest.toList) = map
+        putMempoolMap(map.prover.digest.toList, map)
     }
     ProvenResultWithDigest(response, Proof(proof), map.digest)
   }
@@ -135,7 +158,7 @@ class MempoolPlasmaMap[K, V](
       case Right(i) =>
         opQueue.enqueue((i, UpdateBatch(newKeyVals)))
         map.cachedMap = None
-      case Left(onDigest) => mempoolMaps(map.prover.digest.toList) = map
+      case Left(onDigest) => putMempoolMap(map.prover.digest.toList, map)
     }
     ProvenResultWithDigest(response, Proof(proof), map.digest)
   }
@@ -162,7 +185,7 @@ class MempoolPlasmaMap[K, V](
       case Right(i) =>
         opQueue.enqueue((i, DeleteBatch(keys)))
         map.cachedMap = None
-      case Left(onDigest) => mempoolMaps(map.digest.toList) = map
+      case Left(onDigest) => putMempoolMap(map.digest.toList, map)
     }
     ProvenResultWithDigest(response, Proof(proof), map.digest)
   }
@@ -213,7 +236,7 @@ class MempoolPlasmaMap[K, V](
       case Right(i) =>
         opQueue.enqueue((i, DeleteBatch(keys)))
         map.cachedMap = None
-      case Left(onDigest) => mempoolMaps(map.digest.toList) = map
+      case Left(onDigest) => putMempoolMap(map.digest.toList, map)
     }
     ProvenResultWithDigest(response ++ removeResponse, Proof(proof), map.digest)
   }
@@ -255,12 +278,182 @@ class MempoolPlasmaMap[K, V](
       params,
       newMempoolMaps,
       newlyConfirmedMap.map(_.copy()),
-      opQueue.clone()
+      opQueue.clone(),
+      maxMempoolMaps
     )
+  }
+
+  /** Snapshot of the current mempool forks (digest -> in-progress tree), for callers
+    * that need to carry pending, unconfirmed off-chain state across to a differently
+    * backed map (e.g. StakingState.clone transplanting in-flight mempool chains onto a
+    * freshly persisted snapshot). Independent copies, so mutating the result (or this
+    * map's own forks afterwards) can't cross-contaminate the two maps.
+    */
+  def mempoolMapEntries: Seq[(List[Byte], PlasmaMapWithMap[K, V])] =
+    mempoolMaps.toSeq.map(kv => (kv._1, kv._2.copy()))
+
+  /** Adopts a set of mempool forks (as returned by mempoolMapEntries) into this map,
+    * subject to the usual maxMempoolMaps eviction.
+    */
+  def adoptMempoolMaps(entries: Seq[(List[Byte], PlasmaMapWithMap[K, V])]): Unit =
+    entries.foreach { case (k, v) => putMempoolMap(k, v) }
+
+  /** Digest of the tree as actually persisted through localMap/the versioned prover, as
+    * opposed to `digest`, which reflects the in-memory confirmed state (identical once
+    * `commit()` has drained the queue).
+    */
+  def persistedDigest: ADDigest = localMap.digest
+
+  /** Releases the underlying LevelDB handle (when storage is a VersionedLDBAVLStorage),
+    * so the same directory can be reopened by a new store/map afterwards - e.g. to
+    * prove a restore actually reads back from disk rather than from this instance's
+    * in-memory state. VersionedLDBAVLStorage doesn't expose its LDBVersionedStore
+    * publicly, hence the reflection. A no-op for any other storage implementation.
+    */
+  def close(): Unit = {
+    storage match {
+      case ldbStorage: VersionedLDBAVLStorage =>
+        val field = classOf[VersionedLDBAVLStorage].getDeclaredField("store")
+        field.setAccessible(true)
+        field.get(ldbStorage).asInstanceOf[LDBVersionedStore].close()
+      case _ => ()
+    }
+  }
+
+  /** Number of confirmed-height batches still waiting to be applied to localMap by
+    * commit().
+    */
+  def pendingOps: Int = opQueue.size
+
+  /** Drains opQueue in FIFO order, applying every queued confirmed-height batch to
+    * localMap so it persists through the versioned AVL+ prover. Until this is called,
+    * confirmed writes only ever land in the in-memory newlyConfirmedMap and opQueue
+    * grows forever with nothing behind it on disk.
+    *
+    * A no-op when the map was never initiated (nothing confirmed yet, so the queue is
+    * necessarily empty). Otherwise asserts that the freshly persisted digest agrees
+    * with the in-memory confirmed digest, since the whole point of committing is that
+    * the two must never diverge.
+    */
+  def commit(): Unit = {
+    while (opQueue.nonEmpty) {
+      val (_, batch) = opQueue.dequeue()
+      batch match {
+        case InsertBatch(keyVals) => localMap.insert(keyVals: _*)
+        case UpdateBatch(keyVals) => localMap.update(keyVals: _*)
+        case DeleteBatch(keys)    => localMap.delete(keys: _*)
+        case other =>
+          throw new IllegalStateException(
+            s"MempoolPlasmaMap.commit: unrecognized batch operation $other"
+          )
+      }
+    }
+    newlyConfirmedMap.foreach { confirmed =>
+      val persisted = persistedDigest
+      val inMemory  = confirmed.digest
+      if (!(persisted sameElements inMemory)) {
+        throw new IllegalStateException(
+          "MempoolPlasmaMap.commit: persisted digest " +
+            Util.bytes2hex(persisted) +
+            " does not match in-memory confirmed digest " +
+            Util.bytes2hex(inMemory)
+        )
+      }
+    }
+  }
+
+  /** Clones the current confirmed tree into a brand-new (empty) store, producing an
+    * independent MempoolPlasmaMap whose localMap and newlyConfirmedMap both carry a
+    * structure-preserving copy of this tree (same digest, no shared mutable state, no
+    * opQueue/mempoolMaps carried over). Unlike copy(newStore), which shares this map's
+    * confirmed/mempool state going forward, cloneInto is meant for point-in-time
+    * snapshots (e.g. StakingState.clone) that must reproduce the exact on-chain digest,
+    * since AVL+ tree shape depends on operation history and can't be rebuilt by
+    * re-inserting records.
+    */
+  private def markSubtreeNew(node: ProverNodes[Digest32]): Unit = {
+    node.isNew = true
+    node match {
+      case internal: InternalProverNode[Digest32] =>
+        markSubtreeNew(internal.left)
+        markSubtreeNew(internal.right)
+      case _ => ()
+    }
+  }
+
+  private def markWholeTreeNew(
+    prover: BatchAVLProver[Digest32, Blake2b256.type]
+  ): Unit =
+    markSubtreeNew(
+      MempoolPlasmaMap.batchAVLProverTopNode
+        .invoke(prover)
+        .asInstanceOf[ProverNodes[Digest32]]
+    )
+
+  def cloneInto(
+    newStore: VersionedAVLStorage[Digest32],
+    paranoidChecks: Boolean = false
+  ): MempoolPlasmaMap[K, V] = {
+    val confirmed = newlyConfirmedMap.getOrElse(initiate())
+    val treeCopy  = confirmed.copy()
+    // treeCopy's nodes came out of a manifest round-trip (PlasmaMap.copy), which
+    // reconstructs them as already-known/persisted state (isNew = false) rather than
+    // freshly created state. VersionedAVLStorage.update only walks and writes nodes
+    // that are new (or the root), so left as-is only the root would ever reach newStore
+    // - fine for a single-leaf tree, silently incomplete for anything with real
+    // internal structure. Since treeCopy is already an independent copy (not aliased
+    // with confirmed's live tree), it's safe to mark its whole structure new so
+    // PersistentBatchAVLProver.create's initial dump actually persists every node.
+    markWholeTreeNew(treeCopy.prover)
+    PersistentBatchAVLProver.create(treeCopy.prover, newStore, paranoidChecks).get
+    val cloned = new MempoolPlasmaMap[K, V](
+      newStore,
+      flags,
+      params,
+      maxMempoolMaps = maxMempoolMaps
+    )
+    cloned.initiate()
+    if (!(cloned.digest sameElements digest)) {
+      throw new IllegalStateException(
+        "MempoolPlasmaMap.cloneInto: clone digest " +
+          Util.bytes2hex(cloned.digest) +
+          " does not match source digest " +
+          Util.bytes2hex(digest)
+      )
+    }
+    cloned
   }
 }
 
 object MempoolPlasmaMap {
+
+  /** BatchAVLProver.topNode is `protected` at the Scala level (even though the
+    * generated bytecode is public), so cloneInto's isNew-marking walk (see
+    * markWholeTreeNew) has to reach it through reflection instead of a direct call.
+    */
+  private val batchAVLProverTopNode =
+    classOf[BatchAVLProver[_, _]].getMethod("topNode")
+
+  /** Registry of every live MempoolPlasmaMap, so all of them can be committed without
+    * every owner (DAOConfig, Proposal, StakingState, ...) having to be hunted down and
+    * threaded through a commit call individually. Backed by a WeakHashMap-based set so
+    * maps that are no longer referenced elsewhere are dropped instead of leaking here.
+    */
+  private val live: java.util.Set[MempoolPlasmaMap[_, _]] =
+    java.util.Collections.newSetFromMap(
+      new java.util.WeakHashMap[MempoolPlasmaMap[_, _], java.lang.Boolean]()
+    )
+
+  /** Commits every live MempoolPlasmaMap and returns how many were committed. Intended
+    * to be called once per confirmed block, after all of that block's transactions have
+    * been handled, so every confirmed mutation queued during the block gets persisted
+    * in one pass. See Paideia.commit().
+    */
+  def commitAll(): Int = {
+    val maps = live.asScala.toList
+    maps.foreach(_.commit())
+    maps.size
+  }
 
   def apply[K, V](
     store: VersionedAVLStorage[Digest32],
