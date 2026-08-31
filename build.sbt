@@ -16,8 +16,6 @@ inThisBuild(List(
   )
 ))
 
-sonatypeCredentialHost := "s01.oss.sonatype.org"
-sonatypeRepository := "https://s01.oss.sonatype.org/service/local"
 
 scalaVersion := "2.12.17"
 // That is, to create a valid sbt build, all you've got to do is define the
