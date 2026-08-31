@@ -462,8 +462,20 @@ class PaideiaContract(
     }
   }
 
-  // This should be overridden in sub classes
-  def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = ???
+  /** Default box validation: the output's ErgoTree must match this contract's, and
+    * `parse` (typically `XBox.fromInputBox`) must not throw. Subclasses override
+    * validateBox only when they genuinely differ.
+    */
+  protected def validateBoxWith(ctx: BlockchainContextImpl, inputBox: InputBox)(
+    parse: => Any
+  ): Boolean = {
+    if (inputBox.getErgoTree().bytesHex != ergoTreeHex) return false
+    try { parse; true } catch { case _: Throwable => false }
+  }
+
+  // Overridden in sub classes whose validation differs from the plain ErgoTree check.
+  def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean =
+    validateBoxWith(ctx, inputBox)(())
 
   def getConfigContext(configDigest: Option[ADDigest]): ErgoValue[Coll[java.lang.Byte]] =
     ErgoValueBuilder.buildFor(Colls.fromArray(Array[Byte]()))

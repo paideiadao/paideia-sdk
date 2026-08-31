@@ -27,7 +27,6 @@ import sigma.Coll
 import sigma.ast.Constant
 import sigma.ast.SType
 import sigma.ast.ByteArrayConstant
-import org.ergoplatform.appkit.InputBox
 import org.ergoplatform.appkit.ContextVar
 import scorex.crypto.authds.ADDigest
 import sigma.AvlTree
@@ -50,16 +49,6 @@ class StakeProxy(contractSignature: PaideiaContractSignature)
       stakeAmount,
       stakeDiff
     )
-  }
-
-  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
-    if (inputBox.getErgoTree().bytesHex != ergoTreeHex) return false
-    try {
-      // val b = StakeProxyBox.fromInputBox(ctx, inputBox)
-      true
-    } catch {
-      case _: Throwable => false
-    }
   }
 
   override def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {

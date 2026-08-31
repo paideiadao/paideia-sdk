@@ -32,15 +32,8 @@ class StakeCompound(contractSignature: PaideiaContractSignature)
     cons
   }
 
-  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
-    if (inputBox.getErgoTree().bytesHex != ergoTreeHex) return false
-    try {
-      val b = StakeCompoundBox.fromInputBox(ctx, inputBox)
-      true
-    } catch {
-      case _: Throwable => false
-    }
-  }
+  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean =
+    validateBoxWith(ctx, inputBox)(StakeCompoundBox.fromInputBox(ctx, inputBox))
 
   override lazy val parameters: Map[String, Constant[SType]] = {
     val params = new HashMap[String, Constant[SType]]()

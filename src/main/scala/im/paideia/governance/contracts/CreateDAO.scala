@@ -29,7 +29,6 @@ import im.paideia.staking.contracts.StakeState
 import sigma.ast.Constant
 import sigma.ast.SType
 import sigma.ast.ByteArrayConstant
-import org.ergoplatform.appkit.InputBox
 import im.paideia.DAOConfigKey
 import scorex.util.encode.Base16
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
@@ -49,11 +48,6 @@ class CreateDAO(contractSignature: PaideiaContractSignature)
       ByteArrayConstant(ErgoId.create(Env.paideiaDaoKey).getBytes)
     )
     cons.toMap
-  }
-
-  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
-    if (inputBox.getErgoTree().bytesHex != ergoTreeHex) false
-    else true
   }
 
   override lazy val constants: HashMap[String, Object] = {

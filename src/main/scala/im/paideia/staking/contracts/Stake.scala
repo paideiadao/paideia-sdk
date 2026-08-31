@@ -42,15 +42,8 @@ class Stake(contractSignature: PaideiaContractSignature)
     params.toMap
   }
 
-  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
-    if (inputBox.getErgoTree().bytesHex != ergoTreeHex) return false
-    try {
-      val b = StakeBox.fromInputBox(ctx, inputBox)
-      true
-    } catch {
-      case _: Throwable => false
-    }
-  }
+  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean =
+    validateBoxWith(ctx, inputBox)(StakeBox.fromInputBox(ctx, inputBox))
 
   override lazy val constants: HashMap[String, Object] = {
     val cons = new HashMap[String, Object]()

@@ -35,7 +35,6 @@ import sigma.AvlTree
 import scorex.crypto.authds.ADDigest
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 import sigma.Colls
-import org.ergoplatform.appkit.InputBox
 
 class UnstakeProxy(contractSignature: PaideiaContractSignature)
   extends PaideiaContract(contractSignature) {
@@ -148,16 +147,6 @@ class UnstakeProxy(contractSignature: PaideiaContractSignature)
       case _ => PaideiaEventResponse(0)
     }
     PaideiaEventResponse.merge(List(super.handleEvent(event), response))
-  }
-
-  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
-    if (inputBox.getErgoTree().bytesHex != ergoTreeHex) return false
-    try {
-      // val b = UnstakeProxyBox.fromInputBox(ctx, inputBox)
-      true
-    } catch {
-      case _: Throwable => false
-    }
   }
 
   override lazy val parameters: Map[String, Constant[SType]] = {

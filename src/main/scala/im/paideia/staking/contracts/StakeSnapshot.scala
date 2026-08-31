@@ -75,15 +75,8 @@ class StakeSnapshot(contractSignature: PaideiaContractSignature)
     cons
   }
 
-  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
-    if (inputBox.getErgoTree().bytesHex != ergoTreeHex) return false
-    try {
-      val b = StakeSnapshotBox.fromInputBox(ctx, inputBox)
-      true
-    } catch {
-      case _: Throwable => false
-    }
-  }
+  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean =
+    validateBoxWith(ctx, inputBox)(StakeSnapshotBox.fromInputBox(ctx, inputBox))
 
   override def getConfigContext(configDigest: Option[ADDigest]) = Paideia
     .getConfig(contractSignature.daoKey)

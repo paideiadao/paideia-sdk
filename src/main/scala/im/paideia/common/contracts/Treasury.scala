@@ -69,11 +69,6 @@ class Treasury(contractSignature: PaideiaContractSignature)
     res
   }
 
-  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
-    if (inputBox.getErgoTree().bytesHex.equals(ergoTreeHex)) true
-    else false
-  }
-
   /** Constants for the Treasury contract are defined here. It can only contain objects
     * that were there during the compilation time (e.g literals).
     *

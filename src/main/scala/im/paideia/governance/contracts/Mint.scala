@@ -12,7 +12,6 @@ import org.ergoplatform.sdk.ErgoId
 import sigma.ast.Constant
 import sigma.ast.SType
 import sigma.ast.ByteArrayConstant
-import org.ergoplatform.appkit.InputBox
 import im.paideia.DAOConfigKey
 import scorex.crypto.authds.ADDigest
 
@@ -51,15 +50,6 @@ class Mint(contractSignature: PaideiaContractSignature)
     cons.toMap
   }
 
-  override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
-    if (inputBox.getErgoTree().bytesHex != ergoTreeHex) return false
-    try {
-      // val b = MintBox.fromInputBox(ctx, inputBox)
-      true
-    } catch {
-      case _: Throwable => false
-    }
-  }
 }
 
 object Mint extends PaideiaActor {
