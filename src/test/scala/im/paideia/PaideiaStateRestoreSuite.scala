@@ -99,6 +99,16 @@ class PaideiaStateRestoreSuite extends PaideiaTestSuite {
 
           val proposal = dao.newProposal(0, "restore-test-proposal")
 
+          // A dynamic config key (base ++ hex(bytes), like the per-proposal/per-action
+          // ConfKeys entries) set directly rather than through a ConfKeys helper - its
+          // name only ever exists in DAOConfigKey.knownKeys, never recomputable from the
+          // hashed bytes alone, so it's the case that actually exercises the "knownKeys"
+          // persistence below rather than just the always-registered ConfKeys names.
+          val dynamicKey = DAOConfigKey("im.paideia.test.dynamic.", Array[Byte](1, 2, 3))
+          dao.config.set(dynamicKey, 42L)
+          val recordedDynamicKeyName = dynamicKey.originalKey.get
+          val recordedDynamicKeyHash = dynamicKey.hashedKey
+
           Paideia.commit()
 
           val tmpDir = Files.createTempDirectory("paideia-state-restore").toFile
@@ -143,11 +153,18 @@ class PaideiaStateRestoreSuite extends PaideiaTestSuite {
           )
 
           // Prove restored data actually comes from disk: close every store and empty
-          // every registry first.
+          // every registry first. DAOConfigKey.knownKeys is name metadata rather than
+          // state, so clearRegistries must NOT touch it (real restarts keep it warm from
+          // whatever names got constructed earlier in the process) - but that means this
+          // test has to clear it itself to actually prove restoreState repopulates it
+          // from the checkpoint rather than the assertions below passing on leftover
+          // process-global state from before the clear.
           Paideia.clearRegistries(closeStores = true)
+          DAOConfigKey.knownKeys.clear()
           assert(Paideia._daoMap.isEmpty)
           assert(Paideia._actorList.values.flatMap(_.contractInstances.values).isEmpty)
           assert(TotalStakingState._stakingStates.isEmpty)
+          assert(new DAOConfigKey(recordedDynamicKeyHash).originalKey.isEmpty)
 
           val restored = Paideia.restoreState(tmpDir)
           assert(restored.contains(4711), s"lastRestoreError=${Paideia.lastRestoreError}")
@@ -203,6 +220,17 @@ class PaideiaStateRestoreSuite extends PaideiaTestSuite {
           )
 
           assert(restoredDao.proposals(0).name == recordedProposalName)
+
+          // The dynamic key's name must resolve again after restore - both when rebuilt
+          // straight from its hashed bytes (exactly how paideia-state's /dao/<key>/config
+          // endpoint reconstructs a DAOConfigKey to look its name up) and when reached by
+          // iterating the restored config tree itself.
+          val restoredDynamicKey = new DAOConfigKey(recordedDynamicKeyHash)
+          assert(restoredDynamicKey.originalKey.contains(recordedDynamicKeyName))
+
+          val restoredConfigKeys = restoredDao.config._config.initiate().toMap.keys
+          assert(restoredConfigKeys.nonEmpty)
+          assert(restoredConfigKeys.forall(_.originalKey.isDefined))
 
           // Negative: a tampered configDigest must be rejected outright, and leave
           // nothing half-registered.

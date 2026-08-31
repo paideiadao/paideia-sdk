@@ -231,7 +231,11 @@ object Paideia {
     * String }, ... ], "staking": null | { "nextEmission": Long, "currentDigests": {
     * "stake": hex String, "participation": hex String }, "snapshots": [ {
     * "emissionTime": Long, "stakeDigest": hex String, "participationDigest": hex String
-    * }, ... ] } }, ... ] }`. "contracts" is every PaideiaContractSignature actually live
+    * }, ... ] } }, ... ], "knownKeys": [ { "hash": hex String, "name": String }, ... ] }`.
+    * "knownKeys" is every DAOConfigKey.knownKeys entry with a defined name (hashed key
+    * bytes -> the original name it was constructed with), sorted by hash for stable
+    * output - see restoreState for why this has to be persisted rather than recomputed.
+    * "contracts" is every PaideiaContractSignature actually live
     * in Paideia._actorList's contractInstances for this daoKey at persist time - not a
     * walk of the DAO config tree, which only reaches contract instances the config
     * happens to reference right now and misses instances created by direct construction
@@ -333,6 +337,27 @@ object Paideia {
     }
     stateJson.add("daos", daosArr)
 
+    // DAOConfigKey.knownKeys (hashed key -> original name) only gets populated for a
+    // key when it's constructed BY NAME (DAOConfigKey(s) / DAOConfigKey(s, bytes)); a
+    // key deserialized straight from a persisted AVL+ tree - as every key is after
+    // restoreState - never goes through that constructor, so without persisting this
+    // map here every dynamic key (e.g. im.paideia.contracts.proposal.<hex>) would come
+    // back nameless. The standard ConfKeys names are reconstructed for free (ConfKeys
+    // registers them at class-init time), but dynamic per-proposal/per-action names are
+    // base ++ hex(bytes) and the bytes aren't recoverable from the hash alone, so they
+    // must be persisted rather than recomputed.
+    val knownKeysArr = new JsonArray()
+    DAOConfigKey.knownKeys.toList
+      .collect { case (hashedKey, Some(name)) => (hashedKey, name) }
+      .sortBy(kv => Util.bytes2hex(kv._1.toArray))
+      .foreach { case (hashedKey, name) =>
+        val entry = new JsonObject()
+        entry.addProperty("hash", Util.bytes2hex(hashedKey.toArray))
+        entry.addProperty("name", name)
+        knownKeysArr.add(entry)
+      }
+    stateJson.add("knownKeys", knownKeysArr)
+
     atomicWriteString(new File(dir, "state.json"), gson.toJson(stateJson))
 
     val boxesRoot = new File(dir, "boxes")
@@ -385,7 +410,9 @@ object Paideia {
   }
 
   /** Rebuilds every in-process registry (DAOs/configs, contract instances, proposals,
-    * staking state) and every contract instance's confirmed unspent box set from a
+    * staking state), re-registers every persisted DAOConfigKey.knownKeys (hash -> name)
+    * entry so dynamic config keys resolve their names exactly as they did before the
+    * restart, and every contract instance's confirmed unspent box set from a
     * checkpoint written by persistState, verifying every digest against what's actually
     * reopened from the persisted AVL+ stores on disk along the way, and every recorded
     * contract instance by recompiling it from its signature and comparing the resulting
@@ -409,6 +436,24 @@ object Paideia {
         .parse(new String(Files.readAllBytes(stateFile.toPath), StandardCharsets.UTF_8))
         .getAsJsonObject
       val height = stateJson.get("height").getAsInt
+
+      // Re-register every persisted (hash -> name) pair into the process-global
+      // DAOConfigKey.knownKeys FIRST, before any DAOConfig/DAOConfigKey is constructed
+      // below: knownKeys is only ever populated when a key is built BY NAME, and every
+      // key that comes back out of a restored AVL+ tree is built from raw hashed bytes
+      // instead (see DAOConfigKey.convertsDAOConfigKey), so without this step every
+      // dynamic key (e.g. im.paideia.contracts.proposal.<hex>) would resolve to no name
+      // at all post-restart, even though it had one before. Missing "knownKeys" (an
+      // older checkpoint written before this field existed) is treated as empty, not an
+      // error.
+      Option(stateJson.get("knownKeys"))
+        .filterNot(_.isJsonNull)
+        .foreach(_.getAsJsonArray.asScala.foreach { knownKeyElem =>
+          val knownKeyObj = knownKeyElem.getAsJsonObject
+          val hashBytes   = Util.hex2bytes(knownKeyObj.get("hash").getAsString)
+          val name        = knownKeyObj.get("name").getAsString
+          DAOConfigKey.knownKeys.put(hashBytes.toList, Some(name))
+        })
 
       stateJson.get("daos").getAsJsonArray.asScala.foreach { daoElem =>
         val daoObj                  = daoElem.getAsJsonObject
