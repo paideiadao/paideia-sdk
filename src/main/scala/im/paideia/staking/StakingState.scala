@@ -14,11 +14,11 @@ import work.lithos.plasma.collections.ProxyPlasmaMap
 import scorex.crypto.hash.Blake2b256
 import scorex.crypto.authds.avltree.batch.VersionedLDBAVLStorage
 import scorex.db.LDBVersionedStore
-import java.io.File
 import scorex.crypto.hash.Digest32
 import im.paideia.util.MempoolPlasmaMap
 import scorex.crypto.authds.ADDigest
 import im.paideia.util.ProvenResultWithDigest
+import im.paideia.Paideia
 
 class StakingState(
   val emissionTime: Long,
@@ -142,9 +142,7 @@ class StakingState(
     // copy of the current in-memory tree and persists it into a fresh store, so the new
     // store starts from a clean, minimal state at exactly this digest.
     val newFolders = List("stake", "participation").map(f =>
-      new File(
-        "./stakingStates/" ++ daoKey ++ "/" ++ f ++ "/" ++ newEmissionTime.toString
-      )
+      Paideia.current.stakingStateDir(daoKey, f, newEmissionTime.toString)
     )
     newFolders.foreach(_.mkdirs())
     val newStorages = newFolders.map(newFolder => {
@@ -183,9 +181,10 @@ object StakingState {
     totalStaked: Long = 0
   ): StakingState = {
     val newStorages = List("stake", "participation").map(f => {
-      val folder = new File(
-        "./stakingStates/" ++ daoKey ++ "/" ++ f ++ "/" ++ (if (current) "current"
-                                                            else emissionTime.toString)
+      val folder = Paideia.current.stakingStateDir(
+        daoKey,
+        f,
+        if (current) "current" else emissionTime.toString
       )
       folder.mkdirs()
       val ldbStore = new LDBVersionedStore(folder, 10)

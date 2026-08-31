@@ -54,8 +54,10 @@ class TotalStakingState(
 
 object TotalStakingState {
 
-  val _stakingStates: HashMap[String, TotalStakingState] =
-    HashMap[String, TotalStakingState]()
+  /** Facade over Paideia.current.stakingStates, kept for source compatibility with
+    * every existing caller.
+    */
+  def _stakingStates: HashMap[String, TotalStakingState] = Paideia.current.stakingStates
 
   def apply(
     daoKey: String,

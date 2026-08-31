@@ -22,15 +22,17 @@ import scorex.crypto.authds.ADDigest
 trait PaideiaActor {
 
   /** A HashMap containing contract instances. The key is the contract's serialised hash
-    * value
+    * value. Backed by Paideia.current's per-session registry (keyed by this actor's
+    * class name) rather than a field on this actor singleton, so two sessions never
+    * share (or clobber) each other's contract instances.
     */
-  var contractInstances: HashMap[List[Byte], PaideiaContract] =
-    HashMap[List[Byte], PaideiaContract]()
+  def contractInstances: HashMap[List[Byte], PaideiaContract] =
+    Paideia.current.contractInstances(this)
 
   /** Clears contractInstances HashMap entry.
     */
   def clear = {
-    contractInstances = HashMap[List[Byte], PaideiaContract]()
+    contractInstances.clear()
   }
 
   def contractFromConfig[T <: PaideiaContract](
