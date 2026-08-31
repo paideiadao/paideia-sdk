@@ -70,7 +70,7 @@ class Treasury(contractSignature: PaideiaContractSignature)
   }
 
   override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
-    if (inputBox.getErgoTree().bytesHex.equals(ergoTree.bytesHex)) true
+    if (inputBox.getErgoTree().bytesHex.equals(ergoTreeHex)) true
     else false
   }
 

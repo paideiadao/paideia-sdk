@@ -198,6 +198,12 @@ class PaideiaContract(
   lazy val ergoTree: ErgoTree =
     contractTemplate.applyTemplate(Some(0), parameters)
 
+  /** Hex encoding of [[ergoTree]], cached. sigma's `ErgoTree.bytesHex` re-encodes the
+    * whole tree on every call, and it is compared against every transaction output for
+    * every contract instance during sync, so it must not be recomputed per call.
+    */
+  lazy val ergoTreeHex: String = ergoTree.bytesHex
+
   lazy val contractTemplate: ContractTemplate = {
     if (_contractSignature.version == "latest") {
       val templatePath = Paths.get(ergoScriptURL.getPath().replace(".es", ".json"))
@@ -357,7 +363,7 @@ class PaideiaContract(
         val handledOutputs =
           te.tx.getOutputs().asScala.map { (output: ErgoTransactionOutput) =>
             if (
-              output.getErgoTree == ergoTree.bytesHex && validateBox(
+              output.getErgoTree == ergoTreeHex && validateBox(
                 te.ctx,
                 new InputBoxImpl(output)
               )
