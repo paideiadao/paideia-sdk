@@ -14,9 +14,9 @@ class DAOConfigKey(
   _readOnly: Boolean           = false
 ) {
   val originalKey: Option[String] = _originalKey match {
-    case None => DAOConfigKey.knownKeys.getOrElse(_hashedKey, None)
+    case None => DAOConfigKey.knownKeys.getOrElse(_hashedKey.toList, None)
     case Some(value) =>
-      DAOConfigKey.knownKeys.put(_hashedKey, _originalKey)
+      DAOConfigKey.knownKeys.put(_hashedKey.toList, _originalKey)
       _originalKey
   }
   val hashedKey: Array[Byte] = _hashedKey
@@ -32,6 +32,8 @@ class DAOConfigKey(
       .hashedKey
       .toList
       .equals(hashedKey.toList)
+
+  override def hashCode: Int = java.util.Arrays.hashCode(hashedKey)
 }
 
 object DAOConfigKey {
@@ -42,8 +44,11 @@ object DAOConfigKey {
     Some(s ++ ErgoAlgos.encode(d))
   )
 
-  val knownKeys: HashMap[Array[Byte], Option[String]] =
-    new HashMap[Array[Byte], Option[String]]()
+  /** Hashed key -> original key name, for keys constructed from a name. Keyed by List[Byte]
+    * because Array[Byte] has identity equality and would never hit.
+    */
+  val knownKeys: HashMap[List[Byte], Option[String]] =
+    new HashMap[List[Byte], Option[String]]()
 
   implicit val convertsDAOConfigKey: ByteConversion[DAOConfigKey] =
     new ByteConversion[DAOConfigKey] {
