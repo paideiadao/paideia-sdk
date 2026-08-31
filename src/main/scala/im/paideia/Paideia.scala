@@ -218,12 +218,27 @@ object Paideia {
     * unspent box set. Call AFTER Paideia.commit() so every digest recorded here is
     * actually backed by what's on disk.
     *
-    * Writes dir/state.json (registries + digests) and dir/boxes/<daoKey>/
-    * <contractSignatureHashHex>.json (one JSON array of ErgoTransactionOutput per
-    * contract instance's confirmed unspent boxes). Both are written atomically; box
-    * files are only rewritten when their contents actually changed since the last call
-    * (tracked via an in-memory fingerprint), and files for contract instances that no
-    * longer exist are deleted.
+    * Writes dir/state.json and dir/boxes/<daoKey>/<contractSignatureHashHex>.json (one
+    * JSON array of ErgoTransactionOutput per contract instance's confirmed unspent
+    * boxes). Both are written atomically; box files are only rewritten when their
+    * contents actually changed since the last call (tracked via an in-memory
+    * fingerprint), and files for contract instances that no longer exist are deleted.
+    *
+    * dir/state.json layout: `{ "height": Int, "daos": [ { "key": String,
+    * "configDigest": hex String, "contracts": [ { "className": String, "version":
+    * String, "networkType": "MAINNET"|"TESTNET", "contractHash": hex String, "daoKey":
+    * String }, ... ], "proposals": [ { "index": Int, "name": String, "votesDigest": hex
+    * String }, ... ], "staking": null | { "nextEmission": Long, "currentDigests": {
+    * "stake": hex String, "participation": hex String }, "snapshots": [ {
+    * "emissionTime": Long, "stakeDigest": hex String, "participationDigest": hex String
+    * }, ... ] } }, ... ] }`. "contracts" is every PaideiaContractSignature actually live
+    * in Paideia._actorList's contractInstances for this daoKey at persist time - not a
+    * walk of the DAO config tree, which only reaches contract instances the config
+    * happens to reference right now and misses instances created by direct construction
+    * (e.g. `Stake(PaideiaContractSignature(daoKey = ...))`), proxy contracts, or the
+    * longLivingKey re-instantiation path in PaideiaContract.handleEvent - any of which
+    * can have a box file that a config-tree walk would then fail to find a home for on
+    * restore.
     */
   def persistState(dir: File, height: Int): Unit = {
     dir.mkdirs()
@@ -236,6 +251,40 @@ object Paideia {
       val daoObj = new JsonObject()
       daoObj.addProperty("key", daoKey)
       daoObj.addProperty("configDigest", Util.bytes2hex(dao.config._config.digest))
+
+      // The actual live contract instances for this DAO, not just the ones the config
+      // tree happens to reference right now: contract instances also come from direct
+      // construction (e.g. Stake(PaideiaContractSignature(...))) registered through
+      // PaideiaActor.getContractInstance, proxy contracts, and the longLivingKey
+      // re-instantiation in PaideiaContract.handleEvent (which can leave an outdated
+      // instance alongside its replacement). Recording every one of them - rather than
+      // re-walking the config tree on restore - is what lets restoreState recreate
+      // exactly the instances that had box files written for them.
+      val contractsArr = new JsonArray()
+      _actorList.values
+        .flatMap(_.contractInstances.values)
+        .filter(_.contractSignature.daoKey == daoKey)
+        .toList
+        .sortBy(instance =>
+          (
+            instance.contractSignature.className,
+            Util.bytes2hex(instance.contractSignature.contractHash.toArray)
+          )
+        )
+        .foreach { instance =>
+          val sig         = instance.contractSignature
+          val contractObj = new JsonObject()
+          contractObj.addProperty("className", sig.className)
+          contractObj.addProperty("version", sig.version)
+          contractObj.addProperty("networkType", sig.networkType.toString())
+          contractObj.addProperty(
+            "contractHash",
+            Util.bytes2hex(sig.contractHash.toArray)
+          )
+          contractObj.addProperty("daoKey", sig.daoKey)
+          contractsArr.add(contractObj)
+        }
+      daoObj.add("contracts", contractsArr)
 
       val proposalsArr = new JsonArray()
       dao.proposals.toList.sortBy(_._1).foreach { case (index, proposal) =>
@@ -338,15 +387,17 @@ object Paideia {
   /** Rebuilds every in-process registry (DAOs/configs, contract instances, proposals,
     * staking state) and every contract instance's confirmed unspent box set from a
     * checkpoint written by persistState, verifying every digest against what's actually
-    * reopened from the persisted AVL+ stores on disk along the way. Must be called on a
-    * fresh process state (e.g. right after Paideia.clearRegistries) before any
-    * mutation - it unconditionally addDAO/instantiates/registers as it goes.
+    * reopened from the persisted AVL+ stores on disk along the way, and every recorded
+    * contract instance by recompiling it from its signature and comparing the resulting
+    * ErgoTree hash against what was recorded. Must be called on a fresh process state
+    * (e.g. right after Paideia.clearRegistries) before any mutation - it unconditionally
+    * addDAO/instantiates/registers as it goes.
     *
     * Returns None (and leaves every registry empty, and lastRestoreError set to the
-    * reason) if dir/state.json doesn't exist, or if any digest fails to verify against
-    * what was actually reopened from disk - a stale or partial checkpoint degrades to a
-    * full replay instead of silently resurrecting the wrong state. Returns
-    * Some(height) on success.
+    * reason) if dir/state.json doesn't exist, or if any digest or contract hash fails to
+    * verify against what was actually reopened/recompiled - a stale or partial
+    * checkpoint degrades to a full replay instead of silently resurrecting the wrong
+    * state. Returns Some(height) on success.
     */
   def restoreState(dir: File): Option[Int] = {
     lastRestoreError = None
@@ -377,16 +428,47 @@ object Paideia {
         val dao = DAO(daoKey, config)
         addDAO(dao)
 
-        config._config
-          .initiate()
-          .toMap
-          .values
-          .filter(v => DAOConfigValueDeserializer.getType(v) == "PaideiaContractSignature")
-          .foreach { v =>
-            val sig = DAOConfigValueDeserializer[PaideiaContractSignature](v)
-              .withDaoKey(daoKey)
-            instantiateContractInstance(sig)
-          }
+        // Recreate exactly the contract instances persistState recorded as actually
+        // live for this DAO (see the comment there) - not every PaideiaContractSignature
+        // reachable by walking the config tree, which misses instances created by direct
+        // construction, proxy contracts, or the longLivingKey re-instantiation path.
+        // instantiateContractInstance(sig) resolves the actor for sig.className (via
+        // instantiateActor) and then calls that actor's apply(contractSignature), which -
+        // for every PaideiaContract subtype in this codebase - is
+        // getContractInstance[T](sig, new T(sig)): it builds a fresh instance from just
+        // className/version/networkType/daoKey (recompiling its ErgoTree, using
+        // sig.daoKey to pull whatever config values the contract's parameters need) and
+        // recomputes contractSignature.contractHash from that compiled tree - sig's own
+        // contractHash field is never consulted for construction. So reproducing the
+        // recorded contractHash here is exactly the same compile-and-verify performed
+        // for a fresh instance at runtime; a mismatch means the running system's contract
+        // code changed underneath the checkpoint.
+        daoObj.get("contracts").getAsJsonArray.asScala.foreach { contractElem =>
+          val contractObj = contractElem.getAsJsonObject
+          val className   = contractObj.get("className").getAsString
+          val version     = contractObj.get("version").getAsString
+          val networkType =
+            NetworkType.valueOf(contractObj.get("networkType").getAsString)
+          val expectedHashHex = contractObj.get("contractHash").getAsString
+          val sigDaoKey       = contractObj.get("daoKey").getAsString
+
+          val sig = PaideiaContractSignature(
+            className,
+            version,
+            networkType,
+            List(0.toByte),
+            sigDaoKey
+          )
+          val instance = instantiateContractInstance(sig)
+          val actualHashHex =
+            Util.bytes2hex(instance.contractSignature.contractHash.toArray)
+          if (!actualHashHex.equalsIgnoreCase(expectedHashHex))
+            throw new PaideiaRestoreException(
+              "restoreState: contract hash mismatch for DAO " + daoKey +
+                " contract " + className + " (recorded " + expectedHashHex +
+                ", recompiled " + actualHashHex + ")"
+            )
+        }
 
         daoObj.get("proposals").getAsJsonArray.asScala.foreach { proposalElem =>
           val proposalObj           = proposalElem.getAsJsonObject

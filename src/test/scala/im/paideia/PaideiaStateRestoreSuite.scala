@@ -82,6 +82,21 @@ class PaideiaStateRestoreSuite extends PaideiaTestSuite {
           val unstakeContract = Unstake(PaideiaContractSignature(daoKey = dao.key))
           unstakeContract.newBox(unstakeContract.box(ctx).inputBox(), false)
 
+          // A second Stake instance (version "1.0.0" rather than the "latest" version
+          // wired into dao's config) built by direct construction through
+          // PaideiaActor.getContractInstance, exactly like real code does (e.g.
+          // PaideiaContract.handleEvent's longLivingKey re-instantiation, or a proxy
+          // contract instantiated ad hoc). Nothing in the DAO config tree ever points at
+          // it, so the old config-tree-walk restore couldn't have recreated it even
+          // though persistState still wrote it a box file - this reproduces the real-run
+          // failure ("no contract instance found for box file ...").
+          val outdatedStakeContract =
+            Stake(PaideiaContractSignature(version = "1.0.0", daoKey = dao.key))
+          outdatedStakeContract.newBox(
+            outdatedStakeContract.box(ctx, 3000000L).inputBox(),
+            false
+          )
+
           val proposal = dao.newProposal(0, "restore-test-proposal")
 
           Paideia.commit()
@@ -95,8 +110,14 @@ class PaideiaStateRestoreSuite extends PaideiaTestSuite {
           val recordedConfigDigest = Util.bytes2hex(dao.config._config.digest)
           val recordedInstanceCount =
             Paideia._actorList.values.flatMap(_.contractInstances.values).size
+          val recordedStakeHashHex =
+            Util.bytes2hex(stakeContract.contractSignature.contractHash.toArray)
           val recordedStakeUtxos      = stakeContract.utxos.toSet
           val recordedUnstakeUtxos = unstakeContract.utxos.toSet
+          val recordedOutdatedStakeHashHex = Util.bytes2hex(
+            outdatedStakeContract.contractSignature.contractHash.toArray
+          )
+          val recordedOutdatedStakeUtxos = outdatedStakeContract.utxos.toSet
           val recordedSnapshotTimes   = totalStakingState.snapshots.keySet.toSet
           val recordedCurrentStakeDigest =
             Util.bytes2hex(totalStakingState.currentStakingState.stakeRecords.digest)
@@ -142,12 +163,31 @@ class PaideiaStateRestoreSuite extends PaideiaTestSuite {
             Paideia._actorList.values.flatMap(_.contractInstances.values).toList
           assert(restoredInstances.size == recordedInstanceCount)
 
-          val restoredStakeInstance =
-            restoredInstances.find(_.isInstanceOf[Stake]).get
+          // Two Stake instances are live now (the "latest"-version one wired into the
+          // config, and the "1.0.0" one built by direct construction), so instances must
+          // be told apart by contractHash rather than just isInstanceOf[Stake].
+          val restoredStakeInstance = restoredInstances
+            .find(i =>
+              Util.bytes2hex(i.contractSignature.contractHash.toArray) ==
+                recordedStakeHashHex
+            )
+            .get
           assert(restoredStakeInstance.utxos.toSet == recordedStakeUtxos)
           val restoredUnstakeInstance =
             restoredInstances.find(_.isInstanceOf[Unstake]).get
           assert(restoredUnstakeInstance.utxos.toSet == recordedUnstakeUtxos)
+
+          // The instance the config tree never referenced must come back too, with its
+          // box - proving restoreState no longer relies solely on walking the config
+          // tree to know which contract instances to recreate.
+          val restoredOutdatedStakeInstance = restoredInstances
+            .find(i =>
+              Util.bytes2hex(i.contractSignature.contractHash.toArray) ==
+                recordedOutdatedStakeHashHex
+            )
+            .get
+          assert(restoredOutdatedStakeInstance.isInstanceOf[Stake])
+          assert(restoredOutdatedStakeInstance.utxos.toSet == recordedOutdatedStakeUtxos)
 
           val restoredTss = TotalStakingState(dao.key)
           assert(restoredTss.snapshots.keySet.toSet == recordedSnapshotTimes)
@@ -176,6 +216,22 @@ class PaideiaStateRestoreSuite extends PaideiaTestSuite {
 
           val failedRestore = Paideia.restoreState(tmpDir)
           assert(failedRestore.isEmpty)
+          assert(Paideia.lastRestoreError.isDefined)
+          assert(Paideia._daoMap.isEmpty)
+          assert(Paideia._actorList.values.flatMap(_.contractInstances.values).isEmpty)
+          assert(TotalStakingState._stakingStates.isEmpty)
+
+          // Negative: a tampered recorded contractHash must also be rejected outright -
+          // restoreState recompiles each recorded signature and must not silently accept
+          // an instance whose recompiled hash doesn't match what was checkpointed.
+          Paideia.clearRegistries(closeStores = true)
+
+          assert(original.contains(recordedStakeHashHex))
+          val tamperedHash = original.replace(recordedStakeHashHex, "00" * 32)
+          Files.write(stateFile.toPath, tamperedHash.getBytes("UTF-8"))
+
+          val failedHashRestore = Paideia.restoreState(tmpDir)
+          assert(failedHashRestore.isEmpty)
           assert(Paideia.lastRestoreError.isDefined)
           assert(Paideia._daoMap.isEmpty)
           assert(Paideia._actorList.values.flatMap(_.contractInstances.values).isEmpty)
