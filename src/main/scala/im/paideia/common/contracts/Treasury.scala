@@ -11,8 +11,6 @@ import org.ergoplatform.appkit.InputBox
 import im.paideia.util.Env
 import org.ergoplatform.sdk.ErgoId
 import org.ergoplatform.wallet.boxes.DefaultBoxSelector
-import org.ergoplatform.appkit.InputBoxesSelectionException.NotEnoughTokensException
-import org.ergoplatform.appkit.InputBoxesSelectionException.NotEnoughErgsException
 import scala.collection.JavaConverters._
 import sigma.ast.Constant
 import sigma.ast.SType
@@ -313,14 +311,16 @@ class Treasury(contractSignature: PaideiaContractSignature)
       Some(result.toArray)
     } else {
       if (nanoErgFound < nanoErgNeeded)
-        throw new NotEnoughErgsException(
-          f"Not enough erg in treasury to cover ${nanoErgNeeded} nanoerg",
+        throw new TreasuryShortfallErgsException(
+          contractSignature.daoKey,
+          nanoErgNeeded,
           nanoErgFound
         )
       else if (result.length > 0)
-        throw new NotEnoughTokensException(
-          f"Not enough tokens founds to cover ${tokensNeeded}",
-          tokensFound.asScala.map((t: (String, Long)) => (t._1, long2Long(t._2))).asJava
+        throw new TreasuryShortfallTokensException(
+          contractSignature.daoKey,
+          tokensNeeded.map((t: ErgoToken) => (t.getId.toString(), t.getValue)).toMap,
+          tokensFound.asScala.map((t: (String, Long)) => (t._1, t._2)).toMap
         )
       None
     }
