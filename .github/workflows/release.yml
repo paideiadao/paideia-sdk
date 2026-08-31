@@ -5,17 +5,22 @@ on:
     tags: ["*"]
 jobs:
   publish:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4.1.7
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: olafurpg/setup-scala@v14
+      - uses: actions/setup-java@v4
         with:
-          java-version: openjdk@1.11
+          distribution: temurin
+          java-version: 11
+          cache: sbt
+      - uses: sbt/setup-sbt@v1
       - run: sbt ci-release
         env:
           PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
           PGP_SECRET: ${{ secrets.PGP_SECRET }}
+          # Central Portal token (user + password of a portal-generated token),
+          # NOT the old OSSRH credentials — see PR description.
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
