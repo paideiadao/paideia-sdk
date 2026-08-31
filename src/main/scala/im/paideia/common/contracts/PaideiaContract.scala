@@ -207,22 +207,26 @@ class PaideiaContract(
   lazy val contractTemplate: ContractTemplate = {
     if (_contractSignature.version == "latest") {
       val templatePath = Paths.get(ergoScriptURL.getPath().replace(".es", ".json"))
-      if (Files.exists(templatePath)) {
-        val lastCompile = Files.getLastModifiedTime(templatePath)
-        if (
-          _contractSignature.version == "latest" && lastCompile.compareTo(
-            ergoScript._2
-          ) < 0
-        ) {
+      // The compiled template is a file shared by every instance of this contract class
+      // in the JVM (and, with parallel test suites, by every session at once). The
+      // stale-check + recompile + read below must therefore be serialised per template
+      // path: without it, one thread's recompile (which rewrites the .json) races another
+      // thread's read of the same file and the reader sees a truncated/partial JSON. On a
+      // fresh git checkout every .json can look stale (git doesn't preserve mtimes), so
+      // CI hits this on the first test run while a warmed-up local checkout never does.
+      PaideiaContract.templateLock(templatePath).synchronized {
+        if (Files.exists(templatePath)) {
+          val lastCompile = Files.getLastModifiedTime(templatePath)
+          if (lastCompile.compareTo(ergoScript._2) < 0) {
+            compileContract(templatePath)
+          }
+          val templateString = Files.readString(templatePath)
+          val templateJson   = parse(templateString).right.get
+          val res            = ContractTemplate.jsonEncoder.decoder(templateJson.hcursor)
+          res.right.get
+        } else {
           compileContract(templatePath)
         }
-        val templateString = Files.readString(templatePath)
-        val templateJson   = parse(templateString).right.get
-        val res            = ContractTemplate.jsonEncoder.decoder(templateJson.hcursor)
-        res.right.get
-      } else {
-        Files.createFile(templatePath)
-        compileContract(templatePath)
       }
     } else {
       val templateString =
@@ -237,10 +241,15 @@ class PaideiaContract(
     val template = SigmaTemplateCompiler(
       _contractSignature.networkType.networkPrefix
     ).compile(ergoScript._1)
-    Files.writeString(
+    // Write atomically (temp file + move) so a concurrent reader never observes a
+    // half-written template; see contractTemplate.
+    val tmpPath = templatePath.resolveSibling(templatePath.getFileName.toString + ".tmp")
+    Files.writeString(tmpPath, template.toJsonString)
+    Files.move(
+      tmpPath,
       templatePath,
-      template.toJsonString,
-      StandardOpenOption.TRUNCATE_EXISTING
+      java.nio.file.StandardCopyOption.ATOMIC_MOVE,
+      java.nio.file.StandardCopyOption.REPLACE_EXISTING
     )
     template
   }
@@ -474,4 +483,16 @@ class PaideiaContract(
       .sortBy(-1 * _.getCreationHeight())
   }
 
+}
+
+object PaideiaContract {
+
+  private val templateLocks =
+    new java.util.concurrent.ConcurrentHashMap[Path, AnyRef]()
+
+  /** One JVM-wide monitor per compiled-template path; see contractTemplate for why the
+    * stale-check/recompile/read of a template file has to be serialised across threads.
+    */
+  def templateLock(templatePath: Path): AnyRef =
+    templateLocks.computeIfAbsent(templatePath.toAbsolutePath.normalize, _ => new Object)
 }

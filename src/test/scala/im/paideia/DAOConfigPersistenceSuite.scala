@@ -3,6 +3,7 @@ package im.paideia
 import org.scalatest.funsuite.AnyFunSuite
 import im.paideia.util.Util
 import im.paideia.util.ConfKeys
+import im.paideia.common.PaideiaSessionFixture
 
 /** Covers DAOConfig.keys being restored from the persisted tree (deliverable 3):
   * before this fix, keys was an in-memory-only Set[String] populated solely by set(),
@@ -10,7 +11,7 @@ import im.paideia.util.ConfKeys
   * and always insert, which fails (or corrupts the tree) once that key already exists
   * on disk.
   */
-class DAOConfigPersistenceSuite extends AnyFunSuite {
+class DAOConfigPersistenceSuite extends AnyFunSuite with PaideiaSessionFixture {
 
   test(
     "keys is populated from the persisted tree on construction, and set() on a " +

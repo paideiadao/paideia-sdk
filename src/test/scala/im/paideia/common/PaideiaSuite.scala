@@ -11,7 +11,7 @@ import im.paideia.util.ConfKeys
 import im.paideia.util.Util
 import org.ergoplatform.sdk.ErgoId
 
-class PaideiaSuite extends AnyFunSuite {
+class PaideiaSuite extends AnyFunSuite with PaideiaSessionFixture {
   test("Test PaideiaActor instantiation") {
     val daoKey        = Util.randomKey
     val paideiaConfig = DAOConfig(daoKey)

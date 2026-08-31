@@ -35,7 +35,10 @@ import im.paideia.staking.contracts.Unstake
 import im.paideia.governance.contracts.CreateDAO
 import sigma.ast.ErgoTree
 
-class PaideiaTestSuite extends AnyFunSuite with HttpClientTesting {}
+class PaideiaTestSuite
+  extends AnyFunSuite
+  with HttpClientTesting
+  with PaideiaSessionFixture {}
 
 object PaideiaTestSuite {
   var initializedPaideia: Boolean = false

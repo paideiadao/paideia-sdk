@@ -15,7 +15,6 @@ import work.lithos.plasma.ByteConversion
 import shapeless.Lazy
 import scala.reflect.ClassTag
 import scala.collection.mutable
-import java.io.File
 import scorex.db.LDBVersionedStore
 import scorex.crypto.authds.avltree.batch.VersionedLDBAVLStorage
 import scorex.crypto.hash.Digest32
@@ -241,7 +240,7 @@ case class DAOConfig(
 object DAOConfig {
 
   def apply(daoKey: String): DAOConfig = {
-    val folder = new File("./daoconfigs/" ++ daoKey)
+    val folder = Paideia.current.daoConfigDir(daoKey)
     folder.mkdirs()
     val ldbStore = new LDBVersionedStore(folder, 10)
     val avlStorage = new VersionedLDBAVLStorage(ldbStore)

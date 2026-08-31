@@ -70,4 +70,4 @@ resolvers += "SCIJava" at "https://maven.scijava.org/content/repositories/public
 
 testOptions in Test += Tests.Argument("-oDF")
 
-Test / parallelExecution := false
+Test / parallelExecution := true

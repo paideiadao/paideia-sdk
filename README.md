@@ -128,3 +128,46 @@ Some are specific to the Paideia DAO itself and will not be relevant to other DA
 | im.paideia.contracts.protodaoproxy | PaideiaContractSignature | x | The contract the user sends the initial DAO configuration to | | | |
 | im.paideia.contracts.mint | PaideiaContractSignature | x | The Mint contract holds tokens minted during the DAO creation process | | | |
 | im.paideia.contracts.createdao | PaideiaContractSignature | x | This is a companion contract to the proto dao contract | | | |
+
+## Sessions
+
+Every piece of the SDK's runtime state - the DAO/proposal/contract-instance registries,
+per-DAO staking state, dynamic config key names, the live AVL+ store handles, and the
+network/token/fee configuration - lives on a `PaideiaSession` rather than in
+process-global singletons. This is what lets two protocol instances run side by side in
+one JVM (e.g. a CLI managing multiple DAOs, or the test suite running suites in
+parallel) without one instance's state leaking into, or clobbering, another's.
+
+`Paideia.current` resolves to whichever session is "current" for the calling thread; all
+of `Paideia`'s other members (`addDAO`, `getConfig`, `commit`, `persistState`,
+`restoreState`, ...), and the `Env`/`TotalStakingState`/`DAOConfigKey`/`MempoolPlasmaMap`
+facades used throughout the codebase, simply delegate to `Paideia.current`. Application
+code that never explicitly creates a session transparently uses `Paideia.default`, a
+single session lazily created on first use (equivalent to how the SDK behaved before
+sessions existed).
+
+To run code against a specific session, bind it for the duration of a block:
+
+```scala
+val session = PaideiaSession(env = PaideiaEnv.load(), storeRoot = new File("/var/paideia/instance-a"))
+Paideia.withSession(session) {
+  Paideia.initialize
+  // every Paideia/Env/TotalStakingState/DAOConfigKey/MempoolPlasmaMap call in here,
+  // and in anything it calls, resolves against `session`
+}
+```
+
+`withSession` calls nest correctly (the previous session is restored when the block
+exits, including on an exception), and multiple threads can each have their own current
+session bound at once. `Paideia.setDefault(session)` replaces the fallback session used
+when nothing is explicitly bound - handy for a long-lived process (or a test fixture)
+that wants a fresh default without relying on `withSession` scoping.
+
+A session's `storeRoot` (default: the current working directory, matching the SDK's
+pre-session on-disk layout) is where its `DAOConfig`/`Proposal`/`StakingState` stores are
+rooted: `storeRoot/daoconfigs/<daoKey>`, `storeRoot/proposals/<daoKey>/<index>`, and
+`storeRoot/stakingStates/<daoKey>/<stake|participation>/<current|emissionTime>`. Two
+sessions with different `storeRoot`s never share an on-disk store, even for the same
+`daoKey`. The test suite uses this to give every suite its own temp directory and run
+suites in parallel (`Test / parallelExecution := true`), see
+`PaideiaSessionFixture`/`PaideiaSessionSuite`.

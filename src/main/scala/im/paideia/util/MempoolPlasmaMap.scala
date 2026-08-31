@@ -12,7 +12,6 @@ import work.lithos.plasma.collections.LocalPlasmaMap
 import scorex.crypto.authds.avltree.batch.PersistentBatchAVLProver
 import scala.collection.mutable.LinkedHashMap
 import scala.collection.mutable.Queue
-import scala.collection.JavaConverters._
 import scorex.crypto.hash.Blake2b256
 import work.lithos.plasma.collections.Operations._
 import work.lithos.plasma.collections.ProvenResult
@@ -31,6 +30,7 @@ import sigma.data.AvlTreeData
 import sigma.AvlTree
 import org.ergoplatform.appkit.ErgoValue
 import sigma.Colls
+import im.paideia.Paideia
 
 class MempoolPlasmaMap[K, V](
   store: VersionedAVLStorage[Digest32],
@@ -49,7 +49,7 @@ class MempoolPlasmaMap[K, V](
   override val prover: PersistentBatchAVLProver[Digest32, Blake2b256.type] =
     localMap.prover
 
-  MempoolPlasmaMap.live.add(this)
+  Paideia.current.liveMaps.add(this)
 
   /** Records a mempool fork under its tree digest, evicting the oldest entry (by
     * insertion order) once the map exceeds maxMempoolMaps. Unbounded growth here was a
@@ -434,32 +434,20 @@ object MempoolPlasmaMap {
   private val batchAVLProverTopNode =
     classOf[BatchAVLProver[_, _]].getMethod("topNode")
 
-  /** Registry of every live MempoolPlasmaMap, so all of them can be committed without
-    * every owner (DAOConfig, Proposal, StakingState, ...) having to be hunted down and
-    * threaded through a commit call individually. Backed by a WeakHashMap-based set so
-    * maps that are no longer referenced elsewhere are dropped instead of leaking here.
+  /** Commits every live MempoolPlasmaMap of Paideia.current (see PaideiaSession.liveMaps)
+    * and returns how many were committed. Intended to be called once per confirmed
+    * block, after all of that block's transactions have been handled, so every
+    * confirmed mutation queued during the block gets persisted in one pass. See
+    * Paideia.commit()/PaideiaSession.commit().
     */
-  private val live: java.util.Set[MempoolPlasmaMap[_, _]] =
-    java.util.Collections.newSetFromMap(
-      new java.util.WeakHashMap[MempoolPlasmaMap[_, _], java.lang.Boolean]()
-    )
-
-  /** Commits every live MempoolPlasmaMap and returns how many were committed. Intended
-    * to be called once per confirmed block, after all of that block's transactions have
-    * been handled, so every confirmed mutation queued during the block gets persisted
-    * in one pass. See Paideia.commit().
-    */
-  def commitAll(): Int = {
-    val maps = live.asScala.toList
-    maps.foreach(_.commit())
-    maps.size
-  }
+  def commitAll(): Int = Paideia.current.commit()
 
   /** Closes every live MempoolPlasmaMap's underlying LevelDB handle (see
-    * MempoolPlasmaMap.close()), releasing every LOCK file so the same directories can be
-    * reopened by fresh stores afterwards. See Paideia.clearRegistries.
+    * MempoolPlasmaMap.close()) of Paideia.current, releasing every LOCK file so the
+    * same directories can be reopened by fresh stores afterwards. See
+    * Paideia.clearRegistries/PaideiaSession.close().
     */
-  def closeAll(): Unit = live.asScala.toList.foreach(_.close())
+  def closeAll(): Unit = Paideia.current.close()
 
   def apply[K, V](
     store: VersionedAVLStorage[Digest32],

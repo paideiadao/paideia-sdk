@@ -7,7 +7,6 @@ import im.paideia.staking.StakingTest
 import im.paideia.staking.TotalStakingState
 import im.paideia.staking.contracts.Stake
 import im.paideia.staking.contracts.Unstake
-import im.paideia.util.MempoolPlasmaMap
 import im.paideia.util.Util
 import org.ergoplatform.appkit.BlockchainContext
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
@@ -35,27 +34,15 @@ class PaideiaStateRestoreSuite extends PaideiaTestSuite {
     "persistState + restoreState round-trips registries, digests, boxes, staking " +
       "state and proposals, and is idempotent; a tampered checkpoint is rejected"
   ) {
-    // Best-effort: release whatever earlier suites left open process-wide, and start
-    // every registry empty, before this test builds and measures its own state.
+    // Best-effort: release whatever this suite's own session left open from an
+    // earlier test in this suite, and start every registry empty, before this test
+    // builds and measures its own state. Unlike before PaideiaSession existed, this
+    // suite's session.liveMaps is never shared with any other suite (each has its own
+    // session via PaideiaSessionFixture), so there's no need to scope/restore a
+    // process-wide MempoolPlasmaMap.live registry here any more.
     scala.util.Try(Paideia.clearRegistries(closeStores = true))
 
-    // MempoolPlasmaMap.live is a single process-wide registry shared with every other
-    // suite in this sbt run (see MempoolPlasmaMapPersistenceSuite for the same
-    // technique/rationale). Scope it to this test so Paideia.commit()/
-    // clearRegistries(closeStores = true) only ever sweep maps this test itself
-    // creates, then restore the original registry so nothing else is affected.
-    val liveField =
-      MempoolPlasmaMap.getClass.getDeclaredField(
-        "im$paideia$util$MempoolPlasmaMap$$live"
-      )
-    liveField.setAccessible(true)
-    val originalLive = liveField.get(MempoolPlasmaMap)
-    val scopedLive = java.util.Collections.newSetFromMap(
-      new java.util.WeakHashMap[MempoolPlasmaMap[_, _], java.lang.Boolean]()
-    )
-    liveField.set(MempoolPlasmaMap, scopedLive)
-
-    try {
+    {
       val ergoClient = createMockedErgoClient(MockData(Nil, Nil))
       ergoClient.execute(new java.util.function.Function[BlockchainContext, Unit] {
         override def apply(_ctx: BlockchainContext): Unit = {
@@ -266,8 +253,6 @@ class PaideiaStateRestoreSuite extends PaideiaTestSuite {
           assert(TotalStakingState._stakingStates.isEmpty)
         }
       })
-    } finally {
-      liveField.set(MempoolPlasmaMap, originalLive)
     }
   }
 
