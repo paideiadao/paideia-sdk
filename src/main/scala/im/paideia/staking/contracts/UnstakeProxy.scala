@@ -151,7 +151,7 @@ class UnstakeProxy(contractSignature: PaideiaContractSignature)
   }
 
   override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
-    if (inputBox.getErgoTree().bytesHex != ergoTree.bytesHex) return false
+    if (inputBox.getErgoTree().bytesHex != ergoTreeHex) return false
     try {
       // val b = UnstakeProxyBox.fromInputBox(ctx, inputBox)
       true

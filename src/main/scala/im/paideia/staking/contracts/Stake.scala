@@ -43,7 +43,7 @@ class Stake(contractSignature: PaideiaContractSignature)
   }
 
   override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
-    if (inputBox.getErgoTree().bytesHex != ergoTree.bytesHex) return false
+    if (inputBox.getErgoTree().bytesHex != ergoTreeHex) return false
     try {
       val b = StakeBox.fromInputBox(ctx, inputBox)
       true

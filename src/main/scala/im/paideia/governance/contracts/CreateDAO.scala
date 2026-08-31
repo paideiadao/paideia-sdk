@@ -52,7 +52,7 @@ class CreateDAO(contractSignature: PaideiaContractSignature)
   }
 
   override def validateBox(ctx: BlockchainContextImpl, inputBox: InputBox): Boolean = {
-    if (inputBox.getErgoTree().bytesHex != ergoTree.bytesHex) false
+    if (inputBox.getErgoTree().bytesHex != ergoTreeHex) false
     else true
   }
 
