@@ -101,13 +101,4 @@ class CreateProposal(contractSignature: PaideiaContractSignature)
   }
 }
 
-object CreateProposal extends PaideiaActor {
-  override def apply(
-    configKey: DAOConfigKey,
-    daoKey: String,
-    digest: Option[ADDigest] = None
-  ): CreateProposal =
-    contractFromConfig(configKey, daoKey, digest)
-  override def apply(contractSignature: PaideiaContractSignature): CreateProposal =
-    getContractInstance(contractSignature, new CreateProposal(contractSignature))
-}
+object CreateProposal extends TypedPaideiaActor[CreateProposal](new CreateProposal(_))

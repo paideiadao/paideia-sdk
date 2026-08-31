@@ -3,7 +3,7 @@ package im.paideia.staking.contracts
 import scorex.crypto.authds.ADDigest
 import im.paideia.common.contracts.PaideiaContractSignature
 import im.paideia.common.contracts.PaideiaContract
-import im.paideia.common.contracts.PaideiaActor
+import im.paideia.common.contracts.TypedPaideiaActor
 import scala.collection.mutable.HashMap
 import org.ergoplatform.sdk.ErgoId
 import im.paideia.util.ConfKeys
@@ -61,17 +61,4 @@ class StakeCompound(contractSignature: PaideiaContractSignature)
     )(configDigest)
 }
 
-object StakeCompound extends PaideiaActor {
-  override def apply(
-    configKey: DAOConfigKey,
-    daoKey: String,
-    digest: Option[ADDigest] = None
-  ): StakeCompound =
-    contractFromConfig(configKey, daoKey, digest)
-
-  override def apply(contractSignature: PaideiaContractSignature): StakeCompound =
-    getContractInstance[StakeCompound](
-      contractSignature,
-      new StakeCompound(contractSignature)
-    )
-}
+object StakeCompound extends TypedPaideiaActor[StakeCompound](new StakeCompound(_))

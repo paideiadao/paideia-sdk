@@ -2,7 +2,7 @@ package im.paideia.staking.contracts
 
 import im.paideia.common.contracts.PaideiaContractSignature
 import im.paideia.common.contracts.PaideiaContract
-import im.paideia.common.contracts.PaideiaActor
+import im.paideia.common.contracts.TypedPaideiaActor
 import scala.collection.mutable.HashMap
 import org.ergoplatform.sdk.ErgoId
 import im.paideia.util.ConfKeys
@@ -60,16 +60,4 @@ class Unstake(contractSignature: PaideiaContractSignature)
     )(configDigest)
 }
 
-object Unstake extends PaideiaActor {
-  override def apply(
-    configKey: DAOConfigKey,
-    daoKey: String,
-    digest: Option[ADDigest] = None
-  ): Unstake =
-    contractFromConfig(configKey, daoKey, digest)
-  override def apply(contractSignature: PaideiaContractSignature): Unstake =
-    getContractInstance[Unstake](
-      contractSignature,
-      new Unstake(contractSignature)
-    )
-}
+object Unstake extends TypedPaideiaActor[Unstake](new Unstake(_))

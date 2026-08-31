@@ -329,20 +329,4 @@ class Treasury(contractSignature: PaideiaContractSignature)
 
 /** Companion Treasury object which extends Paideia Actor.
   */
-object Treasury extends PaideiaActor {
-  override def apply(
-    configKey: DAOConfigKey,
-    daoKey: String,
-    digest: Option[ADDigest] = None
-  ): Treasury =
-    contractFromConfig[Treasury](configKey, daoKey, digest)
-
-  /** The apply method creates and returns the Treasury contract's instance.
-    * @param contractSignature
-    *   \- the signature of the Paideia Contract entity
-    * @return
-    *   Treasury class object
-    */
-  override def apply(contractSignature: PaideiaContractSignature): Treasury =
-    getContractInstance[Treasury](contractSignature, new Treasury(contractSignature))
-}
+object Treasury extends TypedPaideiaActor[Treasury](new Treasury(_))

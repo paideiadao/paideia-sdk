@@ -168,17 +168,4 @@ class UnstakeProxy(contractSignature: PaideiaContractSignature)
   }
 }
 
-object UnstakeProxy extends PaideiaActor {
-  override def apply(
-    configKey: DAOConfigKey,
-    daoKey: String,
-    digest: Option[ADDigest] = None
-  ): UnstakeProxy =
-    contractFromConfig(configKey, daoKey, digest)
-
-  override def apply(contractSignature: PaideiaContractSignature): UnstakeProxy =
-    getContractInstance[UnstakeProxy](
-      contractSignature,
-      new UnstakeProxy(contractSignature)
-    )
-}
+object UnstakeProxy extends TypedPaideiaActor[UnstakeProxy](new UnstakeProxy(_))

@@ -315,17 +315,4 @@ class ProtoDAOProxy(contractSignature: PaideiaContractSignature)
   }
 }
 
-object ProtoDAOProxy extends PaideiaActor {
-  override def apply(
-    configKey: DAOConfigKey,
-    daoKey: String,
-    digest: Option[ADDigest] = None
-  ): ProtoDAOProxy =
-    contractFromConfig(configKey, daoKey, digest)
-
-  override def apply(contractSignature: PaideiaContractSignature): ProtoDAOProxy =
-    getContractInstance[ProtoDAOProxy](
-      contractSignature,
-      new ProtoDAOProxy(contractSignature)
-    )
-}
+object ProtoDAOProxy extends TypedPaideiaActor[ProtoDAOProxy](new ProtoDAOProxy(_))

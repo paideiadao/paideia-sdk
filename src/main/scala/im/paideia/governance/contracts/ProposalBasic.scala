@@ -1,7 +1,7 @@
 package im.paideia.governance.contracts
 
 import im.paideia.common.contracts.PaideiaContractSignature
-import im.paideia.common.contracts.PaideiaActor
+import im.paideia.common.contracts.TypedPaideiaActor
 import im.paideia.common.contracts.PaideiaContract
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.governance.boxes.ProposalBasicBox
@@ -307,17 +307,4 @@ class ProposalBasic(contractSignature: PaideiaContractSignature)
 
 }
 
-object ProposalBasic extends PaideiaActor {
-
-  override def apply(
-    configKey: DAOConfigKey,
-    daoKey: String,
-    digest: Option[ADDigest] = None
-  ): ProposalBasic =
-    contractFromConfig(configKey, daoKey, digest)
-  override def apply(contractSignature: PaideiaContractSignature): ProposalBasic =
-    getContractInstance[ProposalBasic](
-      contractSignature,
-      new ProposalBasic(contractSignature)
-    )
-}
+object ProposalBasic extends TypedPaideiaActor[ProposalBasic](new ProposalBasic(_))

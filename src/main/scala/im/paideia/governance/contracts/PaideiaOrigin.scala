@@ -86,16 +86,4 @@ class PaideiaOrigin(contractSignature: PaideiaContractSignature)
   }
 }
 
-object PaideiaOrigin extends PaideiaActor {
-  override def apply(
-    configKey: DAOConfigKey,
-    daoKey: String,
-    digest: Option[ADDigest] = None
-  ): PaideiaOrigin =
-    contractFromConfig(configKey, daoKey, digest)
-  override def apply(contractSignature: PaideiaContractSignature): PaideiaOrigin =
-    getContractInstance[PaideiaOrigin](
-      contractSignature,
-      new PaideiaOrigin(contractSignature)
-    )
-}
+object PaideiaOrigin extends TypedPaideiaActor[PaideiaOrigin](new PaideiaOrigin(_))

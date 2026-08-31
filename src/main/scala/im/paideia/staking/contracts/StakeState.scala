@@ -434,16 +434,4 @@ class StakeState(contractSignature: PaideiaContractSignature)
   }
 }
 
-object StakeState extends PaideiaActor {
-  override def apply(
-    configKey: DAOConfigKey,
-    daoKey: String,
-    digest: Option[ADDigest] = None
-  ): StakeState =
-    contractFromConfig(configKey, daoKey, digest)
-  override def apply(contractSignature: PaideiaContractSignature): StakeState =
-    getContractInstance[StakeState](
-      contractSignature,
-      new StakeState(contractSignature)
-    )
-}
+object StakeState extends TypedPaideiaActor[StakeState](new StakeState(_))

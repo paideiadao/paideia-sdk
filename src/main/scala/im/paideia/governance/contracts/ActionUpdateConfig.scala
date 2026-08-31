@@ -2,7 +2,7 @@ package im.paideia.governance.contracts
 
 import im.paideia.common.contracts.PaideiaContractSignature
 import im.paideia.common.contracts.PaideiaContract
-import im.paideia.common.contracts.PaideiaActor
+import im.paideia.common.contracts.TypedPaideiaActor
 import im.paideia.governance.boxes.ActionUpdateConfigBox
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import im.paideia.DAOConfigKey
@@ -179,16 +179,5 @@ class ActionUpdateConfig(contractSignature: PaideiaContractSignature)
   }
 }
 
-object ActionUpdateConfig extends PaideiaActor {
-  override def apply(
-    configKey: DAOConfigKey,
-    daoKey: String,
-    digest: Option[ADDigest] = None
-  ): ActionUpdateConfig =
-    contractFromConfig[ActionUpdateConfig](configKey, daoKey, digest)
-  override def apply(contractSignature: PaideiaContractSignature): ActionUpdateConfig =
-    getContractInstance[ActionUpdateConfig](
-      contractSignature,
-      new ActionUpdateConfig(contractSignature)
-    )
-}
+object ActionUpdateConfig
+  extends TypedPaideiaActor[ActionUpdateConfig](new ActionUpdateConfig(_))

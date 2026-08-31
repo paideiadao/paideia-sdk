@@ -130,3 +130,18 @@ trait PaideiaActor {
       }
     }
 }
+
+/** Boilerplate companion for the standard contract shape: apply-from-config delegates to
+  * contractFromConfig, apply-from-signature to getContractInstance with a fresh T.
+  */
+abstract class TypedPaideiaActor[T <: PaideiaContract](make: PaideiaContractSignature => T)
+  extends PaideiaActor {
+  override def apply(
+    configKey: DAOConfigKey,
+    daoKey: String,
+    digest: Option[ADDigest] = None
+  ): T =
+    contractFromConfig[T](configKey, daoKey, digest)
+  override def apply(contractSignature: PaideiaContractSignature): T =
+    getContractInstance[T](contractSignature, make(contractSignature))
+}

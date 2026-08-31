@@ -1,6 +1,6 @@
 package im.paideia.staking.contracts
 
-import im.paideia.common.contracts.PaideiaActor
+import im.paideia.common.contracts.TypedPaideiaActor
 import im.paideia.common.contracts.PaideiaContractSignature
 import im.paideia.common.contracts.PaideiaContract
 import im.paideia.staking.boxes.SplitProfitBox
@@ -113,17 +113,4 @@ class SplitProfit(contractSig: PaideiaContractSignature)
   }
 }
 
-object SplitProfit extends PaideiaActor {
-  override def apply(
-    configKey: DAOConfigKey,
-    daoKey: String,
-    digest: Option[ADDigest] = None
-  ): SplitProfit =
-    contractFromConfig(configKey, daoKey, digest)
-
-  override def apply(contractSignature: PaideiaContractSignature): SplitProfit =
-    getContractInstance[SplitProfit](
-      contractSignature,
-      new SplitProfit(contractSignature)
-    )
-}
+object SplitProfit extends TypedPaideiaActor[SplitProfit](new SplitProfit(_))

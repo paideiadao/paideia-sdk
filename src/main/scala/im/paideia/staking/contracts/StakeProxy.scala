@@ -167,14 +167,4 @@ class StakeProxy(contractSignature: PaideiaContractSignature)
   }
 }
 
-object StakeProxy extends PaideiaActor {
-  override def apply(
-    configKey: DAOConfigKey,
-    daoKey: String,
-    digest: Option[ADDigest] = None
-  ): StakeProxy =
-    contractFromConfig(configKey, daoKey, digest)
-
-  override def apply(contractSignature: PaideiaContractSignature): StakeProxy =
-    getContractInstance[StakeProxy](contractSignature, new StakeProxy(contractSignature))
-}
+object StakeProxy extends TypedPaideiaActor[StakeProxy](new StakeProxy(_))
