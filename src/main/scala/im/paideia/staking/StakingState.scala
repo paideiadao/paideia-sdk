@@ -16,7 +16,6 @@ import scorex.crypto.authds.avltree.batch.VersionedLDBAVLStorage
 import scorex.db.LDBVersionedStore
 import java.io.File
 import scorex.crypto.hash.Digest32
-import org.apache.commons.io.FileUtils
 import im.paideia.util.MempoolPlasmaMap
 import scorex.crypto.authds.ADDigest
 import im.paideia.util.ProvenResultWithDigest
@@ -135,25 +134,41 @@ class StakingState(
     daoKey: String,
     newEmissionTime: Long
   ): StakingState = {
-    val newStorages = List("stake", "participation").map(f => {
-      val folder = new File(
-        "./stakingStates/" ++ daoKey ++ "/" ++ f ++ "/" ++ (if (current) "current"
-                                                            else emissionTime.toString)
-      )
-      val newFolder = new File(
+    // A snapshot must reproduce the exact on-chain digest (TotalStakingState looks
+    // snapshots up by digest), and AVL+ tree shape depends on operation history, so it
+    // can't be rebuilt by re-inserting records. FileUtils.copyDirectory used to copy the
+    // LevelDB directory wholesale, which only worked because nothing else here uses
+    // LevelDB version history/rollback; cloneInto instead builds a structure-preserving
+    // copy of the current in-memory tree and persists it into a fresh store, so the new
+    // store starts from a clean, minimal state at exactly this digest.
+    val newFolders = List("stake", "participation").map(f =>
+      new File(
         "./stakingStates/" ++ daoKey ++ "/" ++ f ++ "/" ++ newEmissionTime.toString
       )
-      newFolder.mkdirs()
-      FileUtils.copyDirectory(folder, newFolder)
+    )
+    newFolders.foreach(_.mkdirs())
+    val newStorages = newFolders.map(newFolder => {
       val ldbStore = new LDBVersionedStore(newFolder, 10)
       new VersionedLDBAVLStorage(ldbStore)
     })
 
+    // cloneInto only carries the confirmed tree (empty opQueue/mempoolMaps by design -
+    // see MempoolPlasmaMap.cloneInto), but callers may be mid-way through an unconfirmed
+    // off-chain tx chain when a snapshot is taken (StakeState.compound/emit build these
+    // via Left(digest) operations before cloning), and later code looks snapshots up by
+    // exactly those in-flight digests (TotalStakingState.firstMatchingSnapshot). Those
+    // mempool forks are never persisted anyway, so they're carried over in-memory here,
+    // matching what the old FileUtils.copyDirectory + copy(newStore) path preserved.
+    val newStakeRecords = stakeRecords.cloneInto(newStorages(0))
+    newStakeRecords.adoptMempoolMaps(stakeRecords.mempoolMapEntries)
+    val newParticipationRecords = participationRecords.cloneInto(newStorages(1))
+    newParticipationRecords.adoptMempoolMaps(participationRecords.mempoolMapEntries)
+
     new StakingState(
       newEmissionTime,
       false,
-      stakeRecords.copy(newStorages(0)),
-      participationRecords.copy(newStorages(1))
+      newStakeRecords,
+      newParticipationRecords
     )
 
   }
