@@ -74,11 +74,16 @@ class PaideiaSession(val env: PaideiaEnv, val storeRoot: File) {
   val stakingStates: HashMap[String, TotalStakingState] = HashMap[String, TotalStakingState]()
 
   /** Hashed key -> original key name, for keys constructed from a name in this session.
-    * See DAOConfigKey.staticNames for the process-global counterpart that covers the
-    * always-registered ConfKeys names regardless of which session is current when
-    * ConfKeys is class-initialized.
+    * Seeded below from DAOConfigKey.staticNames (the process-global registry of the
+    * always-registered ConfKeys names, populated at ConfKeys' class-init time
+    * regardless of which session happened to be current then) so that callers reading
+    * this map directly (paideia-state's getDAOConfig endpoint, persistState, ...) see
+    * the standard names too, not just dynamic ones registered in this session. A
+    * session created BEFORE ConfKeys was ever touched won't have them here yet, but
+    * still resolves them correctly via DAOConfigKey's own staticNames fallback.
     */
   val knownKeys: HashMap[List[Byte], Option[String]] = HashMap[List[Byte], Option[String]]()
+  knownKeys ++= DAOConfigKey.staticNames.map { case (k, v) => k -> Some(v) }
 
   /** Registry of every live MempoolPlasmaMap belonging to this session, so all of them
     * can be committed/closed without every owner (DAOConfig, Proposal, StakingState,
@@ -107,6 +112,18 @@ class PaideiaSession(val env: PaideiaEnv, val storeRoot: File) {
 
   private val gson = new Gson()
 
+  /** Runs `body` with `this` bound as Paideia.current, so companion objects that resolve
+    * a session only through that facade (DAOConfig/Proposal/StakingState's store paths,
+    * PaideiaActor.contractInstances, DAOConfigKey.knownKeys, MempoolPlasmaMap.liveMaps,
+    * ...) actually operate on THIS session rather than whatever happens to be current.
+    * Every public entry point below that can construct such an object, or otherwise
+    * reach a Paideia.current-resolving facade, is wrapped in this - so e.g.
+    * `sessionB.clear` or `sessionB.restoreState(dir)` is correct even while a different
+    * session is current. Cheap: DynamicVariable.withValue is just a thread-local
+    * set/restore.
+    */
+  private def bound[T](body: => T): T = Paideia.withSession(this)(body)
+
   /** ./daoconfigs/<daoKey> under this session's storeRoot. */
   def daoConfigDir(daoKey: String): File = new File(storeRoot, "daoconfigs/" + daoKey)
 
@@ -123,7 +140,9 @@ class PaideiaSession(val env: PaideiaEnv, val storeRoot: File) {
   /** Closes every live MempoolPlasmaMap's underlying LevelDB handle, releasing every
     * LOCK file so the same directories can be reopened by fresh stores afterwards.
     */
-  def close(): Unit = liveMaps.asScala.toList.foreach(_.close())
+  def close(): Unit = bound {
+    liveMaps.asScala.toList.foreach(_.close())
+  }
 
   /** Commits every live MempoolPlasmaMap (DAOConfig, Proposal vote records,
     * StakingState stake/participation records, ...), draining their queued confirmed
@@ -131,14 +150,14 @@ class PaideiaSession(val env: PaideiaEnv, val storeRoot: File) {
     * Call once per confirmed block, after all of that block's transactions have been
     * handled. Returns the number of maps committed.
     */
-  def commit(): Int = {
+  def commit(): Int = bound {
     val maps = liveMaps.asScala.toList
     maps.foreach(_.commit())
     maps.size
   }
 
-  def clear: Unit = {
-    actorList.values.foreach(_.clear)
+  def clear: Unit = bound {
+    contractInstancesByActor.values.foreach(_.clear())
     daoMap.clear()
     actorList.clear()
     boxFileFingerprints.clear()
@@ -159,9 +178,9 @@ class PaideiaSession(val env: PaideiaEnv, val storeRoot: File) {
     *   afterwards - LevelDB refuses to reopen a directory while another handle still
     *   holds the lock.
     */
-  def clearRegistries(closeStores: Boolean): Unit = {
+  def clearRegistries(closeStores: Boolean): Unit = bound {
     if (closeStores) close()
-    actorList.values.foreach(_.clear)
+    contractInstancesByActor.values.foreach(_.clear())
     daoMap.clear()
     actorList.clear()
     stakingStates.clear()
@@ -171,13 +190,13 @@ class PaideiaSession(val env: PaideiaEnv, val storeRoot: File) {
 
   def getDAO(key: String): DAO = daoMap(key)
 
-  def initialize: Unit = {
+  def initialize: Unit = bound {
     val paideiaConfig = DAOConfig(env.paideiaDaoKey)
 
     addDAO(DAO(env.paideiaDaoKey, paideiaConfig))
   }
 
-  def handleEvent(event: PaideiaEvent): PaideiaEventResponse = {
+  def handleEvent(event: PaideiaEvent): PaideiaEventResponse = bound {
     PaideiaEventResponse.merge(actorList.values.map {
       _.handleEvent(event)
     }.toList)
@@ -186,7 +205,7 @@ class PaideiaSession(val env: PaideiaEnv, val storeRoot: File) {
   def getActor[T <: PaideiaActor](className: String): PaideiaActor =
     actorList(className).asInstanceOf[T]
 
-  def instantiateActor(contractSignature: PaideiaContractSignature) = {
+  def instantiateActor(contractSignature: PaideiaContractSignature) = bound {
     if (!actorList.contains(contractSignature.className)) {
       val m    = ru.runtimeMirror(getClass.getClassLoader)
       val inst = m.reflectModule(m.staticModule(contractSignature.className)).instance
@@ -196,18 +215,18 @@ class PaideiaSession(val env: PaideiaEnv, val storeRoot: File) {
     }
   }
 
-  def instantiateContractInstance(contractSignature: PaideiaContractSignature) = {
+  def instantiateContractInstance(contractSignature: PaideiaContractSignature) = bound {
     instantiateActor(contractSignature)
     actorList(contractSignature.className)(contractSignature)
   }
 
-  def getBox(boxFilter: FilterNode): List[InputBox] = {
+  def getBox(boxFilter: FilterNode): List[InputBox] = bound {
     actorList.values.toList.flatMap(_.getBox(boxFilter))
   }
 
   def getConfig(daoKey: String): DAOConfig = daoMap(daoKey).config
 
-  def getProposalContract(contractHash: List[Byte]): ProposalContract = {
+  def getProposalContract(contractHash: List[Byte]): ProposalContract = bound {
     actorList.values
       .find(_.getProposalContract(contractHash).isSuccess)
       .get
@@ -215,7 +234,7 @@ class PaideiaSession(val env: PaideiaEnv, val storeRoot: File) {
       .get
   }
 
-  def getBoxById(boxId: String): Option[InputBox] = {
+  def getBoxById(boxId: String): Option[InputBox] = bound {
     actorList.values
       .flatMap(_.contractInstances.values)
       .find(_.getBoxes.contains(boxId))
@@ -309,7 +328,7 @@ class PaideiaSession(val env: PaideiaEnv, val storeRoot: File) {
     * PaideiaContract.handleEvent - any of which can have a box file that a
     * config-tree walk would then fail to find a home for on restore.
     */
-  def persistState(dir: File, height: Int): Unit = {
+  def persistState(dir: File, height: Int): Unit = bound {
     dir.mkdirs()
 
     val stateJson = new JsonObject()
@@ -492,7 +511,7 @@ class PaideiaSession(val env: PaideiaEnv, val storeRoot: File) {
     * checkpoint degrades to a full replay instead of silently resurrecting the wrong
     * state. Returns Some(height) on success.
     */
-  def restoreState(dir: File): Option[Int] = {
+  def restoreState(dir: File): Option[Int] = bound {
     lastRestoreError = None
     val stateFile = new File(dir, "state.json")
     if (!stateFile.exists()) return None

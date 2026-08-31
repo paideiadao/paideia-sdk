@@ -91,16 +91,27 @@ class PaideiaSessionSuite extends AnyFunSuite {
 
   test("static ConfKeys names resolve in a freshly created session") {
     // Force ConfKeys' class-init (registers every static name into
-    // DAOConfigKey.staticNames, process-wide) - a no-op if some earlier suite in this
-    // JVM already touched it, which in practice every other suite does.
+    // DAOConfigKey.staticNames, process-wide) BEFORE the session below is created -
+    // a no-op if some earlier suite in this JVM already touched it, which in practice
+    // every other suite does.
     val staticKey = ConfKeys.im_paideia_dao_name
     assert(staticKey.originalKey.contains("im.paideia.dao.name"))
 
     withTempSession { freshSession =>
+      // A session created AFTER ConfKeys was touched is seeded from staticNames at
+      // construction time (see PaideiaSession), so the standard name is visible in the
+      // knownKeys map view too - not just resolvable via DAOConfigKey's own fallback.
+      // This is what paideia-state's getDAOConfig endpoint (which reads
+      // DAOConfigKey.knownKeys directly rather than reconstructing a DAOConfigKey per
+      // entry) relies on.
+      assert(
+        freshSession.knownKeys.get(staticKey.hashedKey.toList).contains(
+          Some("im.paideia.dao.name")
+        )
+      )
+
       Paideia.withSession(freshSession) {
-        // This session's own knownKeys never saw this key - only the process-global
-        // staticNames fallback can resolve it here.
-        assert(!DAOConfigKey.knownKeys.contains(staticKey.hashedKey.toList))
+        assert(DAOConfigKey.knownKeys.contains(staticKey.hashedKey.toList))
         val rebuiltFromRawBytes = new DAOConfigKey(staticKey.hashedKey)
         assert(rebuiltFromRawBytes.originalKey.contains("im.paideia.dao.name"))
       }
@@ -129,6 +140,58 @@ class PaideiaSessionSuite extends AnyFunSuite {
         session.stakingStateDir("some-dao", "stake", "current") ==
           new File(session.storeRoot, "stakingStates/some-dao/stake/current")
       )
+    }
+  }
+
+  test(
+    "clear/clearRegistries/initialize operate on the session they're called on, even " +
+      "while a different session is current and without being bound via withSession"
+  ) {
+    withTempSession { sessionA =>
+      withTempSession { sessionB =>
+        Paideia.withSession(sessionA) {
+          Paideia.addDAO(DAO("dao-a", DAOConfig("dao-a")))
+          assert(sessionA.daoMap.contains("dao-a"))
+          assert(new File(sessionA.storeRoot, "daoconfigs/dao-a").isDirectory)
+
+          // sessionB is never bound via withSession here - sessionA stays current
+          // throughout this whole block.
+          assert(Paideia.current eq sessionA)
+          sessionB.initialize
+          assert(Paideia.current eq sessionA) // restored by initialize's own bound{}
+
+          // sessionB.initialize must have built sessionB's OWN paideiaDaoKey DAO,
+          // under sessionB's OWN storeRoot - not sessionA's (which is what would
+          // happen if initialize resolved DAOConfig's store path via whatever session
+          // happened to be current instead of via sessionB itself).
+          assert(sessionB.daoMap.size == 1)
+          assert(sessionB.daoMap.contains(sessionB.env.paideiaDaoKey))
+          assert(
+            new File(
+              sessionB.storeRoot,
+              "daoconfigs/" + sessionB.env.paideiaDaoKey
+            ).isDirectory
+          )
+          assert(!sessionA.daoMap.contains(sessionB.env.paideiaDaoKey))
+
+          // sessionA is completely unaffected by the sessionB.initialize call above.
+          assert(sessionA.daoMap.keySet == Set("dao-a"))
+          assert(new File(sessionA.storeRoot, "daoconfigs/dao-a").isDirectory)
+
+          // clearRegistries/clear on sessionB, again unbound, likewise only ever touch
+          // sessionB's own registries/on-disk dirs.
+          sessionB.clearRegistries(closeStores = false)
+          assert(sessionB.daoMap.isEmpty)
+          assert(sessionA.daoMap.keySet == Set("dao-a"))
+
+          sessionB.initialize
+          sessionB.clear
+          assert(sessionB.daoMap.isEmpty)
+          assert(!new File(sessionB.storeRoot, "daoconfigs").exists())
+          // sessionA's on-disk daoconfigs dir must survive sessionB.clear untouched.
+          assert(new File(sessionA.storeRoot, "daoconfigs/dao-a").isDirectory)
+        }
+      }
     }
   }
 
