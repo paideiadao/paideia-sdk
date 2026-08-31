@@ -9,7 +9,7 @@ import im.paideia.DAOConfigValueDeserializer
 import im.paideia.common.contracts.PaideiaContractSignature
 import org.ergoplatform.appkit.NetworkType
 
-class DAOConfigValueSuite extends AnyFunSuite {
+class DAOConfigValueSuite extends AnyFunSuite with PaideiaSessionFixture {
   test("Byte -> Bytes -> Byte") {
     val b: Byte                 = 10
     val serialized: Array[Byte] = DAOConfigValueSerializer(b)

@@ -9,12 +9,14 @@ import work.lithos.plasma.PlasmaParameters
 import work.lithos.plasma.ByteConversion.convertsString
 import work.lithos.plasma.ByteConversion.convertsLongVal
 import im.paideia.Paideia
+import im.paideia.PaideiaSession
+import im.paideia.common.PaideiaSessionFixture
 
 /** Covers MempoolPlasmaMap.commit(): the opQueue -> localMap drain that actually
   * persists confirmed mutations through the versioned AVL+ prover, which previously
   * was never invoked anywhere (opQueue only ever grew).
   */
-class MempoolPlasmaMapPersistenceSuite extends AnyFunSuite {
+class MempoolPlasmaMapPersistenceSuite extends AnyFunSuite with PaideiaSessionFixture {
 
   // PlasmaParameters.default fixes keySize at 32 bytes, and convertsString round-trips
   // through hex, so every key here must be a 64 hex-char (32 byte) string - anything
@@ -127,10 +129,10 @@ class MempoolPlasmaMapPersistenceSuite extends AnyFunSuite {
     }
     assert(ex.getMessage.contains("persisted digest"))
 
-    // Leave the map in a consistent state again: MempoolPlasmaMap.live is a
-    // WeakHashMap, so this instance isn't guaranteed to be GC'd before a later test's
-    // Paideia.commit() call walks every live map - and it shouldn't still be broken
-    // when that happens.
+    // Leave the map in a consistent state again: liveMaps is a WeakHashMap, so this
+    // instance isn't guaranteed to be GC'd before another test in this suite runs (all
+    // share one PaideiaSession - see PaideiaSessionFixture) - it shouldn't still be
+    // broken if something later ends up walking this suite's live maps.
     field.set(map, None)
     map.commit() // no-op: newlyConfirmedMap is None again and opQueue is empty
 
@@ -139,27 +141,13 @@ class MempoolPlasmaMapPersistenceSuite extends AnyFunSuite {
   }
 
   test("Paideia.commit() drains every live MempoolPlasmaMap") {
-    // MempoolPlasmaMap.live is a single process-wide registry shared with every other
-    // suite in this same sbt run. Many of them build DAOConfig instances against the
-    // fixed Env.paideiaDaoKey path and never close their underlying store, so those
-    // stay registered (WeakHashMap only drops entries once actually GC'd). Sweeping the
-    // *real* registry here would commit those stale, orphaned handles - writing into
-    // paths a later suite is about to Paideia.clear() and rebuild, corrupting them
-    // (observed: it broke a dozen unrelated suites). Swap in a scoped registry for the
-    // duration of this test so the sweep only ever touches our own maps, then restore
-    // the original so nothing else is affected.
-    val liveField =
-      MempoolPlasmaMap.getClass.getDeclaredField(
-        "im$paideia$util$MempoolPlasmaMap$$live"
-      )
-    liveField.setAccessible(true)
-    val originalLive = liveField.get(MempoolPlasmaMap)
-    val scopedLive = java.util.Collections.newSetFromMap(
-      new java.util.WeakHashMap[MempoolPlasmaMap[_, _], java.lang.Boolean]()
-    )
-    liveField.set(MempoolPlasmaMap, scopedLive)
-
-    try {
+    // PaideiaSessionFixture gives this whole suite one PaideiaSession, shared across
+    // every test in this file - so this suite's session.liveMaps can still carry
+    // earlier tests' (closed, but not necessarily GC'd - it's a WeakHashMap) maps.
+    // Paideia.commit() sweeps every live map of Paideia.current, so bind a throwaway
+    // session just for this test: the cheapest way to get a liveMaps registry that
+    // contains exactly the two maps this test creates.
+    Paideia.withSession(PaideiaSession()) {
       val dir1                = Files.createTempDirectory("mempool-plasma-global-1").toFile
       val dir2                = Files.createTempDirectory("mempool-plasma-global-2").toFile
       val (ldbStore1, store1) = newStore(dir1)
@@ -184,8 +172,6 @@ class MempoolPlasmaMapPersistenceSuite extends AnyFunSuite {
       ldbStore1.close()
       mapB.close()
       ldbStore2.close()
-    } finally {
-      liveField.set(MempoolPlasmaMap, originalLive)
     }
   }
 

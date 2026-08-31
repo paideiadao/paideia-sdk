@@ -8,7 +8,7 @@ import scorex.db.LDBVersionedStore
 import scorex.crypto.authds.avltree.batch.VersionedLDBAVLStorage
 import sigma.data.AvlTreeFlags
 import work.lithos.plasma.PlasmaParameters
-import java.io.File
+import im.paideia.common.PaideiaSessionFixture
 
 /** Covers deliverable 4: StakingState.clone must reproduce the exact source digest via
   * a structure-preserving copy (not FileUtils.copyDirectory, which relied on nothing
@@ -16,7 +16,7 @@ import java.io.File
   * tree shape depends on operation history), and the result must actually be persisted
   * to disk, not just correct in memory.
   */
-class StakingStateCloneSuite extends AnyFunSuite {
+class StakingStateCloneSuite extends AnyFunSuite with PaideiaSessionFixture {
 
   test("clone reproduces the source digest and the clone is genuinely persisted to disk") {
     val daoKey = Util.randomKey
@@ -44,12 +44,10 @@ class StakingStateCloneSuite extends AnyFunSuite {
     clonedState.stakeRecords.close()
     clonedState.participationRecords.close()
 
-    val stakeFolder = new File(
-      "./stakingStates/" ++ daoKey ++ "/stake/" ++ newEmissionTime.toString
-    )
-    val participationFolder = new File(
-      "./stakingStates/" ++ daoKey ++ "/participation/" ++ newEmissionTime.toString
-    )
+    val stakeFolder =
+      paideiaSession.stakingStateDir(daoKey, "stake", newEmissionTime.toString)
+    val participationFolder =
+      paideiaSession.stakingStateDir(daoKey, "participation", newEmissionTime.toString)
 
     val reopenedStake = new MempoolPlasmaMap[ErgoId, StakeRecord](
       new VersionedLDBAVLStorage(new LDBVersionedStore(stakeFolder, 10)),
