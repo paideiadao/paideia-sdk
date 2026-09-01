@@ -24,7 +24,7 @@ object Proposal {
   def apply(daoKey: String, proposalIndex: Int, name: String): Proposal = {
     val folder = Paideia.current.proposalDir(daoKey, proposalIndex)
     folder.mkdirs()
-    val ldbStore = new LDBVersionedStore(folder, 10)
+    val ldbStore   = new LDBVersionedStore(folder, 10)
     val avlStorage = new VersionedLDBAVLStorage(ldbStore)
 
     new Proposal(

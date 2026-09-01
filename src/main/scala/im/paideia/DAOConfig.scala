@@ -214,7 +214,10 @@ case class DAOConfig(
     digestOrHeight: Either[ADDigest, Int]
   )(implicit dummy: DummyImplicit): (ErgoValue[Coll[java.lang.Byte]], ADDigest) = {
     val provRes = _config.insertWithDigest(operations: _*)(digestOrHeight)
-    (provRes.proof.ergoValue.asInstanceOf[ErgoValue[Coll[java.lang.Byte]]], provRes.digest)
+    (
+      provRes.proof.ergoValue.asInstanceOf[ErgoValue[Coll[java.lang.Byte]]],
+      provRes.digest
+    )
   }
 
   def removeProof(
@@ -223,7 +226,10 @@ case class DAOConfig(
     digestOrHeight: Either[ADDigest, Int]
   )(implicit dummy: DummyImplicit): (ErgoValue[Coll[java.lang.Byte]], ADDigest) = {
     val provRes = _config.deleteWithDigest(operations: _*)(digestOrHeight)
-    (provRes.proof.ergoValue.asInstanceOf[ErgoValue[Coll[java.lang.Byte]]], provRes.digest)
+    (
+      provRes.proof.ergoValue.asInstanceOf[ErgoValue[Coll[java.lang.Byte]]],
+      provRes.digest
+    )
   }
 
   def updateProof(
@@ -232,7 +238,10 @@ case class DAOConfig(
     digestOrHeight: Either[ADDigest, Int]
   )(implicit dummy: DummyImplicit): (ErgoValue[Coll[java.lang.Byte]], ADDigest) = {
     val provRes = _config.updateWithDigest(operations: _*)(digestOrHeight)
-    (provRes.proof.ergoValue.asInstanceOf[ErgoValue[Coll[java.lang.Byte]]], provRes.digest)
+    (
+      provRes.proof.ergoValue.asInstanceOf[ErgoValue[Coll[java.lang.Byte]]],
+      provRes.digest
+    )
   }
 
 }
@@ -242,7 +251,7 @@ object DAOConfig {
   def apply(daoKey: String): DAOConfig = {
     val folder = Paideia.current.daoConfigDir(daoKey)
     folder.mkdirs()
-    val ldbStore = new LDBVersionedStore(folder, 10)
+    val ldbStore   = new LDBVersionedStore(folder, 10)
     val avlStorage = new VersionedLDBAVLStorage(ldbStore)
 
     new DAOConfig(

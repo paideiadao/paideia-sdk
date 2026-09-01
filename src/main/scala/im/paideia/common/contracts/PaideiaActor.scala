@@ -22,9 +22,9 @@ import scorex.crypto.authds.ADDigest
 trait PaideiaActor {
 
   /** A HashMap containing contract instances. The key is the contract's serialised hash
-    * value. Backed by Paideia.current's per-session registry (keyed by this actor's
-    * class name) rather than a field on this actor singleton, so two sessions never
-    * share (or clobber) each other's contract instances.
+    * value. Backed by Paideia.current's per-session registry (keyed by this actor's class
+    * name) rather than a field on this actor singleton, so two sessions never share (or
+    * clobber) each other's contract instances.
     */
   def contractInstances: HashMap[List[Byte], PaideiaContract] =
     Paideia.current.contractInstances(this)
@@ -134,8 +134,9 @@ trait PaideiaActor {
 /** Boilerplate companion for the standard contract shape: apply-from-config delegates to
   * contractFromConfig, apply-from-signature to getContractInstance with a fresh T.
   */
-abstract class TypedPaideiaActor[T <: PaideiaContract](make: PaideiaContractSignature => T)
-  extends PaideiaActor {
+abstract class TypedPaideiaActor[T <: PaideiaContract](
+  make: PaideiaContractSignature => T
+) extends PaideiaActor {
   override def apply(
     configKey: DAOConfigKey,
     daoKey: String,

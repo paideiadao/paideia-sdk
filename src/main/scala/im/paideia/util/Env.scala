@@ -26,19 +26,19 @@ object PaideiaEnv {
 }
 
 /** Facade over `Paideia.current.env`, kept so every existing caller (paideia-state
-  * included) compiles and behaves identically without source changes. `conf` used to be
-  * a `val`, loaded once at class-init time; it's a `def` now since it has to resolve
+  * included) compiles and behaves identically without source changes. `conf` used to be a
+  * `val`, loaded once at class-init time; it's a `def` now since it has to resolve
   * through whichever session is current at call time.
   */
 object Env {
-  def conf: Config              = Paideia.current.env.conf
-  def daoTokenId: String        = Paideia.current.env.daoTokenId
-  def configTokenId: String     = Paideia.current.env.configTokenId
-  def paideiaTokenId: String    = Paideia.current.env.paideiaTokenId
-  def networkType: NetworkType  = Paideia.current.env.networkType
-  def paideiaDaoKey: String     = Paideia.current.env.paideiaDaoKey
-  def paideiaOriginNFT: String  = Paideia.current.env.paideiaOriginNFT
-  def operatorAddress: String   = Paideia.current.env.operatorAddress
-  def compoundBatchSize: Int    = Paideia.current.env.compoundBatchSize
-  def defaultBotFee: Long       = Paideia.current.env.defaultBotFee
+  def conf: Config             = Paideia.current.env.conf
+  def daoTokenId: String       = Paideia.current.env.daoTokenId
+  def configTokenId: String    = Paideia.current.env.configTokenId
+  def paideiaTokenId: String   = Paideia.current.env.paideiaTokenId
+  def networkType: NetworkType = Paideia.current.env.networkType
+  def paideiaDaoKey: String    = Paideia.current.env.paideiaDaoKey
+  def paideiaOriginNFT: String = Paideia.current.env.paideiaOriginNFT
+  def operatorAddress: String  = Paideia.current.env.operatorAddress
+  def compoundBatchSize: Int   = Paideia.current.env.compoundBatchSize
+  def defaultBotFee: Long      = Paideia.current.env.defaultBotFee
 }

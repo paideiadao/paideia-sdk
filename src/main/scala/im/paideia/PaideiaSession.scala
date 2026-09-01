@@ -33,24 +33,24 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import scala.collection.JavaConverters._
 
-/** Thrown internally by PaideiaSession.restoreState when a persisted digest doesn't
-  * match what was actually reopened from disk (a stale or partial checkpoint, or a
-  * tampered state.json). Always caught inside restoreState and converted to None; its
-  * message is also made available via PaideiaSession.lastRestoreError.
+/** Thrown internally by PaideiaSession.restoreState when a persisted digest doesn't match
+  * what was actually reopened from disk (a stale or partial checkpoint, or a tampered
+  * state.json). Always caught inside restoreState and converted to None; its message is
+  * also made available via PaideiaSession.lastRestoreError.
   */
 class PaideiaRestoreException(message: String) extends Exception(message)
 
 /** One protocol instance's worth of process-global-shaped state: every DAO/proposal/
   * contract-instance/staking-state registry, the live MempoolPlasmaMap set, config and
-  * store root. Everything that used to live in top-level `var`s scattered across
-  * Paideia, PaideiaActor, TotalStakingState, DAOConfigKey and MempoolPlasmaMap now lives
-  * here instead, so two sessions can run side by side in one JVM (e.g. parallel tests, a
-  * CLI running two protocol instances) without sharing state or a LevelDB path.
+  * store root. Everything that used to live in top-level `var`s scattered across Paideia,
+  * PaideiaActor, TotalStakingState, DAOConfigKey and MempoolPlasmaMap now lives here
+  * instead, so two sessions can run side by side in one JVM (e.g. parallel tests, a CLI
+  * running two protocol instances) without sharing state or a LevelDB path.
   *
-  * `Paideia` is a thin facade over `Paideia.current` (see there for how a session
-  * becomes "current"); every method below is the verbatim body of what used to be an
-  * `object Paideia` member, now operating on `this` session's fields instead of
-  * process-global statics.
+  * `Paideia` is a thin facade over `Paideia.current` (see there for how a session becomes
+  * "current"); every method below is the verbatim body of what used to be an `object
+  * Paideia` member, now operating on `this` session's fields instead of process-global
+  * statics.
   */
 class PaideiaSession(val env: PaideiaEnv, val storeRoot: File) {
 
@@ -59,10 +59,11 @@ class PaideiaSession(val env: PaideiaEnv, val storeRoot: File) {
   val actorList: HashMap[String, PaideiaActor] = HashMap[String, PaideiaActor]()
 
   /** Per-actor-class contractInstances maps, keyed by actor.getClass.getName so every
-    * PaideiaActor singleton (Config, StakeState, ...) gets its own map without needing
-    * to store it on the (session-agnostic) actor object itself. See contractInstances().
+    * PaideiaActor singleton (Config, StakeState, ...) gets its own map without needing to
+    * store it on the (session-agnostic) actor object itself. See contractInstances().
     */
-  private val contractInstancesByActor: HashMap[String, HashMap[List[Byte], PaideiaContract]] =
+  private val contractInstancesByActor
+    : HashMap[String, HashMap[List[Byte], PaideiaContract]] =
     HashMap[String, HashMap[List[Byte], PaideiaContract]]()
 
   def contractInstances(actor: PaideiaActor): HashMap[List[Byte], PaideiaContract] =
@@ -71,23 +72,25 @@ class PaideiaSession(val env: PaideiaEnv, val storeRoot: File) {
       HashMap[List[Byte], PaideiaContract]()
     )
 
-  val stakingStates: HashMap[String, TotalStakingState] = HashMap[String, TotalStakingState]()
+  val stakingStates: HashMap[String, TotalStakingState] =
+    HashMap[String, TotalStakingState]()
 
   /** Hashed key -> original key name, for keys constructed from a name in this session.
     * Seeded below from DAOConfigKey.staticNames (the process-global registry of the
-    * always-registered ConfKeys names, populated at ConfKeys' class-init time
-    * regardless of which session happened to be current then) so that callers reading
-    * this map directly (paideia-state's getDAOConfig endpoint, persistState, ...) see
-    * the standard names too, not just dynamic ones registered in this session. A
-    * session created BEFORE ConfKeys was ever touched won't have them here yet, but
-    * still resolves them correctly via DAOConfigKey's own staticNames fallback.
+    * always-registered ConfKeys names, populated at ConfKeys' class-init time regardless
+    * of which session happened to be current then) so that callers reading this map
+    * directly (paideia-state's getDAOConfig endpoint, persistState, ...) see the standard
+    * names too, not just dynamic ones registered in this session. A session created
+    * BEFORE ConfKeys was ever touched won't have them here yet, but still resolves them
+    * correctly via DAOConfigKey's own staticNames fallback.
     */
-  val knownKeys: HashMap[List[Byte], Option[String]] = HashMap[List[Byte], Option[String]]()
+  val knownKeys: HashMap[List[Byte], Option[String]] =
+    HashMap[List[Byte], Option[String]]()
   knownKeys ++= DAOConfigKey.staticNames.map { case (k, v) => k -> Some(v) }
 
   /** Registry of every live MempoolPlasmaMap belonging to this session, so all of them
-    * can be committed/closed without every owner (DAOConfig, Proposal, StakingState,
-    * ...) having to be hunted down and threaded through individually. Backed by a
+    * can be committed/closed without every owner (DAOConfig, Proposal, StakingState, ...)
+    * having to be hunted down and threaded through individually. Backed by a
     * WeakHashMap-based set so maps that are no longer referenced elsewhere are dropped
     * instead of leaking here.
     */
@@ -96,10 +99,9 @@ class PaideiaSession(val env: PaideiaEnv, val storeRoot: File) {
       new java.util.WeakHashMap[MempoolPlasmaMap[_, _], java.lang.Boolean]()
     )
 
-  /** Reason the most recent restoreState call returned None because of a digest
-    * mismatch or other restore-time failure; None otherwise (including after a
-    * successful restore, or a call that returned None simply because state.json didn't
-    * exist).
+  /** Reason the most recent restoreState call returned None because of a digest mismatch
+    * or other restore-time failure; None otherwise (including after a successful restore,
+    * or a call that returned None simply because state.json didn't exist).
     */
   var lastRestoreError: Option[String] = None
 
@@ -116,11 +118,10 @@ class PaideiaSession(val env: PaideiaEnv, val storeRoot: File) {
     * a session only through that facade (DAOConfig/Proposal/StakingState's store paths,
     * PaideiaActor.contractInstances, DAOConfigKey.knownKeys, MempoolPlasmaMap.liveMaps,
     * ...) actually operate on THIS session rather than whatever happens to be current.
-    * Every public entry point below that can construct such an object, or otherwise
-    * reach a Paideia.current-resolving facade, is wrapped in this - so e.g.
-    * `sessionB.clear` or `sessionB.restoreState(dir)` is correct even while a different
-    * session is current. Cheap: DynamicVariable.withValue is just a thread-local
-    * set/restore.
+    * Every public entry point below that can construct such an object, or otherwise reach
+    * a Paideia.current-resolving facade, is wrapped in this - so e.g. `sessionB.clear` or
+    * `sessionB.restoreState(dir)` is correct even while a different session is current.
+    * Cheap: DynamicVariable.withValue is just a thread-local set/restore.
     */
   private def bound[T](body: => T): T = Paideia.withSession(this)(body)
 
@@ -131,24 +132,24 @@ class PaideiaSession(val env: PaideiaEnv, val storeRoot: File) {
   def proposalDir(daoKey: String, proposalIndex: Int): File =
     new File(storeRoot, "proposals/" + daoKey + "/" + proposalIndex.toString)
 
-  /** ./stakingStates/<daoKey>/<kind>/<name> under this session's storeRoot, where kind
-    * is "stake" or "participation" and name is either "current" or an emissionTime.
+  /** ./stakingStates/<daoKey>/<kind>/<name> under this session's storeRoot, where kind is
+    * "stake" or "participation" and name is either "current" or an emissionTime.
     */
   def stakingStateDir(daoKey: String, kind: String, name: String): File =
     new File(storeRoot, "stakingStates/" + daoKey + "/" + kind + "/" + name)
 
-  /** Closes every live MempoolPlasmaMap's underlying LevelDB handle, releasing every
-    * LOCK file so the same directories can be reopened by fresh stores afterwards.
+  /** Closes every live MempoolPlasmaMap's underlying LevelDB handle, releasing every LOCK
+    * file so the same directories can be reopened by fresh stores afterwards.
     */
   def close(): Unit = bound {
     liveMaps.asScala.toList.foreach(_.close())
   }
 
-  /** Commits every live MempoolPlasmaMap (DAOConfig, Proposal vote records,
-    * StakingState stake/participation records, ...), draining their queued confirmed
-    * mutations into the versioned AVL+ prover so they're actually persisted to disk.
-    * Call once per confirmed block, after all of that block's transactions have been
-    * handled. Returns the number of maps committed.
+  /** Commits every live MempoolPlasmaMap (DAOConfig, Proposal vote records, StakingState
+    * stake/participation records, ...), draining their queued confirmed mutations into
+    * the versioned AVL+ prover so they're actually persisted to disk. Call once per
+    * confirmed block, after all of that block's transactions have been handled. Returns
+    * the number of maps committed.
     */
   def commit(): Int = bound {
     val maps = liveMaps.asScala.toList
@@ -168,9 +169,9 @@ class PaideiaSession(val env: PaideiaEnv, val storeRoot: File) {
 
   /** Clears every in-process registry (daoMap, every actor's contractInstances,
     * stakingStates) WITHOUT deleting any on-disk directory - unlike clear, which wipes
-    * storeRoot's daoconfigs, proposals and stakingStates. Used before restoreState
-    * (which must start from empty registries) and by tests that want to prove restored
-    * data actually comes back from disk rather than from still-live in-memory state.
+    * storeRoot's daoconfigs, proposals and stakingStates. Used before restoreState (which
+    * must start from empty registries) and by tests that want to prove restored data
+    * actually comes back from disk rather than from still-live in-memory state.
     *
     * @param closeStores
     *   when true, also closes every live MempoolPlasmaMap's underlying LevelDB handle,
@@ -295,12 +296,12 @@ class PaideiaSession(val env: PaideiaEnv, val storeRoot: File) {
     )
   }
 
-  /** Persists everything that today only lives in process memory and is otherwise
-    * rebuilt from scratch by replaying the whole transaction archive on every restart:
-    * the DAO/proposal/contract-instance registries (as digests to verify against, plus
-    * enough to reopen every persisted AVL+ store) and each contract instance's confirmed
-    * unspent box set. Call AFTER commit() so every digest recorded here is actually
-    * backed by what's on disk.
+  /** Persists everything that today only lives in process memory and is otherwise rebuilt
+    * from scratch by replaying the whole transaction archive on every restart: the
+    * DAO/proposal/contract-instance registries (as digests to verify against, plus enough
+    * to reopen every persisted AVL+ store) and each contract instance's confirmed unspent
+    * box set. Call AFTER commit() so every digest recorded here is actually backed by
+    * what's on disk.
     *
     * Writes dir/state.json and dir/boxes/<daoKey>/<contractSignatureHashHex>.json (one
     * JSON array of ErgoTransactionOutput per contract instance's confirmed unspent
@@ -308,25 +309,25 @@ class PaideiaSession(val env: PaideiaEnv, val storeRoot: File) {
     * contents actually changed since the last call (tracked via an in-memory
     * fingerprint), and files for contract instances that no longer exist are deleted.
     *
-    * dir/state.json layout: `{ "height": Int, "daos": [ { "key": String,
-    * "configDigest": hex String, "contracts": [ { "className": String, "version":
-    * String, "networkType": "MAINNET"|"TESTNET", "contractHash": hex String, "daoKey":
-    * String }, ... ], "proposals": [ { "index": Int, "name": String, "votesDigest": hex
-    * String }, ... ], "staking": null | { "nextEmission": Long, "currentDigests": {
-    * "stake": hex String, "participation": hex String }, "snapshots": [ {
-    * "emissionTime": Long, "stakeDigest": hex String, "participationDigest": hex String
-    * }, ... ] } }, ... ], "knownKeys": [ { "hash": hex String, "name": String }, ... ] }`.
-    * "knownKeys" is every DAOConfigKey.knownKeys entry with a defined name (hashed key
-    * bytes -> the original name it was constructed with), sorted by hash for stable
-    * output - see restoreState for why this has to be persisted rather than recomputed.
-    * "contracts" is every PaideiaContractSignature actually live
-    * in this session's actorList's contractInstances for this daoKey at persist time -
-    * not a walk of the DAO config tree, which only reaches contract instances the
-    * config happens to reference right now and misses instances created by direct
-    * construction (e.g. `Stake(PaideiaContractSignature(daoKey = ...))`), proxy
-    * contracts, or the longLivingKey re-instantiation path in
-    * PaideiaContract.handleEvent - any of which can have a box file that a
-    * config-tree walk would then fail to find a home for on restore.
+    * dir/state.json layout: `{ "height": Int, "daos": [ { "key": String, "configDigest":
+    * hex String, "contracts": [ { "className": String, "version": String, "networkType":
+    * "MAINNET"|"TESTNET", "contractHash": hex String, "daoKey": String }, ... ],
+    * "proposals": [ { "index": Int, "name": String, "votesDigest": hex String }, ... ],
+    * "staking": null | { "nextEmission": Long, "currentDigests": { "stake": hex String,
+    * "participation": hex String }, "snapshots": [ { "emissionTime": Long, "stakeDigest":
+    * hex String, "participationDigest": hex String }, ... ] } }, ... ], "knownKeys": [ {
+    * "hash": hex String, "name": String }, ... ] }`. "knownKeys" is every
+    * DAOConfigKey.knownKeys entry with a defined name (hashed key bytes -> the original
+    * name it was constructed with), sorted by hash for stable output - see restoreState
+    * for why this has to be persisted rather than recomputed. "contracts" is every
+    * PaideiaContractSignature actually live in this session's actorList's
+    * contractInstances for this daoKey at persist time - not a walk of the DAO config
+    * tree, which only reaches contract instances the config happens to reference right
+    * now and misses instances created by direct construction (e.g.
+    * `Stake(PaideiaContractSignature(daoKey = ...))`), proxy contracts, or the
+    * longLivingKey re-instantiation path in PaideiaContract.handleEvent - any of which
+    * can have a box file that a config-tree walk would then fail to find a home for on
+    * restore.
     */
   def persistState(dir: File, height: Int): Unit = bound {
     dir.mkdirs()
@@ -477,8 +478,10 @@ class PaideiaSession(val env: PaideiaEnv, val storeRoot: File) {
     }
 
     if (boxesRoot.exists()) {
-      Option(boxesRoot.listFiles()).getOrElse(Array[File]()).filter(_.isDirectory).foreach {
-        daoDir =>
+      Option(boxesRoot.listFiles())
+        .getOrElse(Array[File]())
+        .filter(_.isDirectory)
+        .foreach { daoDir =>
           val daoKey = daoDir.getName
           Option(daoDir.listFiles())
             .getOrElse(Array[File]())
@@ -490,26 +493,26 @@ class PaideiaSession(val env: PaideiaEnv, val storeRoot: File) {
                 boxFileFingerprints.remove((daoKey, sigHashHex))
               }
             }
-      }
+        }
     }
   }
 
   /** Rebuilds every in-process registry (DAOs/configs, contract instances, proposals,
     * staking state), re-registers every persisted knownKeys (hash -> name) entry so
-    * dynamic config keys resolve their names exactly as they did before the restart,
-    * and every contract instance's confirmed unspent box set from a checkpoint written
-    * by persistState, verifying every digest against what's actually reopened from the
-    * persisted AVL+ stores on disk along the way, and every recorded contract instance
-    * by recompiling it from its signature and comparing the resulting ErgoTree hash
-    * against what was recorded. Must be called on a fresh session state (e.g. right
-    * after clearRegistries) before any mutation - it unconditionally
+    * dynamic config keys resolve their names exactly as they did before the restart, and
+    * every contract instance's confirmed unspent box set from a checkpoint written by
+    * persistState, verifying every digest against what's actually reopened from the
+    * persisted AVL+ stores on disk along the way, and every recorded contract instance by
+    * recompiling it from its signature and comparing the resulting ErgoTree hash against
+    * what was recorded. Must be called on a fresh session state (e.g. right after
+    * clearRegistries) before any mutation - it unconditionally
     * addDAO/instantiates/registers as it goes.
     *
     * Returns None (and leaves every registry empty, and lastRestoreError set to the
     * reason) if dir/state.json doesn't exist, or if any digest or contract hash fails to
-    * verify against what was actually reopened/recompiled - a stale or partial
-    * checkpoint degrades to a full replay instead of silently resurrecting the wrong
-    * state. Returns Some(height) on success.
+    * verify against what was actually reopened/recompiled - a stale or partial checkpoint
+    * degrades to a full replay instead of silently resurrecting the wrong state. Returns
+    * Some(height) on success.
     */
   def restoreState(dir: File): Option[Int] = bound {
     lastRestoreError = None
@@ -601,9 +604,9 @@ class PaideiaSession(val env: PaideiaEnv, val storeRoot: File) {
         }
 
         daoObj.get("proposals").getAsJsonArray.asScala.foreach { proposalElem =>
-          val proposalObj           = proposalElem.getAsJsonObject
-          val index                 = proposalObj.get("index").getAsInt
-          val name                  = proposalObj.get("name").getAsString
+          val proposalObj         = proposalElem.getAsJsonObject
+          val index               = proposalObj.get("index").getAsInt
+          val name                = proposalObj.get("name").getAsString
           val expectedVotesDigest = proposalObj.get("votesDigest").getAsString
 
           val proposal = Proposal(daoKey, index, name)
@@ -621,8 +624,8 @@ class PaideiaSession(val env: PaideiaEnv, val storeRoot: File) {
 
         val stakingElem = daoObj.get("staking")
         if (stakingElem != null && !stakingElem.isJsonNull) {
-          val stakingObj    = stakingElem.getAsJsonObject
-          val nextEmission  = stakingObj.get("nextEmission").getAsLong
+          val stakingObj     = stakingElem.getAsJsonObject
+          val nextEmission   = stakingObj.get("nextEmission").getAsLong
           val currentDigests = stakingObj.get("currentDigests").getAsJsonObject
           val expectedCurrentStakeDigest = currentDigests.get("stake").getAsString
           val expectedCurrentParticipationDigest =
@@ -726,7 +729,7 @@ class PaideiaSession(val env: PaideiaEnv, val storeRoot: File) {
       Some(height)
     } catch {
       case e: Exception =>
-        lastRestoreError = Some(e.getMessage)
+        lastRestoreError            = Some(e.getMessage)
         clearRegistries(closeStores = false)
         None
     }

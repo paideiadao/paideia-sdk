@@ -470,7 +470,8 @@ class PaideiaContract(
     parse: => Any
   ): Boolean = {
     if (inputBox.getErgoTree().bytesHex != ergoTreeHex) return false
-    try { parse; true } catch { case _: Throwable => false }
+    try { parse; true }
+    catch { case _: Throwable => false }
   }
 
   // Overridden in sub classes whose validation differs from the plain ErgoTree check.

@@ -189,8 +189,8 @@ class Treasury(contractSignature: PaideiaContractSignature)
     *   \- The treasury input boxes eligible for consolidation.
     * @return
     *   The (possibly empty) prefix of the sorted candidates that can be safely
-    *   consolidated. Callers should check the length of the result (the on-chain
-    *   contract requires at least 5 inputs) and whether the accumulated value covers the
+    *   consolidated. Callers should check the length of the result (the on-chain contract
+    *   requires at least 5 inputs) and whether the accumulated value covers the
     *   consolidation fee before firing a ConsolidateTransaction.
     */
   private def selectConsolidationSubset(
@@ -231,11 +231,9 @@ class Treasury(contractSignature: PaideiaContractSignature)
             val firstBox: InputBox =
               if (selection.isEmpty) candidateBox else selection.head
             val tokensList: List[ErgoToken] =
-              tentativeTokens
-                .map { case (tokenId: String, amount: Long) =>
-                  new ErgoToken(tokenId, amount)
-                }
-                .toList
+              tentativeTokens.map { case (tokenId: String, amount: Long) =>
+                new ErgoToken(tokenId, amount)
+              }.toList
             val outBoxBuilder = ctx
               .newTxBuilder()
               .outBoxBuilder()
@@ -256,9 +254,9 @@ class Treasury(contractSignature: PaideiaContractSignature)
           }
 
         if (fits) {
-          selection = selection :+ candidateBox
+          selection    = selection :+ candidateBox
           mergedTokens = tentativeTokens
-          totalValue = tentativeValue
+          totalValue   = tentativeValue
         } else {
           stillFits = false
         }
