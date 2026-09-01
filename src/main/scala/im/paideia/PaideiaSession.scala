@@ -185,6 +185,12 @@ class PaideiaSession(val env: PaideiaEnv, val storeRoot: File) {
     daoMap.clear()
     actorList.clear()
     stakingStates.clear()
+    // Box-file fingerprints describe what's on disk, not what's in memory - but a
+    // caller clearing the registries to rebuild from scratch (StateLifecycle.fullReplay)
+    // also discards the on-disk state those fingerprints describe, so keeping them
+    // would let persistState skip box files that no longer exist (see the file-exists
+    // guard there for the second half of this defense).
+    boxFileFingerprints.clear()
   }
 
   def addDAO(dao: DAO): Unit = daoMap.put(dao.key, dao)
@@ -462,8 +468,19 @@ class PaideiaSession(val env: PaideiaEnv, val storeRoot: File) {
           val confirmedIds =
             (instance.utxos.toSet intersect instance.boxes.keySet.toSet).toList.sorted
           val fingerprint = boxSetFingerprint(confirmedIds)
+          val target      = new File(new File(boxesRoot, daoKey), sigHashHex + ".json")
 
-          if (!boxFileFingerprints.get(cacheKey).contains(fingerprint)) {
+          // The fingerprint match alone is NOT sufficient to skip the write: the file
+          // must also still exist. A cached fingerprint can outlive the file it
+          // describes - StateLifecycle.fullReplay cleans the whole boxes/ directory and
+          // then replays back to an identical box set, and before this check every such
+          // set was silently skipped here, producing checkpoints whose restore dropped
+          // those boxes (surfacing as fatal Config extraOnNode verification failures on
+          // the next start).
+          if (
+            !boxFileFingerprints.get(cacheKey).contains(fingerprint) || !target
+              .exists()
+          ) {
             val outputsArr = new JsonArray()
             confirmedIds.foreach(id =>
               outputsArr.add(gson.toJsonTree(toErgoTransactionOutput(instance.boxes(id))))
