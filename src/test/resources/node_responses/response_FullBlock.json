@@ -1,0 +1,29 @@
+{
+  "header": {
+    "id": "6fdd4b1c5b89972ca4032d5dd7b5c954a90bff2a160ad409fa4746c67b736632",
+    "height": 800000
+  },
+  "blockTransactions": {
+    "headerId": "6fdd4b1c5b89972ca4032d5dd7b5c954a90bff2a160ad409fa4746c67b736632",
+    "transactions": [
+      {
+        "id": "tx1111111111111111111111111111111111111111111111111111111111",
+        "inputs": [],
+        "dataInputs": [],
+        "outputs": []
+      },
+      {
+        "id": "tx2222222222222222222222222222222222222222222222222222222222",
+        "inputs": [],
+        "dataInputs": [],
+        "outputs": []
+      },
+      {
+        "id": "tx3333333333333333333333333333333333333333333333333333333333",
+        "inputs": [],
+        "dataInputs": [],
+        "outputs": []
+      }
+    ]
+  }
+}
