@@ -227,4 +227,31 @@ class ReadModelsSuite extends PaideiaTestSuite {
       }
     })
   }
+
+  test(
+    "M4(a): stakeStatus throws (not Nil) when the DAO has no confirmed staking state box"
+  ) {
+    val ergoClient = createMockedErgoClient(MockData(Nil, Nil))
+    ergoClient.execute(new java.util.function.Function[BlockchainContext, Unit] {
+      override def apply(_ctx: BlockchainContext): Unit = {
+        val ctx = _ctx.asInstanceOf[BlockchainContextImpl]
+        PaideiaTestSuite.init(ctx)
+
+        // StakingTest.testDAO sets im_paideia_staking_state_tokenid in config, but no
+        // StakeStateBox is ever registered as confirmed - simulating a session whose
+        // local replay hasn't caught up (or is corrupt).
+        val dao = StakingTest.testDAO
+
+        // An empty candidate set is still the ordinary "nothing to check" case - no
+        // staking-state lookup is even attempted.
+        assert(ReadModels.stakeStatus(ctx, dao.key, Set.empty).isEmpty)
+
+        // A non-empty candidate set, on the other hand, must surface the missing local
+        // state as a failure rather than silently answering "no stake found".
+        intercept[NoSuchElementException] {
+          ReadModels.stakeStatus(ctx, dao.key, Set(Util.randomKey))
+        }
+      }
+    })
+  }
 }

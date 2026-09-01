@@ -29,6 +29,8 @@ import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import org.ergoplatform.sdk.ErgoId
 import org.ergoplatform.sdk.ErgoToken
 
+import scala.collection.JavaConverters._
+
 /** Offline coverage of [[UserTransactions]]'s four builders: each is exercised against
   * the same in-memory DAO/staking-state fixtures `StakeTransactionSuite`/
   * `AddStakeTransactionSuite`/`UnstakeTransactionSuite`/`CastVoteTransactionSuite` use
@@ -128,6 +130,156 @@ class UserTransactionsSuite extends PaideiaTestSuite {
     }
   }
 
+  // --- C1 regression: fund() must disable minimizeChangeBox, or the entire funding
+  // surplus above a dust-sized box gets folded into `fee` instead of returned as change
+  // (PaideiaTransaction.unsigned()'s change-box branch) - see UserTransactions.fund's
+  // scaladoc.
+
+  test(
+    "C1: funding from a wildly oversized box does not inflate fee - the surplus goes to change"
+  ) {
+    withCtx { ctx =>
+      val dao = StakingTest.testDAO
+
+      val stakingContract = StakeState(PaideiaContractSignature(daoKey = dao.key))
+      dao.config.set(
+        ConfKeys.im_paideia_contracts_staking_state,
+        stakingContract.contractSignature
+      )
+      val stakingState = stakingContract.emptyBox(ctx, dao, 100000000L)
+
+      val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
+      dao.config.set(
+        ConfKeys.im_paideia_contracts_config,
+        configContract.contractSignature
+      )
+      configContract.newBox(configContract.box(ctx, dao).inputBox(), false)
+
+      val stakeContract = Stake(PaideiaContractSignature(daoKey = dao.key))
+      stakeContract.newBox(stakeContract.box(ctx, 1000000L).inputBox(), false)
+
+      stakingContract.clearBoxes()
+      stakingContract.newBox(stakingState.inputBox(), false)
+
+      // A 500 ERG wallet box funding a tx that only actually needs ~0.0035 ERG + 1,000
+      // raw governance-token units - before the fix, minimizeChangeBox's default true
+      // would have folded essentially the entire 500 ERG into `fee`.
+      val oversized = 500L * 1000000000L
+      val selector = wallet(
+        fundingBox(ctx, oversized, List(new ErgoToken(daoTokenIdOf(dao), 1000L)))
+      )
+      val tx = UserTransactions.stake(
+        ctx,
+        selector,
+        dao.key,
+        1000L,
+        List(walletAddressStr),
+        walletAddressStr
+      )
+
+      val declaredFee = tx.fee
+      assert(
+        declaredFee < 10000000L,
+        s"sanity: declared fee ($declaredFee) should be tiny"
+      )
+
+      val unsigned = tx.unsigned()
+
+      // The fee actually baked into the built transaction must equal the tx's own
+      // declared fee, unchanged by however oversized the funding box was. This is the
+      // crux of the C1 regression: `unsigned()`'s minimizeChangeBox=true branch (the
+      // trait's default) rewrites `this.fee` in place to absorb the change surplus - if
+      // `fund()` didn't disable that, `tx.fee` itself would now read ~500 ERG instead of
+      // its original ~0.00235 ERG.
+      assert(
+        tx.fee == declaredFee,
+        s"fund() must not let unsigned() rewrite the declared fee - was $declaredFee, now ${tx.fee}"
+      )
+
+      // The appkit tx builder's own `.fee(amount)` call materializes the fee as an
+      // explicit output (paid to Ergo's well-known fee contract), so input/output
+      // nanoERG totals always balance exactly regardless of minimizeChangeBox - that
+      // balancing isn't itself evidence of anything; what matters is which output
+      // actually absorbed the funding surplus. It must be the change output (uniquely
+      // huge here, at ~500 ERG), not disappear into an inflated fee output.
+      val outputs     = unsigned.getOutputs().asScala.toList
+      val hugeOutputs = outputs.filter(_.getValue() > oversized - 10000000L)
+      assert(
+        hugeOutputs.size == 1,
+        s"expected exactly one ~500 ERG output (the change box), got values: " +
+          s"${outputs.map(_.getValue())}"
+      )
+      val feeOutputs = outputs.filter(_.getValue() == declaredFee)
+      assert(
+        feeOutputs.size == 1,
+        s"expected exactly one output at the declared fee ($declaredFee), got values: " +
+          s"${outputs.map(_.getValue())}"
+      )
+    }
+  }
+
+  test(
+    "C1: an unrelated NFT held in the funding box lands in the change output, not the fee"
+  ) {
+    withCtx { ctx =>
+      val dao = StakingTest.testDAO
+
+      val stakingContract = StakeState(PaideiaContractSignature(daoKey = dao.key))
+      dao.config.set(
+        ConfKeys.im_paideia_contracts_staking_state,
+        stakingContract.contractSignature
+      )
+      val stakingState = stakingContract.emptyBox(ctx, dao, 100000000L)
+
+      val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
+      dao.config.set(
+        ConfKeys.im_paideia_contracts_config,
+        configContract.contractSignature
+      )
+      configContract.newBox(configContract.box(ctx, dao).inputBox(), false)
+
+      val stakeContract = Stake(PaideiaContractSignature(daoKey = dao.key))
+      stakeContract.newBox(stakeContract.box(ctx, 1000000L).inputBox(), false)
+
+      stakingContract.clearBoxes()
+      stakingContract.newBox(stakingState.inputBox(), false)
+
+      val unrelatedNft = Util.randomKey
+      val selector = wallet(
+        fundingBox(
+          ctx,
+          5000000L,
+          List(new ErgoToken(daoTokenIdOf(dao), 1000L), new ErgoToken(unrelatedNft, 1L))
+        )
+      )
+      val tx = UserTransactions.stake(
+        ctx,
+        selector,
+        dao.key,
+        1000L,
+        List(walletAddressStr),
+        walletAddressStr
+      )
+
+      val unsigned       = tx.unsigned()
+      val changeOutput   = unsigned.getOutputs().asScala.last
+      val changeTokenIds = changeOutput.getTokens().asScala.map(_.getId.toString).toSet
+      assert(
+        changeTokenIds.contains(unrelatedNft),
+        s"expected the unrelated NFT $unrelatedNft to land in the change output, " +
+          s"found tokens: $changeTokenIds"
+      )
+      assert(
+        changeOutput
+          .getTokens()
+          .asScala
+          .find(_.getId.toString == unrelatedNft)
+          .get
+          .getValue == 1L
+      )
+    }
+  }
+
   test("addStake: builds an AddStakeTransaction whose unsigned() form builds") {
     withCtx { ctx =>
       val dao     = StakingTest.testDAO
@@ -179,58 +331,17 @@ class UserTransactionsSuite extends PaideiaTestSuite {
     }
   }
 
-  test("unstake: builds an UnstakeTransaction (partial) whose unsigned() form builds") {
-    withCtx { ctx =>
-      val dao     = StakingTest.testDAO
-      val testKey = Util.randomKey
+  // NOTE (C2): there is no such thing as a "partial unstake" as a valid protocol
+  // operation - ChangeStake.es's `noPartialUnstake: newStakeAmount >= currentStakeAmount`
+  // is one of the conjuncts in that companion contract's final sigmaProp, so any
+  // `newStakeRecord.stake` below the current stake is rejected on-chain. The only valid
+  // reduction is a FULL unstake (stake -> 0, the `Unstake` companion, key burned) - see
+  // the single "full unstake" test below. A prior version of this suite pinned a
+  // (broken) partial-unstake shape; it has been removed rather than fixed, since the CLI
+  // itself no longer offers a way to build one (see `Command.StakeRemove`/
+  // `ArgParser.parseCommand`'s `stake remove` handling).
 
-      val stakingContract = StakeState(PaideiaContractSignature(daoKey = dao.key))
-      dao.config.set(
-        ConfKeys.im_paideia_contracts_staking_state,
-        stakingContract.contractSignature
-      )
-
-      val stakingState = stakingContract.emptyBox(ctx, dao, 100000000L)
-      stakingState.stake(testKey, 10000L)
-
-      val changeStakeContract = ChangeStake(PaideiaContractSignature(daoKey = dao.key))
-      changeStakeContract.newBox(changeStakeContract.box(ctx).inputBox(), false)
-
-      val configContract = Config(PaideiaContractSignature(daoKey = dao.key))
-      dao.config.set(
-        ConfKeys.im_paideia_contracts_config,
-        configContract.contractSignature
-      )
-      configContract.newBox(configContract.box(ctx, dao).inputBox(), false)
-
-      stakingContract.clearBoxes()
-      stakingContract.newBox(stakingState.inputBox(), false)
-
-      val currentStake = stakingState.getStake(testKey)
-      val newRecord =
-        StakeRecord(
-          currentStake.stake - 300L,
-          currentStake.lockedUntil,
-          currentStake.rewards
-        )
-
-      val selector = wallet(fundingBox(ctx, 5000000L, List(new ErgoToken(testKey, 1L))))
-      val tx = UserTransactions.unstake(
-        ctx,
-        selector,
-        dao.key,
-        testKey,
-        newRecord,
-        List(walletAddressStr),
-        walletAddressStr
-      )
-
-      assert(tx.isInstanceOf[UnstakeTransaction])
-      tx.unsigned()
-    }
-  }
-
-  test("unstake: a full unstake (stake = 0) also builds") {
+  test("unstake: a full unstake (stake -> 0, all rewards zeroed) builds") {
     withCtx { ctx =>
       val dao     = StakingTest.testDAO
       val testKey = Util.randomKey

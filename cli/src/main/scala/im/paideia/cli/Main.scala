@@ -59,13 +59,18 @@ object Main {
         System.err.println(error)
         sys.exit(2)
       case Right(cliArgs) =>
-        try {
-          run(cliArgs)
-        } catch {
-          case e: Exception =>
-            System.err.println(s"error: ${Option(e.getMessage).getOrElse(e.toString)}")
-            sys.exit(1)
-        }
+        // m11: `run` returns whether the command actually succeeded (a timed-out
+        // signing wait is a failure, not an exception) rather than calling `sys.exit`
+        // from deep inside the signing flow - that way `session.close()` (in `run`'s own
+        // `finally`) always runs to completion before this process ever exits non-zero.
+        val success =
+          try run(cliArgs)
+          catch {
+            case e: Exception =>
+              System.err.println(s"error: ${Option(e.getMessage).getOrElse(e.toString)}")
+              false
+          }
+        if (!success) sys.exit(1)
     }
 
   /** The CLI's own baked-in defaults (genesis conf + CLI-local settings, see
@@ -105,7 +110,7 @@ object Main {
     dir
   }
 
-  private def run(cliArgs: CliArgs): Unit = {
+  private def run(cliArgs: CliArgs): Boolean = {
     val builtConf = loadConfig(cliArgs.confFile)
     // A --node override wins over both the baked-in default and $ERGO_NODE, so it's
     // layered on top rather than folded into loadConfig.
@@ -141,8 +146,28 @@ object Main {
         onRetry = (desc, attempt, message) =>
           System.err.println(s"[retry] $desc (attempt $attempt): $message")
       )
-      val indexedClient   = IndexedNodeClient.forNode(nodeUrl)
-      val userBoxSelector = UserBoxSelector(indexedClient, ctx)
+      val indexedClient = IndexedNodeClient.forNode(nodeUrl)
+      // M2: excludes any wallet box a still-unconfirmed mempool transaction has already
+      // spent from consideration (see UserBoxSelector.selectFor) - without this, running
+      // two transaction commands back to back could both pick the same box and the
+      // second would be stranded (or worse, double-spent) once the first confirms. A
+      // failure to reach the mempool endpoint degrades to "nothing spent" (still lets the
+      // command proceed) rather than aborting the whole command over what's ultimately
+      // best-effort protection.
+      val userBoxSelector = UserBoxSelector(
+        indexedClient,
+        ctx,
+        mempoolSpentBoxIds = () =>
+          try NodeHttp.mempoolSpentBoxIds(nodeUrl)
+          catch {
+            case e: Exception =>
+              System.err.println(
+                "[warn] failed to fetch mempool state, proceeding without " +
+                  s"mempool-spend filtering: ${e.getMessage}"
+              )
+              Set.empty
+          }
+      )
       val lifecycle = new StateLifecycle(
         session,
         blockSource,
@@ -155,31 +180,49 @@ object Main {
       System.err.println(s"[sync] up to date at height $height")
 
       cliArgs.command match {
-        case Command.Sync => ()
+        case Command.Sync => true
         case Command.DaoList =>
           printDaoList(ReadModels.daoList())
+          true
         case Command.ProposalList(daoKey) =>
           printProposalList(ReadModels.proposalList(ctx, daoKey))
+          true
         case Command.ProposalShow(daoKey, index) =>
           printProposalDetail(ReadModels.proposalDetail(ctx, daoKey, index))
+          true
 
         case Command.StakeStatus(daoKey) =>
-          val addresses  = requireAddresses(cliArgs)
-          val candidates = ReadModels.candidateStakeKeysFor(userBoxSelector, addresses)
-          printStakeStatus(ReadModels.stakeStatus(ctx, daoKey, candidates))
-
-        case Command.StakeAdd(daoKey, amount, stakeKeyOverride) =>
           val addresses = requireAddresses(cliArgs)
-          val existingKey = stakeKeyOverride.orElse(
-            findStake(ctx, userBoxSelector, daoKey, addresses).map(_.stakeKey)
-          )
-          val tx = existingKey match {
-            case Some(key) =>
+          val stakes = cliArgs.stakeKeyOverride match {
+            case Some(key) => ReadModels.stakeStatus(ctx, daoKey, Set(key))
+            case None =>
+              val candidates =
+                ReadModels.candidateStakeKeysFor(userBoxSelector, addresses)
+              ReadModels.stakeStatus(ctx, daoKey, candidates)
+          }
+          printStakeStatus(stakes)
+          true
+
+        case Command.StakeAdd(daoKey, amount) =>
+          val addresses = requireAddresses(cliArgs)
+          val existing =
+            findStake(ctx, userBoxSelector, daoKey, addresses, cliArgs.stakeKeyOverride)
+          if (existing.isEmpty)
+            // M4(b): silently minting a brand new stake key when the user meant to add
+            // to one they already believe exists (a typo'd --address, a --stake-key that
+            // doesn't resolve, ...) is exactly the kind of mistake that's expensive to
+            // notice only after the fact - flag it loudly before proceeding.
+            System.err.println(
+              "warning: no existing stake found for this DAO at the given --address(es) " +
+                "- this will mint a NEW stake key"
+            )
+          val tx = existing match {
+            case Some(info) =>
               UserTransactions.addStake(
                 ctx,
                 userBoxSelector,
                 daoKey,
-                key,
+                info.stakeKey,
                 amount,
                 addresses,
                 addresses.head
@@ -188,33 +231,39 @@ object Main {
               UserTransactions
                 .stake(ctx, userBoxSelector, daoKey, amount, addresses, addresses.head)
           }
-          val description = existingKey match {
-            case Some(key) => s"add $amount to existing stake $key on DAO $daoKey"
-            case None      => s"first-time stake of $amount on DAO $daoKey"
+          val description = existing match {
+            case Some(info) =>
+              s"add $amount to existing stake ${info.stakeKey} on DAO $daoKey"
+            case None => s"first-time stake of $amount on DAO $daoKey"
           }
           signOrPrint(tx, cliArgs, description)
 
-        case Command.StakeRemove(daoKey, removeAmount) =>
+        case Command.StakeRemove(daoKey) =>
           val addresses = requireAddresses(cliArgs)
-          val stakeInfo = findStake(ctx, userBoxSelector, daoKey, addresses).getOrElse(
-            throw new IllegalArgumentException(
-              s"no stake found for DAO $daoKey at the given --address(es)"
-            )
-          )
-          val remaining = removeAmount match {
-            case RemoveAmount.All => 0L
-            case RemoveAmount.Exact(v) =>
-              val r = stakeInfo.stake.stake - v
-              if (r < 0)
+          val stakeInfo =
+            findStake(ctx, userBoxSelector, daoKey, addresses, cliArgs.stakeKeyOverride)
+              .getOrElse(
                 throw new IllegalArgumentException(
-                  s"cannot remove $v: only ${stakeInfo.stake.stake} currently staked"
+                  s"no stake found for DAO $daoKey at the given --address(es)"
                 )
-              r
-          }
-          // Removal always withdraws every pending reward too, regardless of how much
-          // stake is being removed - see RemoveAmount's scaladoc.
+              )
+          // M6: the protocol itself has no notion of an early-unlock override - a
+          // still-locked stake's unstake tx would simply fail to confirm, wasting the
+          // signing round trip - so this is caught here, before the signing server (and
+          // therefore any wallet interaction) even starts.
+          val now = System.currentTimeMillis()
+          if (stakeInfo.stake.lockedUntil > now)
+            throw new IllegalArgumentException(
+              s"stake ${stakeInfo.stakeKey} is locked until " +
+                s"${formatInstant(stakeInfo.stake.lockedUntil)} - cannot unstake yet"
+            )
+          // C2: `stake remove` is always a FULL unstake - the protocol has no partial
+          // variant (see Command.StakeRemove's scaladoc) - so the new record always zeros
+          // the stake and every pending reward; lockedUntil is carried through unchanged
+          // (moot once the record is deleted on confirmation, but kept for a faithful
+          // "this is what's being withdrawn" newStakeRecord).
           val newRecord = StakeRecord(
-            remaining,
+            0L,
             stakeInfo.stake.lockedUntil,
             stakeInfo.stake.rewards.map(_ => 0L)
           )
@@ -227,23 +276,24 @@ object Main {
             addresses,
             addresses.head
           )
-          val amountLabel = removeAmount match {
-            case RemoveAmount.All      => s"the entire stake (${stakeInfo.stake.stake})"
-            case RemoveAmount.Exact(v) => v.toString
-          }
           signOrPrint(
             tx,
             cliArgs,
-            s"withdraw $amountLabel from stake ${stakeInfo.stakeKey} on DAO $daoKey " +
-              "(this also withdraws all pending rewards)"
+            s"withdraw the entire stake (${stakeInfo.stake.stake}) and all pending " +
+              s"rewards from stake ${stakeInfo.stakeKey} on DAO $daoKey"
           )
 
         case Command.Vote(daoKey, proposalIndex, votes) =>
           val addresses = requireAddresses(cliArgs)
-          val stakeInfo = findStake(ctx, userBoxSelector, daoKey, addresses).getOrElse(
-            throw new IllegalArgumentException(
-              s"no stake found for DAO $daoKey - you must stake before voting"
-            )
+          val stakeInfo =
+            findStake(ctx, userBoxSelector, daoKey, addresses, cliArgs.stakeKeyOverride)
+              .getOrElse(
+                throw new IllegalArgumentException(
+                  s"no stake found for DAO $daoKey - you must stake before voting"
+                )
+              )
+          validateVoteTotal(votes, stakeInfo.stake.stake, daoKey).left.foreach(err =>
+            throw new IllegalArgumentException(err)
           )
           val tx = UserTransactions.vote(
             ctx,
@@ -281,22 +331,58 @@ object Main {
       )
     else cliArgs.addresses
 
-  /** Auto-detects an existing stake for `daoKey` among `addresses`' own wallet contents -
-    * the same lookup `stake status` prints, reused by `stake add` (to decide between a
-    * `StakeTransaction` and an `AddStakeTransaction` - see
-    * `im.paideia.app.UserTransactions`), `stake remove` and `vote` (which both require an
-    * existing stake key). Picks the first match when more than one of the addresses'
-    * tokens happens to resolve to a live stake record - in practice a wallet holds at
-    * most one stake key per DAO.
+  /** Resolves the stake `stake add`/`stake remove`/`vote` should act on.
+    *
+    *   - `stakeKeyOverride` given (`--stake-key <id>`): looks up exactly that key's
+    *     current record directly, bypassing wallet auto-detection entirely.
+    *   - Otherwise, auto-detects among `addresses`' own wallet contents - the same lookup
+    *     `stake status` prints (see `ReadModels.candidateStakeKeysFor`/`stakeStatus`).
+    *
+    * @throws IllegalArgumentException
+    *   (M5) if auto-detection finds MORE THAN ONE stake key for `daoKey` among
+    *   `addresses`' wallets - picking one arbitrarily would silently act on a stake the
+    *   caller may not have meant, so this fails loudly instead, listing every key found
+    *   and pointing at `--stake-key` to disambiguate.
     */
   private def findStake(
     ctx: BlockchainContextImpl,
     selector: UserBoxSelector,
     daoKey: String,
-    addresses: List[String]
-  ): Option[StakeInfo] = {
-    val candidates = ReadModels.candidateStakeKeysFor(selector, addresses)
-    ReadModels.stakeStatus(ctx, daoKey, candidates).headOption
+    addresses: List[String],
+    stakeKeyOverride: Option[String]
+  ): Option[StakeInfo] =
+    stakeKeyOverride match {
+      case Some(key) => ReadModels.stakeStatus(ctx, daoKey, Set(key)).headOption
+      case None =>
+        val candidates = ReadModels.candidateStakeKeysFor(selector, addresses)
+        ReadModels.stakeStatus(ctx, daoKey, candidates) match {
+          case Nil        => None
+          case one :: Nil => Some(one)
+          case many =>
+            throw new IllegalArgumentException(
+              s"multiple stake keys found for DAO $daoKey among the given --address(es): " +
+                s"${many.map(_.stakeKey).mkString(", ")} - use --stake-key <id> to pick one"
+            )
+        }
+    }
+
+  /** M3: a vote allocation summing to more than the voter's own staked amount has no
+    * protocol meaning (a stake's voting weight is capped by how much is staked) -
+    * rejected here rather than left to fail obscurely deeper in `CastVoteTransaction`/the
+    * `StakeVote` contract. `private[cli]` (rather than `private`) and pure (no
+    * session/node access) purely so it's directly testable - see `MainSuite`.
+    */
+  private[cli] def validateVoteTotal(
+    votes: List[Long],
+    staked: Long,
+    daoKey: String
+  ): Either[String, Unit] = {
+    val total = votes.sum
+    if (total > staked)
+      Left(
+        s"vote allocation totals $total, more than the $staked currently staked on $daoKey"
+      )
+    else Right(())
   }
 
   private def printStakeStatus(stakes: List[StakeInfo]): Unit =
@@ -318,28 +404,32 @@ object Main {
   /** The local signing server's default port (`--port` overrides it). */
   private val defaultPort = 8077
 
-  /** How long to wait for a wallet to sign and submit before giving up (`sys.exit(1)`).
+  /** How long to wait for a wallet to sign and submit before giving up (returning `false`
+    * \- see [[signAndSubmit]]/m11).
     */
   private val signingTimeoutMs = 15L * 60L * 1000L
 
   /** Finishes every W4a transaction command: builds the tx's unsigned form exactly once
     * (`PaideiaTransaction.unsigned()` mutates the tx's own `outputs` to add a change box
-    * \- calling it twice would add two), then either dumps `--no-sign` JSON and returns,
-    * or starts the local signing server and waits for a signature (see
-    * [[signAndSubmit]]).
+    * \- calling it twice would add two), then either dumps `--no-sign` JSON and returns
+    * `true`, or starts the local signing server and waits for a signature (see
+    * [[signAndSubmit]]), returning whether one arrived in time.
     */
   private def signOrPrint(
     tx: PaideiaTransaction,
     cliArgs: CliArgs,
     actionDescription: String
-  ): Unit = {
+  ): Boolean = {
     val unsignedTx = tx.unsigned()
-    if (cliArgs.noSign) printNoSign(unsignedTx, tx)
-    else
+    if (cliArgs.noSign) {
+      printNoSign(unsignedTx, tx)
+      true
+    } else
       signAndSubmit(
         unsignedTx,
         tx,
         cliArgs.port.getOrElse(defaultPort),
+        cliArgs.host,
         actionDescription
       )
   }
@@ -364,30 +454,48 @@ object Main {
     println(root.toString)
   }
 
-  /** The default signing flow: starts a [[SigningServer]] exposing `unsignedTx`, prints
-    * the ErgoPay URI (+ QR code, for a mobile wallet) and the Nautilus-in-the-browser
-    * page URL, then blocks in [[waitForSubmission]] until one of them completes (or the
-    * 15 minute timeout hits, in which case this exits non-zero).
+  /** The default signing flow: mints a fresh per-invocation URL token (M1.2 - see
+    * `SigningServer`'s scaladoc for why every endpoint lives under one), starts a
+    * [[SigningServer]] exposing `unsignedTx` under it, prints the ErgoPay URI (+ QR code,
+    * for a mobile wallet) and the Nautilus-in-the-browser page URL, then blocks in
+    * [[waitForSubmission]] until one of them completes or the 15 minute timeout hits.
+    *
+    * @param hostOverride
+    *   `--host`, when given - see [[CliArgs.host]]. Only affects what's printed/encoded
+    *   in the URLs; the server itself always binds every interface.
+    * @return
+    *   whether a signature actually arrived in time (m11 - the caller, not this method,
+    *   decides what a timeout means for the process exit code).
     */
   private def signAndSubmit(
     unsignedTx: UnsignedTransaction,
     tx: PaideiaTransaction,
     port: Int,
+    hostOverride: Option[String],
     actionDescription: String
-  ): Unit = {
+  ): Boolean = {
     val reducedTx    = tx.ctx.newProverBuilder().build().reduce(unsignedTx, 0)
     val payload      = Base64.getUrlEncoder.encodeToString(reducedTx.toBytes())
     val eip12Json    = Eip12UnsignedTx.toJson(Eip12UnsignedTx(unsignedTx))
     val expectedTxId = unsignedTx.getId()
     val nodeUrl      = Env.conf.getString("node")
+    val token        = SigningServer.newToken()
 
     val server =
-      SigningServer(port, payload, eip12Json, actionDescription, nodeUrl)
+      SigningServer(
+        port,
+        token,
+        payload,
+        eip12Json,
+        actionDescription,
+        expectedTxId,
+        nodeUrl
+      )
     server.start()
     try {
-      val host        = lanIp()
-      val ergopayUri  = s"ergopay://$host:$port/tx"
-      val nautilusUrl = s"http://$host:$port/"
+      val host        = hostOverride.getOrElse(lanIp())
+      val ergopayUri  = s"ergopay://$host:$port/$token/tx"
+      val nautilusUrl = s"http://$host:$port/$token/"
 
       println(actionDescription)
       println()
@@ -401,10 +509,12 @@ object Main {
       )
 
       waitForSubmission(server, nodeUrl, expectedTxId, signingTimeoutMs) match {
-        case Some(txId) => println(s"submitted: $txId")
+        case Some(txId) =>
+          println(s"submitted: $txId")
+          true
         case None =>
           System.err.println("timed out waiting for a signature")
-          sys.exit(1)
+          false
       }
     } finally server.stop()
   }
@@ -451,7 +561,8 @@ object Main {
     * `127.0.0.1` if none is found (e.g. offline) - used to build a QR-scannable
     * `ergopay://`/`http://` URL another device on the same LAN (a phone running an Ergo
     * wallet) can actually reach; `localhost` itself would only work for a wallet running
-    * on this same machine.
+    * on this same machine. Only consulted when `--host` isn't given (m7) - see
+    * `CliArgs.host`/`signAndSubmit`'s `hostOverride`.
     */
   private def lanIp(): String = {
     val candidate = NetworkInterface.getNetworkInterfaces.asScala

@@ -412,9 +412,20 @@ object ReadModels {
     *
     * @return
     *   one [[StakeInfo]] per candidate that resolves to a live stake record - not
-    *   necessarily in `candidateTokenIds`' order. Empty (rather than throwing) when the
-    *   DAO has no confirmed staking state yet, or when nothing in `candidateTokenIds`
-    *   matches.
+    *   necessarily in `candidateTokenIds`' order. Empty (never throwing) exactly when
+    *   `candidateTokenIds` itself is empty, or when the DAO's staking state was resolved
+    *   fine but none of `candidateTokenIds` turned out to be an actual key in it - both
+    *   are the ordinary "this wallet has no stake here" outcome.
+    * @throws NoSuchElementException
+    *   (M4(a)) if `candidateTokenIds` is non-empty but the DAO's current `StakeStateBox`
+    *   can't be found, or the stake-records/participation-records map at that box's own
+    *   digest is missing - mirrors `PaideiaStateService.getStake`'s unguarded `.get`s on
+    *   exactly those two lookups. Either is a local replay/sync problem (this session's
+    *   state is stale or corrupt), never a legitimate "no stake" answer - silently
+    *   returning `Nil` here would be indistinguishable from "this wallet has no stake",
+    *   which is a materially different (and worse) thing to tell a caller deciding
+    *   whether it's safe to mint a brand new stake key (see `Main`'s `stake add`
+    *   handling).
     */
   def stakeStatus(
     ctx: BlockchainContextImpl,
@@ -428,33 +439,46 @@ object ReadModels {
           .getConfig(daoKey)
           .getArray[Byte](ConfKeys.im_paideia_staking_state_tokenid)
       ).toString()
-      Paideia
+      val box = Paideia
         .getBox(new FilterLeaf(FilterType.FTEQ, stakeStateTokenId, CompareField.ASSET, 0))
         .headOption
-        .toList
-        .flatMap { box =>
-          val stakeStateBox = StakeStateBox.fromInputBox(ctx, box)
-          val state         = TotalStakingState(daoKey).currentStakingState
-          val stakeMapOpt   = state.stakeRecords.getMap(Some(stakeStateBox.stateDigest))
-          val partMap = state.participationRecords
-            .getMap(Some(stakeStateBox.participationDigest))
-            .map(_.toMap)
-            .getOrElse(Map.empty)
+        .getOrElse(
+          throw new NoSuchElementException(
+            s"ReadModels.stakeStatus: no confirmed staking state box for DAO $daoKey - " +
+              "local state may be out of sync"
+          )
+        )
+      val stakeStateBox = StakeStateBox.fromInputBox(ctx, box)
+      val state         = TotalStakingState(daoKey).currentStakingState
+      val stakeMap = state.stakeRecords
+        .getMap(Some(stakeStateBox.stateDigest))
+        .getOrElse(
+          throw new NoSuchElementException(
+            s"ReadModels.stakeStatus: no stake-records map at the current staking " +
+              s"state's digest for DAO $daoKey - local state may be out of sync"
+          )
+        )
+        .toMap
+      val partMap = state.participationRecords
+        .getMap(Some(stakeStateBox.participationDigest))
+        .getOrElse(
+          throw new NoSuchElementException(
+            s"ReadModels.stakeStatus: no participation-records map at the current " +
+              s"staking state's digest for DAO $daoKey - local state may be out of sync"
+          )
+        )
+        .toMap
 
-          stakeMapOpt.toList.flatMap { stakeMapWithMap =>
-            val stakeMap = stakeMapWithMap.toMap
-            candidateTokenIds.toList.flatMap { tokenId =>
-              try {
-                val key = ErgoId.create(tokenId)
-                stakeMap
-                  .get(key)
-                  .map(record => StakeInfo(key.toString(), record, partMap.get(key)))
-              } catch {
-                case _: Throwable => None
-              }
-            }
-          }
+      candidateTokenIds.toList.flatMap { tokenId =>
+        try {
+          val key = ErgoId.create(tokenId)
+          stakeMap
+            .get(key)
+            .map(record => StakeInfo(key.toString(), record, partMap.get(key)))
+        } catch {
+          case _: Throwable => None
         }
+      }
     }
 
   /** Every token id sitting in any of `addresses`' unspent boxes - the CLI's stand-in for

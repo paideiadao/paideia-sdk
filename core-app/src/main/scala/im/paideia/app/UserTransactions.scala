@@ -47,13 +47,25 @@ object UserTransactions {
     * plus every token the transaction's own outputs need that its protocol `inputs` don't
     * already supply, e.g. the stake-key NFT `addStake`/`unstake`/`vote` return to the
     * user).
+    *
+    * Also sets `tx.minimizeChangeBox = false` - CRITICAL: `PaideiaTransaction.unsigned()`
+    * defaults `minimizeChangeBox = true`, and in that mode it folds the ENTIRE change
+    * surplus above a dust-sized box into `fee` rather than returning it to the user (see
+    * `PaideiaTransaction.scala`'s change-box branch). That default is fine for a protocol
+    * bot funding itself from a tightly-sized treasury box, but the CLI funds from
+    * whatever wallet box `UserBoxSelector` happens to pick - typically far larger than
+    * what's needed - so leaving it on would silently charge the user their entire
+    * leftover balance as a "fee". paideia-state's own `MUnsignedTransaction.apply`
+    * (`app/models/MUnsignedTransaction.scala:63`) sets this to `false` before funding for
+    * exactly this reason; every CLI transaction must too.
     */
   private def fund(
     tx: PaideiaTransaction,
     selector: UserBoxSelector,
     addresses: Seq[String]
   ): PaideiaTransaction = {
-    tx.userInputs = selector.selectFor(tx, addresses)
+    tx.minimizeChangeBox = false
+    tx.userInputs        = selector.selectFor(tx, addresses)
     tx
   }
 

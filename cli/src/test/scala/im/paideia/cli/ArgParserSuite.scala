@@ -111,17 +111,7 @@ class ArgParserSuite extends AnyFunSuite {
   test("stake add <daoKey> <amount>") {
     val result = ArgParser.parse(Array("stake", "add", "abc123", "1000"))
     assert(
-      result == Right(CliArgs(None, None, None, Command.StakeAdd("abc123", 1000L, None)))
-    )
-  }
-
-  test("stake add <daoKey> <amount> --stake-key <id>") {
-    val result =
-      ArgParser.parse(Array("stake", "add", "abc123", "1000", "--stake-key", "deadbeef"))
-    assert(
-      result == Right(
-        CliArgs(None, None, None, Command.StakeAdd("abc123", 1000L, Some("deadbeef")))
-      )
+      result == Right(CliArgs(None, None, None, Command.StakeAdd("abc123", 1000L)))
     )
   }
 
@@ -131,33 +121,36 @@ class ArgParserSuite extends AnyFunSuite {
     assert(result.left.get.contains("not-a-number"))
   }
 
-  test("stake remove <daoKey> <amount>") {
-    val result = ArgParser.parse(Array("stake", "remove", "abc123", "500"))
-    assert(
-      result == Right(
-        CliArgs(None, None, None, Command.StakeRemove("abc123", RemoveAmount.Exact(500L)))
-      )
-    )
-  }
-
-  test("stake remove <daoKey> all") {
-    val result = ArgParser.parse(Array("stake", "remove", "abc123", "all"))
-    assert(
-      result == Right(
-        CliArgs(None, None, None, Command.StakeRemove("abc123", RemoveAmount.All))
-      )
-    )
-  }
-
-  test("stake remove with a non-positive amount is an error") {
-    val result = ArgParser.parse(Array("stake", "remove", "abc123", "0"))
-    assert(result.isLeft)
-    val negative = ArgParser.parse(Array("stake", "remove", "abc123", "-5"))
+  // m9
+  test("stake add with a zero or negative amount is an error") {
+    val zero = ArgParser.parse(Array("stake", "add", "abc123", "0"))
+    assert(zero.isLeft)
+    val negative = ArgParser.parse(Array("stake", "add", "abc123", "-5"))
     assert(negative.isLeft)
   }
 
-  test("stake remove with a non-integer, non-'all' amount is an error") {
-    val result = ArgParser.parse(Array("stake", "remove", "abc123", "lots"))
+  // C2
+  test("stake remove <daoKey> - a full unstake, no amount argument") {
+    val result = ArgParser.parse(Array("stake", "remove", "abc123"))
+    assert(result == Right(CliArgs(None, None, None, Command.StakeRemove("abc123"))))
+  }
+
+  test("C2: stake remove with a numeric amount is a clear parse error, not a command") {
+    val result = ArgParser.parse(Array("stake", "remove", "abc123", "500"))
+    assert(result.isLeft)
+    assert(result.left.get.contains("full unstake"))
+  }
+
+  test(
+    "C2: stake remove <daoKey> all is also rejected (no such thing as 'remove all' anymore)"
+  ) {
+    val result = ArgParser.parse(Array("stake", "remove", "abc123", "all"))
+    assert(result.isLeft)
+    assert(result.left.get.contains("full unstake"))
+  }
+
+  test("stake remove without a daoKey is an error") {
+    val result = ArgParser.parse(Array("stake", "remove"))
     assert(result.isLeft)
   }
 
@@ -184,6 +177,13 @@ class ArgParserSuite extends AnyFunSuite {
   test("vote with a non-integer vote allocation is an error") {
     val result = ArgParser.parse(Array("vote", "abc123", "0", "100,abc"))
     assert(result.isLeft)
+  }
+
+  // M3
+  test("M3: vote with a negative allocation element is rejected at parse time") {
+    val result = ArgParser.parse(Array("vote", "abc123", "0", "100,-5"))
+    assert(result.isLeft)
+    assert(result.left.get.toLowerCase.contains("negative"))
   }
 
   test("--address is repeatable, first one wins as change/receive address") {
@@ -218,7 +218,7 @@ class ArgParserSuite extends AnyFunSuite {
           None,
           None,
           None,
-          Command.StakeAdd("abc123", 1000L, None),
+          Command.StakeAdd("abc123", 1000L),
           addresses = List("addr1"),
           noSign    = true
         )
@@ -254,5 +254,126 @@ class ArgParserSuite extends AnyFunSuite {
     val result = ArgParser.parse(Array("--port", "not-a-port", "sync"))
     assert(result.isLeft)
     assert(result.left.get.contains("not-a-port"))
+  }
+
+  // m10
+  test("--port out of range (0, negative, or > 65535) is an error") {
+    assert(ArgParser.parse(Array("--port", "0", "sync")).isLeft)
+    assert(ArgParser.parse(Array("--port", "-1", "sync")).isLeft)
+    assert(ArgParser.parse(Array("--port", "65536", "sync")).isLeft)
+    assert(ArgParser.parse(Array("--port", "65535", "sync")).isRight)
+    assert(ArgParser.parse(Array("--port", "1", "sync")).isRight)
+  }
+
+  // M5/m12: --stake-key is a single global flag now (not parsed per-command), since
+  // stake add, stake remove and vote all accept it.
+  test("--stake-key is a global flag usable before stake add") {
+    val result = ArgParser.parse(
+      Array(
+        "--address",
+        "addr1",
+        "--stake-key",
+        "deadbeef",
+        "stake",
+        "add",
+        "abc123",
+        "1000"
+      )
+    )
+    assert(
+      result == Right(
+        CliArgs(
+          None,
+          None,
+          None,
+          Command.StakeAdd("abc123", 1000L),
+          addresses        = List("addr1"),
+          stakeKeyOverride = Some("deadbeef")
+        )
+      )
+    )
+  }
+
+  test("--stake-key is usable before stake remove") {
+    val result = ArgParser.parse(
+      Array("--address", "addr1", "--stake-key", "deadbeef", "stake", "remove", "abc123")
+    )
+    assert(
+      result == Right(
+        CliArgs(
+          None,
+          None,
+          None,
+          Command.StakeRemove("abc123"),
+          addresses        = List("addr1"),
+          stakeKeyOverride = Some("deadbeef")
+        )
+      )
+    )
+  }
+
+  test("--stake-key is usable before vote") {
+    val result = ArgParser.parse(
+      Array(
+        "--address",
+        "addr1",
+        "--stake-key",
+        "deadbeef",
+        "vote",
+        "abc123",
+        "0",
+        "100,0"
+      )
+    )
+    assert(result.isRight)
+    assert(result.toOption.get.stakeKeyOverride == Some("deadbeef"))
+  }
+
+  test("--stake-key without a value is an error") {
+    val result = ArgParser.parse(Array("--stake-key"))
+    assert(result == Left("--stake-key requires a value"))
+  }
+
+  // m12: --stake-key placed AFTER the command (the old per-command syntax) is now a
+  // "flags before the command" parse error, not a supported shape.
+  test(
+    "m12: --stake-key after the command is rejected as misplaced, not silently accepted"
+  ) {
+    val result =
+      ArgParser.parse(Array("stake", "add", "abc123", "1000", "--stake-key", "deadbeef"))
+    assert(result.isLeft)
+    assert(result.left.get.contains("flags must come before the command"))
+  }
+
+  test(
+    "m12: a stray --flag anywhere in the command's own arguments is rejected the same way"
+  ) {
+    val result = ArgParser.parse(Array("vote", "abc123", "0", "100,0", "--bogus"))
+    assert(result.isLeft)
+    assert(result.left.get.contains("flags must come before the command"))
+  }
+
+  // m7
+  test("--host overrides the advertised signing host") {
+    val result = ArgParser.parse(
+      Array("--address", "addr1", "--host", "203.0.113.5", "stake", "status", "abc")
+    )
+    assert(
+      result == Right(
+        CliArgs(
+          None,
+          None,
+          None,
+          Command.StakeStatus("abc"),
+          addresses = List("addr1"),
+          host      = Some("203.0.113.5")
+        )
+      )
+    )
+  }
+
+  test("--host without a value is an error") {
+    val result = ArgParser.parse(Array("--host"))
+    assert(result == Left("--host requires a value"))
   }
 }

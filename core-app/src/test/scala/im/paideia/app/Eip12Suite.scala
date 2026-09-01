@@ -92,6 +92,26 @@ class Eip12Suite extends PaideiaTestSuite {
         val unsigned = tx.unsigned()
         val eip12    = Eip12UnsignedTx(unsigned)
 
+        // The StakeState box (inputs.head - see StakeTransaction's own `inputs` list) is
+        // spent with two ContextVars attached (index 1: the config proof; index 0: the
+        // STAKE tx-type tag - see StakingContextVars.stake/StakeTransaction's
+        // `contextVars`). A prior version of this test only checked that the "extension"
+        // field was *present*, which would have passed even if extension serialization
+        // were silently dropping every entry.
+        val stakeStateInputExtension = eip12.inputs.head.extension
+        assert(
+          stakeStateInputExtension.nonEmpty,
+          s"expected a non-empty context extension on the StakeState input, got $stakeStateInputExtension"
+        )
+        assert(
+          stakeStateInputExtension.contains("0"),
+          s"expected extension key 0 (tx-type tag), got keys ${stakeStateInputExtension.keys}"
+        )
+        assert(
+          stakeStateInputExtension.contains("1"),
+          s"expected extension key 1 (config proof), got keys ${stakeStateInputExtension.keys}"
+        )
+
         // --- structural shape ---
         assert(eip12.inputs.nonEmpty, "expected at least one input")
         assert(eip12.outputs.nonEmpty, "expected at least one output")

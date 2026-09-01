@@ -97,4 +97,47 @@ object NodeHttp {
     */
   def isConfirmed(nodeUrl: String, txId: String): Boolean =
     get(nodeUrl, s"/blockchain/transaction/byId/$txId") == 200
+
+  /** Every box id currently spent as an input by some unconfirmed (mempool) transaction -
+    * paginated over the node's `GET /transactions/unconfirmed?limit=&offset=` (the same
+    * endpoint `TransactionsApi.getUnconfirmedTransactions` wraps), stopping once a page
+    * comes back shorter than `pageSize`. Used by [[im.paideia.app.UserBoxSelector]]'s
+    * production wiring (see `Main`) to exclude wallet boxes a still-unconfirmed CLI
+    * transaction has already spent - without this, running two transaction commands back
+    * to back could pick the same box twice.
+    *
+    * @throws RuntimeException
+    *   on any HTTP failure - callers are expected to catch this and degrade to "nothing
+    *   spent in the mempool" (see `Main`'s wiring), since a mempool-visibility outage is
+    *   not a reason to refuse to build a transaction at all.
+    */
+  def mempoolSpentBoxIds(nodeUrl: String, pageSize: Int = 100): Set[String] = {
+    val ids      = scala.collection.mutable.Set[String]()
+    var offset   = 0
+    var continue = true
+    while (continue) {
+      val request = HttpRequest
+        .newBuilder(
+          URI.create(s"$nodeUrl/transactions/unconfirmed?limit=$pageSize&offset=$offset")
+        )
+        .GET()
+        .build()
+      val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+      if (response.statusCode() / 100 != 2)
+        throw new RuntimeException(
+          s"failed to fetch unconfirmed transactions: HTTP ${response.statusCode()}"
+        )
+      val page = new JsonParser().parse(response.body()).getAsJsonArray
+      page.asScala.foreach { txEl =>
+        val inputs = txEl.getAsJsonObject.getAsJsonArray("inputs")
+        if (inputs != null)
+          inputs.asScala.foreach(inp =>
+            ids += inp.getAsJsonObject.get("boxId").getAsString
+          )
+      }
+      offset += page.size()
+      continue = page.size() == pageSize
+    }
+    ids.toSet
+  }
 }

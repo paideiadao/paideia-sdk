@@ -227,4 +227,86 @@ class UserBoxSelectorSuite extends PaideiaTestSuite {
       assert(selected == List(plenty))
     }
   }
+
+  // --- M2: a box already spent by a not-yet-confirmed mempool transaction must never be
+  // picked again - otherwise two transaction commands run back to back (e.g. `stake add`
+  // immediately followed by `vote`) can both try to spend the same wallet box, and the
+  // second one is stranded (or double-spent) once the first confirms.
+
+  test(
+    "M2: a box already spent in the mempool is excluded, even though it would exactly cover the target"
+  ) {
+    withCtx { ctx =>
+      val tx = fixture(
+        ctx,
+        protocolInputValue = 2000000L,
+        outputValue        = 3500000L,
+        fee                = 1000000L
+      )
+      val spentInMempool = boxWith(ctx, 3500000L)
+      val stillFree      = boxWith(ctx, 2000000L)
+      val alsoFree       = boxWith(ctx, 1500000L)
+
+      val selector = new UserBoxSelector(
+        _ => List(spentInMempool, stillFree, alsoFree),
+        () => Set(spentInMempool.getId().toString)
+      )
+      val selected = selector.selectFor(tx, List(walletAddress))
+
+      assert(!selected.contains(spentInMempool))
+      assert(selected == List(stillFree, alsoFree))
+    }
+  }
+
+  test(
+    "M2: mempool spending every candidate box surfaces the usual insufficient-ERG error, not a crash"
+  ) {
+    withCtx { ctx =>
+      val tx = fixture(
+        ctx,
+        protocolInputValue = 2000000L,
+        outputValue        = 3500000L,
+        fee                = 1000000L
+      )
+      val onlyBox = boxWith(ctx, 3500000L)
+
+      val selector =
+        new UserBoxSelector(_ => List(onlyBox), () => Set(onlyBox.getId().toString))
+      val thrown = intercept[IllegalArgumentException] {
+        selector.selectFor(tx, List(walletAddress))
+      }
+      assert(thrown.getMessage.contains("Insufficient ERG"))
+      assert(thrown.getMessage.contains("found 0"))
+    }
+  }
+
+  // --- m8: the per-address box fetch must be memoized for the selector's lifetime, both
+  // to avoid a redundant live-node round trip and so two calls within the same CLI
+  // invocation (e.g. `stake add`'s auto-detection, then its own funding pass) see a
+  // consistent wallet snapshot rather than possibly-different live results.
+
+  test(
+    "m8: fetchBoxesByAddress is called at most once per address for the selector's lifetime"
+  ) {
+    withCtx { ctx =>
+      var calls = 0
+      val box   = boxWith(ctx, 3500000L)
+      val selector = new UserBoxSelector(_ => {
+        calls += 1
+        List(box)
+      })
+
+      selector.unspentBoxes(List(walletAddress))
+      selector.unspentBoxes(List(walletAddress))
+      val tx = fixture(
+        ctx,
+        protocolInputValue = 2000000L,
+        outputValue        = 3500000L,
+        fee                = 1000000L
+      )
+      selector.selectFor(tx, List(walletAddress))
+
+      assert(calls == 1, s"expected exactly one fetch for $walletAddress, got $calls")
+    }
+  }
 }

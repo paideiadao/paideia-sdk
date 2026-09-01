@@ -16,10 +16,14 @@
 <script>
 // Minimal EIP-12 dApp connector flow, no frameworks:
 //   1. window.ergoConnector.nautilus.connect() - prompts the user, injects window.ergo
-//   2. GET /eip12 - this CLI's own unsigned tx, in EIP-12 shape
+//   2. GET eip12 - this CLI's own unsigned tx, in EIP-12 shape
 //   3. window.ergo.sign_tx(tx) - Nautilus prompts the user to review and sign
-//   4. POST /signed - hands the signed tx back to the CLI, which submits it to the node
+//   4. POST signed - hands the signed tx back to the CLI, which submits it to the node
 //      (the page itself has no node access)
+// Both fetch paths are RELATIVE (not '/eip12'/'/signed'): this page is served at
+// /<token>/, and relative URLs resolve against that same token prefix - an absolute
+// '/eip12' would instead hit the server's root, which 404s (see SigningServer's scaladoc
+// on why every endpoint lives under a random per-invocation token).
 async function run() {
   var statusEl = document.getElementById('status');
   var detailEl = document.getElementById('detail');
@@ -39,7 +43,7 @@ async function run() {
     }
 
     statusEl.textContent = 'Fetching the transaction to sign...';
-    var txResp = await fetch('/eip12');
+    var txResp = await fetch('eip12');
     if (!txResp.ok) {
       fail('Failed to fetch the transaction.', 'HTTP ' + txResp.status);
       return;
@@ -50,7 +54,7 @@ async function run() {
     var signed = await window.ergo.sign_tx(tx);
 
     statusEl.textContent = 'Submitting the signed transaction...';
-    var submitResp = await fetch('/signed', {
+    var submitResp = await fetch('signed', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(signed)
