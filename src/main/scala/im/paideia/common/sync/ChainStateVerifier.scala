@@ -5,10 +5,12 @@ import im.paideia.util.Util
 import org.ergoplatform.appkit.InputBox
 import org.ergoplatform.appkit.impl.InputBoxImpl
 import org.ergoplatform.restapi.client.ErgoTransactionOutput
+import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import sigma.AvlTree
 import sigma.Coll
 
 import scala.collection.JavaConverters._
+import scala.util.Try
 
 /** One digest comparison between the local (in-memory session) view and what was actually
   * read back from an on-chain box.
@@ -264,25 +266,40 @@ object ChainStateVerifier {
     *   \- every distinct ErgoTree's currently-unspent boxes, keyed by hex-encoded
     *   ErgoTree; an ErgoTree with no entry (or an empty list) is treated as having no
     *   unspent boxes on-chain.
+    * @param accepts
+    *   \- whether the local contract instance behind `ergoTreeHex` (first argument) would
+    *   track the given on-chain box at all. `PaideiaContract.handleEvent` only ever adds
+    *   an output that passes `validateBox`, so a box that fails it - e.g. a tokenless
+    *   dust box someone sent to a contract address - is deliberately invisible to local
+    *   state while still sitting in the node's by-ErgoTree unspent index forever; without
+    *   this filter such a box is a permanent false-positive `extraOnNode` that not even a
+    *   full replay clears (found live: a 2022 dust box on the CreateDAO address).
+    *   Only `extraOnNode` is filtered - a box local state DOES track already passed
+    *   `validateBox` once, so `missingOnNode` needs no filter. Defaults to accepting
+    *   everything, which keeps the pure-comparison tests' semantics.
     * @return
     *   one [[BoxSetCheck]] per local contract instance, and one [[DigestCheck]] per local
     *   digest.
     */
   private[sync] def compare(
     local: LocalSnapshot,
-    onChain: Map[String, List[ErgoTransactionOutput]]
+    onChain: Map[String, List[ErgoTransactionOutput]],
+    accepts: (String, ErgoTransactionOutput) => Boolean = (_, _) => true
   ): VerificationReport = {
 
     def boxesFor(ergoTreeHex: String): List[ErgoTransactionOutput] =
       onChain.getOrElse(ergoTreeHex, Nil)
 
     val boxSetChecks = local.contractInstances.map { instance =>
-      val onChainIds = boxesFor(instance.ergoTreeHex).map(_.getBoxId()).toSet
+      val onChainBoxes = boxesFor(instance.ergoTreeHex)
+      val onChainIds   = onChainBoxes.map(_.getBoxId()).toSet
+      val acceptedOnChainIds =
+        onChainBoxes.filter(accepts(instance.ergoTreeHex, _)).map(_.getBoxId()).toSet
       BoxSetCheck(
         instance.contractClass,
         instance.daoKey,
         missingOnNode = instance.confirmedBoxIds -- onChainIds,
-        extraOnNode   = onChainIds -- instance.confirmedBoxIds
+        extraOnNode   = acceptedOnChainIds -- instance.confirmedBoxIds
       )
     }
 
@@ -328,14 +345,32 @@ object ChainStateVerifier {
     * even when the local session thinks a contract has zero confirmed boxes - itself a
     * mismatch worth reporting via that box set's `extraOnNode`), and compares.
     *
+    * On-chain boxes a contract instance would itself refuse to track (`validateBox`
+    * false, or throwing on a garbage box it can't even decode) are excluded from
+    * `extraOnNode` - see [[compare]]'s `accepts` parameter for why.
+    *
     * @param client
     *   \- reaches the node's indexed `blockchain` endpoints.
+    * @param ctx
+    *   \- the blockchain context `validateBox` implementations need to decode candidate
+    *   boxes.
     * @return
     *   the full comparison report; see [[VerificationReport.ok]] for the pass/fail
     *   summary.
     */
-  def verify(client: IndexedNodeClient): VerificationReport = {
+  def verify(client: IndexedNodeClient, ctx: BlockchainContextImpl): VerificationReport = {
     val local = localSnapshot()
+
+    val instanceByTree = Paideia._actorList.values
+      .flatMap(_.contractInstances.values)
+      .map(instance => instance.ergoTreeHex -> instance)
+      .toMap
+    val accepts: (String, ErgoTransactionOutput) => Boolean = (treeHex, output) =>
+      instanceByTree.get(treeHex) match {
+        case Some(instance) =>
+          Try(instance.validateBox(ctx, new InputBoxImpl(output))).getOrElse(false)
+        case None => true
+      }
 
     val digestBackedClasses = Set(ConfigClass, StakeStateClass, ProposalBasicClass)
     val ergoTreesToFetch = local.contractInstances
@@ -345,6 +380,6 @@ object ChainStateVerifier {
 
     val onChain = ergoTreesToFetch.map(t => t -> client.unspentBoxesByErgoTree(t)).toMap
 
-    compare(local, onChain)
+    compare(local, onChain, accepts)
   }
 }

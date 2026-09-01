@@ -293,4 +293,37 @@ class ChainStateVerifierSuite extends AnyFunSuite {
     assert(check1.onChain.contains(digestHex(0xD1.toByte)))
     assert(report.ok)
   }
+
+  test(
+    "compare: an on-chain box the contract would not track (accepts false) is not extraOnNode, " +
+      "but missingOnNode is never filtered"
+  ) {
+    val daoKey = hexId(6)
+    val tree   = "config-tree-placeholder"
+
+    // Local state tracks "a"; on-chain also has "dust" (a box the contract's validateBox
+    // would reject - e.g. a tokenless box someone parked at the contract address).
+    val local = LocalSnapshot(
+      contractInstances = Seq(LocalContractInstance(tree, "Config", daoKey, Set("a", "gone"))),
+      digests           = Seq.empty
+    )
+    val onChain = Map(
+      tree -> List(outputBox("a", tree), outputBox("dust", tree))
+    )
+    val accepts: (String, ErgoTransactionOutput) => Boolean =
+      (_, out) => out.getBoxId() != "dust"
+
+    val report = ChainStateVerifier.compare(local, onChain, accepts)
+
+    val check = report.boxSetChecks.head
+    // "dust" is excluded from extraOnNode by the accepts filter...
+    assert(check.extraOnNode == Set.empty)
+    // ...but a locally-tracked box that's gone from the node still fails, unfiltered.
+    assert(check.missingOnNode == Set("gone"))
+    assert(!report.ok)
+
+    // Without the filter, the dust box is a (false-positive) extra.
+    val unfiltered = ChainStateVerifier.compare(local, onChain)
+    assert(unfiltered.boxSetChecks.head.extraOnNode == Set("dust"))
+  }
 }
