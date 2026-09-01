@@ -120,12 +120,16 @@ lazy val coreApp: Project = (project in file("core-app"))
   */
 lazy val cli: Project = (project in file("cli"))
   // test->test brings coreApp's (transitively sdk's) Test-scoped scalatest dependency
-  // onto cli's own test classpath (ArgParserSuite) without cli declaring any library
-  // dependency of its own - see ArgParserSuite.
+  // onto cli's own test classpath (ArgParserSuite) without cli needing to declare a
+  // scalatest dependency of its own - see ArgParserSuite.
   .dependsOn(coreApp % "compile->compile;test->test")
   .settings(
     name := "paideia-cli",
     publish / skip := true,
+    // Terminal QR rendering for the default ErgoPay tx-signing flow (Main.signAndSubmit)
+    // - the only place this repo needs QR encoding, so it's scoped to the cli module
+    // alone rather than added to the sdk or coreApp.
+    libraryDependencies += "com.google.zxing" % "core" % "3.5.3",
     Compile / mainClass := Some("im.paideia.cli.Main"),
     assembly / mainClass := Some("im.paideia.cli.Main"),
     assembly / assemblyJarName := "paideia-cli.jar",

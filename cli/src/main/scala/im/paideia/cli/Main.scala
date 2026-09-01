@@ -1,27 +1,40 @@
 package im.paideia.cli
 
+import com.google.gson.JsonObject
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import im.paideia.Paideia
 import im.paideia.PaideiaSession
 import im.paideia.app.ActionView
 import im.paideia.app.DaoSummary
+import im.paideia.app.Eip12UnsignedTx
 import im.paideia.app.ProposalDetail
 import im.paideia.app.ProposalSummary
 import im.paideia.app.ReadModels
 import im.paideia.app.SendFundsActionView
+import im.paideia.app.StakeInfo
 import im.paideia.app.StateLifecycle
 import im.paideia.app.UpdateConfigActionView
+import im.paideia.app.UserBoxSelector
+import im.paideia.app.UserTransactions
 import im.paideia.common.sync.IndexedNodeClient
 import im.paideia.common.sync.NodeBlockSource
+import im.paideia.common.transactions.PaideiaTransaction
+import im.paideia.staking.StakeRecord
+import im.paideia.util.Env
 import im.paideia.util.PaideiaEnv
+import org.ergoplatform.appkit.UnsignedTransaction
 import org.ergoplatform.appkit.impl.BlockchainContextBuilderImpl
 import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import org.ergoplatform.appkit.impl.NodeDataSourceImpl
 import org.ergoplatform.restapi.client.ApiClient
 
 import java.io.File
+import java.net.NetworkInterface
 import java.time.Instant
+import java.util.Base64
+import scala.collection.JavaConverters._
+import scala.util.Try
 
 /** `paideia` - the v1 CLI shell described in `PHASE4-CLI-DESIGN.md` (W3): "a guaranteed
   * surface for any user to interact with Paideia" needing only this JAR, a wallet (not
@@ -128,7 +141,8 @@ object Main {
         onRetry = (desc, attempt, message) =>
           System.err.println(s"[retry] $desc (attempt $attempt): $message")
       )
-      val indexedClient = IndexedNodeClient.forNode(nodeUrl)
+      val indexedClient   = IndexedNodeClient.forNode(nodeUrl)
+      val userBoxSelector = UserBoxSelector(indexedClient, ctx)
       val lifecycle = new StateLifecycle(
         session,
         blockSource,
@@ -148,6 +162,105 @@ object Main {
           printProposalList(ReadModels.proposalList(ctx, daoKey))
         case Command.ProposalShow(daoKey, index) =>
           printProposalDetail(ReadModels.proposalDetail(ctx, daoKey, index))
+
+        case Command.StakeStatus(daoKey) =>
+          val addresses  = requireAddresses(cliArgs)
+          val candidates = ReadModels.candidateStakeKeysFor(userBoxSelector, addresses)
+          printStakeStatus(ReadModels.stakeStatus(ctx, daoKey, candidates))
+
+        case Command.StakeAdd(daoKey, amount, stakeKeyOverride) =>
+          val addresses = requireAddresses(cliArgs)
+          val existingKey = stakeKeyOverride.orElse(
+            findStake(ctx, userBoxSelector, daoKey, addresses).map(_.stakeKey)
+          )
+          val tx = existingKey match {
+            case Some(key) =>
+              UserTransactions.addStake(
+                ctx,
+                userBoxSelector,
+                daoKey,
+                key,
+                amount,
+                addresses,
+                addresses.head
+              )
+            case None =>
+              UserTransactions
+                .stake(ctx, userBoxSelector, daoKey, amount, addresses, addresses.head)
+          }
+          val description = existingKey match {
+            case Some(key) => s"add $amount to existing stake $key on DAO $daoKey"
+            case None      => s"first-time stake of $amount on DAO $daoKey"
+          }
+          signOrPrint(tx, cliArgs, description)
+
+        case Command.StakeRemove(daoKey, removeAmount) =>
+          val addresses = requireAddresses(cliArgs)
+          val stakeInfo = findStake(ctx, userBoxSelector, daoKey, addresses).getOrElse(
+            throw new IllegalArgumentException(
+              s"no stake found for DAO $daoKey at the given --address(es)"
+            )
+          )
+          val remaining = removeAmount match {
+            case RemoveAmount.All => 0L
+            case RemoveAmount.Exact(v) =>
+              val r = stakeInfo.stake.stake - v
+              if (r < 0)
+                throw new IllegalArgumentException(
+                  s"cannot remove $v: only ${stakeInfo.stake.stake} currently staked"
+                )
+              r
+          }
+          // Removal always withdraws every pending reward too, regardless of how much
+          // stake is being removed - see RemoveAmount's scaladoc.
+          val newRecord = StakeRecord(
+            remaining,
+            stakeInfo.stake.lockedUntil,
+            stakeInfo.stake.rewards.map(_ => 0L)
+          )
+          val tx = UserTransactions.unstake(
+            ctx,
+            userBoxSelector,
+            daoKey,
+            stakeInfo.stakeKey,
+            newRecord,
+            addresses,
+            addresses.head
+          )
+          val amountLabel = removeAmount match {
+            case RemoveAmount.All      => s"the entire stake (${stakeInfo.stake.stake})"
+            case RemoveAmount.Exact(v) => v.toString
+          }
+          signOrPrint(
+            tx,
+            cliArgs,
+            s"withdraw $amountLabel from stake ${stakeInfo.stakeKey} on DAO $daoKey " +
+              "(this also withdraws all pending rewards)"
+          )
+
+        case Command.Vote(daoKey, proposalIndex, votes) =>
+          val addresses = requireAddresses(cliArgs)
+          val stakeInfo = findStake(ctx, userBoxSelector, daoKey, addresses).getOrElse(
+            throw new IllegalArgumentException(
+              s"no stake found for DAO $daoKey - you must stake before voting"
+            )
+          )
+          val tx = UserTransactions.vote(
+            ctx,
+            userBoxSelector,
+            daoKey,
+            stakeInfo.stakeKey,
+            proposalIndex,
+            votes.toArray,
+            addresses,
+            addresses.head
+          )
+          signOrPrint(
+            tx,
+            cliArgs,
+            s"vote [${votes.mkString(",")}] on proposal $proposalIndex of DAO $daoKey " +
+              s"using stake ${stakeInfo.stakeKey}"
+          )
       }
     } finally {
       session.close()
@@ -156,6 +269,199 @@ object Main {
 
   private def formatInstant(epochMs: Long): String =
     Instant.ofEpochMilli(epochMs).toString
+
+  /** Every W4a transaction command needs at least one `--address` - both as the source of
+    * wallet funds/tokens `UserBoxSelector` draws `userInputs` from, and, for its first
+    * entry, as the change/receive address (see `CliArgs.addresses`'s scaladoc).
+    */
+  private def requireAddresses(cliArgs: CliArgs): List[String] =
+    if (cliArgs.addresses.isEmpty)
+      throw new IllegalArgumentException(
+        "this command requires at least one --address"
+      )
+    else cliArgs.addresses
+
+  /** Auto-detects an existing stake for `daoKey` among `addresses`' own wallet contents -
+    * the same lookup `stake status` prints, reused by `stake add` (to decide between a
+    * `StakeTransaction` and an `AddStakeTransaction` - see
+    * `im.paideia.app.UserTransactions`), `stake remove` and `vote` (which both require an
+    * existing stake key). Picks the first match when more than one of the addresses'
+    * tokens happens to resolve to a live stake record - in practice a wallet holds at
+    * most one stake key per DAO.
+    */
+  private def findStake(
+    ctx: BlockchainContextImpl,
+    selector: UserBoxSelector,
+    daoKey: String,
+    addresses: List[String]
+  ): Option[StakeInfo] = {
+    val candidates = ReadModels.candidateStakeKeysFor(selector, addresses)
+    ReadModels.stakeStatus(ctx, daoKey, candidates).headOption
+  }
+
+  private def printStakeStatus(stakes: List[StakeInfo]): Unit =
+    if (stakes.isEmpty) println("no stake found")
+    else
+      stakes.foreach { s =>
+        val lockedUntil =
+          if (s.stake.lockedUntil <= 0) "not locked"
+          else formatInstant(s.stake.lockedUntil)
+        val participation = s.participation
+          .map(p => s"voted=${p.voted} votedTotal=${p.votedTotal}")
+          .getOrElse("no participation record yet")
+        println(
+          s"stake key ${s.stakeKey}: staked=${s.stake.stake} lockedUntil=$lockedUntil " +
+            s"rewards=[${s.stake.rewards.mkString(",")}] ($participation)"
+        )
+      }
+
+  /** The local signing server's default port (`--port` overrides it). */
+  private val defaultPort = 8077
+
+  /** How long to wait for a wallet to sign and submit before giving up (`sys.exit(1)`).
+    */
+  private val signingTimeoutMs = 15L * 60L * 1000L
+
+  /** Finishes every W4a transaction command: builds the tx's unsigned form exactly once
+    * (`PaideiaTransaction.unsigned()` mutates the tx's own `outputs` to add a change box
+    * \- calling it twice would add two), then either dumps `--no-sign` JSON and returns,
+    * or starts the local signing server and waits for a signature (see
+    * [[signAndSubmit]]).
+    */
+  private def signOrPrint(
+    tx: PaideiaTransaction,
+    cliArgs: CliArgs,
+    actionDescription: String
+  ): Unit = {
+    val unsignedTx = tx.unsigned()
+    if (cliArgs.noSign) printNoSign(unsignedTx, tx)
+    else
+      signAndSubmit(
+        unsignedTx,
+        tx,
+        cliArgs.port.getOrElse(defaultPort),
+        actionDescription
+      )
+  }
+
+  /** `--no-sign`: `{txId, reducedTx, eip12UnsignedTx}`, no server started. `reducedTx` is
+    * still included (base64url of `tx.ctx.newProverBuilder.build.reduce(unsignedTx,
+    * 0).toBytes()`, the same payload the signing server would hand an ErgoPay wallet) so
+    * this output is independently usable by a caller with its own signing/submission
+    * pipeline.
+    */
+  private def printNoSign(
+    unsignedTx: UnsignedTransaction,
+    tx: PaideiaTransaction
+  ): Unit = {
+    val reducedTx = tx.ctx.newProverBuilder().build().reduce(unsignedTx, 0)
+    val payload   = Base64.getUrlEncoder.encodeToString(reducedTx.toBytes())
+
+    val root = new JsonObject()
+    root.addProperty("txId", unsignedTx.getId())
+    root.addProperty("reducedTx", payload)
+    root.add("eip12UnsignedTx", Eip12UnsignedTx.toJsonObject(Eip12UnsignedTx(unsignedTx)))
+    println(root.toString)
+  }
+
+  /** The default signing flow: starts a [[SigningServer]] exposing `unsignedTx`, prints
+    * the ErgoPay URI (+ QR code, for a mobile wallet) and the Nautilus-in-the-browser
+    * page URL, then blocks in [[waitForSubmission]] until one of them completes (or the
+    * 15 minute timeout hits, in which case this exits non-zero).
+    */
+  private def signAndSubmit(
+    unsignedTx: UnsignedTransaction,
+    tx: PaideiaTransaction,
+    port: Int,
+    actionDescription: String
+  ): Unit = {
+    val reducedTx    = tx.ctx.newProverBuilder().build().reduce(unsignedTx, 0)
+    val payload      = Base64.getUrlEncoder.encodeToString(reducedTx.toBytes())
+    val eip12Json    = Eip12UnsignedTx.toJson(Eip12UnsignedTx(unsignedTx))
+    val expectedTxId = unsignedTx.getId()
+    val nodeUrl      = Env.conf.getString("node")
+
+    val server =
+      SigningServer(port, payload, eip12Json, actionDescription, nodeUrl)
+    server.start()
+    try {
+      val host        = lanIp()
+      val ergopayUri  = s"ergopay://$host:$port/tx"
+      val nautilusUrl = s"http://$host:$port/"
+
+      println(actionDescription)
+      println()
+      println(s"scan with an Ergo mobile wallet (ErgoPay): $ergopayUri")
+      print(Qr.render(ergopayUri))
+      println()
+      println(s"or sign in a browser with Nautilus: $nautilusUrl")
+      println()
+      println(
+        s"waiting up to 15 minutes for a signature (expected transaction id: $expectedTxId)..."
+      )
+
+      waitForSubmission(server, nodeUrl, expectedTxId, signingTimeoutMs) match {
+        case Some(txId) => println(s"submitted: $txId")
+        case None =>
+          System.err.println("timed out waiting for a signature")
+          sys.exit(1)
+      }
+    } finally server.stop()
+  }
+
+  /** Polls, every 5 seconds, for either the local `/signed` handler having accepted a
+    * wallet-submitted tx (the Nautilus path) or `expectedTxId` showing up at the node
+    * itself, unconfirmed or confirmed (the ErgoPay path - a mobile wallet submits
+    * directly to the network, never touching this server - see [[SigningServer]]'s
+    * scaladoc). Ergo transaction ids are computed from inputs/dataInputs/outputs only,
+    * never from signatures, so `expectedTxId` (computed from the *unsigned* tx) is
+    * exactly the id the signed, broadcast transaction will have.
+    */
+  private def waitForSubmission(
+    server: SigningServer,
+    nodeUrl: String,
+    expectedTxId: String,
+    timeoutMs: Long
+  ): Option[String] = {
+    val deadline               = System.currentTimeMillis() + timeoutMs
+    var result: Option[String] = None
+    while (result.isEmpty && System.currentTimeMillis() < deadline) {
+      server.submittedTxId match {
+        case some @ Some(_) => result = some
+        case None =>
+          server
+            .takeError()
+            .foreach(err =>
+              System.err.println(s"[signing] a signed submission failed: $err")
+            )
+          if (
+            Try(NodeHttp.isUnconfirmed(nodeUrl, expectedTxId)).getOrElse(false) ||
+            Try(NodeHttp.isConfirmed(nodeUrl, expectedTxId)).getOrElse(false)
+          ) {
+            result = Some(expectedTxId)
+          } else {
+            Thread.sleep(5000)
+          }
+      }
+    }
+    result
+  }
+
+  /** The first non-loopback site-local IPv4 address of any up network interface, or
+    * `127.0.0.1` if none is found (e.g. offline) - used to build a QR-scannable
+    * `ergopay://`/`http://` URL another device on the same LAN (a phone running an Ergo
+    * wallet) can actually reach; `localhost` itself would only work for a wallet running
+    * on this same machine.
+    */
+  private def lanIp(): String = {
+    val candidate = NetworkInterface.getNetworkInterfaces.asScala
+      .filter(ni => Try(ni.isUp && !ni.isLoopback).getOrElse(false))
+      .flatMap(ni => ni.getInetAddresses.asScala)
+      .collectFirst {
+        case a: java.net.Inet4Address if a.isSiteLocalAddress => a.getHostAddress
+      }
+    candidate.getOrElse("127.0.0.1")
+  }
 
   /** Abbreviates a hex id (box id, token id) to its first 8 hex characters + "..", for
     * compact terminal output; the full id is always available separately (box ids in

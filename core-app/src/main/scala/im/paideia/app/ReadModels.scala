@@ -13,6 +13,10 @@ import im.paideia.governance.boxes.ActionUpdateConfigBox
 import im.paideia.governance.boxes.ProposalBasicBox
 import im.paideia.governance.contracts.ActionSendFundsBasic
 import im.paideia.governance.contracts.ActionUpdateConfig
+import im.paideia.staking.ParticipationRecord
+import im.paideia.staking.StakeRecord
+import im.paideia.staking.TotalStakingState
+import im.paideia.staking.boxes.StakeStateBox
 import im.paideia.util.ConfKeys
 import im.paideia.util.Env
 import org.ergoplatform.appkit.Address
@@ -21,6 +25,8 @@ import org.ergoplatform.appkit.impl.BlockchainContextImpl
 import org.ergoplatform.sdk.ErgoId
 import scorex.crypto.hash.Blake2b256
 import sigma.Coll
+
+import scala.collection.JavaConverters._
 
 /** A DAO known to the current session, as far as the config box lookup can tell.
   *
@@ -50,9 +56,9 @@ case class DaoSummary(key: String, name: String, configBoxCreationHeight: Int)
   *   per-option vote tallies, in option order.
   * @param passed
   *   the raw on-chain resolution flag, forwarded untouched (same as
-  *   `PaideiaStateService`): `-1` while the proposal is still running, `-2` evaluated
-  *   but the winning option didn't meet the threshold/quorum, otherwise the index of
-  *   the winning option (see `EvaluateProposalBasicTransaction`).
+  *   `PaideiaStateService`): `-1` while the proposal is still running, `-2` evaluated but
+  *   the winning option didn't meet the threshold/quorum, otherwise the index of the
+  *   winning option (see `EvaluateProposalBasicTransaction`).
   * @param boxId
   *   the proposal's current box id.
   */
@@ -149,6 +155,25 @@ case class ProposalDetail(
   summary: ProposalSummary,
   actions: List[ActionView],
   votes: List[(String, List[Long])]
+)
+
+/** A single on-chain stake record, decoded from the DAO's current staking state - port of
+  * `PaideiaStateActor.StakeInfo`/`PaideiaStateService.getStake` (paideia-state's
+  * `app/actors/PaideiaStateActor.scala`/`app/services/PaideiaStateService.scala`).
+  *
+  * @param stakeKey
+  *   the stake key NFT's token id (hex), the same id the user's proxy transactions
+  *   (`UserTransactions.addStake`/`unstake`/`vote`) must reference.
+  * @param stake
+  *   the current `StakeRecord` (staked amount, lock, pending per-cycle rewards).
+  * @param participation
+  *   the current `ParticipationRecord` (voting participation), when one exists - a staker
+  *   who has never voted has no participation record yet.
+  */
+case class StakeInfo(
+  stakeKey: String,
+  stake: StakeRecord,
+  participation: Option[ParticipationRecord]
 )
 
 /** Read-only queries over the current session's replayed state, framework-free port of
@@ -373,4 +398,79 @@ object ReadModels {
 
     ProposalDetail(summary, actions, votes)
   }
+
+  /** `daoKey`'s current stake records for every token id in `candidateTokenIds` that
+    * actually is a live stake key - port of `PaideiaStateService.getStake`: resolves the
+    * DAO's current `StakeStateBox` (by its `im_paideia_staking_state_tokenid` NFT, same
+    * as that box's own singleton-token lookup elsewhere in this class), then looks up
+    * each candidate against `TotalStakingState(daoKey).currentStakingState`'s stake/
+    * participation maps at that box's digests.
+    *
+    * Unlike the original (which takes the caller's already-known stake keys directly),
+    * the CLI doesn't otherwise know a user's stake key - see [[candidateStakeKeysFor]]
+    * for how it derives `candidateTokenIds` from a wallet's own unspent boxes instead.
+    *
+    * @return
+    *   one [[StakeInfo]] per candidate that resolves to a live stake record - not
+    *   necessarily in `candidateTokenIds`' order. Empty (rather than throwing) when the
+    *   DAO has no confirmed staking state yet, or when nothing in `candidateTokenIds`
+    *   matches.
+    */
+  def stakeStatus(
+    ctx: BlockchainContextImpl,
+    daoKey: String,
+    candidateTokenIds: Set[String]
+  ): List[StakeInfo] =
+    if (candidateTokenIds.isEmpty) Nil
+    else {
+      val stakeStateTokenId = new ErgoId(
+        Paideia
+          .getConfig(daoKey)
+          .getArray[Byte](ConfKeys.im_paideia_staking_state_tokenid)
+      ).toString()
+      Paideia
+        .getBox(new FilterLeaf(FilterType.FTEQ, stakeStateTokenId, CompareField.ASSET, 0))
+        .headOption
+        .toList
+        .flatMap { box =>
+          val stakeStateBox = StakeStateBox.fromInputBox(ctx, box)
+          val state         = TotalStakingState(daoKey).currentStakingState
+          val stakeMapOpt   = state.stakeRecords.getMap(Some(stakeStateBox.stateDigest))
+          val partMap = state.participationRecords
+            .getMap(Some(stakeStateBox.participationDigest))
+            .map(_.toMap)
+            .getOrElse(Map.empty)
+
+          stakeMapOpt.toList.flatMap { stakeMapWithMap =>
+            val stakeMap = stakeMapWithMap.toMap
+            candidateTokenIds.toList.flatMap { tokenId =>
+              try {
+                val key = ErgoId.create(tokenId)
+                stakeMap
+                  .get(key)
+                  .map(record => StakeInfo(key.toString(), record, partMap.get(key)))
+              } catch {
+                case _: Throwable => None
+              }
+            }
+          }
+        }
+    }
+
+  /** Every token id sitting in any of `addresses`' unspent boxes - the CLI's stand-in for
+    * "the stake keys this user might hold for any DAO", since (unlike paideia-api, which
+    * tracks stake keys per user account) a node-only CLI has no other record of which
+    * token in a user's wallet is a stake key versus an ordinary asset. Cheap to compute
+    * (reuses [[UserBoxSelector]]'s own box fetch) and safe to overshoot: [[stakeStatus]]
+    * itself filters this down to whichever candidates actually resolve to a live stake
+    * record for the DAO being queried.
+    */
+  def candidateStakeKeysFor(
+    selector: UserBoxSelector,
+    addresses: Seq[String]
+  ): Set[String] =
+    selector
+      .unspentBoxes(addresses)
+      .flatMap(_.getTokens().asScala.map(_.getId.toString))
+      .toSet
 }

@@ -10,6 +10,7 @@ import im.paideia.governance.Proposal
 import im.paideia.governance.contracts.ActionSendFundsBasic
 import im.paideia.governance.contracts.DAOOrigin
 import im.paideia.governance.contracts.ProposalBasic
+import im.paideia.staking.StakingTest
 import im.paideia.staking.TotalStakingState
 import im.paideia.staking.contracts.StakeState
 import im.paideia.util.ConfKeys
@@ -194,6 +195,35 @@ class ReadModelsSuite extends PaideiaTestSuite {
           case other => fail(s"expected a SendFundsActionView, got $other")
         }
         assert(detail.votes.isEmpty)
+      }
+    })
+  }
+
+  test("stakeStatus finds a known stake key and skips unknown candidates") {
+    val ergoClient = createMockedErgoClient(MockData(Nil, Nil))
+    ergoClient.execute(new java.util.function.Function[BlockchainContext, Unit] {
+      override def apply(_ctx: BlockchainContext): Unit = {
+        val ctx = _ctx.asInstanceOf[BlockchainContextImpl]
+        PaideiaTestSuite.init(ctx)
+
+        val dao        = StakingTest.testDAO
+        val stakeKey   = Util.randomKey
+        val unknownKey = Util.randomKey
+
+        val stakingContract = StakeState(PaideiaContractSignature(daoKey = dao.key))
+        val stakingState    = stakingContract.emptyBox(ctx, dao, 100000000L)
+        stakingState.stake(stakeKey, 250L)
+        stakingContract.clearBoxes()
+        stakingContract.newBox(stakingState.inputBox(), false)
+
+        val found = ReadModels.stakeStatus(ctx, dao.key, Set(stakeKey, unknownKey))
+        assert(found.size == 1, found)
+        assert(found.head.stakeKey == ErgoId.create(stakeKey).toString())
+        assert(found.head.stake.stake == 250L)
+        assert(found.head.participation.isEmpty)
+
+        assert(ReadModels.stakeStatus(ctx, dao.key, Set(unknownKey)).isEmpty)
+        assert(ReadModels.stakeStatus(ctx, dao.key, Set.empty).isEmpty)
       }
     })
   }
