@@ -61,8 +61,10 @@ class NodeBlockSource(
 
   /** Executes a retrofit node call, retrying on HTTP failure, a null/invalid body, or a
     * thrown exception, up to `maxAttempts` times with exponential backoff (1, 2, 4, 8, 8,
-    * ... seconds between attempts). Ported verbatim from `PaideiaSyncTask.nodeCall`, with
-    * the state actor's `logger.warn` replaced by the `onRetry` callback.
+    * ... seconds between attempts). Delegates to [[NodeCalls.retry]] (the retry loop
+    * itself was ported verbatim from `PaideiaSyncTask.nodeCall`, with the state actor's
+    * `logger.warn` replaced by the `onRetry` callback); kept here, with this exact public
+    * signature, so every existing caller (paideia-state included) is unaffected.
     *
     * Public so callers can reuse the same retry behaviour for node endpoints that are
     * not part of [[BlockSource]] itself (e.g. paideia-state's unconfirmed-transaction
@@ -85,47 +87,6 @@ class NodeBlockSource(
   def nodeCall[T](
     desc: String,
     valid: T => Boolean = (_: T) => true
-  )(call: => retrofit2.Call[T]): T = {
-    var attempt                          = 1
-    var lastException: Option[Exception] = None
-    var lastErrorMessage: String         = "unknown error"
-    while (attempt <= maxAttempts) {
-      try {
-        val resp = call.execute()
-        if (resp.isSuccessful() && resp.body() != null && valid(resp.body())) {
-          return resp.body()
-        } else {
-          lastException = None
-          lastErrorMessage =
-            if (!resp.isSuccessful())
-              s"HTTP ${resp.code()}: ${resp.message()}"
-            else if (resp.body() == null)
-              s"HTTP ${resp.code()}: empty body"
-            else
-              s"HTTP ${resp.code()}: invalid body"
-        }
-      } catch {
-        case e: Exception =>
-          lastException    = Some(e)
-          lastErrorMessage = e.getMessage()
-      }
-      onRetry(desc, attempt, lastErrorMessage)
-      if (attempt < maxAttempts) {
-        val backoffSeconds = math.min(8, math.pow(2, attempt - 1).toInt)
-        Thread.sleep(backoffSeconds * 1000L)
-      }
-      attempt += 1
-    }
-    lastException match {
-      case Some(e) =>
-        throw new RuntimeException(
-          s"Node call failed after $maxAttempts attempts: $desc: $lastErrorMessage",
-          e
-        )
-      case None =>
-        throw new RuntimeException(
-          s"Node call failed after $maxAttempts attempts: $desc: $lastErrorMessage"
-        )
-    }
-  }
+  )(call: => retrofit2.Call[T]): T =
+    NodeCalls.retry[T](maxAttempts, onRetry)(desc, valid)(call)
 }
