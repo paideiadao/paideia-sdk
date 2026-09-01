@@ -1,11 +1,16 @@
 package im.paideia.common.sync
 
-import org.ergoplatform.appkit.impl.NodeAndExplorerDataSourceImpl
+import org.ergoplatform.appkit.impl.NodeDataSourceImpl
 import org.ergoplatform.restapi.client.FullBlock
 import org.ergoplatform.restapi.client.NodeInfo
 
 /** A [[BlockSource]] backed by a live Ergo node, reached through appkit's
-  * `NodeAndExplorerDataSourceImpl`.
+  * `NodeDataSourceImpl` - the node-only base class, so both a
+  * `RestApiErgoClient.create` client (paideia-state, whose
+  * `NodeAndExplorerDataSourceImpl` datasource extends it) and a
+  * `RestApiErgoClient.createWithoutExplorer` client (the CLI, node-only per the design's
+  * D3) can supply one; everything used here (`getNodeInfoApi`, `getNodeBlocksApi`) lives
+  * on the node-only base.
   *
   * Ported from paideia-state's `PaideiaSyncTask` (`nodeCall`, `fetchNodeHeight` and
   * `BlockPrefetcher.fetchBlock`) so any process - the sync task itself, a future CLI -
@@ -24,7 +29,7 @@ import org.ergoplatform.restapi.client.NodeInfo
   *   logging-framework dependency of its own; the default is a no-op.
   */
 class NodeBlockSource(
-  datasource: NodeAndExplorerDataSourceImpl,
+  datasource: NodeDataSourceImpl,
   maxAttempts: Int                       = 5,
   onRetry: (String, Int, String) => Unit = (_, _, _) => ()
 ) extends BlockSource {
