@@ -24,9 +24,9 @@ import java.nio.file.attribute.FileTime
   * Deliberately avoids Env.paideiaDaoKey (the fixed key nearly every other suite reuses
   * via PaideiaTestSuite.init) and instead builds its own DAO under a fresh random key,
   * like StakingTest.testDAO/DAOConfigPersistenceSuite/StakingStateCloneSuite already do
-  * - so this suite's persist/restore round-trip can never be muddied by another
-  * (possibly still-open, since most suites never close their DAOConfig handle) suite's
-  * state sharing that same well-known path.
+  *   - so this suite's persist/restore round-trip can never be muddied by another
+  *     (possibly still-open, since most suites never close their DAOConfig handle)
+  *     suite's state sharing that same well-known path.
   */
 class PaideiaStateRestoreSuite extends PaideiaTestSuite {
 
@@ -109,13 +109,13 @@ class PaideiaStateRestoreSuite extends PaideiaTestSuite {
             Paideia._actorList.values.flatMap(_.contractInstances.values).size
           val recordedStakeHashHex =
             Util.bytes2hex(stakeContract.contractSignature.contractHash.toArray)
-          val recordedStakeUtxos      = stakeContract.utxos.toSet
+          val recordedStakeUtxos   = stakeContract.utxos.toSet
           val recordedUnstakeUtxos = unstakeContract.utxos.toSet
           val recordedOutdatedStakeHashHex = Util.bytes2hex(
             outdatedStakeContract.contractSignature.contractHash.toArray
           )
           val recordedOutdatedStakeUtxos = outdatedStakeContract.utxos.toSet
-          val recordedSnapshotTimes   = totalStakingState.snapshots.keySet.toSet
+          val recordedSnapshotTimes      = totalStakingState.snapshots.keySet.toSet
           val recordedCurrentStakeDigest =
             Util.bytes2hex(totalStakingState.currentStakingState.stakeRecords.digest)
           val recordedCurrentParticipationDigest =
@@ -259,5 +259,50 @@ class PaideiaStateRestoreSuite extends PaideiaTestSuite {
   test("restoreState returns None when state.json doesn't exist") {
     val tmpDir = Files.createTempDirectory("paideia-state-restore-missing").toFile
     assert(Paideia.restoreState(tmpDir).isEmpty)
+  }
+
+  test(
+    "persistState rewrites a box file that vanished from disk even when its " +
+      "fingerprint is unchanged (fullReplay-checkpoint regression)"
+  ) {
+    // Reproduces the StateLifecycle.fullReplay sequence that produced unrestorable
+    // checkpoints in the wild: persist, then the state directory is cleaned while the
+    // session (and its box-file fingerprint cache) lives on, then persist again with an
+    // UNCHANGED box set. Before the file-exists guard in persistState, the second
+    // persist skipped the box file entirely - the fingerprint said it was already on
+    // disk - so the checkpoint restored with that contract instance's box set empty,
+    // failing chain-state verification fatally on the next start (Config extraOnNode).
+    scala.util.Try(Paideia.clearRegistries(closeStores = true))
+    val ergoClient = createMockedErgoClient(MockData(Nil, Nil))
+    ergoClient.execute(new java.util.function.Function[BlockchainContext, Unit] {
+      override def apply(_ctx: BlockchainContext): Unit = {
+        val ctx = _ctx.asInstanceOf[BlockchainContextImpl]
+
+        val dao           = StakingTest.testDAO
+        val stakeContract = Stake(PaideiaContractSignature(daoKey = dao.key))
+        stakeContract.newBox(stakeContract.box(ctx, 1000000L).inputBox(), false)
+        Paideia.commit()
+
+        val tmpDir = Files.createTempDirectory("paideia-fingerprint").toFile
+        Paideia.persistState(tmpDir, 1)
+
+        val sigHashHex =
+          Util.bytes2hex(stakeContract.contractSignature.contractHash.toArray)
+        val boxFile =
+          new File(new File(new File(tmpDir, "boxes"), dao.key), sigHashHex + ".json")
+        assert(boxFile.exists(), "first persist must write the box file")
+
+        // What StateLifecycle.discardLocalState does mid-process, minus the replay.
+        org.apache.commons.io.FileUtils.cleanDirectory(tmpDir)
+        assert(!boxFile.exists())
+
+        Paideia.persistState(tmpDir, 2)
+        assert(
+          boxFile.exists(),
+          "persistState must rewrite a box file that no longer exists on disk, even " +
+            "when the box set (and so its fingerprint) is unchanged"
+        )
+      }
+    })
   }
 }
