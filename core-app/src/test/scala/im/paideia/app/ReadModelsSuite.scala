@@ -176,7 +176,7 @@ class ReadModelsSuite extends PaideiaTestSuite {
         assert(summary.endTime == endTime)
         assert(summary.totalVotes == 0L)
         assert(summary.voteCounts == List(0L, 0L))
-        assert(summary.passed.isEmpty)
+        assert(summary.passed == -1)
 
         // --- proposalDetail ---
         val detail = ReadModels.proposalDetail(ctx, daoKey, 0)

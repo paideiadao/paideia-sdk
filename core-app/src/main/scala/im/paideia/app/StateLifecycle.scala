@@ -62,6 +62,8 @@ class StateLifecycle(
   verify: BlockchainContextImpl => VerificationReport = null
 ) {
 
+  require(checkpointInterval > 0, "checkpointInterval must be positive")
+
   /** `<storeRoot>/state`, mirroring paideia-state's `stateDir` (there, `Env.conf`'s
     * `stateDir` key, resolved relative to the process CWD; here, always under this
     * session's own `storeRoot` so two sessions in one JVM never collide).
@@ -192,8 +194,13 @@ class StateLifecycle(
     attempt: Int = 1
   ): Int = {
     val report = verifyNow(ctx)
-    if (report.ok) height
-    else if (attempt < 3) {
+    if (report.ok) {
+      // Surfaces the report on success too - it's the only place the verifier's
+      // non-fatal [boxes][warn] lines (untracked on-chain boxes on contracts where
+      // extras aren't enforced) ever reach the caller's log.
+      log(s"[sync] verification: ${report.describe}")
+      height
+    } else if (attempt < 3) {
       log(
         s"[sync] chain-state verification failed (attempt $attempt/3), re-replaying to tip: " +
           report.describe

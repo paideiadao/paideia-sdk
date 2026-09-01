@@ -175,10 +175,13 @@ object Main {
           )
         )
 
-  private def statusOf(passed: Option[Boolean]): String = passed match {
-    case None        => "running"
-    case Some(true)  => "passed"
-    case Some(false) => "failed"
+  /** Renders `ProposalSummary.passed` (see there): -1 running, -2 evaluated but
+    * threshold/quorum not met, otherwise the winning option's index.
+    */
+  private def statusOf(passed: Int): String = passed match {
+    case -1 => "running"
+    case -2 => "failed (threshold/quorum not met)"
+    case n  => s"passed (option $n)"
   }
 
   private def printProposalList(proposals: List[ProposalSummary]): Unit =

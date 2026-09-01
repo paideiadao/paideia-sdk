@@ -49,8 +49,10 @@ case class DaoSummary(key: String, name: String, configBoxCreationHeight: Int)
   * @param voteCounts
   *   per-option vote tallies, in option order.
   * @param passed
-  *   `None` while unresolved (`ProposalBasicBox.passed == -1`);
-  *   `Some(true)`/`Some(false)` once evaluated.
+  *   the raw on-chain resolution flag, forwarded untouched (same as
+  *   `PaideiaStateService`): `-1` while the proposal is still running, `-2` evaluated
+  *   but the winning option didn't meet the threshold/quorum, otherwise the index of
+  *   the winning option (see `EvaluateProposalBasicTransaction`).
   * @param boxId
   *   the proposal's current box id.
   */
@@ -60,7 +62,7 @@ case class ProposalSummary(
   endTime: Long,
   totalVotes: Long,
   voteCounts: List[Long],
-  passed: Option[Boolean],
+  passed: Int,
   boxId: String
 )
 
@@ -208,7 +210,7 @@ object ReadModels {
       pbBox.endTime,
       pbBox.totalVotes,
       pbBox.voteCount.toList,
-      if (pbBox.passed == -1) None else Some(pbBox.passed == 1),
+      pbBox.passed,
       box.getId().toString()
     )
   }

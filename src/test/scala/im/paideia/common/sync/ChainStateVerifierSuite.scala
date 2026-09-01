@@ -119,11 +119,12 @@ class ChainStateVerifierSuite extends AnyFunSuite {
     boxId: String,
     ergoTreeHex: String,
     stakeFill: Byte,
-    participationFill: Byte
+    participationFill: Byte,
+    tokens: List[(String, Long)] = Nil
   ): ErgoTransactionOutput = {
     val r4 =
       ErgoValueBuilder.buildFor(Colls.fromArray(Array(avlTreeValue(stakeFill), avlTreeValue(participationFill))))
-    outputBox(boxId, ergoTreeHex, registers = registersOf(r4.toHex()))
+    outputBox(boxId, ergoTreeHex, tokens = tokens, registers = registersOf(r4.toHex()))
   }
 
   /** R4 = `Coll[Int]`(index, passed), R5 = filler `Coll[Long]`, R6 = votes AvlTree, R7 =
@@ -369,5 +370,82 @@ class ChainStateVerifierSuite extends AnyFunSuite {
     )
     assert(!missing.ok)
     assert(missing.boxSetChecks.head.missingOnNode == Set("gone"))
+  }
+
+  test("compare: extraOnNode is enforced for action-box classes (read-model trust surface)") {
+    val daoKey = hexId(8)
+    for (cls <- Seq("ActionSendFundsBasic", "ActionUpdateConfig")) {
+      val tree = s"$cls-tree-placeholder"
+      val report = ChainStateVerifier.compare(
+        LocalSnapshot(Seq(LocalContractInstance(tree, cls, daoKey, Set("a"))), Seq.empty),
+        Map(tree -> List(outputBox("a", tree), outputBox("hidden-action", tree)))
+      )
+      assert(!report.ok, s"$cls extras must fail verification")
+      assert(report.boxSetChecks.head.extraOnNode == Set("hidden-action"))
+    }
+  }
+
+  test(
+    "compare: an undecodable box at a proposal address neither crashes the votes digest " +
+      "check nor shadows the genuine box"
+  ) {
+    val daoKey     = hexId(10)
+    val tree       = p2pkTreeHex
+    val dustBoxId  = boxIdHex(0x50.toByte)
+    val propBoxId  = boxIdHex(0x51.toByte)
+    val local = LocalSnapshot(
+      contractInstances =
+        Seq(LocalContractInstance(tree, "ProposalBasic", daoKey, Set(dustBoxId, propBoxId))),
+      digests = Seq(LocalDigest(daoKey, "votes", "0:First", "0", digestHex(0xD0.toByte)))
+    )
+    // The register-less dust box is listed FIRST - previously proposalIndexOf threw an
+    // uncaught cast exception on it, killing the whole verification.
+    val onChain = Map(
+      tree -> List(
+        outputBox(dustBoxId, tree),
+        proposalBox(propBoxId, tree, index = 0, votesFill = 0xD0.toByte)
+      )
+    )
+
+    val report = ChainStateVerifier.compare(local, onChain)
+    assert(report.digestChecks.head.onChain.contains(digestHex(0xD0.toByte)))
+    assert(report.ok)
+  }
+
+  test(
+    "compare: the stake/participation digests are matched by the stake-state NFT in " +
+      "matchKey, not node list order"
+  ) {
+    val daoKey     = hexId(11)
+    val tree       = p2pkTreeHex
+    val stakeNft   = hexId(12)
+    val decoyBoxId = boxIdHex(0x60.toByte)
+    val realBoxId  = boxIdHex(0x61.toByte)
+    val local = LocalSnapshot(
+      contractInstances =
+        Seq(LocalContractInstance(tree, "StakeState", daoKey, Set(decoyBoxId, realBoxId))),
+      digests = Seq(
+        LocalDigest(daoKey, "stake", "", stakeNft, digestHex(0xBB.toByte)),
+        LocalDigest(daoKey, "participation", "", stakeNft, digestHex(0xCC.toByte))
+      )
+    )
+    // A structurally valid decoy with wrong digests and no NFT is listed first; the
+    // genuine box carries the stake-state NFT as token 0.
+    val onChain = Map(
+      tree -> List(
+        stakeStateBox(decoyBoxId, tree, 0x01.toByte, 0x02.toByte),
+        stakeStateBox(
+          realBoxId,
+          tree,
+          0xBB.toByte,
+          0xCC.toByte,
+          tokens = List((stakeNft, 1L))
+        )
+      )
+    )
+
+    val report = ChainStateVerifier.compare(local, onChain)
+    assert(report.digestChecks.forall(_.ok), report.describe)
+    assert(report.ok)
   }
 }

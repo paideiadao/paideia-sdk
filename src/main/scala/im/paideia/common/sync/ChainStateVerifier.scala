@@ -58,7 +58,7 @@ case class DigestCheck(
   * @param enforceExtras
   *   \- whether a nonempty `extraOnNode` fails this check ([[ok]]) or is merely reported
   *   ([[warnings]]). `missingOnNode` always fails, regardless. See
-  *   [[ChainStateVerifier.digestBackedClasses]] for which contracts enforce extras and
+  *   [[ChainStateVerifier.enforcedExtrasClasses]] for which contracts enforce extras and
   *   why the rest cannot: a lazily-instantiated contract instance (e.g. `CreateDAO`,
   *   born only when `ProtoDAO`'s DAO-creation flow first reads
   *   `im_paideia_contracts_createdao` - a config key that isn't even in the genesis
@@ -139,15 +139,22 @@ object ChainStateVerifier {
   private val StakeStateClass    = "StakeState"
   private val ProposalBasicClass = "ProposalBasic"
 
+  /** The contract classes whose boxes carry the AVL digests [[localSnapshot]] emits
+    * checks for; used to force an on-chain fetch for their instances even when the local
+    * confirmed set is empty (so a digest check always has candidates to look for).
+    */
+  private[sync] val digestBackedClasses: Set[String] =
+    Set(ConfigClass, StakeStateClass, ProposalBasicClass)
+
   /** The contract classes whose box sets must match the chain EXACTLY - `extraOnNode`
-    * included. These are the read-model trust surface (their boxes/digests are what
-    * proposals, tallies, config and stake are read from), and for them completeness is
-    * sound: their instances are instantiated during replay at or before the event that
-    * creates their first box (Config at genesis seeding / DAO creation, StakeState at
-    * staking bootstrap, ProposalBasic at proposal creation), so they observe every box
-    * ever put at their address. Notably, this is what catches a checkpoint that simply
-    * OMITS a whole proposal box - the one tampering the digest checks can't see, since
-    * those only iterate proposals local state knows about.
+    * included: the read-model trust surface. The digest-backed classes (proposals,
+    * tallies, config, stake) plus the action-box classes, whose boxes carry the literal
+    * effects `proposal show` renders - hiding an action box from a checkpoint would show
+    * a proposal without its effects. For all of these, completeness is sound: their
+    * instances are instantiated during replay at or before the event that creates their
+    * first box (Config at genesis seeding / DAO creation, StakeState at staking
+    * bootstrap, ProposalBasic and the action contracts at proposal creation), so they
+    * observe every box ever put at their address.
     *
     * Every other contract class is instantiated lazily on first operational use (see
     * [[BoxSetCheck.enforceExtras]]'s scaladoc for the CreateDAO example) and so can be
@@ -155,9 +162,18 @@ object ChainStateVerifier {
     * `extraOnNode` for those is reported as a warning instead of failing verification.
     * `missingOnNode` - local state claiming a box the chain doesn't have - stays
     * enforced for every class.
+    *
+    * KNOWN LIMITS (must be closed before checkpoints from untrusted sources are
+    * consumed - see the W5 notes in the CLI design doc): every check here is enumerated
+    * from LOCAL state, so a checkpoint that omits a whole contract INSTANCE (and with it
+    * a DAO's entire proposal set), a DAO's staking section (no instance, no stake
+    * digests emitted), or an entire DAO is not detected; and box CONTENT is trusted from
+    * the checkpoint by `PaideiaSession.restoreState` (box ids are taken from the
+    * checkpoint JSON, not recomputed from content), so digest/box-set checks cannot see
+    * forged register contents under genuine box ids.
     */
-  private[sync] val digestBackedClasses: Set[String] =
-    Set(ConfigClass, StakeStateClass, ProposalBasicClass)
+  private[sync] val enforcedExtrasClasses: Set[String] =
+    digestBackedClasses ++ Set("ActionSendFundsBasic", "ActionUpdateConfig")
 
   /** One live contract instance, as recorded locally: enough to look up its unspent boxes
     * on-chain (by ErgoTree) and compare confirmed-box-id sets.
@@ -178,10 +194,11 @@ object ChainStateVerifier {
   /** One digest the local session expects to find on-chain.
     *
     * @param matchKey
-    *   \- extra key used only to pick the right on-chain box out of several candidates
-    *   with the same `(daoKey, kind)` (the proposal index, for `"votes"`); unused (empty)
-    *   for `"config"`/`"stake"`/`"participation"`, which - in this codebase - have at
-    *   most one live contract instance per DAO.
+    *   \- extra key used to pick the right on-chain box out of the candidates with the
+    *   same `(daoKey, kind)`: the proposal index for `"votes"`, the DAO's stake-state
+    *   NFT hex for `"stake"`/`"participation"` (empty when the config didn't resolve -
+    *   any decodable candidate is accepted then); unused (empty) for `"config"`, which
+    *   is matched by its daoKey NFT directly.
     */
   private[sync] case class LocalDigest(
     daoKey: String,
@@ -225,19 +242,29 @@ object ChainStateVerifier {
 
     val stakingDigests = Paideia._daoMap.keys.flatMap { daoKey =>
       Paideia.current.stakingStates.get(daoKey).toSeq.flatMap { tss =>
+        // The stake-state NFT (token 0 of the genuine stake state box) as matchKey, so
+        // compare() picks the right on-chain box instead of whatever the node lists
+        // first - anyone can park a garbage box at the stake contract's address.
+        val stakeNft = Try(
+          new org.ergoplatform.sdk.ErgoId(
+            Paideia
+              .getConfig(daoKey)
+              .getArray[Byte](im.paideia.util.ConfKeys.im_paideia_staking_state_tokenid)
+          ).toString()
+        ).getOrElse("")
         Seq(
           LocalDigest(
             daoKey,
             "stake",
             "",
-            "",
+            stakeNft,
             Util.bytes2hex(tss.currentStakingState.stakeRecords.digest)
           ),
           LocalDigest(
             daoKey,
             "participation",
             "",
-            "",
+            stakeNft,
             Util.bytes2hex(tss.currentStakingState.participationRecords.digest)
           )
         )
@@ -343,7 +370,7 @@ object ChainStateVerifier {
         instance.daoKey,
         missingOnNode = instance.confirmedBoxIds -- onChainIds,
         extraOnNode   = acceptedOnChainIds -- instance.confirmedBoxIds,
-        enforceExtras = digestBackedClasses.contains(instance.contractClass)
+        enforceExtras = enforcedExtrasClasses.contains(instance.contractClass)
       )
     }
 
@@ -356,23 +383,43 @@ object ChainStateVerifier {
         .flatMap(i => boxesFor(i.ergoTreeHex))
         .map(toInputBox)
 
+    // Decodes each candidate with `decode`, silently skipping boxes that throw: anyone
+    // can park an arbitrary (register-less, token-less) box at a contract address for
+    // pocket change, and one such box must neither crash verification nor be able to
+    // shadow the genuine box (found live: a dust box at the CreateDAO address; the same
+    // move at a proposal or stake address previously threw an uncaught cast exception
+    // out of `verify`).
+    def firstDecodable[T](boxes: Seq[InputBox])(decode: InputBox => T)(
+      matches: T => Boolean
+    ): Option[T] =
+      boxes.iterator.flatMap(box => Try(decode(box)).toOption).find(matches)
+
+    def token0(box: InputBox): Option[String] =
+      box.getTokens().asScala.headOption.map(_.id.toString())
+
+    // The genuine stake state box is matched by its NFT (token 0 == the DAO's
+    // im_paideia_staking_state_tokenid, carried in matchKey); when the snapshot couldn't
+    // resolve the NFT (matchKey empty) any decodable box is accepted, as before.
+    def stakeDigest(digest: LocalDigest, treeIndex: Int): Option[String] =
+      firstDecodable(candidateBoxes(digest.daoKey, StakeStateClass))(box =>
+        (token0(box), stakeStateTreeDigestHex(box, treeIndex))
+      )(t => digest.matchKey.isEmpty || t._1.contains(digest.matchKey)).map(_._2)
+
     val digestChecks = local.digests.map { digest =>
       val onChainHex: Option[String] = digest.kind match {
         case "config" =>
-          candidateBoxes(digest.daoKey, ConfigClass)
-            .find(box => configBoxDaoKey(box).contains(digest.daoKey))
-            .map(configDigestHex)
+          firstDecodable(candidateBoxes(digest.daoKey, ConfigClass))(box =>
+            (configBoxDaoKey(box), configDigestHex(box))
+          )(_._1.contains(digest.daoKey)).map(_._2)
         case "stake" =>
-          candidateBoxes(digest.daoKey, StakeStateClass).headOption
-            .map(stakeStateTreeDigestHex(_, 0))
+          stakeDigest(digest, 0)
         case "participation" =>
-          candidateBoxes(digest.daoKey, StakeStateClass).headOption
-            .map(stakeStateTreeDigestHex(_, 1))
+          stakeDigest(digest, 1)
         case "votes" =>
           val wantIndex = digest.matchKey.toInt
-          candidateBoxes(digest.daoKey, ProposalBasicClass)
-            .find(box => proposalIndexOf(box) == wantIndex)
-            .map(proposalVotesDigestHex)
+          firstDecodable(candidateBoxes(digest.daoKey, ProposalBasicClass))(box =>
+            (proposalIndexOf(box), proposalVotesDigestHex(box))
+          )(_._1 == wantIndex).map(_._2)
         case other =>
           throw new IllegalArgumentException(s"Unknown digest kind: $other")
       }
@@ -384,10 +431,11 @@ object ChainStateVerifier {
 
   /** Verifies the current session (`Paideia.current`) against on-chain reality through
     * `client`: gathers the local snapshot, fetches unspent boxes for every ErgoTree that
-    * either has a nonempty confirmed set locally or belongs to a Config/StakeState/
-    * ProposalBasic contract instance (so a digest check always has something to look for,
-    * even when the local session thinks a contract has zero confirmed boxes - itself a
-    * mismatch worth reporting via that box set's `extraOnNode`), and compares.
+    * either has a nonempty confirmed set locally or belongs to an
+    * [[enforcedExtrasClasses]] contract instance (so digest checks and enforced box-set
+    * checks always have something to look for, even when the local session thinks a
+    * contract has zero confirmed boxes - itself a mismatch worth reporting via that box
+    * set's `extraOnNode`), and compares.
     *
     * On-chain boxes a contract instance would itself refuse to track (`validateBox`
     * false, or throwing on a garbage box it can't even decode) are excluded from
@@ -417,7 +465,7 @@ object ChainStateVerifier {
       }
 
     val ergoTreesToFetch = local.contractInstances
-      .filter(i => i.confirmedBoxIds.nonEmpty || digestBackedClasses.contains(i.contractClass))
+      .filter(i => i.confirmedBoxIds.nonEmpty || enforcedExtrasClasses.contains(i.contractClass))
       .map(_.ergoTreeHex)
       .distinct
 
