@@ -64,8 +64,9 @@ class NodeBlockSource(
     * ... seconds between attempts). Ported verbatim from `PaideiaSyncTask.nodeCall`, with
     * the state actor's `logger.warn` replaced by the `onRetry` callback.
     *
-    * Package-private so the retry behaviour can be exercised directly from tests with
-    * hand-rolled `retrofit2.Call` stubs, without going through a real datasource.
+    * Public so callers can reuse the same retry behaviour for node endpoints that are
+    * not part of [[BlockSource]] itself (e.g. paideia-state's unconfirmed-transaction
+    * poll).
     *
     * @param desc
     *   \- a short description of the call, used in retry notifications and the final
@@ -81,7 +82,7 @@ class NodeBlockSource(
     *   if every attempt fails; the last error is included in the message, and the last
     *   thrown exception (if any) is preserved as the cause.
     */
-  private[sync] def nodeCall[T](
+  def nodeCall[T](
     desc: String,
     valid: T => Boolean = (_: T) => true
   )(call: => retrofit2.Call[T]): T = {
