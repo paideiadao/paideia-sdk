@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Paideia CLI - Sign with Nautilus</title>
+<style>
+  body { font-family: monospace; max-width: 40em; margin: 3em auto; padding: 0 1em; }
+  #status { font-size: 1.2em; }
+  #detail { white-space: pre-wrap; word-break: break-all; background: #f0f0f0; padding: 1em; }
+</style>
+</head>
+<body>
+<h1>Paideia CLI</h1>
+<p id="status">Looking for the Nautilus wallet extension...</p>
+<pre id="detail"></pre>
+<script>
+// Minimal EIP-12 dApp connector flow, no frameworks:
+//   1. window.ergoConnector.nautilus.connect() - prompts the user, injects window.ergo
+//   2. GET eip12 - this CLI's own unsigned tx, in EIP-12 shape
+//   3. window.ergo.sign_tx(tx) - Nautilus prompts the user to review and sign
+//   4. POST signed - hands the signed tx back to the CLI, which submits it to the node
+//      (the page itself has no node access)
+// Both fetch paths are RELATIVE (not '/eip12'/'/signed'): this page is served at
+// /<token>/, and relative URLs resolve against that same token prefix - an absolute
+// '/eip12' would instead hit the server's root, which 404s (see SigningServer's scaladoc
+// on why every endpoint lives under a random per-invocation token).
+async function run() {
+  var statusEl = document.getElementById('status');
+  var detailEl = document.getElementById('detail');
+  function fail(message, detail) {
+    statusEl.textContent = message;
+    detailEl.textContent = detail || '';
+  }
+  try {
+    if (!window.ergoConnector || !window.ergoConnector.nautilus) {
+      fail('Nautilus wallet extension not found. Install it, then reload this page.');
+      return;
+    }
+    var connected = await window.ergoConnector.nautilus.connect();
+    if (!connected) {
+      fail('Connection to Nautilus was refused.');
+      return;
+    }
+
+    statusEl.textContent = 'Fetching the transaction to sign...';
+    var txResp = await fetch('eip12');
+    if (!txResp.ok) {
+      fail('Failed to fetch the transaction.', 'HTTP ' + txResp.status);
+      return;
+    }
+    var tx = await txResp.json();
+
+    statusEl.textContent = 'Review and sign in the Nautilus popup...';
+    var signed = await window.ergo.sign_tx(tx);
+
+    statusEl.textContent = 'Submitting the signed transaction...';
+    var submitResp = await fetch('signed', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(signed)
+    });
+    var result = await submitResp.json();
+    if (submitResp.ok) {
+      statusEl.textContent = 'Submitted. Transaction id:';
+      detailEl.textContent = result.txId;
+    } else {
+      fail('The node rejected the transaction.', result.error || JSON.stringify(result));
+    }
+  } catch (e) {
+    fail('Error: ' + (e && e.message ? e.message : String(e)));
+  }
+}
+run();
+</script>
+</body>
+</html>

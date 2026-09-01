@@ -10,6 +10,7 @@ import im.paideia.governance.Proposal
 import im.paideia.governance.contracts.ActionSendFundsBasic
 import im.paideia.governance.contracts.DAOOrigin
 import im.paideia.governance.contracts.ProposalBasic
+import im.paideia.staking.StakingTest
 import im.paideia.staking.TotalStakingState
 import im.paideia.staking.contracts.StakeState
 import im.paideia.util.ConfKeys
@@ -194,6 +195,62 @@ class ReadModelsSuite extends PaideiaTestSuite {
           case other => fail(s"expected a SendFundsActionView, got $other")
         }
         assert(detail.votes.isEmpty)
+      }
+    })
+  }
+
+  test("stakeStatus finds a known stake key and skips unknown candidates") {
+    val ergoClient = createMockedErgoClient(MockData(Nil, Nil))
+    ergoClient.execute(new java.util.function.Function[BlockchainContext, Unit] {
+      override def apply(_ctx: BlockchainContext): Unit = {
+        val ctx = _ctx.asInstanceOf[BlockchainContextImpl]
+        PaideiaTestSuite.init(ctx)
+
+        val dao        = StakingTest.testDAO
+        val stakeKey   = Util.randomKey
+        val unknownKey = Util.randomKey
+
+        val stakingContract = StakeState(PaideiaContractSignature(daoKey = dao.key))
+        val stakingState    = stakingContract.emptyBox(ctx, dao, 100000000L)
+        stakingState.stake(stakeKey, 250L)
+        stakingContract.clearBoxes()
+        stakingContract.newBox(stakingState.inputBox(), false)
+
+        val found = ReadModels.stakeStatus(ctx, dao.key, Set(stakeKey, unknownKey))
+        assert(found.size == 1, found)
+        assert(found.head.stakeKey == ErgoId.create(stakeKey).toString())
+        assert(found.head.stake.stake == 250L)
+        assert(found.head.participation.isEmpty)
+
+        assert(ReadModels.stakeStatus(ctx, dao.key, Set(unknownKey)).isEmpty)
+        assert(ReadModels.stakeStatus(ctx, dao.key, Set.empty).isEmpty)
+      }
+    })
+  }
+
+  test(
+    "M4(a): stakeStatus throws (not Nil) when the DAO has no confirmed staking state box"
+  ) {
+    val ergoClient = createMockedErgoClient(MockData(Nil, Nil))
+    ergoClient.execute(new java.util.function.Function[BlockchainContext, Unit] {
+      override def apply(_ctx: BlockchainContext): Unit = {
+        val ctx = _ctx.asInstanceOf[BlockchainContextImpl]
+        PaideiaTestSuite.init(ctx)
+
+        // StakingTest.testDAO sets im_paideia_staking_state_tokenid in config, but no
+        // StakeStateBox is ever registered as confirmed - simulating a session whose
+        // local replay hasn't caught up (or is corrupt).
+        val dao = StakingTest.testDAO
+
+        // An empty candidate set is still the ordinary "nothing to check" case - no
+        // staking-state lookup is even attempted.
+        assert(ReadModels.stakeStatus(ctx, dao.key, Set.empty).isEmpty)
+
+        // A non-empty candidate set, on the other hand, must surface the missing local
+        // state as a failure rather than silently answering "no stake found".
+        intercept[NoSuchElementException] {
+          ReadModels.stakeStatus(ctx, dao.key, Set(Util.randomKey))
+        }
       }
     })
   }
