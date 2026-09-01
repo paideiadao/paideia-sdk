@@ -55,14 +55,31 @@ case class DigestCheck(
   * @param extraOnNode
   *   \- box ids the node reports as unspent that the local session doesn't know about (a
   *   checkpoint that's missing boxes the chain actually has).
+  * @param enforceExtras
+  *   \- whether a nonempty `extraOnNode` fails this check ([[ok]]) or is merely reported
+  *   ([[warnings]]). `missingOnNode` always fails, regardless. See
+  *   [[ChainStateVerifier.digestBackedClasses]] for which contracts enforce extras and
+  *   why the rest cannot: a lazily-instantiated contract instance (e.g. `CreateDAO`,
+  *   born only when `ProtoDAO`'s DAO-creation flow first reads
+  *   `im_paideia_contracts_createdao` - a config key that isn't even in the genesis
+  *   seed) only ever observes boxes from its instantiation point onward, so an on-chain
+  *   box that landed at its address before that moment is - deterministically, on every
+  *   replay - a permanent `extraOnNode` no full replay clears (found live: a tokenless
+  *   dust box parked at the CreateDAO address at height 1381271).
   */
 case class BoxSetCheck(
   contractClass: String,
   daoKey: String,
   missingOnNode: Set[String],
-  extraOnNode: Set[String]
+  extraOnNode: Set[String],
+  enforceExtras: Boolean = true
 ) {
-  def ok: Boolean = missingOnNode.isEmpty && extraOnNode.isEmpty
+  def ok: Boolean = missingOnNode.isEmpty && (extraOnNode.isEmpty || !enforceExtras)
+
+  /** Extra on-chain box ids that don't fail the check (`enforceExtras` false) but are
+    * still worth surfacing in [[VerificationReport.describe]].
+    */
+  def warnings: Set[String] = if (enforceExtras) Set.empty else extraOnNode
 }
 
 /** The full result of comparing a session's in-memory state against on-chain reality.
@@ -88,12 +105,18 @@ case class VerificationReport(
         s"missingOnNode=[${c.missingOnNode.mkString(",")}] " +
         s"extraOnNode=[${c.extraOnNode.mkString(",")}]"
     }
-    val failures = failedDigests ++ failedBoxSets
+    val warnings = boxSetChecks.filter(c => c.ok && c.warnings.nonEmpty).map { c =>
+      s"[boxes][warn] ${c.contractClass} DAO ${c.daoKey}: untracked on-chain box(es) " +
+        s"[${c.warnings.mkString(",")}] (extras not enforced for this contract class)"
+    }
+    val failures    = failedDigests ++ failedBoxSets
+    val warningsStr = if (warnings.isEmpty) "" else "\n" + warnings.mkString("\n")
     if (failures.isEmpty)
-      s"OK: ${digestChecks.size} digest check(s), ${boxSetChecks.size} box-set check(s) all passed"
+      s"OK: ${digestChecks.size} digest check(s), ${boxSetChecks.size} box-set check(s) all passed" +
+        warningsStr
     else
       s"FAILED: ${failures.size} of ${digestChecks.size + boxSetChecks.size} check(s):\n" +
-        failures.mkString("\n")
+        failures.mkString("\n") + warningsStr
   }
 }
 
@@ -115,6 +138,26 @@ object ChainStateVerifier {
   private val ConfigClass        = "Config"
   private val StakeStateClass    = "StakeState"
   private val ProposalBasicClass = "ProposalBasic"
+
+  /** The contract classes whose box sets must match the chain EXACTLY - `extraOnNode`
+    * included. These are the read-model trust surface (their boxes/digests are what
+    * proposals, tallies, config and stake are read from), and for them completeness is
+    * sound: their instances are instantiated during replay at or before the event that
+    * creates their first box (Config at genesis seeding / DAO creation, StakeState at
+    * staking bootstrap, ProposalBasic at proposal creation), so they observe every box
+    * ever put at their address. Notably, this is what catches a checkpoint that simply
+    * OMITS a whole proposal box - the one tampering the digest checks can't see, since
+    * those only iterate proposals local state knows about.
+    *
+    * Every other contract class is instantiated lazily on first operational use (see
+    * [[BoxSetCheck.enforceExtras]]'s scaladoc for the CreateDAO example) and so can be
+    * legitimately, deterministically unaware of earlier boxes at its address:
+    * `extraOnNode` for those is reported as a warning instead of failing verification.
+    * `missingOnNode` - local state claiming a box the chain doesn't have - stays
+    * enforced for every class.
+    */
+  private[sync] val digestBackedClasses: Set[String] =
+    Set(ConfigClass, StakeStateClass, ProposalBasicClass)
 
   /** One live contract instance, as recorded locally: enough to look up its unspent boxes
     * on-chain (by ErgoTree) and compare confirmed-box-id sets.
@@ -299,7 +342,8 @@ object ChainStateVerifier {
         instance.contractClass,
         instance.daoKey,
         missingOnNode = instance.confirmedBoxIds -- onChainIds,
-        extraOnNode   = acceptedOnChainIds -- instance.confirmedBoxIds
+        extraOnNode   = acceptedOnChainIds -- instance.confirmedBoxIds,
+        enforceExtras = digestBackedClasses.contains(instance.contractClass)
       )
     }
 
@@ -372,7 +416,6 @@ object ChainStateVerifier {
         case None => true
       }
 
-    val digestBackedClasses = Set(ConfigClass, StakeStateClass, ProposalBasicClass)
     val ergoTreesToFetch = local.contractInstances
       .filter(i => i.confirmedBoxIds.nonEmpty || digestBackedClasses.contains(i.contractClass))
       .map(_.ergoTreeHex)

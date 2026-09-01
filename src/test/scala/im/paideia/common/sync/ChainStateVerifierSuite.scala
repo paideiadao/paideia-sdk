@@ -326,4 +326,48 @@ class ChainStateVerifierSuite extends AnyFunSuite {
     val unfiltered = ChainStateVerifier.compare(local, onChain)
     assert(unfiltered.boxSetChecks.head.extraOnNode == Set("dust"))
   }
+
+  test(
+    "compare: extraOnNode fails verification only for digest-backed contract classes; " +
+      "elsewhere it's a warning, while missingOnNode always fails"
+  ) {
+    val daoKey = hexId(7)
+    val tree   = "createdao-tree-placeholder"
+
+    // CreateDAO is lazily instantiated (see BoxSetCheck.enforceExtras) - an on-chain box
+    // predating the instance is expected, not a verification failure.
+    val extrasOnly = LocalSnapshot(
+      contractInstances = Seq(LocalContractInstance(tree, "CreateDAO", daoKey, Set("a"))),
+      digests           = Seq.empty
+    )
+    val onChain = Map(tree -> List(outputBox("a", tree), outputBox("pre-instance", tree)))
+
+    val report = ChainStateVerifier.compare(extrasOnly, onChain)
+    val check  = report.boxSetChecks.head
+    assert(check.extraOnNode == Set("pre-instance"))
+    assert(check.ok)
+    assert(report.ok)
+    assert(report.describe.contains("[boxes][warn]"))
+    assert(report.describe.contains("pre-instance"))
+
+    // The same extra on a digest-backed class still fails.
+    val enforced = ChainStateVerifier.compare(
+      extrasOnly.copy(contractInstances =
+        Seq(LocalContractInstance(tree, "ProposalBasic", daoKey, Set("a")))
+      ),
+      onChain
+    )
+    assert(!enforced.ok)
+
+    // missingOnNode fails even for a lazily-instantiated class.
+    val missing = ChainStateVerifier.compare(
+      LocalSnapshot(
+        Seq(LocalContractInstance(tree, "CreateDAO", daoKey, Set("a", "gone"))),
+        Seq.empty
+      ),
+      Map(tree -> List(outputBox("a", tree)))
+    )
+    assert(!missing.ok)
+    assert(missing.boxSetChecks.head.missingOnNode == Set("gone"))
+  }
 }
